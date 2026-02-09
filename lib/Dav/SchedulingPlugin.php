@@ -32,6 +32,9 @@ use Sabre\VObject\ITip;
 class SchedulingPlugin extends ServerPlugin {
     private ?Server $server = null;
 
+    /** @var array<string, string> room email → PARTSTAT set during this request */
+    private array $scheduledPartstats = [];
+
     public function __construct(
         private RoomService $roomService,
         private PermissionService $permissionService,
@@ -101,6 +104,25 @@ class SchedulingPlugin extends ServerPlugin {
             'CANCEL' => $this->handleCancel($message, $room),
             default => null,
         };
+
+        // Remember the PARTSTAT we set so fixOrganizerEvent can write it
+        // back into the organizer's event (Sabre won't do this since we
+        // return false to stop its scheduleLocalDelivery).
+        $roomEmail = strtolower($room['email'] ?? '');
+        if ($roomEmail !== '' && $message->message !== null) {
+            $vEvent = $message->message->VEVENT ?? null;
+            if ($vEvent !== null) {
+                foreach ($vEvent->select('ATTENDEE') as $att) {
+                    if (strtolower($this->stripMailto((string)$att)) === $roomEmail) {
+                        $ps = isset($att['PARTSTAT']) ? (string)$att['PARTSTAT'] : null;
+                        if ($ps !== null) {
+                            $this->scheduledPartstats[$roomEmail] = $ps;
+                        }
+                        break;
+                    }
+                }
+            }
+        }
 
         // Return false to stop event propagation — we've handled delivery,
         // so Sabre's scheduleLocalDelivery should NOT run for this message.
@@ -258,7 +280,7 @@ class SchedulingPlugin extends ServerPlugin {
             $roomEmails = [];
             $attendees = $vEvent->select('ATTENDEE');
 
-            // 1. Fix existing room attendees with wrong CUTYPE (iOS fix)
+            // 1. Fix existing room attendees: CUTYPE + PARTSTAT write-back
             foreach ($attendees as $attendee) {
                 $email = strtolower($this->stripMailto((string)$attendee));
                 $cutype = isset($attendee['CUTYPE']) ? (string)$attendee['CUTYPE'] : '';
@@ -269,6 +291,17 @@ class SchedulingPlugin extends ServerPlugin {
                     if ($cutype !== 'ROOM') {
                         $attendee['CUTYPE'] = 'ROOM';
                         $changed = true;
+                    }
+
+                    // Write back PARTSTAT that was set during scheduling
+                    // (Sabre doesn't do this because we handle delivery ourselves)
+                    if (isset($this->scheduledPartstats[$email])) {
+                        $currentPartstat = isset($attendee['PARTSTAT']) ? (string)$attendee['PARTSTAT'] : '';
+                        if ($currentPartstat !== $this->scheduledPartstats[$email]) {
+                            $attendee['PARTSTAT'] = $this->scheduledPartstats[$email];
+                            $changed = true;
+                            $this->logger->info("ResaVox: Updated PARTSTAT to {$this->scheduledPartstats[$email]} for room {$email} in organizer event {$path}");
+                        }
                     }
                 }
             }
