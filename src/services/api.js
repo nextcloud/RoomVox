@@ -1,0 +1,27 @@
+import axios from '@nextcloud/axios'
+import { generateUrl } from '@nextcloud/router'
+
+const baseUrl = (path) => generateUrl(`/apps/roombooking${path}`)
+
+// Rooms
+export const getRooms = () => axios.get(baseUrl('/api/rooms'))
+export const getRoom = (id) => axios.get(baseUrl(`/api/rooms/${id}`))
+export const createRoom = (data) => axios.post(baseUrl('/api/rooms'), data)
+export const updateRoom = (id, data) => axios.put(baseUrl(`/api/rooms/${id}`), data)
+export const deleteRoom = (id) => axios.delete(baseUrl(`/api/rooms/${id}`))
+
+// Permissions
+export const getPermissions = (id) => axios.get(baseUrl(`/api/rooms/${id}/permissions`))
+export const setPermissions = (id, data) => axios.put(baseUrl(`/api/rooms/${id}/permissions`), data)
+
+// Bookings
+export const getBookings = (id, params = {}) => axios.get(baseUrl(`/api/rooms/${id}/bookings`), { params })
+export const respondToBooking = (roomId, bookingUid, action) =>
+    axios.post(baseUrl(`/api/rooms/${roomId}/bookings/${bookingUid}/respond`), { action })
+
+// Settings
+export const getSettings = () => axios.get(baseUrl('/api/settings'))
+export const saveSettings = (data) => axios.put(baseUrl('/api/settings'), data)
+
+// Sharee search
+export const searchSharees = (search) => axios.get(baseUrl('/api/sharees'), { params: { search } })

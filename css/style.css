@@ -1,0 +1,26 @@
+/* Room Booking App - Global Styles */
+
+#app-roombooking {
+    height: 100%;
+}
+
+/* Ensure the content area fills available space */
+#app-content-vue {
+    height: 100%;
+}
+
+/* Active nav item */
+.app-navigation-entry.active {
+    background-color: var(--color-primary-element-light) !important;
+}
+
+/* Smooth transitions */
+.fade-enter-active,
+.fade-leave-active {
+    transition: opacity 0.2s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+    opacity: 0;
+}

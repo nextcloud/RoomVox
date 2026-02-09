@@ -1,0 +1,10 @@
+node_modules/
+vendor/
+js/
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+package-lock.json
+composer.lock
