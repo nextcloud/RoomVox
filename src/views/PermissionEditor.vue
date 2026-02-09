@@ -23,10 +23,7 @@
                     <div v-for="(entry, index) in permissions[role.key]"
                          :key="index"
                          class="permission-entry">
-                        <NcChip
-                            :text="entry.type === 'group' ? $t('Group') : $t('User')"
-                            :variant="entry.type === 'group' ? 'warning' : 'primary'"
-                            no-close />
+                        <AccountGroup :size="16" />
                         <span class="entry-name">{{ entry.id }}</span>
                         <NcButton type="tertiary" @click="removeEntry(role.key, index)">
                             <template #icon>
@@ -43,17 +40,14 @@
                 <div class="add-entry">
                     <NcTextField
                         v-model="searchQueries[role.key]"
-                        :placeholder="$t('Search users or groups...')"
+                        :placeholder="$t('Search groups...')"
                         @update:model-value="onSearch(role.key)" />
                     <div v-if="searchResults[role.key]?.length > 0" class="search-results">
                         <div v-for="result in searchResults[role.key]"
                              :key="result.type + '-' + result.id"
                              class="search-result"
                              @click="addEntry(role.key, result)">
-                            <NcChip
-                                :text="result.type === 'group' ? $t('Group') : $t('User')"
-                                :variant="result.type === 'group' ? 'warning' : 'primary'"
-                                no-close />
+                            <AccountGroup :size="16" />
                             <span>{{ result.label }}</span>
                         </div>
                     </div>
@@ -80,9 +74,9 @@ import NcButton from '@nextcloud/vue/components/NcButton'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import NcNoteCard from '@nextcloud/vue/components/NcNoteCard'
-import NcChip from '@nextcloud/vue/components/NcChip'
 import ArrowLeft from 'vue-material-design-icons/ArrowLeft.vue'
 import Close from 'vue-material-design-icons/Close.vue'
+import AccountGroup from 'vue-material-design-icons/AccountGroup.vue'
 
 import { getPermissions, setPermissions, searchSharees } from '../services/api.js'
 
@@ -93,9 +87,9 @@ const props = defineProps({
 defineEmits(['back'])
 
 const roles = [
-    { key: 'viewers', label: 'Viewers', description: 'Can see the room as a resource in their calendar app, but cannot book.' },
-    { key: 'bookers', label: 'Bookers', description: 'Can see and book the room. Bookings follow the auto-accept or approval workflow.' },
-    { key: 'managers', label: 'Managers', description: 'Can see, book, and manage the room. Receives approval requests and can accept/decline bookings.' },
+    { key: 'viewers', label: 'Viewers', description: 'Groups that can see the room in their calendar, but cannot book.' },
+    { key: 'bookers', label: 'Bookers', description: 'Groups that can see and book the room. Bookings follow the auto-accept or approval workflow.' },
+    { key: 'managers', label: 'Managers', description: 'Groups that can see, book, and manage the room. Members receive approval requests and can accept/decline bookings.' },
 ]
 
 const loading = ref(true)

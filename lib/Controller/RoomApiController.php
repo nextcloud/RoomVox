@@ -260,34 +260,21 @@ class RoomApiController extends Controller {
     }
 
     /**
-     * Search users and groups for the permission editor
+     * Search groups for the permission editor.
+     * Only groups are supported because NC Calendar's room visibility
+     * filtering (group_restrictions) is group-based.
      */
     public function searchSharees(): JSONResponse {
         $search = $this->request->getParam('search', '');
         $results = [];
 
-        // Search users
-        $users = $this->userManager->search($search, 25);
-        foreach ($users as $user) {
-            $uid = $user->getUID();
-            // Skip room accounts
-            if (str_starts_with($uid, 'rb_')) {
-                continue;
-            }
-            $results[] = [
-                'type' => 'user',
-                'id' => $uid,
-                'label' => $user->getDisplayName() . ' (' . $uid . ')',
-            ];
-        }
-
-        // Search groups
+        // Search groups only
         $groups = $this->groupManager->search($search, 25);
         foreach ($groups as $group) {
             $results[] = [
                 'type' => 'group',
                 'id' => $group->getGID(),
-                'label' => $group->getDisplayName() . ' (group)',
+                'label' => $group->getDisplayName(),
             ];
         }
 

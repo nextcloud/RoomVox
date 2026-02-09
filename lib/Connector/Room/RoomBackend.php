@@ -80,7 +80,6 @@ class RoomBackend implements IBackend {
      * Create a Room object from room config data
      */
     private function createRoomObject(array $roomData): Room {
-        // Get group restrictions for visibility filtering
         $permissions = $this->permissionService->getPermissions($roomData['id']);
         $groupRestrictions = $this->extractGroupIds($permissions);
 
@@ -98,8 +97,17 @@ class RoomBackend implements IBackend {
     }
 
     /**
-     * Extract all unique group IDs from permission entries
-     * Used for NC Calendar's group-based resource filtering
+     * Extract explicitly configured group IDs from permissions.
+     *
+     * NC Calendar uses group_restrictions to filter room visibility:
+     * - Empty array → room visible to everyone
+     * - Non-empty → only members of listed groups see the room
+     *
+     * Only explicit group entries are used here. User-based permissions
+     * are enforced by the SchedulingPlugin at booking time, not at
+     * visibility level. To restrict room visibility, admins should
+     * assign groups (not individual users) in the permission editor.
+     *
      * @return string[]
      */
     private function extractGroupIds(array $permissions): array {

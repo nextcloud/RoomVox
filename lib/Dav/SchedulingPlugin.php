@@ -8,6 +8,7 @@ use OCA\ResaVox\Service\CalDAVService;
 use OCA\ResaVox\Service\MailService;
 use OCA\ResaVox\Service\PermissionService;
 use OCA\ResaVox\Service\RoomService;
+use OCP\IUserManager;
 use Psr\Log\LoggerInterface;
 use Sabre\DAV\Server;
 use Sabre\DAV\ServerPlugin;
@@ -36,6 +37,7 @@ class SchedulingPlugin extends ServerPlugin {
         private PermissionService $permissionService,
         private CalDAVService $calDAVService,
         private MailService $mailService,
+        private IUserManager $userManager,
         private LoggerInterface $logger,
     ) {
     }
@@ -113,11 +115,23 @@ class SchedulingPlugin extends ServerPlugin {
         $roomId = $room['id'];
 
         // 1. Permission check
-        if ($senderId !== null && !$this->permissionService->canBook($senderId, $roomId)) {
-            $this->logger->info("ResaVox: Booking denied for {$senderId} on room {$roomId} — no permission");
-            $message->scheduleStatus = '3.7'; // Delivery refused
-            $this->setPartstat($message, 'DECLINED');
-            return;
+        $perms = $this->permissionService->getPermissions($roomId);
+        $hasPermissions = !empty($perms['viewers']) || !empty($perms['bookers']) || !empty($perms['managers']);
+
+        if ($hasPermissions) {
+            if ($senderId === null) {
+                // Sender could not be resolved to a NC user — deny when permissions are configured
+                $this->logger->info("ResaVox: Booking denied for unknown sender {$message->sender} on room {$roomId} — could not resolve user");
+                $message->scheduleStatus = '3.7'; // Delivery refused
+                $this->setPartstat($message, 'DECLINED');
+                return;
+            }
+            if (!$this->permissionService->canBook($senderId, $roomId)) {
+                $this->logger->info("ResaVox: Booking denied for {$senderId} on room {$roomId} — no permission");
+                $message->scheduleStatus = '3.7'; // Delivery refused
+                $this->setPartstat($message, 'DECLINED');
+                return;
+            }
         }
 
         // 2. Conflict check
@@ -507,8 +521,15 @@ class SchedulingPlugin extends ServerPlugin {
             return substr($sender, strlen($prefix));
         }
 
-        // Handle mailto: format — try to find user by email
+        // Handle mailto: format — find Nextcloud user by email
         if (str_starts_with(strtolower($sender), 'mailto:')) {
+            $email = substr($sender, 7);
+            $users = $this->userManager->getByEmail($email);
+            if (count($users) === 1) {
+                return $users[0]->getUID();
+            }
+            // Multiple matches or none: return null (handled by caller)
+            $this->logger->debug("ResaVox: Could not resolve mailto:{$email} to a unique user (found " . count($users) . ")");
             return null;
         }
 
