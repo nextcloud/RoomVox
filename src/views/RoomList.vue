@@ -82,8 +82,10 @@
                         class="room-list__row"
                         @click="$emit('select', room)">
                         <td class="room-name">
-                            <DoorOpen :size="16" />
-                            <span>{{ room.name }}</span>
+                            <span class="room-name__inner">
+                                <DoorOpen :size="16" />
+                                <span>{{ room.name }}</span>
+                            </span>
                         </td>
                         <td>{{ room.location || '—' }}</td>
                         <td>{{ room.capacity || '—' }}</td>
@@ -284,9 +286,12 @@ const sortedRooms = computed(() => {
 }
 
 .room-name {
-    display: flex;
+    font-weight: 500;
+}
+
+.room-name__inner {
+    display: inline-flex;
     align-items: center;
     gap: 8px;
-    font-weight: 500;
 }
 </style>
