@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace OCA\RoomBooking\Connector\Room;
+namespace OCA\ResaVox\Connector\Room;
 
 use OCP\Calendar\Room\IRoom;
 use OCP\Calendar\IMetadataProvider;

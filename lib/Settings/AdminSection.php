@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace OCA\RoomBooking\Settings;
+namespace OCA\ResaVox\Settings;
 
-use OCA\RoomBooking\AppInfo\Application;
+use OCA\ResaVox\AppInfo\Application;
 use OCP\IL10N;
 use OCP\IURLGenerator;
 use OCP\Settings\IIconSection;
@@ -21,7 +21,7 @@ class AdminSection implements IIconSection {
     }
 
     public function getName(): string {
-        return $this->l->t('Room Booking');
+        return $this->l->t('ResaVox');
     }
 
     public function getPriority(): int {

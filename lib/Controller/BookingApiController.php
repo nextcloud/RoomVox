@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace OCA\RoomBooking\Controller;
+namespace OCA\ResaVox\Controller;
 
-use OCA\RoomBooking\Service\CalDAVService;
-use OCA\RoomBooking\Service\MailService;
-use OCA\RoomBooking\Service\PermissionService;
-use OCA\RoomBooking\Service\RoomService;
+use OCA\ResaVox\Service\CalDAVService;
+use OCA\ResaVox\Service\MailService;
+use OCA\ResaVox\Service\PermissionService;
+use OCA\ResaVox\Service\RoomService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IGroupManager;

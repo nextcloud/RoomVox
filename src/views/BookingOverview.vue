@@ -57,9 +57,10 @@
                         <td>{{ formatTime(booking.dtstart) }} – {{ formatTime(booking.dtend) }}</td>
                         <td>{{ booking.organizerName || booking.organizer }}</td>
                         <td>
-                            <span :class="'badge badge--' + getStatusClass(booking.partstat)">
-                                {{ getStatusLabel(booking.partstat) }}
-                            </span>
+                            <NcChip
+                                :text="getStatusLabel(booking.partstat)"
+                                :variant="getStatusVariant(booking.partstat)"
+                                no-close />
                         </td>
                         <td>
                             <div v-if="booking.partstat === 'TENTATIVE'" class="booking-actions">
@@ -92,6 +93,7 @@ import NcSelect from '@nextcloud/vue/components/NcSelect'
 import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwitch'
 import NcEmptyContent from '@nextcloud/vue/components/NcEmptyContent'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
+import NcChip from '@nextcloud/vue/components/NcChip'
 import CalendarCheck from 'vue-material-design-icons/CalendarCheck.vue'
 
 import { getBookings, respondToBooking } from '../services/api.js'
@@ -162,12 +164,12 @@ const formatTime = (dateStr) => {
     return d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })
 }
 
-const getStatusClass = (partstat) => {
+const getStatusVariant = (partstat) => {
     switch (partstat) {
         case 'ACCEPTED': return 'success'
         case 'DECLINED': return 'error'
         case 'TENTATIVE': return 'warning'
-        default: return 'neutral'
+        default: return 'secondary'
     }
 }
 
@@ -187,7 +189,7 @@ const getStatusLabel = (partstat) => {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 20px;
+    margin-bottom: 24px;
     flex-wrap: wrap;
     gap: 12px;
 }
@@ -256,34 +258,5 @@ const getStatusLabel = (partstat) => {
     display: flex;
     gap: 4px;
     justify-content: center;
-}
-
-.badge {
-    display: inline-block;
-    padding: 2px 10px;
-    border-radius: 10px;
-    font-size: 12px;
-    font-weight: 500;
-    white-space: nowrap;
-}
-
-.badge--success {
-    background: var(--color-success-element-light);
-    color: var(--color-success-text);
-}
-
-.badge--error {
-    background: var(--color-error-element-light);
-    color: var(--color-error-text);
-}
-
-.badge--warning {
-    background: var(--color-warning-element-light);
-    color: var(--color-warning-text);
-}
-
-.badge--neutral {
-    background: var(--color-background-dark);
-    color: var(--color-text-maxcontrast);
 }
 </style>

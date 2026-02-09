@@ -1,71 +1,100 @@
 <template>
-    <div class="roombooking-admin">
-                <div class="tab-bar">
-                    <button
-                        v-for="tab in tabs"
-                        :key="tab.id"
-                        class="tab-bar__item"
-                        :class="{ 'tab-bar__item--active': isTabActive(tab.id) }"
-                        @click="onTabClick(tab.id)">
-                        <component :is="tab.icon" :size="18" />
-                        <span>{{ tab.label }}</span>
-                    </button>
+    <NcContent app-name="resavox">
+        <NcAppNavigation>
+            <template #list>
+                <NcAppNavigationItem
+                    :name="'Rooms'"
+                    :class="{ active: isTabActive('rooms') }"
+                    @click="onTabClick('rooms')">
+                    <template #icon>
+                        <DoorOpen :size="20" />
+                    </template>
+                    <template #counter>
+                        <NcCounterBubble v-if="rooms.length > 0">
+                            {{ rooms.length }}
+                        </NcCounterBubble>
+                    </template>
+                </NcAppNavigationItem>
+                <NcAppNavigationItem
+                    :name="'Bookings'"
+                    :class="{ active: isTabActive('bookings') }"
+                    @click="onTabClick('bookings')">
+                    <template #icon>
+                        <CalendarCheck :size="20" />
+                    </template>
+                </NcAppNavigationItem>
+            </template>
+            <template #footer>
+                <NcAppNavigationItem
+                    :name="'Settings'"
+                    :class="{ active: isTabActive('settings') }"
+                    @click="onTabClick('settings')">
+                    <template #icon>
+                        <Cog :size="20" />
+                    </template>
+                </NcAppNavigationItem>
+            </template>
+        </NcAppNavigation>
+
+        <NcAppContent>
+            <div class="resavox-content">
+                <RoomList
+                    v-if="currentView === 'rooms' && !selectedRoom && !creatingRoom"
+                    :rooms="rooms"
+                    :loading="loadingRooms"
+                    @select="onSelectRoom"
+                    @create="creatingRoom = true"
+                    @refresh="loadRooms" />
+
+                <RoomEditor
+                    v-if="currentView === 'rooms' && (selectedRoom || creatingRoom)"
+                    :room="selectedRoom"
+                    :creating="creatingRoom"
+                    @save="onSaveRoom"
+                    @cancel="selectedRoom = null; creatingRoom = false"
+                    @delete="onDeleteRoom"
+                    @manage-permissions="onManagePermissions" />
+
+                <PermissionEditor
+                    v-if="currentView === 'permissions' && selectedRoom"
+                    :room="selectedRoom"
+                    @back="currentView = 'rooms'" />
+
+                <BookingOverview
+                    v-if="currentView === 'bookings'"
+                    :rooms="rooms" />
+
+                <div v-if="currentView === 'settings'" class="resavox-settings">
+                    <NcSettingsSection :name="'General'">
+                        <NcCheckboxRadioSwitch
+                            :model-value="settings.defaultAutoAccept"
+                            @update:model-value="settings.defaultAutoAccept = $event; saveGlobalSettings()">
+                            {{ $t('Auto-accept bookings by default for new rooms') }}
+                        </NcCheckboxRadioSwitch>
+                        <NcCheckboxRadioSwitch
+                            :model-value="settings.emailEnabled"
+                            @update:model-value="settings.emailEnabled = $event; saveGlobalSettings()">
+                            {{ $t('Enable email notifications') }}
+                        </NcCheckboxRadioSwitch>
+                    </NcSettingsSection>
+                    <NcNoteCard v-if="settingsSaved" type="success">
+                        {{ $t('Settings saved') }}
+                    </NcNoteCard>
                 </div>
-
-                <div class="tab-content">
-                    <RoomList
-                        v-if="currentView === 'rooms' && !selectedRoom && !creatingRoom"
-                        :rooms="rooms"
-                        :loading="loadingRooms"
-                        @select="onSelectRoom"
-                        @create="creatingRoom = true"
-                        @refresh="loadRooms" />
-
-                    <RoomEditor
-                        v-if="currentView === 'rooms' && (selectedRoom || creatingRoom)"
-                        :room="selectedRoom"
-                        :creating="creatingRoom"
-                        @save="onSaveRoom"
-                        @cancel="selectedRoom = null; creatingRoom = false"
-                        @delete="onDeleteRoom"
-                        @manage-permissions="onManagePermissions" />
-
-                    <PermissionEditor
-                        v-if="currentView === 'permissions' && selectedRoom"
-                        :room="selectedRoom"
-                        @back="currentView = 'rooms'" />
-
-                    <BookingOverview
-                        v-if="currentView === 'bookings'"
-                        :rooms="rooms" />
-
-                    <div v-if="currentView === 'settings'" class="roombooking-settings">
-                        <div class="settings-card">
-                            <h3>{{ $t('General') }}</h3>
-                            <div class="settings-options">
-                                <NcCheckboxRadioSwitch
-                                    :model-value="settings.defaultAutoAccept"
-                                    @update:model-value="settings.defaultAutoAccept = $event; saveGlobalSettings()">
-                                    {{ $t('Auto-accept bookings by default for new rooms') }}
-                                </NcCheckboxRadioSwitch>
-                                <NcCheckboxRadioSwitch
-                                    :model-value="settings.emailEnabled"
-                                    @update:model-value="settings.emailEnabled = $event; saveGlobalSettings()">
-                                    {{ $t('Enable email notifications') }}
-                                </NcCheckboxRadioSwitch>
-                            </div>
-                        </div>
-                        <NcNoteCard v-if="settingsSaved" type="success">
-                            {{ $t('Settings saved') }}
-                        </NcNoteCard>
-                    </div>
-                </div>
-    </div>
+            </div>
+        </NcAppContent>
+    </NcContent>
 </template>
 
 <script setup>
-import { ref, onMounted, markRaw } from 'vue'
+import { ref, onMounted } from 'vue'
 import { showError, showSuccess } from '@nextcloud/dialogs'
+import NcContent from '@nextcloud/vue/components/NcContent'
+import NcAppNavigation from '@nextcloud/vue/components/NcAppNavigation'
+import NcAppContent from '@nextcloud/vue/components/NcAppContent'
+import NcAppNavigationItem from '@nextcloud/vue/components/NcAppNavigationItem'
+import NcCounterBubble from '@nextcloud/vue/components/NcCounterBubble'
+import NcSettingsSection from '@nextcloud/vue/components/NcSettingsSection'
 import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwitch'
 import NcNoteCard from '@nextcloud/vue/components/NcNoteCard'
 import DoorOpen from 'vue-material-design-icons/DoorOpen.vue'
@@ -78,12 +107,6 @@ import PermissionEditor from './views/PermissionEditor.vue'
 import BookingOverview from './views/BookingOverview.vue'
 
 import { getRooms, createRoom, updateRoom, deleteRoom, getSettings, saveSettings } from './services/api.js'
-
-const tabs = [
-    { id: 'rooms', label: 'Rooms', icon: markRaw(DoorOpen) },
-    { id: 'bookings', label: 'Bookings', icon: markRaw(CalendarCheck) },
-    { id: 'settings', label: 'Settings', icon: markRaw(Cog) },
-]
 
 const currentView = ref('rooms')
 const rooms = ref([])
@@ -182,63 +205,14 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.roombooking-admin {
-    padding: 20px 0;
+.resavox-content {
+    padding: 24px 32px;
+    max-width: 900px;
 }
 
-.tab-bar {
-    display: flex;
-    gap: 4px;
-    border-bottom: 2px solid var(--color-border);
-    margin-bottom: 24px;
-}
-
-.tab-bar__item {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 10px 20px;
-    border: none;
-    background: none;
-    color: var(--color-text-maxcontrast);
-    font-size: 14px;
-    font-weight: 500;
-    cursor: pointer;
-    border-bottom: 2px solid transparent;
-    margin-bottom: -2px;
-    border-radius: var(--border-radius) var(--border-radius) 0 0;
-    transition: color 0.15s, border-color 0.15s, background 0.15s;
-}
-
-.tab-bar__item:hover {
-    color: var(--color-main-text);
-    background: var(--color-background-hover);
-}
-
-.tab-bar__item--active {
-    color: var(--color-primary-element);
-    border-bottom-color: var(--color-primary-element);
-    font-weight: 600;
-}
-
-.settings-card {
-    background: var(--color-main-background);
-    border: 1px solid var(--color-border);
-    border-radius: var(--border-radius-large);
-    padding: 20px;
-    margin-bottom: 16px;
-}
-
-.settings-card h3 {
-    font-size: 16px;
-    font-weight: 600;
-    margin-bottom: 16px;
-}
-
-.settings-options {
+.resavox-settings {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 16px;
 }
 </style>
-

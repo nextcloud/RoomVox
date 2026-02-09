@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace OCA\RoomBooking\Controller;
+namespace OCA\ResaVox\Controller;
 
-use OCA\RoomBooking\AppInfo\Application;
+use OCA\ResaVox\AppInfo\Application;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IAppConfig;

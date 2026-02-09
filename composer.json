@@ -1,5 +1,5 @@
 {
-    "name": "nextcloud/roombooking",
+    "name": "nextcloud/resavox",
     "description": "CalDAV-native room booking for Nextcloud",
     "type": "nextcloud-app",
     "license": "AGPL-3.0-or-later",
@@ -12,12 +12,12 @@
     },
     "autoload": {
         "psr-4": {
-            "OCA\\RoomBooking\\": "lib/"
+            "OCA\\ResaVox\\": "lib/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "OCA\\RoomBooking\\Tests\\": "tests/"
+            "OCA\\ResaVox\\Tests\\": "tests/"
         }
     },
     "config": {

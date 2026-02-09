@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace OCA\RoomBooking\Listener;
+namespace OCA\ResaVox\Listener;
 
 use OCA\DAV\Events\SabrePluginAuthInitEvent;
-use OCA\RoomBooking\Dav\SchedulingPlugin;
+use OCA\ResaVox\Dav\SchedulingPlugin;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use Psr\Container\ContainerInterface;
@@ -33,9 +33,9 @@ class SabrePluginListener implements IEventListener {
             $plugin = $this->container->get(SchedulingPlugin::class);
             $server->addPlugin($plugin);
 
-            $this->logger->debug('RoomBooking: SchedulingPlugin registered with Sabre DAV server');
+            $this->logger->debug('ResaVox: SchedulingPlugin registered with Sabre DAV server');
         } catch (\Exception $e) {
-            $this->logger->error('RoomBooking: Failed to register SchedulingPlugin: ' . $e->getMessage());
+            $this->logger->error('ResaVox: Failed to register SchedulingPlugin: ' . $e->getMessage());
         }
     }
 }

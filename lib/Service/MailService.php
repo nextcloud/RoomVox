@@ -2,14 +2,17 @@
 
 declare(strict_types=1);
 
-namespace OCA\RoomBooking\Service;
+namespace OCA\ResaVox\Service;
 
-use OCA\RoomBooking\AppInfo\Application;
+use OCA\ResaVox\AppInfo\Application;
 use OCP\IAppConfig;
 use OCP\Mail\IMailer;
 use OCP\Security\ICrypto;
 use Psr\Log\LoggerInterface;
 use Sabre\VObject\ITip;
+use Symfony\Component\Mailer\Mailer as SymfonyMailer;
+use Symfony\Component\Mailer\Transport\Smtp\EsmtpTransport;
+use Symfony\Component\Mime\Email;
 
 class MailService {
     public function __construct(
@@ -98,7 +101,7 @@ class MailService {
 
         $managerUserIds = $this->permissionService->getManagerUserIds($room['id']);
         if (empty($managerUserIds)) {
-            $this->logger->warning("RoomBooking: No managers found for room {$room['id']}, cannot send approval notification");
+            $this->logger->warning("ResaVox: No managers found for room {$room['id']}, cannot send approval notification");
             return;
         }
 
@@ -172,13 +175,14 @@ class MailService {
             );
             return true;
         } catch (\Exception $e) {
-            $this->logger->error("RoomBooking: Test email failed: " . $e->getMessage());
+            $this->logger->error("ResaVox: Test email failed: " . $e->getMessage());
             return false;
         }
     }
 
     /**
-     * Send an email from a room
+     * Send an email from a room.
+     * Uses per-room SMTP config if available, falls back to NC global mailer.
      */
     private function sendMail(
         array $room,
@@ -191,20 +195,27 @@ class MailService {
             return;
         }
 
+        $smtpConfig = $room['smtpConfig'] ?? null;
+        $fromEmail = $room['email'] ?? '';
+        $fromName = $room['name'] ?? 'Room Booking';
+
+        // Use per-room SMTP if configured
+        if ($smtpConfig !== null && !empty($smtpConfig['host'])) {
+            $this->sendViaRoomSmtp($smtpConfig, $fromEmail, $fromName, $to, $subject, $body, $icalAttachment);
+            return;
+        }
+
+        // Fallback: NC global mailer
         try {
             $message = $this->mailer->createMessage();
             $message->setTo([$to]);
             $message->setSubject($subject);
             $message->setPlainBody($body);
 
-            // Set from address as the room email
-            $fromEmail = $room['email'] ?? '';
-            $fromName = $room['name'] ?? 'Room Booking';
             if ($fromEmail !== '') {
                 $message->setFrom([$fromEmail => $fromName]);
             }
 
-            // Add iCalendar attachment if provided
             if ($icalAttachment !== null) {
                 $attachment = $this->mailer->createAttachment(
                     $icalAttachment,
@@ -215,9 +226,79 @@ class MailService {
             }
 
             $this->mailer->send($message);
-            $this->logger->debug("RoomBooking: Email sent to {$to}: {$subject}");
+            $this->logger->info("ResaVox: Email sent to {$to}: {$subject} (via NC mailer)");
         } catch (\Exception $e) {
-            $this->logger->error("RoomBooking: Failed to send email to {$to}: " . $e->getMessage());
+            $this->logger->error("ResaVox: Failed to send email to {$to}: " . $e->getMessage());
+            throw $e;
+        }
+    }
+
+    /**
+     * Send email via per-room SMTP configuration using Symfony Mailer directly.
+     */
+    private function sendViaRoomSmtp(
+        array $smtpConfig,
+        string $fromEmail,
+        string $fromName,
+        string $to,
+        string $subject,
+        string $body,
+        ?string $icalAttachment = null,
+    ): void {
+        $host = $smtpConfig['host'];
+        $port = (int)($smtpConfig['port'] ?? 587);
+        $username = $smtpConfig['username'] ?? '';
+        $password = $smtpConfig['password'] ?? '';
+        $encryption = $smtpConfig['encryption'] ?? 'tls';
+
+        // Decrypt password if encrypted
+        if ($password !== '') {
+            try {
+                $password = $this->crypto->decrypt($password);
+            } catch (\Exception $e) {
+                // Already decrypted (from getRoom which decrypts) or plain text
+            }
+        }
+
+        try {
+            $tls = ($encryption === 'tls' || $encryption === 'ssl');
+            $transport = new EsmtpTransport($host, $port, $tls);
+
+            if ($username !== '') {
+                $transport->setUsername($username);
+            }
+            if ($password !== '') {
+                $transport->setPassword($password);
+            }
+
+            // Use SMTP username as envelope sender if room email differs
+            // (SMTP servers reject sender addresses not owned by the account)
+            $senderEmail = $fromEmail;
+            if ($username !== '' && $fromEmail !== '' && strtolower($username) !== strtolower($fromEmail)) {
+                $senderEmail = $username;
+            }
+
+            $email = (new Email())
+                ->from("{$fromName} <{$senderEmail}>")
+                ->to($to)
+                ->subject($subject)
+                ->text($body);
+
+            // Set Reply-To as the room email so replies go to the room
+            if ($fromEmail !== '' && $senderEmail !== $fromEmail) {
+                $email->replyTo($fromEmail);
+            }
+
+            if ($icalAttachment !== null) {
+                $email->attach($icalAttachment, 'invite.ics', 'text/calendar; method=REPLY');
+            }
+
+            $mailer = new SymfonyMailer($transport);
+            $mailer->send($email);
+
+            $this->logger->info("ResaVox: Email sent to {$to}: {$subject} (via room SMTP {$host}:{$port})");
+        } catch (\Exception $e) {
+            $this->logger->error("ResaVox: Failed to send email via room SMTP ({$host}:{$port}) to {$to}: " . $e->getMessage());
             throw $e;
         }
     }
@@ -314,7 +395,7 @@ class MailService {
 
         return "BEGIN:VCALENDAR\r\n"
             . "VERSION:2.0\r\n"
-            . "PRODID:-//Nextcloud RoomBooking//EN\r\n"
+            . "PRODID:-//Nextcloud ResaVox//EN\r\n"
             . "METHOD:REPLY\r\n"
             . "BEGIN:VEVENT\r\n"
             . "UID:{$event['uid']}\r\n"
@@ -338,7 +419,7 @@ class MailService {
 
         return "BEGIN:VCALENDAR\r\n"
             . "VERSION:2.0\r\n"
-            . "PRODID:-//Nextcloud RoomBooking//EN\r\n"
+            . "PRODID:-//Nextcloud ResaVox//EN\r\n"
             . "METHOD:CANCEL\r\n"
             . "BEGIN:VEVENT\r\n"
             . "UID:{$event['uid']}\r\n"

@@ -5,9 +5,9 @@ import App from './App.vue'
 const app = createApp(App)
 
 app.config.globalProperties.$t = (text, vars = {}) =>
-    translate('roombooking', text, vars)
+    translate('resavox', text, vars)
 
 app.config.globalProperties.$n = (singular, plural, count, vars = {}) =>
-    translatePlural('roombooking', singular, plural, count, vars)
+    translatePlural('resavox', singular, plural, count, vars)
 
-app.mount('#app-roombooking')
+app.mount('#app-resavox')

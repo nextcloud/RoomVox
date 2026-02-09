@@ -2,16 +2,16 @@
 
 declare(strict_types=1);
 
-namespace OCA\RoomBooking\Settings;
+namespace OCA\ResaVox\Settings;
 
-use OCA\RoomBooking\AppInfo\Application;
+use OCA\ResaVox\AppInfo\Application;
 use OCP\AppFramework\Http\TemplateResponse;
 use OCP\Settings\ISettings;
 use OCP\Util;
 
 class AdminSettings implements ISettings {
     public function getForm(): TemplateResponse {
-        Util::addScript(Application::APP_ID, 'roombooking-main');
+        Util::addScript(Application::APP_ID, 'resavox-main');
         Util::addStyle(Application::APP_ID, 'style');
 
         return new TemplateResponse(Application::APP_ID, 'main');

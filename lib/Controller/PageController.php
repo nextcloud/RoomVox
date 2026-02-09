@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace OCA\RoomBooking\Controller;
+namespace OCA\ResaVox\Controller;
 
-use OCA\RoomBooking\AppInfo\Application;
+use OCA\ResaVox\AppInfo\Application;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\TemplateResponse;
 use OCP\IRequest;
@@ -22,7 +22,7 @@ class PageController extends Controller {
      * Main app page — loads the Vue admin UI
      */
     public function index(): TemplateResponse {
-        Util::addScript(Application::APP_ID, 'roombooking-main');
+        Util::addScript(Application::APP_ID, 'resavox-main');
         Util::addStyle(Application::APP_ID, 'style');
 
         return new TemplateResponse(Application::APP_ID, 'main');

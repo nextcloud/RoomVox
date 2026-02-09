@@ -1,7 +1,7 @@
 import axios from '@nextcloud/axios'
 import { generateUrl } from '@nextcloud/router'
 
-const baseUrl = (path) => generateUrl(`/apps/roombooking${path}`)
+const baseUrl = (path) => generateUrl(`/apps/resavox${path}`)
 
 // Rooms
 export const getRooms = () => axios.get(baseUrl('/api/rooms'))

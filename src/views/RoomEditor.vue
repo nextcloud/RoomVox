@@ -18,12 +18,18 @@
                         :label="$t('Room name')"
                         v-model="form.name"
                         :placeholder="$t('e.g. Meeting Room 1')"
-                        required />
+                        :error="!!errors.name"
+                        :helper-text="errors.name"
+                        required
+                        @update:model-value="clearError('name')" />
                     <NcTextField
                         :label="$t('Email address')"
                         v-model="form.email"
                         :placeholder="$t('e.g. room1@company.com')"
-                        type="email" />
+                        :error="!!errors.email"
+                        :helper-text="errors.email"
+                        type="email"
+                        @update:model-value="clearError('email')" />
                     <NcTextField
                         :label="$t('Location')"
                         v-model="form.location"
@@ -31,16 +37,19 @@
                     <NcTextField
                         :label="$t('Capacity')"
                         v-model="form.capacity"
+                        :error="!!errors.capacity"
+                        :helper-text="errors.capacity"
                         type="number"
-                        :placeholder="$t('Number of seats')" />
+                        :placeholder="$t('Number of seats')"
+                        @update:model-value="clearError('capacity')" />
                 </div>
 
                 <div class="form-field">
-                    <label>{{ $t('Description') }}</label>
-                    <textarea
+                    <NcTextArea
+                        :label="$t('Description')"
                         v-model="form.description"
                         :placeholder="$t('Optional room description')"
-                        rows="3" />
+                        resize="vertical" />
                 </div>
 
                 <div class="form-field">
@@ -82,16 +91,18 @@
                     <NcTextField
                         :label="$t('SMTP Port')"
                         v-model="smtp.port"
+                        :error="!!errors.smtpPort"
+                        :helper-text="errors.smtpPort"
                         type="number"
-                        placeholder="587" />
+                        placeholder="587"
+                        @update:model-value="clearError('smtpPort')" />
                     <NcTextField
                         :label="$t('Username')"
                         v-model="smtp.username"
                         :placeholder="$t('SMTP username')" />
-                    <NcTextField
+                    <NcPasswordField
                         :label="$t('Password')"
                         v-model="smtp.password"
-                        type="password"
                         :placeholder="creating ? '' : $t('Leave empty to keep current')" />
                 </div>
                 <div class="form-field">
@@ -123,7 +134,7 @@
             </div>
 
             <div class="form-actions">
-                <NcButton type="primary" @click="save" :disabled="!form.name">
+                <NcButton type="primary" @click="save">
                     {{ creating ? $t('Create Room') : $t('Save Changes') }}
                 </NcButton>
                 <NcButton type="secondary" @click="$emit('cancel')">
@@ -138,11 +149,26 @@
                 <NcButton
                     v-if="!creating"
                     type="error"
-                    @click="confirmDelete">
+                    @click="showDeleteDialog = true">
                     {{ $t('Delete Room') }}
                 </NcButton>
             </div>
         </div>
+
+        <NcDialog
+            v-if="showDeleteDialog"
+            :name="$t('Delete Room')"
+            @closing="showDeleteDialog = false">
+            <p>{{ $t('Are you sure you want to delete this room? This action cannot be undone.') }}</p>
+            <template #actions>
+                <NcButton type="secondary" @click="showDeleteDialog = false">
+                    {{ $t('Cancel') }}
+                </NcButton>
+                <NcButton type="error" @click="showDeleteDialog = false; $emit('delete', room.id)">
+                    {{ $t('Delete') }}
+                </NcButton>
+            </template>
+        </NcDialog>
     </div>
 </template>
 
@@ -150,7 +176,10 @@
 import { ref, reactive, watch } from 'vue'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
+import NcTextArea from '@nextcloud/vue/components/NcTextArea'
+import NcPasswordField from '@nextcloud/vue/components/NcPasswordField'
 import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwitch'
+import NcDialog from '@nextcloud/vue/components/NcDialog'
 import ArrowLeft from 'vue-material-design-icons/ArrowLeft.vue'
 
 const props = defineProps({
@@ -159,6 +188,8 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['save', 'cancel', 'delete', 'manage-permissions'])
+
+const showDeleteDialog = ref(false)
 
 const availableFacilities = [
     { id: 'projector', label: 'Projector' },
@@ -187,6 +218,44 @@ const smtp = reactive({
     password: '',
     encryption: 'tls',
 })
+
+const errors = reactive({
+    name: '',
+    email: '',
+    capacity: '',
+    smtpPort: '',
+})
+
+const clearError = (field) => {
+    errors[field] = ''
+}
+
+const validate = () => {
+    let valid = true
+
+    if (!form.name.trim()) {
+        errors.name = 'Room name is required'
+        valid = false
+    }
+
+    if (form.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
+        errors.email = 'Invalid email address'
+        valid = false
+    }
+
+    if (form.capacity < 0) {
+        errors.capacity = 'Capacity cannot be negative'
+        valid = false
+    }
+
+    const port = Number(smtp.port)
+    if (smtp.host && (port < 1 || port > 65535)) {
+        errors.smtpPort = 'Port must be between 1 and 65535'
+        valid = false
+    }
+
+    return valid
+}
 
 // Initialize form from room data
 watch(() => props.room, (room) => {
@@ -224,6 +293,8 @@ const toggleFacility = (facilityId, checked) => {
 }
 
 const save = () => {
+    if (!validate()) return
+
     const data = { ...form }
 
     // Only include SMTP config if something is filled in
@@ -239,12 +310,6 @@ const save = () => {
 
     emit('save', data)
 }
-
-const confirmDelete = () => {
-    if (confirm('Are you sure you want to delete this room? This action cannot be undone.')) {
-        emit('delete', props.room.id)
-    }
-}
 </script>
 
 <style scoped>
@@ -252,7 +317,7 @@ const confirmDelete = () => {
     display: flex;
     align-items: center;
     gap: 12px;
-    margin-bottom: 20px;
+    margin-bottom: 24px;
 }
 
 .room-editor__header h2 {
@@ -264,13 +329,15 @@ const confirmDelete = () => {
     background: var(--color-main-background);
     border: 1px solid var(--color-border);
     border-radius: var(--border-radius-large);
-    padding: 20px;
+    padding: 24px;
     margin-bottom: 16px;
 }
 
 .form-section h3 {
-    font-size: 16px;
-    font-weight: 600;
+    font-size: 17px;
+    font-weight: 700;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--color-border);
     margin-bottom: 16px;
 }
 
@@ -284,12 +351,12 @@ const confirmDelete = () => {
 .form-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 12px;
-    margin-bottom: 12px;
+    gap: 16px;
+    margin-bottom: 16px;
 }
 
 .form-field {
-    margin-bottom: 12px;
+    margin-bottom: 16px;
 }
 
 .form-field label {
@@ -297,23 +364,6 @@ const confirmDelete = () => {
     font-weight: 500;
     margin-bottom: 4px;
     font-size: 14px;
-}
-
-.form-field textarea {
-    width: 100%;
-    padding: 8px 12px;
-    border: 2px solid var(--color-border-maxcontrast);
-    border-radius: var(--border-radius-large);
-    font-family: inherit;
-    resize: vertical;
-    background: var(--color-main-background);
-    color: var(--color-main-text);
-    min-height: 80px;
-}
-
-.form-field textarea:focus {
-    border-color: var(--color-primary-element);
-    outline: none;
 }
 
 .facilities-grid {
@@ -329,7 +379,27 @@ const confirmDelete = () => {
 
 .form-actions {
     display: flex;
-    gap: 8px;
+    gap: 12px;
     margin-top: 4px;
+}
+
+@media (max-width: 768px) {
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .facilities-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+@media (max-width: 480px) {
+    .facilities-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .form-actions {
+        flex-direction: column;
+    }
 }
 </style>

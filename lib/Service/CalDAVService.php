@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace OCA\RoomBooking\Service;
+namespace OCA\ResaVox\Service;
 
 use OCA\DAV\CalDAV\CalDavBackend;
 use Psr\Log\LoggerInterface;
@@ -260,7 +260,7 @@ class CalDAVService {
     public function deliverToRoomCalendar(string $roomUserId, string $calendarData): bool {
         $calendarId = $this->getRoomCalendarId($roomUserId);
         if ($calendarId === null) {
-            $this->logger->error("RoomBooking: No calendar found for room {$roomUserId}, cannot deliver");
+            $this->logger->error("ResaVox: No calendar found for room {$roomUserId}, cannot deliver");
             return false;
         }
 
@@ -268,13 +268,13 @@ class CalDAVService {
             $vObject = Reader::read($calendarData);
             $vEvent = $vObject->VEVENT ?? null;
             if ($vEvent === null) {
-                $this->logger->error("RoomBooking: No VEVENT in calendar data for delivery");
+                $this->logger->error("ResaVox: No VEVENT in calendar data for delivery");
                 return false;
             }
 
             $uid = (string)($vEvent->UID ?? '');
             if ($uid === '') {
-                $this->logger->error("RoomBooking: No UID in VEVENT for delivery");
+                $this->logger->error("ResaVox: No UID in VEVENT for delivery");
                 return false;
             }
 
@@ -290,15 +290,15 @@ class CalDAVService {
 
             if ($existing !== null) {
                 $this->calDavBackend->updateCalendarObject($calendarId, $objectUri, $calendarData);
-                $this->logger->info("RoomBooking: Updated calendar object {$objectUri} in calendar {$calendarId}");
+                $this->logger->info("ResaVox: Updated calendar object {$objectUri} in calendar {$calendarId}");
             } else {
                 $this->calDavBackend->createCalendarObject($calendarId, $objectUri, $calendarData);
-                $this->logger->info("RoomBooking: Created calendar object {$objectUri} in calendar {$calendarId}");
+                $this->logger->info("ResaVox: Created calendar object {$objectUri} in calendar {$calendarId}");
             }
 
             return true;
         } catch (\Throwable $e) {
-            $this->logger->error("RoomBooking: Failed to deliver to room calendar: " . $e->getMessage());
+            $this->logger->error("ResaVox: Failed to deliver to room calendar: " . $e->getMessage());
             return false;
         }
     }
@@ -318,11 +318,11 @@ class CalDAVService {
             $existing = $this->calDavBackend->getCalendarObject($calendarId, $objectUri);
             if ($existing !== null) {
                 $this->calDavBackend->deleteCalendarObject($calendarId, $objectUri);
-                $this->logger->info("RoomBooking: Deleted calendar object {$objectUri} from calendar {$calendarId}");
+                $this->logger->info("ResaVox: Deleted calendar object {$objectUri} from calendar {$calendarId}");
                 return true;
             }
         } catch (\Throwable $e) {
-            $this->logger->error("RoomBooking: Failed to delete from room calendar: " . $e->getMessage());
+            $this->logger->error("ResaVox: Failed to delete from room calendar: " . $e->getMessage());
         }
 
         return false;
@@ -403,13 +403,13 @@ class CalDAVService {
 
     /**
      * Get the internal calendar ID for a room via calendar-rooms principal.
-     * NC scheduling delivers events to principals/calendar-rooms/roombooking-<roomId>,
+     * NC scheduling delivers events to principals/calendar-rooms/resavox-<roomId>,
      * not to the user principal.
      */
     public function getRoomCalendarId(string $roomUserId): ?int {
         // Extract room ID from userId (rb_testroom → testroom)
         $roomId = str_starts_with($roomUserId, 'rb_') ? substr($roomUserId, 3) : $roomUserId;
-        $principalUri = 'principals/calendar-rooms/roombooking-' . $roomId;
+        $principalUri = 'principals/calendar-rooms/resavox-' . $roomId;
 
         $calendars = $this->calDavBackend->getCalendarsForUser($principalUri);
 

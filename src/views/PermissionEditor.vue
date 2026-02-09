@@ -23,9 +23,10 @@
                     <div v-for="(entry, index) in permissions[role.key]"
                          :key="index"
                          class="permission-entry">
-                        <span class="entry-badge" :class="'entry-badge--' + entry.type">
-                            {{ entry.type === 'group' ? $t('Group') : $t('User') }}
-                        </span>
+                        <NcChip
+                            :text="entry.type === 'group' ? $t('Group') : $t('User')"
+                            :variant="entry.type === 'group' ? 'warning' : 'primary'"
+                            no-close />
                         <span class="entry-name">{{ entry.id }}</span>
                         <NcButton type="tertiary" @click="removeEntry(role.key, index)">
                             <template #icon>
@@ -49,9 +50,10 @@
                              :key="result.type + '-' + result.id"
                              class="search-result"
                              @click="addEntry(role.key, result)">
-                            <span class="entry-badge" :class="'entry-badge--' + result.type">
-                                {{ result.type === 'group' ? $t('Group') : $t('User') }}
-                            </span>
+                            <NcChip
+                                :text="result.type === 'group' ? $t('Group') : $t('User')"
+                                :variant="result.type === 'group' ? 'warning' : 'primary'"
+                                no-close />
                             <span>{{ result.label }}</span>
                         </div>
                     </div>
@@ -78,6 +80,7 @@ import NcButton from '@nextcloud/vue/components/NcButton'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import NcNoteCard from '@nextcloud/vue/components/NcNoteCard'
+import NcChip from '@nextcloud/vue/components/NcChip'
 import ArrowLeft from 'vue-material-design-icons/ArrowLeft.vue'
 import Close from 'vue-material-design-icons/Close.vue'
 
@@ -172,7 +175,7 @@ onMounted(loadPermissions)
     display: flex;
     align-items: center;
     gap: 12px;
-    margin-bottom: 20px;
+    margin-bottom: 24px;
 }
 
 .permission-editor__header h2 {
@@ -190,13 +193,15 @@ onMounted(loadPermissions)
     background: var(--color-main-background);
     border: 1px solid var(--color-border);
     border-radius: var(--border-radius-large);
-    padding: 20px;
+    padding: 24px;
     margin-bottom: 16px;
 }
 
 .permission-section h3 {
-    font-size: 16px;
-    font-weight: 600;
+    font-size: 17px;
+    font-weight: 700;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--color-border);
     margin-bottom: 4px;
 }
 
@@ -207,7 +212,7 @@ onMounted(loadPermissions)
 }
 
 .permission-entries {
-    margin-bottom: 12px;
+    margin-bottom: 16px;
 }
 
 .permission-entry {
@@ -226,25 +231,6 @@ onMounted(loadPermissions)
 .entry-name {
     flex: 1;
     font-weight: 500;
-}
-
-.entry-badge {
-    display: inline-block;
-    padding: 2px 8px;
-    border-radius: 10px;
-    font-size: 11px;
-    font-weight: 600;
-    text-transform: uppercase;
-}
-
-.entry-badge--user {
-    background: var(--color-primary-element-light);
-    color: var(--color-primary-text);
-}
-
-.entry-badge--group {
-    background: var(--color-warning-element-light);
-    color: var(--color-warning-text);
 }
 
 .no-entries {

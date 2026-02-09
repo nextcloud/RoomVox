@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace OCA\RoomBooking\Service;
+namespace OCA\ResaVox\Service;
 
-use OCA\RoomBooking\AppInfo\Application;
+use OCA\ResaVox\AppInfo\Application;
 use OCP\IAppConfig;
 use OCP\IGroupManager;
 use Psr\Log\LoggerInterface;
