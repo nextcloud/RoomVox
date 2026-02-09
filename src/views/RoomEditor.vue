@@ -76,6 +76,16 @@
                         {{ $t('Room is active and bookable') }}
                     </NcCheckboxRadioSwitch>
                 </div>
+
+                <div v-if="roomGroups.length > 0" class="form-field">
+                    <label>{{ $t('Room Group') }}</label>
+                    <NcSelect
+                        :model-value="groupOptions.find(o => o.id === form.groupId) || groupOptions[0]"
+                        :options="groupOptions"
+                        label="label"
+                        :clearable="false"
+                        @update:model-value="form.groupId = $event?.id || null" />
+                </div>
             </div>
 
             <div class="form-section">
@@ -173,18 +183,20 @@
 </template>
 
 <script setup>
-import { ref, reactive, watch } from 'vue'
+import { ref, reactive, computed, watch } from 'vue'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
 import NcTextArea from '@nextcloud/vue/components/NcTextArea'
 import NcPasswordField from '@nextcloud/vue/components/NcPasswordField'
 import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwitch'
 import NcDialog from '@nextcloud/vue/components/NcDialog'
+import NcSelect from '@nextcloud/vue/components/NcSelect'
 import ArrowLeft from 'vue-material-design-icons/ArrowLeft.vue'
 
 const props = defineProps({
     room: { type: Object, default: null },
     creating: { type: Boolean, default: false },
+    roomGroups: { type: Array, default: () => [] },
 })
 
 const emit = defineEmits(['save', 'cancel', 'delete', 'manage-permissions'])
@@ -200,6 +212,13 @@ const availableFacilities = [
     { id: 'wheelchair', label: 'Wheelchair accessible' },
 ]
 
+const groupOptions = computed(() => {
+    return [
+        { id: null, label: '— No group —' },
+        ...props.roomGroups.map(g => ({ id: g.id, label: g.name })),
+    ]
+})
+
 const form = reactive({
     name: '',
     email: '',
@@ -209,6 +228,7 @@ const form = reactive({
     facilities: [],
     autoAccept: false,
     active: true,
+    groupId: null,
 })
 
 const smtp = reactive({
@@ -269,6 +289,7 @@ watch(() => props.room, (room) => {
             facilities: room.facilities || [],
             autoAccept: room.autoAccept || false,
             active: room.active !== false,
+            groupId: room.groupId || null,
         })
         if (room.smtpConfig) {
             Object.assign(smtp, {

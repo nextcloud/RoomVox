@@ -156,7 +156,7 @@ class RoomApiController extends Controller {
         }
 
         $data = [];
-        $updatableFields = ['name', 'email', 'description', 'capacity', 'location', 'facilities', 'autoAccept', 'active', 'smtpConfig'];
+        $updatableFields = ['name', 'email', 'description', 'capacity', 'location', 'facilities', 'autoAccept', 'active', 'smtpConfig', 'groupId'];
 
         foreach ($updatableFields as $field) {
             $value = $this->request->getParam($field);

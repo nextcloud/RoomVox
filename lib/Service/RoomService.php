@@ -109,6 +109,7 @@ class RoomService {
             'location' => $data['location'] ?? '',
             'facilities' => $data['facilities'] ?? [],
             'autoAccept' => (bool)($data['autoAccept'] ?? false),
+            'groupId' => $data['groupId'] ?? null,
             'active' => true,
             'calendarUri' => '',
             'smtpConfig' => null,
@@ -137,7 +138,7 @@ class RoomService {
             return null;
         }
 
-        $updatableFields = ['name', 'email', 'description', 'capacity', 'location', 'facilities', 'autoAccept', 'active'];
+        $updatableFields = ['name', 'email', 'description', 'capacity', 'location', 'facilities', 'autoAccept', 'active', 'groupId'];
 
         foreach ($updatableFields as $field) {
             if (array_key_exists($field, $data)) {

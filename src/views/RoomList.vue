@@ -10,6 +10,12 @@
                     trailing-button-icon="close"
                     :show-trailing-button="searchQuery !== ''"
                     @trailing-button-click="searchQuery = ''" />
+                <NcButton type="secondary" @click="$emit('create-group')">
+                    <template #icon>
+                        <FolderPlus :size="20" />
+                    </template>
+                    {{ $t('New Group') }}
+                </NcButton>
                 <NcButton type="primary" @click="$emit('create')">
                     <template #icon>
                         <Plus :size="20" />
@@ -38,7 +44,7 @@
         </div>
 
         <NcEmptyContent
-            v-if="!loading && rooms.length > 0 && sortedRooms.length === 0"
+            v-if="!loading && rooms.length > 0 && visibleGroupCount === 0 && filteredUngroupedRooms.length === 0"
             :name="$t('No matching rooms')"
             :description="$t('Try a different search query')">
             <template #icon>
@@ -46,74 +52,203 @@
             </template>
         </NcEmptyContent>
 
-        <div v-if="!loading && sortedRooms.length > 0" class="room-list__card">
-            <table class="room-list__table">
-                <thead>
-                    <tr>
-                        <th @click="toggleSort('name')">
-                            <span class="th-sortable">
-                                {{ $t('Name') }}
-                                <ChevronUp v-if="sortBy === 'name' && sortDir === 'asc'" :size="14" />
-                                <ChevronDown v-else-if="sortBy === 'name' && sortDir === 'desc'" :size="14" />
-                            </span>
-                        </th>
-                        <th @click="toggleSort('location')">
-                            <span class="th-sortable">
-                                {{ $t('Location') }}
-                                <ChevronUp v-if="sortBy === 'location' && sortDir === 'asc'" :size="14" />
-                                <ChevronDown v-else-if="sortBy === 'location' && sortDir === 'desc'" :size="14" />
-                            </span>
-                        </th>
-                        <th @click="toggleSort('capacity')">
-                            <span class="th-sortable">
-                                {{ $t('Capacity') }}
-                                <ChevronUp v-if="sortBy === 'capacity' && sortDir === 'asc'" :size="14" />
-                                <ChevronDown v-else-if="sortBy === 'capacity' && sortDir === 'desc'" :size="14" />
-                            </span>
-                        </th>
-                        <th>{{ $t('Auto-accept') }}</th>
-                        <th>{{ $t('Status') }}</th>
-                        <th class="th-actions">{{ $t('Actions') }}</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr v-for="room in sortedRooms"
-                        :key="room.id"
-                        class="room-list__row"
-                        @click="$emit('select', room)">
-                        <td class="room-name">
-                            <span class="room-name__inner">
-                                <DoorOpen :size="16" />
-                                <span>{{ room.name }}</span>
-                            </span>
-                        </td>
-                        <td>{{ room.location || '—' }}</td>
-                        <td>{{ room.capacity || '—' }}</td>
-                        <td>
-                            <NcChip
-                                :text="room.autoAccept ? $t('Yes') : $t('No')"
-                                :variant="room.autoAccept ? 'success' : 'secondary'"
-                                no-close />
-                        </td>
-                        <td>
-                            <NcChip
-                                :text="room.active ? $t('Active') : $t('Inactive')"
-                                :variant="room.active ? 'success' : 'warning'"
-                                no-close />
-                        </td>
-                        <td class="td-actions" @click.stop>
-                            <NcActions>
-                                <NcActionButton @click="$emit('select', room)">
-                                    <template #icon>
-                                        <Pencil :size="20" />
-                                    </template>
-                                    {{ $t('Edit') }}
-                                </NcActionButton>
-                            </NcActions>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
+        <div v-if="!loading && (visibleGroupCount > 0 || filteredUngroupedRooms.length > 0)" class="room-list__groups">
+            <!-- Grouped rooms -->
+            <div v-for="group in sortedGroups"
+                 :key="group.id"
+                 class="room-group"
+                 :class="{ 'room-group--empty': groupedRooms[group.id]?.length === 0 }">
+                <div class="room-group__header" @click="toggleGroup(group.id)">
+                    <ChevronRight v-if="!expandedGroups.has(group.id)" :size="20" class="chevron" />
+                    <ChevronDown v-else :size="20" class="chevron" />
+                    <FolderMultiple :size="18" />
+                    <span class="room-group__name">{{ group.name }}</span>
+                    <NcCounterBubble v-if="filteredGroupRooms(group.id).length > 0" class="room-group__count">
+                        {{ filteredGroupRooms(group.id).length }}
+                    </NcCounterBubble>
+                    <span class="room-group__spacer" />
+                    <div class="room-group__actions" @click.stop>
+                        <NcActions>
+                            <NcActionButton @click="$emit('edit-group', group)">
+                                <template #icon>
+                                    <Pencil :size="20" />
+                                </template>
+                                {{ $t('Edit Group') }}
+                            </NcActionButton>
+                            <NcActionButton @click="$emit('group-permissions', group)">
+                                <template #icon>
+                                    <ShieldLock :size="20" />
+                                </template>
+                                {{ $t('Group Permissions') }}
+                            </NcActionButton>
+                        </NcActions>
+                    </div>
+                </div>
+
+                <div v-if="expandedGroups.has(group.id) && filteredGroupRooms(group.id).length > 0"
+                     class="room-group__body">
+                    <div class="room-list__card">
+                        <table class="room-list__table">
+                            <thead>
+                                <tr>
+                                    <th @click="toggleSort('name')">
+                                        <span class="th-sortable">
+                                            {{ $t('Name') }}
+                                            <ChevronUp v-if="sortBy === 'name' && sortDir === 'asc'" :size="14" />
+                                            <ChevronDown v-else-if="sortBy === 'name' && sortDir === 'desc'" :size="14" />
+                                        </span>
+                                    </th>
+                                    <th @click="toggleSort('location')">
+                                        <span class="th-sortable">
+                                            {{ $t('Location') }}
+                                            <ChevronUp v-if="sortBy === 'location' && sortDir === 'asc'" :size="14" />
+                                            <ChevronDown v-else-if="sortBy === 'location' && sortDir === 'desc'" :size="14" />
+                                        </span>
+                                    </th>
+                                    <th @click="toggleSort('capacity')">
+                                        <span class="th-sortable">
+                                            {{ $t('Capacity') }}
+                                            <ChevronUp v-if="sortBy === 'capacity' && sortDir === 'asc'" :size="14" />
+                                            <ChevronDown v-else-if="sortBy === 'capacity' && sortDir === 'desc'" :size="14" />
+                                        </span>
+                                    </th>
+                                    <th>{{ $t('Auto-accept') }}</th>
+                                    <th>{{ $t('Status') }}</th>
+                                    <th class="th-actions">{{ $t('Actions') }}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="room in sortRooms(filteredGroupRooms(group.id))"
+                                    :key="room.id"
+                                    class="room-list__row"
+                                    @click="$emit('select', room)">
+                                    <td class="room-name">
+                                        <span class="room-name__inner">
+                                            <DoorOpen :size="16" />
+                                            <span>{{ room.name }}</span>
+                                        </span>
+                                    </td>
+                                    <td>{{ room.location || '—' }}</td>
+                                    <td>{{ room.capacity || '—' }}</td>
+                                    <td>
+                                        <NcChip
+                                            :text="room.autoAccept ? $t('Yes') : $t('No')"
+                                            :variant="room.autoAccept ? 'success' : 'secondary'"
+                                            no-close />
+                                    </td>
+                                    <td>
+                                        <NcChip
+                                            :text="room.active ? $t('Active') : $t('Inactive')"
+                                            :variant="room.active ? 'success' : 'warning'"
+                                            no-close />
+                                    </td>
+                                    <td class="td-actions" @click.stop>
+                                        <NcActions>
+                                            <NcActionButton @click="$emit('select', room)">
+                                                <template #icon>
+                                                    <Pencil :size="20" />
+                                                </template>
+                                                {{ $t('Edit') }}
+                                            </NcActionButton>
+                                        </NcActions>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div v-if="expandedGroups.has(group.id) && filteredGroupRooms(group.id).length === 0"
+                     class="room-group__empty">
+                    {{ $t('No rooms in this group') }}
+                </div>
+            </div>
+
+            <!-- Ungrouped rooms -->
+            <div v-if="filteredUngroupedRooms.length > 0" class="room-group room-group--ungrouped">
+                <div class="room-group__header" @click="toggleGroup('__ungrouped')">
+                    <ChevronRight v-if="!expandedGroups.has('__ungrouped')" :size="20" class="chevron" />
+                    <ChevronDown v-else :size="20" class="chevron" />
+                    <FolderMultiple :size="18" />
+                    <span class="room-group__name">{{ $t('Ungrouped Rooms') }}</span>
+                    <NcCounterBubble class="room-group__count">
+                        {{ filteredUngroupedRooms.length }}
+                    </NcCounterBubble>
+                    <span class="room-group__spacer" />
+                </div>
+
+                <div v-if="expandedGroups.has('__ungrouped')" class="room-group__body">
+                    <div class="room-list__card">
+                        <table class="room-list__table">
+                            <thead>
+                                <tr>
+                                    <th @click="toggleSort('name')">
+                                        <span class="th-sortable">
+                                            {{ $t('Name') }}
+                                            <ChevronUp v-if="sortBy === 'name' && sortDir === 'asc'" :size="14" />
+                                            <ChevronDown v-else-if="sortBy === 'name' && sortDir === 'desc'" :size="14" />
+                                        </span>
+                                    </th>
+                                    <th @click="toggleSort('location')">
+                                        <span class="th-sortable">
+                                            {{ $t('Location') }}
+                                            <ChevronUp v-if="sortBy === 'location' && sortDir === 'asc'" :size="14" />
+                                            <ChevronDown v-else-if="sortBy === 'location' && sortDir === 'desc'" :size="14" />
+                                        </span>
+                                    </th>
+                                    <th @click="toggleSort('capacity')">
+                                        <span class="th-sortable">
+                                            {{ $t('Capacity') }}
+                                            <ChevronUp v-if="sortBy === 'capacity' && sortDir === 'asc'" :size="14" />
+                                            <ChevronDown v-else-if="sortBy === 'capacity' && sortDir === 'desc'" :size="14" />
+                                        </span>
+                                    </th>
+                                    <th>{{ $t('Auto-accept') }}</th>
+                                    <th>{{ $t('Status') }}</th>
+                                    <th class="th-actions">{{ $t('Actions') }}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="room in sortRooms(filteredUngroupedRooms)"
+                                    :key="room.id"
+                                    class="room-list__row"
+                                    @click="$emit('select', room)">
+                                    <td class="room-name">
+                                        <span class="room-name__inner">
+                                            <DoorOpen :size="16" />
+                                            <span>{{ room.name }}</span>
+                                        </span>
+                                    </td>
+                                    <td>{{ room.location || '—' }}</td>
+                                    <td>{{ room.capacity || '—' }}</td>
+                                    <td>
+                                        <NcChip
+                                            :text="room.autoAccept ? $t('Yes') : $t('No')"
+                                            :variant="room.autoAccept ? 'success' : 'secondary'"
+                                            no-close />
+                                    </td>
+                                    <td>
+                                        <NcChip
+                                            :text="room.active ? $t('Active') : $t('Inactive')"
+                                            :variant="room.active ? 'success' : 'warning'"
+                                            no-close />
+                                    </td>
+                                    <td class="td-actions" @click.stop>
+                                        <NcActions>
+                                            <NcActionButton @click="$emit('select', room)">
+                                                <template #icon>
+                                                    <Pencil :size="20" />
+                                                </template>
+                                                {{ $t('Edit') }}
+                                            </NcActionButton>
+                                        </NcActions>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </template>
@@ -127,23 +262,49 @@ import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import NcActions from '@nextcloud/vue/components/NcActions'
 import NcActionButton from '@nextcloud/vue/components/NcActionButton'
 import NcChip from '@nextcloud/vue/components/NcChip'
+import NcCounterBubble from '@nextcloud/vue/components/NcCounterBubble'
 import Plus from 'vue-material-design-icons/Plus.vue'
+import FolderPlus from 'vue-material-design-icons/FolderPlus.vue'
+import FolderMultiple from 'vue-material-design-icons/FolderMultiple.vue'
 import DoorOpen from 'vue-material-design-icons/DoorOpen.vue'
 import Pencil from 'vue-material-design-icons/Pencil.vue'
+import ShieldLock from 'vue-material-design-icons/ShieldLock.vue'
 import Magnify from 'vue-material-design-icons/Magnify.vue'
 import ChevronUp from 'vue-material-design-icons/ChevronUp.vue'
 import ChevronDown from 'vue-material-design-icons/ChevronDown.vue'
+import ChevronRight from 'vue-material-design-icons/ChevronRight.vue'
 
 const props = defineProps({
     rooms: { type: Array, default: () => [] },
+    roomGroups: { type: Array, default: () => [] },
     loading: { type: Boolean, default: false },
 })
 
-defineEmits(['select', 'create', 'refresh'])
+defineEmits(['select', 'create', 'create-group', 'edit-group', 'group-permissions', 'refresh'])
 
 const searchQuery = ref('')
 const sortBy = ref('name')
 const sortDir = ref('asc')
+const expandedGroups = ref(new Set(['__ungrouped']))
+
+// Expand all groups on load
+const initExpanded = () => {
+    props.roomGroups.forEach(g => expandedGroups.value.add(g.id))
+}
+
+// Watch for new groups being loaded
+import { watch } from 'vue'
+watch(() => props.roomGroups, () => {
+    initExpanded()
+}, { immediate: true })
+
+const toggleGroup = (groupId) => {
+    if (expandedGroups.value.has(groupId)) {
+        expandedGroups.value.delete(groupId)
+    } else {
+        expandedGroups.value.add(groupId)
+    }
+}
 
 const toggleSort = (column) => {
     if (sortBy.value === column) {
@@ -154,20 +315,51 @@ const toggleSort = (column) => {
     }
 }
 
-const sortedRooms = computed(() => {
-    let filtered = props.rooms
+const matchesSearch = (room) => {
+    if (!searchQuery.value.trim()) return true
+    const q = searchQuery.value.toLowerCase()
+    return (room.name || '').toLowerCase().includes(q)
+        || (room.location || '').toLowerCase().includes(q)
+}
 
-    // Filter by search query
-    if (searchQuery.value.trim()) {
-        const q = searchQuery.value.toLowerCase()
-        filtered = filtered.filter(r =>
-            (r.name || '').toLowerCase().includes(q)
-            || (r.location || '').toLowerCase().includes(q)
-        )
-    }
+const groupedRooms = computed(() => {
+    const map = {}
+    props.roomGroups.forEach(g => { map[g.id] = [] })
+    props.rooms.forEach(room => {
+        if (room.groupId && map[room.groupId]) {
+            map[room.groupId].push(room)
+        }
+    })
+    return map
+})
 
-    // Sort
-    return [...filtered].sort((a, b) => {
+const ungroupedRooms = computed(() => {
+    const groupIds = new Set(props.roomGroups.map(g => g.id))
+    return props.rooms.filter(r => !r.groupId || !groupIds.has(r.groupId))
+})
+
+const filteredGroupRooms = (groupId) => {
+    return (groupedRooms.value[groupId] || []).filter(matchesSearch)
+}
+
+const filteredUngroupedRooms = computed(() => {
+    return ungroupedRooms.value.filter(matchesSearch)
+})
+
+const sortedGroups = computed(() => {
+    return [...props.roomGroups].sort((a, b) =>
+        (a.name || '').localeCompare(b.name || '')
+    )
+})
+
+const visibleGroupCount = computed(() => {
+    return sortedGroups.value.filter(g =>
+        filteredGroupRooms(g.id).length > 0 || !searchQuery.value.trim()
+    ).length
+})
+
+const sortRooms = (rooms) => {
+    return [...rooms].sort((a, b) => {
         let aVal, bVal
         if (sortBy.value === 'capacity') {
             aVal = a.capacity || 0
@@ -180,7 +372,7 @@ const sortedRooms = computed(() => {
         if (aVal > bVal) return sortDir.value === 'asc' ? 1 : -1
         return 0
     })
-})
+}
 </script>
 
 <style scoped>
@@ -220,6 +412,65 @@ const sortedRooms = computed(() => {
     padding: 60px;
 }
 
+.room-list__groups {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.room-group {
+    border: 1px solid var(--color-border);
+    border-radius: var(--border-radius-large);
+    overflow: hidden;
+}
+
+.room-group__header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 16px;
+    background: var(--color-background-dark);
+    cursor: pointer;
+    user-select: none;
+}
+
+.room-group__header:hover {
+    background: var(--color-background-hover);
+}
+
+.chevron {
+    flex-shrink: 0;
+    color: var(--color-text-maxcontrast);
+}
+
+.room-group__name {
+    font-weight: 600;
+    font-size: 15px;
+}
+
+.room-group__count {
+    flex-shrink: 0;
+}
+
+.room-group__spacer {
+    flex: 1;
+}
+
+.room-group__actions {
+    flex-shrink: 0;
+}
+
+.room-group__body .room-list__card {
+    border: none;
+    border-radius: 0;
+}
+
+.room-group__empty {
+    padding: 16px 24px;
+    color: var(--color-text-maxcontrast);
+    font-style: italic;
+}
+
 .room-list__card {
     border: 1px solid var(--color-border);
     border-radius: var(--border-radius-large);
@@ -242,7 +493,6 @@ const sortedRooms = computed(() => {
     border-bottom: 1px solid var(--color-border);
 }
 
-.room-list__table th[onclick],
 .room-list__table th:has(.th-sortable) {
     cursor: pointer;
     user-select: none;

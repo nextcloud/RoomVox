@@ -14,6 +14,17 @@ export const deleteRoom = (id) => axios.delete(baseUrl(`/api/rooms/${id}`))
 export const getPermissions = (id) => axios.get(baseUrl(`/api/rooms/${id}/permissions`))
 export const setPermissions = (id, data) => axios.put(baseUrl(`/api/rooms/${id}/permissions`), data)
 
+// Room Groups
+export const getRoomGroups = () => axios.get(baseUrl('/api/room-groups'))
+export const getRoomGroup = (id) => axios.get(baseUrl(`/api/room-groups/${id}`))
+export const createRoomGroup = (data) => axios.post(baseUrl('/api/room-groups'), data)
+export const updateRoomGroup = (id, data) => axios.put(baseUrl(`/api/room-groups/${id}`), data)
+export const deleteRoomGroup = (id) => axios.delete(baseUrl(`/api/room-groups/${id}`))
+
+// Room Group Permissions
+export const getGroupPermissions = (id) => axios.get(baseUrl(`/api/room-groups/${id}/permissions`))
+export const setGroupPermissions = (id, data) => axios.put(baseUrl(`/api/room-groups/${id}/permissions`), data)
+
 // Bookings
 export const getBookings = (id, params = {}) => axios.get(baseUrl(`/api/rooms/${id}/bookings`), { params })
 export const respondToBooking = (roomId, bookingUid, action) =>

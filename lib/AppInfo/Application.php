@@ -7,6 +7,8 @@ namespace OCA\ResaVox\AppInfo;
 use OCA\DAV\Events\SabrePluginAuthInitEvent;
 use OCA\ResaVox\Connector\Room\RoomBackend;
 use OCA\ResaVox\Listener\SabrePluginListener;
+use OCA\ResaVox\Service\PermissionService;
+use OCA\ResaVox\Service\RoomService;
 use OCA\ResaVox\UserBackend\RoomUserBackend;
 use OCP\AppFramework\App;
 use OCP\AppFramework\Bootstrap\IBootContext;
@@ -38,5 +40,9 @@ class Application extends App implements IBootstrap {
         // Register the custom user backend for room service accounts
         $userManager = $server->get(IUserManager::class);
         $userManager->registerBackend($server->get(RoomUserBackend::class));
+
+        // Wire up late injection to avoid circular dependency
+        $permissionService = $server->get(PermissionService::class);
+        $permissionService->setRoomService($server->get(RoomService::class));
     }
 }

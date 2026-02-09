@@ -22,6 +22,15 @@ return [
         ['name' => 'booking_api#index', 'url' => '/api/rooms/{id}/bookings', 'verb' => 'GET'],
         ['name' => 'booking_api#respond', 'url' => '/api/rooms/{id}/bookings/{uid}/respond', 'verb' => 'POST'],
 
+        // Room Groups API
+        ['name' => 'room_group_api#index', 'url' => '/api/room-groups', 'verb' => 'GET'],
+        ['name' => 'room_group_api#create', 'url' => '/api/room-groups', 'verb' => 'POST'],
+        ['name' => 'room_group_api#show', 'url' => '/api/room-groups/{id}', 'verb' => 'GET'],
+        ['name' => 'room_group_api#update', 'url' => '/api/room-groups/{id}', 'verb' => 'PUT'],
+        ['name' => 'room_group_api#destroy', 'url' => '/api/room-groups/{id}', 'verb' => 'DELETE'],
+        ['name' => 'room_group_api#get_permissions', 'url' => '/api/room-groups/{id}/permissions', 'verb' => 'GET'],
+        ['name' => 'room_group_api#set_permissions', 'url' => '/api/room-groups/{id}/permissions', 'verb' => 'PUT'],
+
         // Settings API
         ['name' => 'settings#get', 'url' => '/api/settings', 'verb' => 'GET'],
         ['name' => 'settings#save', 'url' => '/api/settings', 'verb' => 'PUT'],

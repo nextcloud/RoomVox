@@ -38,32 +38,54 @@
 
         <NcAppContent>
             <div class="resavox-content">
+                <!-- Room list -->
                 <RoomList
-                    v-if="currentView === 'rooms' && !selectedRoom && !creatingRoom"
+                    v-if="currentView === 'rooms' && !selectedRoom && !creatingRoom && !selectedRoomGroup && !creatingRoomGroup"
                     :rooms="rooms"
+                    :room-groups="roomGroups"
                     :loading="loadingRooms"
                     @select="onSelectRoom"
                     @create="creatingRoom = true"
+                    @create-group="creatingRoomGroup = true"
+                    @edit-group="onSelectRoomGroup"
+                    @group-permissions="onManageGroupPermissions"
                     @refresh="loadRooms" />
 
+                <!-- Room editor -->
                 <RoomEditor
                     v-if="currentView === 'rooms' && (selectedRoom || creatingRoom)"
                     :room="selectedRoom"
                     :creating="creatingRoom"
+                    :room-groups="roomGroups"
                     @save="onSaveRoom"
                     @cancel="selectedRoom = null; creatingRoom = false"
                     @delete="onDeleteRoom"
                     @manage-permissions="onManagePermissions" />
 
-                <PermissionEditor
-                    v-if="currentView === 'permissions' && selectedRoom"
-                    :room="selectedRoom"
-                    @back="currentView = 'rooms'" />
+                <!-- Room group editor -->
+                <RoomGroupEditor
+                    v-if="currentView === 'rooms' && (selectedRoomGroup || creatingRoomGroup)"
+                    :group="selectedRoomGroup"
+                    :creating="creatingRoomGroup"
+                    @save="onSaveRoomGroup"
+                    @cancel="selectedRoomGroup = null; creatingRoomGroup = false"
+                    @delete="onDeleteRoomGroup"
+                    @manage-permissions="onManageGroupPermissions" />
 
+                <!-- Room permissions -->
+                <PermissionEditor
+                    v-if="currentView === 'permissions' && permissionTarget"
+                    :target="permissionTarget"
+                    :target-type="permissionTargetType"
+                    :read-only="permissionTargetType === 'room' && !!permissionTarget.groupId"
+                    @back="currentView = 'rooms'; permissionTarget = null" />
+
+                <!-- Bookings -->
                 <BookingOverview
                     v-if="currentView === 'bookings'"
                     :rooms="rooms" />
 
+                <!-- Settings -->
                 <div v-if="currentView === 'settings'" class="resavox-settings">
                     <NcSettingsSection :name="'General'">
                         <NcCheckboxRadioSwitch
@@ -103,15 +125,25 @@ import Cog from 'vue-material-design-icons/Cog.vue'
 
 import RoomList from './views/RoomList.vue'
 import RoomEditor from './views/RoomEditor.vue'
+import RoomGroupEditor from './views/RoomGroupEditor.vue'
 import PermissionEditor from './views/PermissionEditor.vue'
 import BookingOverview from './views/BookingOverview.vue'
 
-import { getRooms, createRoom, updateRoom, deleteRoom, getSettings, saveSettings } from './services/api.js'
+import {
+    getRooms, createRoom, updateRoom, deleteRoom,
+    getRoomGroups, createRoomGroup, updateRoomGroup, deleteRoomGroup,
+    getSettings, saveSettings,
+} from './services/api.js'
 
 const currentView = ref('rooms')
 const rooms = ref([])
+const roomGroups = ref([])
 const selectedRoom = ref(null)
 const creatingRoom = ref(false)
+const selectedRoomGroup = ref(null)
+const creatingRoomGroup = ref(false)
+const permissionTarget = ref(null)
+const permissionTargetType = ref('room')
 const loadingRooms = ref(true)
 const settings = ref({ defaultAutoAccept: false, emailEnabled: true })
 const settingsSaved = ref(false)
@@ -126,14 +158,18 @@ const onTabClick = (tabId) => {
     if (tabId === 'rooms') {
         selectedRoom.value = null
         creatingRoom.value = false
+        selectedRoomGroup.value = null
+        creatingRoomGroup.value = false
+        permissionTarget.value = null
     }
 }
 
 const loadRooms = async () => {
     loadingRooms.value = true
     try {
-        const response = await getRooms()
-        rooms.value = response.data
+        const [roomsRes, groupsRes] = await Promise.all([getRooms(), getRoomGroups()])
+        rooms.value = roomsRes.data
+        roomGroups.value = groupsRes.data
     } catch (e) {
         showError('Failed to load rooms')
     } finally {
@@ -150,6 +186,7 @@ const loadSettings = async () => {
     }
 }
 
+// Room handlers
 const onSelectRoom = (room) => {
     selectedRoom.value = room
     creatingRoom.value = false
@@ -184,7 +221,48 @@ const onDeleteRoom = async (roomId) => {
 }
 
 const onManagePermissions = (room) => {
-    selectedRoom.value = room
+    permissionTarget.value = room
+    permissionTargetType.value = 'room'
+    currentView.value = 'permissions'
+}
+
+// Room group handlers
+const onSelectRoomGroup = (group) => {
+    selectedRoomGroup.value = group
+    creatingRoomGroup.value = false
+}
+
+const onSaveRoomGroup = async (groupData) => {
+    try {
+        if (creatingRoomGroup.value) {
+            await createRoomGroup(groupData)
+            showSuccess('Room group created')
+        } else {
+            await updateRoomGroup(selectedRoomGroup.value.id, groupData)
+            showSuccess('Room group updated')
+        }
+        selectedRoomGroup.value = null
+        creatingRoomGroup.value = false
+        await loadRooms()
+    } catch (e) {
+        showError('Failed to save room group: ' + (e.response?.data?.error || e.message))
+    }
+}
+
+const onDeleteRoomGroup = async (groupId) => {
+    try {
+        await deleteRoomGroup(groupId)
+        showSuccess('Room group deleted')
+        selectedRoomGroup.value = null
+        await loadRooms()
+    } catch (e) {
+        showError('Failed to delete room group: ' + (e.response?.data?.error || e.message))
+    }
+}
+
+const onManageGroupPermissions = (group) => {
+    permissionTarget.value = group
+    permissionTargetType.value = 'group'
     currentView.value = 'permissions'
 }
 

@@ -80,7 +80,7 @@ class RoomBackend implements IBackend {
      * Create a Room object from room config data
      */
     private function createRoomObject(array $roomData): Room {
-        $permissions = $this->permissionService->getPermissions($roomData['id']);
+        $permissions = $this->permissionService->getEffectivePermissions($roomData['id']);
         $groupRestrictions = $this->extractGroupIds($permissions);
 
         return new Room(

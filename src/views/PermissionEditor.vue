@@ -7,8 +7,16 @@
                 </template>
                 {{ $t('Back') }}
             </NcButton>
-            <h2>{{ $t('Permissions') }}: {{ room.name }}</h2>
+            <h2>{{ $t('Permissions') }}: {{ target.name }}</h2>
         </div>
+
+        <NcNoteCard v-if="targetType === 'group'" type="info" class="permission-editor__info">
+            {{ $t('These permissions apply to all rooms in this group. Individual rooms can have additional permissions on top of these.') }}
+        </NcNoteCard>
+
+        <NcNoteCard v-if="readOnly" type="info" class="permission-editor__info">
+            {{ $t('This room belongs to a group. Permissions are managed at group level and shown here for reference.') }}
+        </NcNoteCard>
 
         <div v-if="loading" class="permission-editor__loading">
             <NcLoadingIcon :size="44" />
@@ -25,7 +33,7 @@
                          class="permission-entry">
                         <AccountGroup :size="16" />
                         <span class="entry-name">{{ entry.id }}</span>
-                        <NcButton type="tertiary" @click="removeEntry(role.key, index)">
+                        <NcButton v-if="!readOnly" type="tertiary" @click="removeEntry(role.key, index)">
                             <template #icon>
                                 <Close :size="20" />
                             </template>
@@ -37,7 +45,7 @@
                     </div>
                 </div>
 
-                <div class="add-entry">
+                <div v-if="!readOnly" class="add-entry">
                     <NcTextField
                         v-model="searchQueries[role.key]"
                         :placeholder="$t('Search groups...')"
@@ -54,7 +62,7 @@
                 </div>
             </div>
 
-            <div class="form-actions">
+            <div v-if="!readOnly" class="form-actions">
                 <NcButton type="primary" @click="save" :disabled="saving">
                     {{ saving ? $t('Saving...') : $t('Save Permissions') }}
                 </NcButton>
@@ -78,10 +86,16 @@ import ArrowLeft from 'vue-material-design-icons/ArrowLeft.vue'
 import Close from 'vue-material-design-icons/Close.vue'
 import AccountGroup from 'vue-material-design-icons/AccountGroup.vue'
 
-import { getPermissions, setPermissions, searchSharees } from '../services/api.js'
+import {
+    getPermissions, setPermissions,
+    getGroupPermissions, setGroupPermissions,
+    searchSharees,
+} from '../services/api.js'
 
 const props = defineProps({
-    room: { type: Object, required: true },
+    target: { type: Object, required: true },
+    targetType: { type: String, default: 'room' }, // 'room' or 'group'
+    readOnly: { type: Boolean, default: false },
 })
 
 defineEmits(['back'])
@@ -104,8 +118,15 @@ let searchTimeouts = {}
 const loadPermissions = async () => {
     loading.value = true
     try {
-        const response = await getPermissions(props.room.id)
-        Object.assign(permissions, response.data)
+        if (props.readOnly && props.target.groupId) {
+            // Read-only mode: show group permissions (what this room inherits)
+            const response = await getGroupPermissions(props.target.groupId)
+            Object.assign(permissions, response.data)
+        } else {
+            const fetcher = props.targetType === 'group' ? getGroupPermissions : getPermissions
+            const response = await fetcher(props.target.id)
+            Object.assign(permissions, response.data)
+        }
     } catch (e) {
         showError('Failed to load permissions')
     } finally {
@@ -146,7 +167,8 @@ const removeEntry = (role, index) => {
 const save = async () => {
     saving.value = true
     try {
-        await setPermissions(props.room.id, {
+        const saver = props.targetType === 'group' ? setGroupPermissions : setPermissions
+        await saver(props.target.id, {
             viewers: permissions.viewers,
             bookers: permissions.bookers,
             managers: permissions.managers,
@@ -175,6 +197,10 @@ onMounted(loadPermissions)
 .permission-editor__header h2 {
     font-size: 20px;
     font-weight: 700;
+}
+
+.permission-editor__info {
+    margin-bottom: 16px;
 }
 
 .permission-editor__loading {
