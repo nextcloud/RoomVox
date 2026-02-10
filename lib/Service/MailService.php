@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace OCA\ResaVox\Service;
 
-use OCA\ResaVox\AppInfo\Application;
 use OCP\IAppConfig;
 use OCP\Mail\IMailer;
 use OCP\Security\ICrypto;
@@ -35,14 +34,12 @@ class MailService {
 
         $subject = "Booking confirmed: {$room['name']} — {$eventInfo['summary']}";
         $body = $this->buildAcceptedBody($room, $eventInfo);
-        $icalAttachment = $this->buildICalReply($room, $eventInfo, 'ACCEPTED');
 
         $this->sendMail(
             $room,
             $eventInfo['organizerEmail'],
             $subject,
             $body,
-            $icalAttachment
         );
     }
 
@@ -57,14 +54,12 @@ class MailService {
 
         $subject = "Booking declined: {$room['name']} — {$eventInfo['summary']}";
         $body = $this->buildDeclinedBody($room, $eventInfo);
-        $icalAttachment = $this->buildICalReply($room, $eventInfo, 'DECLINED');
 
         $this->sendMail(
             $room,
             $eventInfo['organizerEmail'],
             $subject,
             $body,
-            $icalAttachment
         );
     }
 
@@ -79,14 +74,12 @@ class MailService {
 
         $subject = "Booking conflict: {$room['name']} — {$eventInfo['summary']}";
         $body = $this->buildConflictBody($room, $eventInfo);
-        $icalAttachment = $this->buildICalReply($room, $eventInfo, 'DECLINED');
 
         $this->sendMail(
             $room,
             $eventInfo['organizerEmail'],
             $subject,
             $body,
-            $icalAttachment
         );
     }
 
@@ -136,7 +129,6 @@ class MailService {
 
         $subject = "Booking cancelled: {$room['name']} — {$eventInfo['summary']}";
         $body = $this->buildCancelledBody($room, $eventInfo);
-        $icalAttachment = $this->buildICalCancel($room, $eventInfo);
 
         // Notify organizer
         $this->sendMail(
@@ -144,7 +136,6 @@ class MailService {
             $eventInfo['organizerEmail'],
             $subject,
             $body,
-            $icalAttachment
         );
 
         // Also notify managers
@@ -189,7 +180,6 @@ class MailService {
         string $to,
         string $subject,
         string $body,
-        ?string $icalAttachment = null,
     ): void {
         if (empty($to)) {
             return;
@@ -201,7 +191,7 @@ class MailService {
 
         // Use per-room SMTP if configured
         if ($smtpConfig !== null && !empty($smtpConfig['host'])) {
-            $this->sendViaRoomSmtp($smtpConfig, $fromEmail, $fromName, $to, $subject, $body, $icalAttachment);
+            $this->sendViaRoomSmtp($smtpConfig, $fromEmail, $fromName, $to, $subject, $body);
             return;
         }
 
@@ -214,15 +204,6 @@ class MailService {
 
             if ($fromEmail !== '') {
                 $message->setFrom([$fromEmail => $fromName]);
-            }
-
-            if ($icalAttachment !== null) {
-                $attachment = $this->mailer->createAttachment(
-                    $icalAttachment,
-                    'invite.ics',
-                    'text/calendar; method=REPLY'
-                );
-                $message->attach($attachment);
             }
 
             $this->mailer->send($message);
@@ -243,7 +224,6 @@ class MailService {
         string $to,
         string $subject,
         string $body,
-        ?string $icalAttachment = null,
     ): void {
         $host = $smtpConfig['host'];
         $port = (int)($smtpConfig['port'] ?? 587);
@@ -287,10 +267,6 @@ class MailService {
             // Set Reply-To as the room email so replies go to the room
             if ($fromEmail !== '' && $senderEmail !== $fromEmail) {
                 $email->replyTo($fromEmail);
-            }
-
-            if ($icalAttachment !== null) {
-                $email->attach($icalAttachment, 'invite.ics', 'text/calendar; method=REPLY');
             }
 
             $mailer = new SymfonyMailer($transport);
@@ -383,53 +359,6 @@ class MailService {
             . "Date: {$event['dtstartFormatted']} – {$event['dtendFormatted']}\n"
             . "Cancelled by: {$event['organizerName']}\n\n"
             . "The room is now available for this time slot.";
-    }
-
-    /**
-     * Build iCalendar REPLY attachment
-     */
-    private function buildICalReply(array $room, array $event, string $partstat): string {
-        $dtstamp = gmdate('Ymd\THis\Z');
-        $dtstart = $event['dtstart'] ? $event['dtstart']->format('Ymd\THis\Z') : $dtstamp;
-        $dtend = $event['dtend'] ? $event['dtend']->format('Ymd\THis\Z') : $dtstamp;
-
-        return "BEGIN:VCALENDAR\r\n"
-            . "VERSION:2.0\r\n"
-            . "PRODID:-//Nextcloud ResaVox//EN\r\n"
-            . "METHOD:REPLY\r\n"
-            . "BEGIN:VEVENT\r\n"
-            . "UID:{$event['uid']}\r\n"
-            . "DTSTAMP:{$dtstamp}\r\n"
-            . "DTSTART:{$dtstart}\r\n"
-            . "DTEND:{$dtend}\r\n"
-            . "SUMMARY:{$event['summary']}\r\n"
-            . "ORGANIZER;CN={$event['organizerName']}:mailto:{$event['organizerEmail']}\r\n"
-            . "ATTENDEE;CUTYPE=ROOM;ROLE=NON-PARTICIPANT;PARTSTAT={$partstat};CN={$room['name']}:mailto:{$room['email']}\r\n"
-            . "END:VEVENT\r\n"
-            . "END:VCALENDAR\r\n";
-    }
-
-    /**
-     * Build iCalendar CANCEL attachment
-     */
-    private function buildICalCancel(array $room, array $event): string {
-        $dtstamp = gmdate('Ymd\THis\Z');
-        $dtstart = $event['dtstart'] ? $event['dtstart']->format('Ymd\THis\Z') : $dtstamp;
-        $dtend = $event['dtend'] ? $event['dtend']->format('Ymd\THis\Z') : $dtstamp;
-
-        return "BEGIN:VCALENDAR\r\n"
-            . "VERSION:2.0\r\n"
-            . "PRODID:-//Nextcloud ResaVox//EN\r\n"
-            . "METHOD:CANCEL\r\n"
-            . "BEGIN:VEVENT\r\n"
-            . "UID:{$event['uid']}\r\n"
-            . "DTSTAMP:{$dtstamp}\r\n"
-            . "DTSTART:{$dtstart}\r\n"
-            . "DTEND:{$dtend}\r\n"
-            . "SUMMARY:{$event['summary']}\r\n"
-            . "STATUS:CANCELLED\r\n"
-            . "END:VEVENT\r\n"
-            . "END:VCALENDAR\r\n";
     }
 
     private function stripMailto(string $email): string {

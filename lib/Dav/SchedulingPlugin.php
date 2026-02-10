@@ -156,13 +156,35 @@ class SchedulingPlugin extends ServerPlugin {
             }
         }
 
-        // 2. Conflict check
+        // 2. Extract event data (used by availability + conflict check)
         $vEvent = $this->extractVEvent($message);
+        $dtStart = null;
+        $dtEnd = null;
+        $uid = '';
         if ($vEvent !== null) {
             $dtStart = $vEvent->DTSTART ? $vEvent->DTSTART->getDateTime() : null;
             $dtEnd = $vEvent->DTEND ? $vEvent->DTEND->getDateTime() : null;
             $uid = (string)($vEvent->UID ?? '');
+        }
 
+        // 3. Availability check
+        if ($dtStart !== null && $dtEnd !== null && !$this->isWithinAvailability($room, $dtStart, $dtEnd)) {
+            $this->logger->info("ResaVox: Booking outside availability hours for room {$roomId}");
+            $message->scheduleStatus = '3.7';
+            $this->setPartstat($message, 'DECLINED');
+            return;
+        }
+
+        // 3b. Max booking horizon check
+        if ($vEvent !== null && !$this->isWithinHorizon($room, $vEvent)) {
+            $this->logger->info("ResaVox: Booking exceeds max horizon for room {$roomId}");
+            $message->scheduleStatus = '3.7';
+            $this->setPartstat($message, 'DECLINED');
+            return;
+        }
+
+        // 4. Conflict check
+        if ($vEvent !== null) {
             if ($dtStart !== null && $dtEnd !== null) {
                 if ($this->calDAVService->hasConflict($room['userId'], $dtStart, $dtEnd, $uid)) {
                     $this->logger->info("ResaVox: Conflict detected for room {$roomId}");
@@ -179,7 +201,7 @@ class SchedulingPlugin extends ServerPlugin {
             }
         }
 
-        // 3. Determine PARTSTAT based on auto-accept setting
+        // 5. Determine PARTSTAT based on auto-accept setting
         if ($room['autoAccept'] ?? false) {
             $partstat = 'ACCEPTED';
             $this->logger->info("ResaVox: Auto-accepting booking for room {$roomId}");
@@ -188,7 +210,7 @@ class SchedulingPlugin extends ServerPlugin {
             $this->logger->info("ResaVox: Booking for room {$roomId} requires approval");
         }
 
-        // 4. Fix room attendee metadata and add LOCATION
+        // 6. Fix room attendee metadata and add LOCATION
         $this->enrichRoomAttendee($message, $room);
 
         // 5. Set PARTSTAT on the message before delivery
@@ -457,6 +479,166 @@ class SchedulingPlugin extends ServerPlugin {
         } catch (\Throwable $e) {
             $this->logger->error("ResaVox: Failed to schedule room from LOCATION: " . $e->getMessage());
         }
+    }
+
+    /**
+     * Check if a booking (including recurring instances) falls within the
+     * room's maximum booking horizon. Returns true if no horizon is set
+     * or if the booking's furthest date is within the allowed range.
+     *
+     * @param array $room Room data with optional maxBookingHorizon (in days)
+     * @param \Sabre\VObject\Component\VEvent $vEvent The event to check
+     */
+    private function isWithinHorizon(array $room, \Sabre\VObject\Component\VEvent $vEvent): bool {
+        $maxDays = (int)($room['maxBookingHorizon'] ?? 0);
+        if ($maxDays <= 0) {
+            return true; // No restriction
+        }
+
+        $horizon = new \DateTimeImmutable('+' . $maxDays . ' days');
+
+        // For non-recurring events, just check DTEND/DTSTART
+        $rrule = $vEvent->RRULE ?? null;
+        if ($rrule === null) {
+            $dtEnd = $vEvent->DTEND ? $vEvent->DTEND->getDateTime() : null;
+            $dtStart = $vEvent->DTSTART ? $vEvent->DTSTART->getDateTime() : null;
+            $lastDate = $dtEnd ?? $dtStart;
+            if ($lastDate === null) {
+                return true;
+            }
+            return $lastDate <= $horizon;
+        }
+
+        // Recurring event: check UNTIL or calculate from COUNT
+        $rruleStr = (string)$rrule;
+        $parts = [];
+        foreach (explode(';', $rruleStr) as $part) {
+            $kv = explode('=', $part, 2);
+            if (count($kv) === 2) {
+                $parts[strtoupper($kv[0])] = $kv[1];
+            }
+        }
+
+        // If UNTIL is set, check it directly
+        if (!empty($parts['UNTIL'])) {
+            try {
+                $until = new \DateTimeImmutable($parts['UNTIL']);
+                return $until <= $horizon;
+            } catch (\Exception $e) {
+                // Couldn't parse UNTIL, be conservative and allow
+                return true;
+            }
+        }
+
+        // If COUNT is set, estimate the last occurrence
+        if (!empty($parts['COUNT'])) {
+            $count = (int)$parts['COUNT'];
+            $freq = strtoupper($parts['FREQ'] ?? 'WEEKLY');
+            $interval = (int)($parts['INTERVAL'] ?? 1);
+            if ($interval < 1) $interval = 1;
+
+            $dtStart = $vEvent->DTSTART ? $vEvent->DTSTART->getDateTime() : null;
+            if ($dtStart === null) {
+                return true;
+            }
+
+            $startDt = \DateTimeImmutable::createFromInterface($dtStart);
+
+            // Estimate last occurrence based on frequency
+            $totalIntervals = ($count - 1) * $interval;
+            $lastOccurrence = match ($freq) {
+                'DAILY' => $startDt->modify('+' . $totalIntervals . ' days'),
+                'WEEKLY' => $startDt->modify('+' . ($totalIntervals * 7) . ' days'),
+                'MONTHLY' => $startDt->modify('+' . $totalIntervals . ' months'),
+                'YEARLY' => $startDt->modify('+' . $totalIntervals . ' years'),
+                default => $startDt->modify('+' . ($totalIntervals * 7) . ' days'),
+            };
+
+            return $lastOccurrence <= $horizon;
+        }
+
+        // RRULE with neither UNTIL nor COUNT = infinite recurrence → always exceeds horizon
+        $this->logger->info("ResaVox: Recurring event without UNTIL or COUNT — exceeds horizon");
+        return false;
+    }
+
+    /**
+     * Check if a booking falls within the room's availability rules.
+     * Returns true if no rules are configured or if the booking fits within at least one rule.
+     */
+    private function isWithinAvailability(array $room, \DateTimeInterface $start, \DateTimeInterface $end): bool {
+        $rules = $room['availabilityRules'] ?? [];
+        if (empty($rules['enabled']) || empty($rules['rules'])) {
+            return true; // No restrictions
+        }
+
+        foreach ($rules['rules'] as $rule) {
+            if ($this->bookingFitsRule($start, $end, $rule)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Check if a booking fits entirely within a single availability rule.
+     * The booking's start and end must fall on allowed days and within the time window.
+     */
+    private function bookingFitsRule(\DateTimeInterface $start, \DateTimeInterface $end, array $rule): bool {
+        $allowedDays = $rule['days'] ?? [];
+        $ruleStart = $rule['startTime'] ?? '00:00';
+        $ruleEnd = $rule['endTime'] ?? '23:59';
+
+        if (empty($allowedDays)) {
+            return false;
+        }
+
+        // Get day of week (0=Sunday, 6=Saturday) matching our data model
+        $startDay = (int)$start->format('w');
+        $endDay = (int)$end->format('w');
+        $startTime = $start->format('H:i');
+        $endTime = $end->format('H:i');
+
+        // Check if start and end are on the same day
+        $startDate = $start->format('Y-m-d');
+        $endDate = $end->format('Y-m-d');
+
+        if ($startDate === $endDate) {
+            // Same day: check day is allowed and times fit
+            return in_array($startDay, $allowedDays, true)
+                && $startTime >= $ruleStart
+                && $endTime <= $ruleEnd;
+        }
+
+        // Multi-day booking: check all days in range
+        $current = \DateTimeImmutable::createFromInterface($start);
+        $endDt = \DateTimeImmutable::createFromInterface($end);
+
+        while ($current->format('Y-m-d') <= $endDt->format('Y-m-d')) {
+            $day = (int)$current->format('w');
+            if (!in_array($day, $allowedDays, true)) {
+                return false;
+            }
+
+            // First day: start time must be >= rule start
+            if ($current->format('Y-m-d') === $startDate) {
+                if ($current->format('H:i') < $ruleStart) {
+                    return false;
+                }
+            }
+
+            // Last day: end time must be <= rule end
+            if ($current->format('Y-m-d') === $endDate) {
+                if ($endDt->format('H:i') > $ruleEnd) {
+                    return false;
+                }
+            }
+
+            $current = $current->modify('+1 day')->setTime(0, 0);
+        }
+
+        return true;
     }
 
     /**

@@ -110,6 +110,8 @@ class RoomService {
             'facilities' => $data['facilities'] ?? [],
             'autoAccept' => (bool)($data['autoAccept'] ?? false),
             'groupId' => $data['groupId'] ?? null,
+            'availabilityRules' => $data['availabilityRules'] ?? ['enabled' => false, 'rules' => []],
+            'maxBookingHorizon' => (int)($data['maxBookingHorizon'] ?? 0),
             'active' => true,
             'calendarUri' => '',
             'smtpConfig' => null,
@@ -138,7 +140,7 @@ class RoomService {
             return null;
         }
 
-        $updatableFields = ['name', 'email', 'description', 'capacity', 'location', 'facilities', 'autoAccept', 'active', 'groupId'];
+        $updatableFields = ['name', 'email', 'description', 'capacity', 'location', 'facilities', 'autoAccept', 'active', 'groupId', 'availabilityRules', 'maxBookingHorizon'];
 
         foreach ($updatableFields as $field) {
             if (array_key_exists($field, $data)) {
@@ -241,11 +243,16 @@ class RoomService {
             return substr($principalUri, strlen($prefix));
         }
 
-        // Also handle mailto: format
+        // Also handle mailto: format — match room email or SMTP username
         if (str_starts_with(strtolower($principalUri), 'mailto:')) {
-            $email = substr($principalUri, 7);
+            $email = strtolower(substr($principalUri, 7));
             foreach ($this->getAllRooms() as $room) {
-                if (strtolower($room['email']) === strtolower($email)) {
+                if (strtolower($room['email']) === $email) {
+                    return $room['userId'];
+                }
+                // Also match SMTP username (clients sometimes use this as room email)
+                $smtpUser = strtolower($room['smtpConfig']['username'] ?? '');
+                if ($smtpUser !== '' && $smtpUser === $email) {
                     return $room['userId'];
                 }
             }

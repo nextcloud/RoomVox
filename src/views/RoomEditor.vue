@@ -89,6 +89,93 @@
             </div>
 
             <div class="form-section">
+                <h3>{{ $t('Availability') }}</h3>
+                <p class="section-description">
+                    {{ $t('Restrict when this room can be booked. Bookings outside these hours will be automatically declined.') }}
+                </p>
+
+                <div class="form-field">
+                    <NcCheckboxRadioSwitch
+                        :model-value="availability.enabled"
+                        @update:model-value="availability.enabled = $event">
+                        {{ $t('Restrict booking hours') }}
+                    </NcCheckboxRadioSwitch>
+                </div>
+
+                <div v-if="availability.enabled">
+                    <div v-for="(rule, ruleIndex) in availability.rules"
+                         :key="ruleIndex"
+                         class="availability-rule">
+                        <div class="rule-header">
+                            <span class="rule-label">{{ $t('Rule') }} {{ ruleIndex + 1 }}</span>
+                            <NcButton v-if="availability.rules.length > 1"
+                                      type="tertiary"
+                                      @click="removeRule(ruleIndex)">
+                                <template #icon>
+                                    <Close :size="20" />
+                                </template>
+                            </NcButton>
+                        </div>
+
+                        <div class="form-field">
+                            <label>{{ $t('Days') }}</label>
+                            <div class="days-grid">
+                                <NcCheckboxRadioSwitch
+                                    v-for="day in weekDays"
+                                    :key="day.value"
+                                    :model-value="rule.days.includes(day.value)"
+                                    @update:model-value="toggleDay(ruleIndex, day.value, $event)">
+                                    {{ day.label }}
+                                </NcCheckboxRadioSwitch>
+                            </div>
+                        </div>
+
+                        <div class="time-grid">
+                            <div class="form-field">
+                                <label>{{ $t('From') }}</label>
+                                <input type="time" v-model="rule.startTime" class="time-input" />
+                            </div>
+                            <div class="form-field">
+                                <label>{{ $t('To') }}</label>
+                                <input type="time" v-model="rule.endTime" class="time-input" />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="availability-actions">
+                        <NcButton type="secondary" @click="addRule">
+                            {{ $t('+ Add Rule') }}
+                        </NcButton>
+                    </div>
+
+                    <div class="availability-presets">
+                        <span class="presets-label">{{ $t('Presets:') }}</span>
+                        <NcButton type="tertiary" @click="applyPreset([1,2,3,4,5], '08:00', '18:00')">
+                            {{ $t('Weekdays 08-18') }}
+                        </NcButton>
+                        <NcButton type="tertiary" @click="applyPreset([1,2,3,4,5], '09:00', '17:00')">
+                            {{ $t('Weekdays 09-17') }}
+                        </NcButton>
+                    </div>
+                </div>
+
+                <div class="form-field horizon-field">
+                    <label>{{ $t('Maximum booking horizon') }}</label>
+                    <p class="section-description">
+                        {{ $t('Limit how far in advance bookings can be made. Recurring events that extend beyond this limit will be declined. Set to 0 for no limit.') }}
+                    </p>
+                    <div class="horizon-input">
+                        <NcTextField
+                            v-model="form.maxBookingHorizon"
+                            type="number"
+                            :placeholder="$t('e.g. 90')"
+                            min="0" />
+                        <span class="horizon-unit">{{ $t('days') }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-section">
                 <h3>{{ $t('SMTP Configuration') }}</h3>
                 <p class="section-description">
                     {{ $t('Optional: configure a dedicated SMTP server for this room. If empty, the global Nextcloud mail configuration is used.') }}
@@ -192,6 +279,7 @@ import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwit
 import NcDialog from '@nextcloud/vue/components/NcDialog'
 import NcSelect from '@nextcloud/vue/components/NcSelect'
 import ArrowLeft from 'vue-material-design-icons/ArrowLeft.vue'
+import Close from 'vue-material-design-icons/Close.vue'
 
 const props = defineProps({
     room: { type: Object, default: null },
@@ -212,6 +300,16 @@ const availableFacilities = [
     { id: 'wheelchair', label: 'Wheelchair accessible' },
 ]
 
+const weekDays = [
+    { value: 1, label: 'Mon' },
+    { value: 2, label: 'Tue' },
+    { value: 3, label: 'Wed' },
+    { value: 4, label: 'Thu' },
+    { value: 5, label: 'Fri' },
+    { value: 6, label: 'Sat' },
+    { value: 0, label: 'Sun' },
+]
+
 const groupOptions = computed(() => {
     return [
         { id: null, label: '— No group —' },
@@ -229,6 +327,7 @@ const form = reactive({
     autoAccept: false,
     active: true,
     groupId: null,
+    maxBookingHorizon: 0,
 })
 
 const smtp = reactive({
@@ -237,6 +336,11 @@ const smtp = reactive({
     username: '',
     password: '',
     encryption: 'tls',
+})
+
+const availability = reactive({
+    enabled: false,
+    rules: [],
 })
 
 const errors = reactive({
@@ -290,6 +394,7 @@ watch(() => props.room, (room) => {
             autoAccept: room.autoAccept || false,
             active: room.active !== false,
             groupId: room.groupId || null,
+            maxBookingHorizon: room.maxBookingHorizon || 0,
         })
         if (room.smtpConfig) {
             Object.assign(smtp, {
@@ -299,6 +404,14 @@ watch(() => props.room, (room) => {
                 password: '',
                 encryption: room.smtpConfig.encryption || 'tls',
             })
+        }
+        if (room.availabilityRules) {
+            availability.enabled = room.availabilityRules.enabled || false
+            availability.rules = (room.availabilityRules.rules || []).map(r => ({
+                days: [...(r.days || [])],
+                startTime: r.startTime || '08:00',
+                endTime: r.endTime || '18:00',
+            }))
         }
     }
 }, { immediate: true })
@@ -313,10 +426,44 @@ const toggleFacility = (facilityId, checked) => {
     }
 }
 
+const toggleDay = (ruleIndex, day, checked) => {
+    const rule = availability.rules[ruleIndex]
+    if (checked) {
+        if (!rule.days.includes(day)) {
+            rule.days.push(day)
+        }
+    } else {
+        rule.days = rule.days.filter(d => d !== day)
+    }
+}
+
+const addRule = () => {
+    availability.rules.push({ days: [], startTime: '08:00', endTime: '18:00' })
+}
+
+const removeRule = (index) => {
+    availability.rules.splice(index, 1)
+}
+
+const applyPreset = (days, startTime, endTime) => {
+    availability.enabled = true
+    availability.rules = [{ days: [...days], startTime, endTime }]
+}
+
 const save = () => {
     if (!validate()) return
 
     const data = { ...form }
+
+    // Include availability rules
+    data.availabilityRules = {
+        enabled: availability.enabled,
+        rules: availability.rules.map(r => ({
+            days: [...r.days],
+            startTime: r.startTime,
+            endTime: r.endTime,
+        })),
+    }
 
     // Only include SMTP config if something is filled in
     if (smtp.host) {
@@ -396,6 +543,86 @@ const save = () => {
 .encryption-options {
     display: flex;
     gap: 16px;
+}
+
+.availability-rule {
+    background: var(--color-background-dark);
+    border-radius: var(--border-radius-large);
+    padding: 16px;
+    margin-bottom: 12px;
+}
+
+.rule-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+
+.rule-label {
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.days-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.time-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+.time-input {
+    width: 100%;
+    padding: 8px 12px;
+    border: 2px solid var(--color-border-maxcontrast);
+    border-radius: var(--border-radius-large);
+    background: var(--color-main-background);
+    color: var(--color-main-text);
+    font-size: 14px;
+}
+
+.time-input:focus {
+    border-color: var(--color-primary-element);
+    outline: none;
+}
+
+.availability-actions {
+    margin-bottom: 12px;
+}
+
+.availability-presets {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.presets-label {
+    font-size: 13px;
+    color: var(--color-text-maxcontrast);
+}
+
+.horizon-field {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--color-border);
+}
+
+.horizon-input {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    max-width: 200px;
+}
+
+.horizon-unit {
+    font-size: 14px;
+    color: var(--color-text-maxcontrast);
+    white-space: nowrap;
 }
 
 .form-actions {

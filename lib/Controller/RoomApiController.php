@@ -106,6 +106,8 @@ class RoomApiController extends Controller {
             'facilities' => $this->request->getParam('facilities', []),
             'autoAccept' => $this->request->getParam('autoAccept', false),
             'smtpConfig' => $this->request->getParam('smtpConfig', null),
+            'availabilityRules' => $this->request->getParam('availabilityRules', null),
+            'maxBookingHorizon' => $this->request->getParam('maxBookingHorizon', 0),
         ];
 
         if (empty($data['name'])) {
@@ -128,7 +130,12 @@ class RoomApiController extends Controller {
                 'managers' => [],
             ]);
 
-            // 4. Sync room cache so it appears in calendar apps immediately
+            // 4. Publish VAVAILABILITY if availability rules are set
+            if (!empty($room['availabilityRules']['enabled'])) {
+                $this->calDAVService->publishAvailability($room['userId'], $room);
+            }
+
+            // 5. Sync room cache so it appears in calendar apps immediately
             $this->syncRoomCache();
 
             if (!empty($room['smtpConfig']['password'])) {
@@ -156,7 +163,7 @@ class RoomApiController extends Controller {
         }
 
         $data = [];
-        $updatableFields = ['name', 'email', 'description', 'capacity', 'location', 'facilities', 'autoAccept', 'active', 'smtpConfig', 'groupId'];
+        $updatableFields = ['name', 'email', 'description', 'capacity', 'location', 'facilities', 'autoAccept', 'active', 'smtpConfig', 'groupId', 'availabilityRules', 'maxBookingHorizon'];
 
         foreach ($updatableFields as $field) {
             $value = $this->request->getParam($field);
@@ -169,6 +176,11 @@ class RoomApiController extends Controller {
             $room = $this->roomService->updateRoom($id, $data);
             if ($room === null) {
                 return new JSONResponse(['error' => 'Room not found'], 404);
+            }
+
+            // Publish/remove VAVAILABILITY when availability rules change
+            if (array_key_exists('availabilityRules', $data)) {
+                $this->calDAVService->publishAvailability($room['userId'], $room);
             }
 
             // Sync room cache

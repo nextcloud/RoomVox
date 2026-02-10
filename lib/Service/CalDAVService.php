@@ -423,6 +423,110 @@ class CalDAVService {
     }
 
     /**
+     * Publish or remove a VAVAILABILITY object on the room's calendar.
+     * CalDAV clients (Apple Calendar, Outlook) use this to show
+     * when the room is available for booking.
+     */
+    public function publishAvailability(string $roomUserId, array $room): void {
+        $calendarId = $this->getRoomCalendarId($roomUserId);
+        if ($calendarId === null) {
+            $this->logger->warning("ResaVox: No calendar found for {$roomUserId}, cannot publish availability");
+            return;
+        }
+
+        $objectUri = 'room-availability.ics';
+        $rules = $room['availabilityRules'] ?? [];
+        $enabled = !empty($rules['enabled']) && !empty($rules['rules']);
+
+        try {
+            $existing = null;
+            try {
+                $existing = $this->calDavBackend->getCalendarObject($calendarId, $objectUri);
+            } catch (\Throwable $e) {
+                // Not found
+            }
+
+            if (!$enabled) {
+                // Remove availability object if it exists
+                if ($existing !== null) {
+                    $this->calDavBackend->deleteCalendarObject($calendarId, $objectUri);
+                    $this->logger->info("ResaVox: Removed VAVAILABILITY for {$roomUserId}");
+                }
+                return;
+            }
+
+            // Build VAVAILABILITY iCalendar data
+            $icsData = $this->buildVAvailability($room);
+
+            if ($existing !== null) {
+                $this->calDavBackend->updateCalendarObject($calendarId, $objectUri, $icsData);
+                $this->logger->info("ResaVox: Updated VAVAILABILITY for {$roomUserId}");
+            } else {
+                $this->calDavBackend->createCalendarObject($calendarId, $objectUri, $icsData);
+                $this->logger->info("ResaVox: Published VAVAILABILITY for {$roomUserId}");
+            }
+        } catch (\Throwable $e) {
+            $this->logger->error("ResaVox: Failed to publish availability for {$roomUserId}: " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Build a VCALENDAR with VAVAILABILITY component from room availability rules.
+     */
+    private function buildVAvailability(array $room): string {
+        $dayMap = [0 => 'SU', 1 => 'MO', 2 => 'TU', 3 => 'WE', 4 => 'TH', 5 => 'FR', 6 => 'SA'];
+        $rules = $room['availabilityRules']['rules'] ?? [];
+        $roomEmail = $room['email'] ?? '';
+
+        $lines = [
+            'BEGIN:VCALENDAR',
+            'VERSION:2.0',
+            'PRODID:-//ResaVox//Room Availability//EN',
+            'BEGIN:VAVAILABILITY',
+        ];
+
+        if ($roomEmail !== '') {
+            $lines[] = 'ORGANIZER:mailto:' . $roomEmail;
+        }
+
+        // DTSTART far in the past so it covers all recurring instances
+        $lines[] = 'DTSTART:20240101T000000Z';
+
+        foreach ($rules as $rule) {
+            $days = $rule['days'] ?? [];
+            $startTime = $rule['startTime'] ?? '08:00';
+            $endTime = $rule['endTime'] ?? '18:00';
+
+            if (empty($days)) {
+                continue;
+            }
+
+            // Map day numbers to BYDAY codes
+            $byDay = [];
+            foreach ($days as $day) {
+                if (isset($dayMap[$day])) {
+                    $byDay[] = $dayMap[$day];
+                }
+            }
+
+            $startFormatted = str_replace(':', '', $startTime) . '00';
+            $endFormatted = str_replace(':', '', $endTime) . '00';
+
+            $lines[] = 'BEGIN:AVAILABLE';
+            $lines[] = 'DTSTART;TZID=Europe/Amsterdam:20240101T' . $startFormatted;
+            $lines[] = 'DTEND;TZID=Europe/Amsterdam:20240101T' . $endFormatted;
+            $lines[] = 'RRULE:FREQ=WEEKLY;BYDAY=' . implode(',', $byDay);
+            $lines[] = 'SUMMARY:Available';
+            $lines[] = 'END:AVAILABLE';
+        }
+
+        $lines[] = 'END:VAVAILABILITY';
+        $lines[] = 'END:VCALENDAR';
+
+        return implode("\r\n", $lines) . "\r\n";
+    }
+
+    /**
      * Strip mailto: prefix from email
      */
     private function stripMailto(string $email): string {
