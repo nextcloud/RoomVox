@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace OCA\ResaVox\Controller;
+namespace OCA\RoomVox\Controller;
 
-use OCA\ResaVox\AppInfo\Application;
+use OCA\RoomVox\AppInfo\Application;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IAppConfig;

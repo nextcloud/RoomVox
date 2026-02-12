@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 use OCP\Util;
 
-Util::addScript('resavox', 'resavox-main');
-Util::addStyle('resavox', 'style');
+Util::addScript('roomvox', 'roomvox-main');
+Util::addStyle('roomvox', 'style');
 ?>
 
-<div id="app-resavox"></div>
+<div id="app-roomvox"></div>

@@ -11,8 +11,8 @@ module.exports = {
     output: {
         path: path.resolve(__dirname, 'js'),
         publicPath: '/js/',
-        filename: 'resavox-[name].js',
-        chunkFilename: 'resavox-[name].js',
+        filename: 'roomvox-[name].js',
+        chunkFilename: 'roomvox-[name].js',
         clean: true,
     },
     module: {
@@ -51,7 +51,7 @@ module.exports = {
             __VUE_OPTIONS_API__: JSON.stringify(true),
             __VUE_PROD_DEVTOOLS__: JSON.stringify(isDev),
             __VUE_PROD_HYDRATION_MISMATCH_DETAILS__: JSON.stringify(false),
-            appName: JSON.stringify('resavox'),
+            appName: JSON.stringify('roomvox'),
         }),
     ],
     resolve: {

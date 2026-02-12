@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace OCA\ResaVox\Connector\Room;
+namespace OCA\RoomVox\Connector\Room;
 
-use OCA\ResaVox\AppInfo\Application;
-use OCA\ResaVox\Service\PermissionService;
-use OCA\ResaVox\Service\RoomService;
+use OCA\RoomVox\AppInfo\Application;
+use OCA\RoomVox\Service\PermissionService;
+use OCA\RoomVox\Service\RoomService;
 use OCP\Calendar\Room\IBackend;
 use OCP\Calendar\Room\IRoom;
 use Psr\Log\LoggerInterface;

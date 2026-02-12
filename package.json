@@ -1,5 +1,5 @@
 {
-    "name": "resavox",
+    "name": "roomvox",
     "version": "1.0.0",
     "description": "Nextcloud Room Booking App",
     "scripts": {
@@ -8,6 +8,13 @@
         "watch": "webpack --mode development --watch"
     },
     "dependencies": {
+        "@fullcalendar/core": "^6.1.20",
+        "@fullcalendar/daygrid": "^6.1.20",
+        "@fullcalendar/interaction": "^6.1.20",
+        "@fullcalendar/list": "^6.1.20",
+        "@fullcalendar/resource-timeline": "^6.1.20",
+        "@fullcalendar/timegrid": "^6.1.20",
+        "@fullcalendar/vue3": "^6.1.20",
         "@nextcloud/axios": "^2.5.0",
         "@nextcloud/dialogs": "^7.1.0",
         "@nextcloud/initial-state": "^2.2.0",

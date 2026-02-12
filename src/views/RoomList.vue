@@ -63,9 +63,7 @@
                     <ChevronDown v-else :size="20" class="chevron" />
                     <FolderMultiple :size="18" />
                     <span class="room-group__name">{{ group.name }}</span>
-                    <NcCounterBubble v-if="filteredGroupRooms(group.id).length > 0" class="room-group__count">
-                        {{ filteredGroupRooms(group.id).length }}
-                    </NcCounterBubble>
+                    <NcCounterBubble v-if="filteredGroupRooms(group.id).length > 0" class="room-group__count" :count="filteredGroupRooms(group.id).length" />
                     <span class="room-group__spacer" />
                     <div class="room-group__actions" @click.stop>
                         <NcActions>
@@ -74,12 +72,6 @@
                                     <Pencil :size="20" />
                                 </template>
                                 {{ $t('Edit Group') }}
-                            </NcActionButton>
-                            <NcActionButton @click="$emit('group-permissions', group)">
-                                <template #icon>
-                                    <ShieldLock :size="20" />
-                                </template>
-                                {{ $t('Group Permissions') }}
                             </NcActionButton>
                         </NcActions>
                     </div>
@@ -150,6 +142,15 @@
                                                 </template>
                                                 {{ $t('Edit') }}
                                             </NcActionButton>
+                                            <NcActionButton v-for="groupOption in moveToGroupOptions(room)"
+                                                :key="groupOption.id ?? 'none'"
+                                                @click="handleMoveToGroup(room, groupOption.id)">
+                                                <template #icon>
+                                                    <Check v-if="groupOption.isCurrent" :size="20" />
+                                                    <FolderMove v-else :size="20" />
+                                                </template>
+                                                {{ groupOption.label }}
+                                            </NcActionButton>
                                         </NcActions>
                                     </td>
                                 </tr>
@@ -171,9 +172,7 @@
                     <ChevronDown v-else :size="20" class="chevron" />
                     <FolderMultiple :size="18" />
                     <span class="room-group__name">{{ $t('Ungrouped Rooms') }}</span>
-                    <NcCounterBubble class="room-group__count">
-                        {{ filteredUngroupedRooms.length }}
-                    </NcCounterBubble>
+                    <NcCounterBubble class="room-group__count" :count="filteredUngroupedRooms.length" />
                     <span class="room-group__spacer" />
                 </div>
 
@@ -241,6 +240,15 @@
                                                 </template>
                                                 {{ $t('Edit') }}
                                             </NcActionButton>
+                                            <NcActionButton v-for="groupOption in moveToGroupOptions(room)"
+                                                :key="groupOption.id ?? 'none'"
+                                                @click="handleMoveToGroup(room, groupOption.id)">
+                                                <template #icon>
+                                                    <Check v-if="groupOption.isCurrent" :size="20" />
+                                                    <FolderMove v-else :size="20" />
+                                                </template>
+                                                {{ groupOption.label }}
+                                            </NcActionButton>
                                         </NcActions>
                                     </td>
                                 </tr>
@@ -268,11 +276,12 @@ import FolderPlus from 'vue-material-design-icons/FolderPlus.vue'
 import FolderMultiple from 'vue-material-design-icons/FolderMultiple.vue'
 import DoorOpen from 'vue-material-design-icons/DoorOpen.vue'
 import Pencil from 'vue-material-design-icons/Pencil.vue'
-import ShieldLock from 'vue-material-design-icons/ShieldLock.vue'
 import Magnify from 'vue-material-design-icons/Magnify.vue'
 import ChevronUp from 'vue-material-design-icons/ChevronUp.vue'
 import ChevronDown from 'vue-material-design-icons/ChevronDown.vue'
 import ChevronRight from 'vue-material-design-icons/ChevronRight.vue'
+import FolderMove from 'vue-material-design-icons/FolderMove.vue'
+import Check from 'vue-material-design-icons/Check.vue'
 
 const props = defineProps({
     rooms: { type: Array, default: () => [] },
@@ -280,7 +289,7 @@ const props = defineProps({
     loading: { type: Boolean, default: false },
 })
 
-defineEmits(['select', 'create', 'create-group', 'edit-group', 'group-permissions', 'refresh'])
+const emit = defineEmits(['select', 'create', 'create-group', 'edit-group', 'group-permissions', 'refresh', 'move-to-group'])
 
 const searchQuery = ref('')
 const sortBy = ref('name')
@@ -372,6 +381,25 @@ const sortRooms = (rooms) => {
         if (aVal > bVal) return sortDir.value === 'asc' ? 1 : -1
         return 0
     })
+}
+
+const moveToGroupOptions = (room) => {
+    const options = props.roomGroups.map(g => ({
+        id: g.id,
+        label: g.name,
+        isCurrent: room.groupId === g.id
+    }))
+    // Add "No group" option
+    options.push({
+        id: null,
+        label: '— No group —',
+        isCurrent: !room.groupId
+    })
+    return options
+}
+
+const handleMoveToGroup = (room, groupId) => {
+    emit('move-to-group', { room, groupId })
 }
 </script>
 

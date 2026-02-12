@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace OCA\ResaVox\UserBackend;
+namespace OCA\RoomVox\UserBackend;
 
-use OCA\ResaVox\Service\RoomService;
+use OCA\RoomVox\Service\RoomService;
 use OC\User\Backend;
 use OCP\User\Backend\ICheckPasswordBackend;
 use OCP\User\Backend\ICountUsersBackend;
@@ -28,7 +28,7 @@ class RoomUserBackend extends Backend implements ICheckPasswordBackend, IGetDisp
      * @inheritDoc
      */
     public function getBackendName(): string {
-        return 'ResaVox';
+        return 'RoomVox';
     }
 
     /**

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace OCA\ResaVox\Connector\Room;
+namespace OCA\RoomVox\Connector\Room;
 
 use OCP\Calendar\Room\IRoom;
 use OCP\Calendar\IMetadataProvider;
@@ -41,10 +41,67 @@ class Room implements IRoom, IMetadataProvider {
      * @inheritDoc
      */
     public function getDisplayName(): string {
-        if ($this->location !== null && $this->location !== '') {
-            return $this->displayName . ' — ' . $this->location;
+        $parts = [$this->displayName];
+
+        // Capaciteit compact (bijv. "12p")
+        if ($this->capacity !== null && $this->capacity > 0) {
+            $parts[] = $this->capacity . 'p';
         }
-        return $this->displayName;
+
+        // Top faciliteiten (max 3, afgekort)
+        if (!empty($this->facilities)) {
+            $shortFacilities = $this->getShortFacilities();
+            if ($shortFacilities) {
+                $parts[] = $shortFacilities;
+            }
+        }
+
+        $name = implode(' · ', $parts);
+
+        // Locatie na em-dash
+        if ($this->location !== null && $this->location !== '') {
+            $name .= ' — ' . $this->location;
+        }
+
+        return $name;
+    }
+
+    /**
+     * Get shortened facility names for compact display
+     */
+    private function getShortFacilities(): ?string {
+        if (empty($this->facilities)) {
+            return null;
+        }
+
+        // Mapping van lange namen naar korte
+        $shortNames = [
+            'projector' => 'Beamer',
+            'beamer' => 'Beamer',
+            'videoconference' => 'Video',
+            'videoconferencing' => 'Video',
+            'video conference' => 'Video',
+            'video' => 'Video',
+            'whiteboard' => 'WB',
+            'smartboard' => 'Smart',
+            'tv' => 'TV',
+            'television' => 'TV',
+            'screen' => 'Screen',
+            'audio' => 'Audio',
+            'phone' => 'Phone',
+            'telephone' => 'Phone',
+            'wifi' => 'WiFi',
+            'airco' => 'AC',
+            'air conditioning' => 'AC',
+        ];
+
+        $short = [];
+        foreach (array_slice($this->facilities, 0, 3) as $facility) {
+            $lower = strtolower(trim($facility));
+            $short[] = $shortNames[$lower] ?? ucfirst(substr($facility, 0, 6));
+        }
+
+        return implode('+', $short);
     }
 
     /**
@@ -90,10 +147,23 @@ class Room implements IRoom, IMetadataProvider {
             '{urn:ietf:params:xml:ns:caldav}calendar-description' => $this->buildDescription(),
             '{http://nextcloud.com/ns}room-type' => 'meeting-room',
             '{http://nextcloud.com/ns}room-seating-capacity' => $this->capacity !== null ? (string)$this->capacity : null,
-            '{http://nextcloud.com/ns}room-building-name' => null,
+            '{http://nextcloud.com/ns}room-building-name' => $this->extractBuilding(),
             '{http://nextcloud.com/ns}room-features' => $this->getFeaturesString(),
             default => null,
         };
+    }
+
+    /**
+     * Extract building name from location (first part before comma)
+     */
+    private function extractBuilding(): ?string {
+        if ($this->location !== null && $this->location !== '') {
+            if (preg_match('/^([^,]+)/', $this->location, $matches)) {
+                return trim($matches[1]);
+            }
+            return $this->location;
+        }
+        return null;
     }
 
     private function buildDescription(): string {

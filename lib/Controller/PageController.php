@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace OCA\ResaVox\Controller;
+namespace OCA\RoomVox\Controller;
 
-use OCA\ResaVox\AppInfo\Application;
+use OCA\RoomVox\AppInfo\Application;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\TemplateResponse;
 use OCP\IRequest;
@@ -19,10 +19,12 @@ class PageController extends Controller {
     }
 
     /**
-     * Main app page — loads the Vue admin UI
+     * Admin panel — loads the Vue admin UI
+     *
+     * @NoCSRFRequired
      */
     public function index(): TemplateResponse {
-        Util::addScript(Application::APP_ID, 'resavox-main');
+        Util::addScript(Application::APP_ID, 'roomvox-main');
         Util::addStyle(Application::APP_ID, 'style');
 
         return new TemplateResponse(Application::APP_ID, 'main');

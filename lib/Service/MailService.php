@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace OCA\ResaVox\Service;
+namespace OCA\RoomVox\Service;
 
 use OCP\IAppConfig;
 use OCP\Mail\IMailer;
@@ -94,7 +94,7 @@ class MailService {
 
         $managerUserIds = $this->permissionService->getManagerUserIds($room['id']);
         if (empty($managerUserIds)) {
-            $this->logger->warning("ResaVox: No managers found for room {$room['id']}, cannot send approval notification");
+            $this->logger->warning("RoomVox: No managers found for room {$room['id']}, cannot send approval notification");
             return;
         }
 
@@ -166,7 +166,7 @@ class MailService {
             );
             return true;
         } catch (\Exception $e) {
-            $this->logger->error("ResaVox: Test email failed: " . $e->getMessage());
+            $this->logger->error("RoomVox: Test email failed: " . $e->getMessage());
             return false;
         }
     }
@@ -207,9 +207,9 @@ class MailService {
             }
 
             $this->mailer->send($message);
-            $this->logger->info("ResaVox: Email sent to {$to}: {$subject} (via NC mailer)");
+            $this->logger->info("RoomVox: Email sent to {$to}: {$subject} (via NC mailer)");
         } catch (\Exception $e) {
-            $this->logger->error("ResaVox: Failed to send email to {$to}: " . $e->getMessage());
+            $this->logger->error("RoomVox: Failed to send email to {$to}: " . $e->getMessage());
             throw $e;
         }
     }
@@ -272,9 +272,9 @@ class MailService {
             $mailer = new SymfonyMailer($transport);
             $mailer->send($email);
 
-            $this->logger->info("ResaVox: Email sent to {$to}: {$subject} (via room SMTP {$host}:{$port})");
+            $this->logger->info("RoomVox: Email sent to {$to}: {$subject} (via room SMTP {$host}:{$port})");
         } catch (\Exception $e) {
-            $this->logger->error("ResaVox: Failed to send email via room SMTP ({$host}:{$port}) to {$to}: " . $e->getMessage());
+            $this->logger->error("RoomVox: Failed to send email via room SMTP ({$host}:{$port}) to {$to}: " . $e->getMessage());
             throw $e;
         }
     }

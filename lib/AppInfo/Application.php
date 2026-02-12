@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace OCA\ResaVox\AppInfo;
+namespace OCA\RoomVox\AppInfo;
 
 use OCA\DAV\Events\SabrePluginAuthInitEvent;
-use OCA\ResaVox\Connector\Room\RoomBackend;
-use OCA\ResaVox\Listener\SabrePluginListener;
-use OCA\ResaVox\Service\PermissionService;
-use OCA\ResaVox\Service\RoomService;
-use OCA\ResaVox\UserBackend\RoomUserBackend;
+use OCA\RoomVox\Connector\Room\RoomBackend;
+use OCA\RoomVox\Listener\SabrePluginListener;
+use OCA\RoomVox\Service\PermissionService;
+use OCA\RoomVox\Service\RoomService;
+use OCA\RoomVox\UserBackend\RoomUserBackend;
 use OCP\AppFramework\App;
 use OCP\AppFramework\Bootstrap\IBootContext;
 use OCP\AppFramework\Bootstrap\IBootstrap;
@@ -17,7 +17,7 @@ use OCP\AppFramework\Bootstrap\IRegistrationContext;
 use OCP\IUserManager;
 
 class Application extends App implements IBootstrap {
-    public const APP_ID = 'resavox';
+    public const APP_ID = 'roomvox';
 
     public function __construct(array $urlParams = []) {
         parent::__construct(self::APP_ID, $urlParams);

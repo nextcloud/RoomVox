@@ -7,6 +7,9 @@ return [
         // Pages
         ['name' => 'page#index', 'url' => '/', 'verb' => 'GET'],
 
+        // All Bookings API
+        ['name' => 'room_api#all_bookings', 'url' => '/api/all-bookings', 'verb' => 'GET'],
+
         // Rooms API
         ['name' => 'room_api#index', 'url' => '/api/rooms', 'verb' => 'GET'],
         ['name' => 'room_api#create', 'url' => '/api/rooms', 'verb' => 'POST'],
@@ -18,9 +21,12 @@ return [
         ['name' => 'room_api#get_permissions', 'url' => '/api/rooms/{id}/permissions', 'verb' => 'GET'],
         ['name' => 'room_api#set_permissions', 'url' => '/api/rooms/{id}/permissions', 'verb' => 'PUT'],
 
-        // Bookings API
+        // Room-specific bookings
         ['name' => 'booking_api#index', 'url' => '/api/rooms/{id}/bookings', 'verb' => 'GET'],
+        ['name' => 'booking_api#create', 'url' => '/api/rooms/{id}/bookings', 'verb' => 'POST'],
+        ['name' => 'booking_api#update', 'url' => '/api/rooms/{id}/bookings/{uid}', 'verb' => 'PUT'],
         ['name' => 'booking_api#respond', 'url' => '/api/rooms/{id}/bookings/{uid}/respond', 'verb' => 'POST'],
+        ['name' => 'booking_api#destroy', 'url' => '/api/rooms/{id}/bookings/{uid}', 'verb' => 'DELETE'],
 
         // Room Groups API
         ['name' => 'room_group_api#index', 'url' => '/api/room-groups', 'verb' => 'GET'],
@@ -37,5 +43,8 @@ return [
 
         // User/Group search (for permission editor)
         ['name' => 'room_api#search_sharees', 'url' => '/api/sharees', 'verb' => 'GET'],
+
+        // Debug endpoint
+        ['name' => 'room_api#debug', 'url' => '/api/debug/rooms', 'verb' => 'GET'],
     ],
 ];

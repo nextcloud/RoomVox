@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace OCA\ResaVox\Service;
+namespace OCA\RoomVox\Service;
 
 use OCA\DAV\CalDAV\CalDavBackend;
 use Psr\Log\LoggerInterface;
@@ -260,7 +260,7 @@ class CalDAVService {
     public function deliverToRoomCalendar(string $roomUserId, string $calendarData): bool {
         $calendarId = $this->getRoomCalendarId($roomUserId);
         if ($calendarId === null) {
-            $this->logger->error("ResaVox: No calendar found for room {$roomUserId}, cannot deliver");
+            $this->logger->error("RoomVox: No calendar found for room {$roomUserId}, cannot deliver");
             return false;
         }
 
@@ -268,13 +268,13 @@ class CalDAVService {
             $vObject = Reader::read($calendarData);
             $vEvent = $vObject->VEVENT ?? null;
             if ($vEvent === null) {
-                $this->logger->error("ResaVox: No VEVENT in calendar data for delivery");
+                $this->logger->error("RoomVox: No VEVENT in calendar data for delivery");
                 return false;
             }
 
             $uid = (string)($vEvent->UID ?? '');
             if ($uid === '') {
-                $this->logger->error("ResaVox: No UID in VEVENT for delivery");
+                $this->logger->error("RoomVox: No UID in VEVENT for delivery");
                 return false;
             }
 
@@ -290,17 +290,25 @@ class CalDAVService {
 
             if ($existing !== null) {
                 $this->calDavBackend->updateCalendarObject($calendarId, $objectUri, $calendarData);
-                $this->logger->info("ResaVox: Updated calendar object {$objectUri} in calendar {$calendarId}");
+                $this->logger->info("RoomVox: Updated calendar object {$objectUri} in calendar {$calendarId}");
             } else {
                 $this->calDavBackend->createCalendarObject($calendarId, $objectUri, $calendarData);
-                $this->logger->info("ResaVox: Created calendar object {$objectUri} in calendar {$calendarId}");
+                $this->logger->info("RoomVox: Created calendar object {$objectUri} in calendar {$calendarId}");
             }
 
             return true;
         } catch (\Throwable $e) {
-            $this->logger->error("ResaVox: Failed to deliver to room calendar: " . $e->getMessage());
+            $this->logger->error("RoomVox: Failed to deliver to room calendar: " . $e->getMessage());
             return false;
         }
+    }
+
+    /**
+     * Delete a booking from the room's calendar by UID.
+     * Wrapper for deleteFromRoomCalendar for controller use.
+     */
+    public function deleteBooking(string $roomUserId, string $uid): bool {
+        return $this->deleteFromRoomCalendar($roomUserId, $uid);
     }
 
     /**
@@ -318,11 +326,11 @@ class CalDAVService {
             $existing = $this->calDavBackend->getCalendarObject($calendarId, $objectUri);
             if ($existing !== null) {
                 $this->calDavBackend->deleteCalendarObject($calendarId, $objectUri);
-                $this->logger->info("ResaVox: Deleted calendar object {$objectUri} from calendar {$calendarId}");
+                $this->logger->info("RoomVox: Deleted calendar object {$objectUri} from calendar {$calendarId}");
                 return true;
             }
         } catch (\Throwable $e) {
-            $this->logger->error("ResaVox: Failed to delete from room calendar: " . $e->getMessage());
+            $this->logger->error("RoomVox: Failed to delete from room calendar: " . $e->getMessage());
         }
 
         return false;
@@ -403,13 +411,13 @@ class CalDAVService {
 
     /**
      * Get the internal calendar ID for a room via calendar-rooms principal.
-     * NC scheduling delivers events to principals/calendar-rooms/resavox-<roomId>,
+     * NC scheduling delivers events to principals/calendar-rooms/roomvox-<roomId>,
      * not to the user principal.
      */
     public function getRoomCalendarId(string $roomUserId): ?int {
         // Extract room ID from userId (rb_testroom → testroom)
         $roomId = str_starts_with($roomUserId, 'rb_') ? substr($roomUserId, 3) : $roomUserId;
-        $principalUri = 'principals/calendar-rooms/resavox-' . $roomId;
+        $principalUri = 'principals/calendar-rooms/roomvox-' . $roomId;
 
         $calendars = $this->calDavBackend->getCalendarsForUser($principalUri);
 
@@ -430,7 +438,7 @@ class CalDAVService {
     public function publishAvailability(string $roomUserId, array $room): void {
         $calendarId = $this->getRoomCalendarId($roomUserId);
         if ($calendarId === null) {
-            $this->logger->warning("ResaVox: No calendar found for {$roomUserId}, cannot publish availability");
+            $this->logger->warning("RoomVox: No calendar found for {$roomUserId}, cannot publish availability");
             return;
         }
 
@@ -450,7 +458,7 @@ class CalDAVService {
                 // Remove availability object if it exists
                 if ($existing !== null) {
                     $this->calDavBackend->deleteCalendarObject($calendarId, $objectUri);
-                    $this->logger->info("ResaVox: Removed VAVAILABILITY for {$roomUserId}");
+                    $this->logger->info("RoomVox: Removed VAVAILABILITY for {$roomUserId}");
                 }
                 return;
             }
@@ -460,13 +468,13 @@ class CalDAVService {
 
             if ($existing !== null) {
                 $this->calDavBackend->updateCalendarObject($calendarId, $objectUri, $icsData);
-                $this->logger->info("ResaVox: Updated VAVAILABILITY for {$roomUserId}");
+                $this->logger->info("RoomVox: Updated VAVAILABILITY for {$roomUserId}");
             } else {
                 $this->calDavBackend->createCalendarObject($calendarId, $objectUri, $icsData);
-                $this->logger->info("ResaVox: Published VAVAILABILITY for {$roomUserId}");
+                $this->logger->info("RoomVox: Published VAVAILABILITY for {$roomUserId}");
             }
         } catch (\Throwable $e) {
-            $this->logger->error("ResaVox: Failed to publish availability for {$roomUserId}: " . $e->getMessage());
+            $this->logger->error("RoomVox: Failed to publish availability for {$roomUserId}: " . $e->getMessage());
         }
     }
 
@@ -481,7 +489,7 @@ class CalDAVService {
         $lines = [
             'BEGIN:VCALENDAR',
             'VERSION:2.0',
-            'PRODID:-//ResaVox//Room Availability//EN',
+            'PRODID:-//RoomVox//Room Availability//EN',
             'BEGIN:VAVAILABILITY',
         ];
 
@@ -524,6 +532,197 @@ class CalDAVService {
         $lines[] = 'END:VCALENDAR';
 
         return implode("\r\n", $lines) . "\r\n";
+    }
+
+    /**
+     * Create a new booking in the room's calendar
+     *
+     * @param string $roomUserId The room's service account user ID
+     * @param array $data Booking data with keys: summary, start, end, description, organizer, roomEmail, autoAccept
+     * @return string The UID of the created event
+     */
+    public function createBooking(string $roomUserId, array $data): string {
+        $calendarId = $this->getRoomCalendarId($roomUserId);
+        if ($calendarId === null) {
+            throw new \Exception("No calendar found for room: {$roomUserId}");
+        }
+
+        $uid = $this->generateUid();
+        $objectUri = $uid . '.ics';
+
+        /** @var \DateTime $start */
+        $start = $data['start'];
+        /** @var \DateTime $end */
+        $end = $data['end'];
+
+        $summary = $data['summary'] ?? 'Booking';
+        $description = $data['description'] ?? '';
+        $organizer = $data['organizer'] ?? '';
+        $roomEmail = $data['roomEmail'] ?? '';
+        $autoAccept = $data['autoAccept'] ?? false;
+
+        // Build iCalendar data
+        $icsLines = [
+            'BEGIN:VCALENDAR',
+            'VERSION:2.0',
+            'PRODID:-//RoomVox//Room Booking//EN',
+            'BEGIN:VEVENT',
+            'UID:' . $uid,
+            'DTSTAMP:' . gmdate('Ymd\THis\Z'),
+            'DTSTART:' . $start->format('Ymd\THis\Z'),
+            'DTEND:' . $end->format('Ymd\THis\Z'),
+            'SUMMARY:' . $this->escapeIcsText($summary),
+        ];
+
+        if ($description !== '') {
+            $icsLines[] = 'DESCRIPTION:' . $this->escapeIcsText($description);
+        }
+
+        if ($organizer !== '') {
+            $icsLines[] = 'ORGANIZER;CN=' . $this->escapeIcsText($organizer) . ':mailto:' . $organizer . '@localhost';
+        }
+
+        // Add room as attendee
+        if ($roomEmail !== '') {
+            $partstat = $autoAccept ? 'ACCEPTED' : 'TENTATIVE';
+            $icsLines[] = 'ATTENDEE;CUTYPE=ROOM;PARTSTAT=' . $partstat . ';CN=Room:mailto:' . $roomEmail;
+        }
+
+        // Set status based on auto-accept
+        $icsLines[] = 'STATUS:' . ($autoAccept ? 'CONFIRMED' : 'TENTATIVE');
+
+        $icsLines[] = 'END:VEVENT';
+        $icsLines[] = 'END:VCALENDAR';
+
+        $icsData = implode("\r\n", $icsLines) . "\r\n";
+
+        try {
+            $this->calDavBackend->createCalendarObject($calendarId, $objectUri, $icsData);
+            $this->logger->info("RoomVox: Created booking {$uid} in calendar for {$roomUserId}");
+            return $uid;
+        } catch (\Throwable $e) {
+            $this->logger->error("RoomVox: Failed to create booking: " . $e->getMessage());
+            throw $e;
+        }
+    }
+
+    /**
+     * Update the times of an existing booking
+     *
+     * @param string $roomUserId The room's service account user ID
+     * @param string $uid The UID of the event to update
+     * @param \DateTime $start New start time
+     * @param \DateTime $end New end time
+     * @return bool True if successful
+     */
+    public function updateBookingTimes(string $roomUserId, string $uid, \DateTime $start, \DateTime $end): bool {
+        $calendarId = $this->getRoomCalendarId($roomUserId);
+        if ($calendarId === null) {
+            return false;
+        }
+
+        $objectUri = $uid . '.ics';
+
+        try {
+            $existing = $this->calDavBackend->getCalendarObject($calendarId, $objectUri);
+            if ($existing === null) {
+                $this->logger->warning("RoomVox: Booking not found: {$uid}");
+                return false;
+            }
+
+            $calendarData = $existing['calendardata'] ?? '';
+            $vObject = Reader::read($calendarData);
+            $vEvent = $vObject->VEVENT ?? null;
+
+            if ($vEvent === null) {
+                return false;
+            }
+
+            // Update times
+            $vEvent->DTSTART = $start;
+            $vEvent->DTEND = $end;
+            $vEvent->DTSTAMP = new \DateTime('now', new \DateTimeZone('UTC'));
+
+            $this->calDavBackend->updateCalendarObject($calendarId, $objectUri, $vObject->serialize());
+            $this->logger->info("RoomVox: Updated booking times for {$uid}");
+            return true;
+        } catch (\Throwable $e) {
+            $this->logger->error("RoomVox: Failed to update booking times: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Get a single booking by its UID
+     *
+     * @param string $roomUserId The room's service account user ID
+     * @param string $uid The UID of the event
+     * @return array|null The booking data or null if not found
+     */
+    public function getBookingByUid(string $roomUserId, string $uid): ?array {
+        $calendarId = $this->getRoomCalendarId($roomUserId);
+        if ($calendarId === null) {
+            return null;
+        }
+
+        $objectUri = $uid . '.ics';
+
+        try {
+            $object = $this->calDavBackend->getCalendarObject($calendarId, $objectUri);
+            if ($object === null) {
+                return null;
+            }
+
+            $calendarData = $object['calendardata'] ?? '';
+            $vObject = Reader::read($calendarData);
+            $vEvent = $vObject->VEVENT ?? null;
+
+            if ($vEvent === null) {
+                return null;
+            }
+
+            // Extract organizer
+            $organizer = '';
+            if ($vEvent->ORGANIZER) {
+                $organizer = $this->stripMailto((string)$vEvent->ORGANIZER);
+            }
+
+            return [
+                'uid' => (string)($vEvent->UID ?? ''),
+                'uri' => $objectUri,
+                'summary' => (string)($vEvent->SUMMARY ?? ''),
+                'description' => (string)($vEvent->DESCRIPTION ?? ''),
+                'dtstart' => $vEvent->DTSTART ? $vEvent->DTSTART->getDateTime()->format('c') : null,
+                'dtend' => $vEvent->DTEND ? $vEvent->DTEND->getDateTime()->format('c') : null,
+                'organizer' => $organizer,
+                'status' => (string)($vEvent->STATUS ?? ''),
+            ];
+        } catch (\Throwable $e) {
+            $this->logger->warning("RoomVox: Failed to get booking {$uid}: " . $e->getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Generate a unique ID for calendar events
+     */
+    private function generateUid(): string {
+        return sprintf(
+            '%s-%s@roomvox',
+            bin2hex(random_bytes(8)),
+            time()
+        );
+    }
+
+    /**
+     * Escape text for iCalendar format
+     */
+    private function escapeIcsText(string $text): string {
+        return str_replace(
+            ['\\', "\n", ';', ','],
+            ['\\\\', '\\n', '\\;', '\\,'],
+            $text
+        );
     }
 
     /**

@@ -1,43 +1,38 @@
 <template>
-    <NcContent app-name="resavox">
-        <NcAppNavigation>
-            <template #list>
-                <NcAppNavigationItem
-                    :name="'Rooms'"
-                    :class="{ active: isTabActive('rooms') }"
-                    @click="onTabClick('rooms')">
-                    <template #icon>
-                        <DoorOpen :size="20" />
-                    </template>
-                    <template #counter>
-                        <NcCounterBubble v-if="rooms.length > 0">
-                            {{ rooms.length }}
-                        </NcCounterBubble>
-                    </template>
-                </NcAppNavigationItem>
-                <NcAppNavigationItem
-                    :name="'Bookings'"
-                    :class="{ active: isTabActive('bookings') }"
-                    @click="onTabClick('bookings')">
-                    <template #icon>
-                        <CalendarCheck :size="20" />
-                    </template>
-                </NcAppNavigationItem>
-            </template>
-            <template #footer>
-                <NcAppNavigationItem
-                    :name="'Settings'"
-                    :class="{ active: isTabActive('settings') }"
-                    @click="onTabClick('settings')">
-                    <template #icon>
-                        <Cog :size="20" />
-                    </template>
-                </NcAppNavigationItem>
-            </template>
-        </NcAppNavigation>
-
+    <NcContent app-name="roomvox">
         <NcAppContent>
-            <div class="resavox-content">
+            <div class="roomvox-app">
+                <!-- Tab Navigation - IntraVox/FormVox style -->
+                <nav class="tab-navigation">
+                    <button
+                        :class="['tab-button', { active: isTabActive('rooms') }]"
+                        @click="onTabClick('rooms')">
+                        <DoorOpen :size="16" />
+                        Rooms
+                        <NcCounterBubble v-if="rooms.length > 0" :count="rooms.length" />
+                    </button>
+                    <button
+                        :class="['tab-button', { active: isTabActive('bookings') }]"
+                        @click="onTabClick('bookings')">
+                        <CalendarCheck :size="16" />
+                        Bookings
+                    </button>
+                    <button
+                        :class="['tab-button', { active: isTabActive('statistics') }]"
+                        @click="onTabClick('statistics')">
+                        <ChartBox :size="16" />
+                        Statistics
+                    </button>
+                    <button
+                        :class="['tab-button', { active: isTabActive('settings') }]"
+                        @click="onTabClick('settings')">
+                        <Cog :size="16" />
+                        Settings
+                    </button>
+                </nav>
+
+                <!-- Content -->
+                <div class="roomvox-content">
                 <!-- Room list -->
                 <RoomList
                     v-if="currentView === 'rooms' && !selectedRoom && !creatingRoom && !selectedRoomGroup && !creatingRoomGroup"
@@ -49,7 +44,8 @@
                     @create-group="creatingRoomGroup = true"
                     @edit-group="onSelectRoomGroup"
                     @group-permissions="onManageGroupPermissions"
-                    @refresh="loadRooms" />
+                    @refresh="loadRooms"
+                    @move-to-group="onMoveToGroup" />
 
                 <!-- Room editor -->
                 <RoomEditor
@@ -81,12 +77,96 @@
                     @back="currentView = 'rooms'; permissionTarget = null" />
 
                 <!-- Bookings -->
-                <BookingOverview
-                    v-if="currentView === 'bookings'"
-                    :rooms="rooms" />
+                <div v-if="currentView === 'bookings'" class="tab-content">
+                    <BookingOverview :rooms="rooms" />
+                </div>
+
+                <!-- Statistics -->
+                <div v-if="currentView === 'statistics'" class="tab-content">
+                    <!-- Room Statistics Section -->
+                    <div class="settings-section">
+                        <h2>Room Statistics</h2>
+                        <p class="settings-section-desc">Overview of rooms and bookings in your RoomVox installation.</p>
+
+                        <div class="stats-overview">
+                            <div class="stat-row">
+                                <div class="stat-info">
+                                    <span class="stat-icon">🚪</span>
+                                    <span class="stat-label">Total Rooms</span>
+                                </div>
+                                <span class="stat-value">{{ rooms.length }}</span>
+                            </div>
+                            <div class="stat-row">
+                                <div class="stat-info">
+                                    <span class="stat-icon">✅</span>
+                                    <span class="stat-label">Active Rooms</span>
+                                </div>
+                                <span class="stat-value">{{ rooms.filter(r => r.active !== false).length }}</span>
+                            </div>
+                            <div class="stat-row">
+                                <div class="stat-info">
+                                    <span class="stat-icon">📁</span>
+                                    <span class="stat-label">Room Groups</span>
+                                </div>
+                                <span class="stat-value">{{ roomGroups.length }}</span>
+                            </div>
+                        </div>
+
+                        <!-- About RoomVox -->
+                        <div class="about-info">
+                            <h4>About RoomVox</h4>
+                            <p>RoomVox is open source room booking software for Nextcloud. We aim to keep RoomVox free and accessible for everyone.</p>
+                            <p>Anonymous usage statistics help us understand how RoomVox is used and guide future development.</p>
+                        </div>
+                    </div>
+
+                    <!-- Telemetry Section -->
+                    <div class="settings-section">
+                        <h2>Anonymous Usage Statistics</h2>
+                        <p class="settings-section-desc">Help improve RoomVox by sharing anonymous usage statistics.</p>
+
+                        <div class="telemetry-settings">
+                            <div class="engagement-option">
+                                <NcCheckboxRadioSwitch
+                                    type="switch"
+                                    :model-value="telemetryEnabled"
+                                    @update:model-value="toggleTelemetry($event)">
+                                    <div class="option-info">
+                                        <span class="option-label">Share anonymous usage statistics</span>
+                                        <span class="option-desc">We collect: room counts, booking counts, and version info (RoomVox, Nextcloud, PHP). No personal data or booking details are shared.</span>
+                                    </div>
+                                </NcCheckboxRadioSwitch>
+                            </div>
+
+                            <div v-if="telemetryEnabled" class="telemetry-info">
+                                <NcNoteCard type="success">
+                                    <p>Thank you for helping improve RoomVox!</p>
+                                    <p v-if="telemetryLastReport">Last report sent: {{ telemetryLastReport }}</p>
+                                </NcNoteCard>
+                            </div>
+
+                            <div class="telemetry-details">
+                                <h4>What we collect:</h4>
+                                <ul>
+                                    <li>Number of rooms and room groups</li>
+                                    <li>Number of bookings</li>
+                                    <li>RoomVox, Nextcloud, and PHP version numbers</li>
+                                    <li>A unique hash of your instance URL (privacy-friendly identifier)</li>
+                                </ul>
+                                <h4>What we never collect:</h4>
+                                <ul class="not-collected">
+                                    <li>Room names or descriptions</li>
+                                    <li>Booking details or attendees</li>
+                                    <li>User names or email addresses</li>
+                                    <li>Your actual server URL</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
                 <!-- Settings -->
-                <div v-if="currentView === 'settings'" class="resavox-settings">
+                <div v-if="currentView === 'settings'" class="roomvox-settings">
                     <NcSettingsSection :name="'General'">
                         <NcCheckboxRadioSwitch
                             :model-value="settings.defaultAutoAccept"
@@ -102,6 +182,7 @@
                     <NcNoteCard v-if="settingsSaved" type="success">
                         {{ $t('Settings saved') }}
                     </NcNoteCard>
+                    </div>
                 </div>
             </div>
         </NcAppContent>
@@ -112,9 +193,7 @@
 import { ref, onMounted } from 'vue'
 import { showError, showSuccess } from '@nextcloud/dialogs'
 import NcContent from '@nextcloud/vue/components/NcContent'
-import NcAppNavigation from '@nextcloud/vue/components/NcAppNavigation'
 import NcAppContent from '@nextcloud/vue/components/NcAppContent'
-import NcAppNavigationItem from '@nextcloud/vue/components/NcAppNavigationItem'
 import NcCounterBubble from '@nextcloud/vue/components/NcCounterBubble'
 import NcSettingsSection from '@nextcloud/vue/components/NcSettingsSection'
 import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwitch'
@@ -122,6 +201,7 @@ import NcNoteCard from '@nextcloud/vue/components/NcNoteCard'
 import DoorOpen from 'vue-material-design-icons/DoorOpen.vue'
 import CalendarCheck from 'vue-material-design-icons/CalendarCheck.vue'
 import Cog from 'vue-material-design-icons/Cog.vue'
+import ChartBox from 'vue-material-design-icons/ChartBox.vue'
 
 import RoomList from './views/RoomList.vue'
 import RoomEditor from './views/RoomEditor.vue'
@@ -147,6 +227,8 @@ const permissionTargetType = ref('room')
 const loadingRooms = ref(true)
 const settings = ref({ defaultAutoAccept: false, emailEnabled: true })
 const settingsSaved = ref(false)
+const telemetryEnabled = ref(true)
+const telemetryLastReport = ref(null)
 
 const isTabActive = (tabId) => {
     if (tabId === 'rooms') return currentView.value === 'rooms' || currentView.value === 'permissions'
@@ -266,6 +348,17 @@ const onManageGroupPermissions = (group) => {
     currentView.value = 'permissions'
 }
 
+// Move room to group handler
+const onMoveToGroup = async ({ room, groupId }) => {
+    try {
+        await updateRoom(room.id, { ...room, groupId })
+        showSuccess(groupId ? 'Room moved to group' : 'Room removed from group')
+        await loadRooms()
+    } catch (e) {
+        showError('Failed to move room: ' + (e.response?.data?.error || e.message))
+    }
+}
+
 const saveGlobalSettings = async () => {
     try {
         await saveSettings(settings.value)
@@ -276,6 +369,20 @@ const saveGlobalSettings = async () => {
     }
 }
 
+const toggleTelemetry = async (enabled) => {
+    try {
+        // TODO: Implement API call to save telemetry setting
+        // const response = await axios.post(generateUrl('/apps/roomvox/api/statistics/telemetry'), { enabled })
+        telemetryEnabled.value = enabled
+        if (enabled) {
+            showSuccess('Thank you for helping improve RoomVox!')
+        }
+    } catch (e) {
+        showError('Failed to update telemetry setting')
+        telemetryEnabled.value = !enabled
+    }
+}
+
 onMounted(() => {
     loadRooms()
     loadSettings()
@@ -283,14 +390,221 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.resavox-content {
-    padding: 24px 32px;
-    max-width: 900px;
+.roomvox-app {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
 }
 
-.resavox-settings {
+/* Tab Navigation - IntraVox/FormVox style */
+.tab-navigation {
+    border-bottom: 1px solid var(--color-border);
+    display: flex;
+    gap: 10px;
+    padding: 0 24px;
+    background: var(--color-main-background);
+}
+
+.tab-button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 20px;
+    border: none;
+    background: none;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    color: var(--color-text-lighter);
+    font-size: 14px;
+    transition: all 0.2s ease;
+}
+
+.tab-button:hover:not(.active) {
+    background: var(--color-background-hover);
+}
+
+.tab-button.active {
+    border-bottom-color: var(--color-primary);
+    color: var(--color-primary);
+    background: var(--color-primary-element-light);
+}
+
+.tab-content {
+    animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-4px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.roomvox-content {
+    flex: 1;
+    padding: 24px 32px;
+    max-width: 1200px;
+    overflow-y: auto;
+}
+
+/* Settings sections */
+.settings-section {
+    margin-bottom: 32px;
+}
+
+.settings-section h2 {
+    font-size: 20px;
+    font-weight: bold;
+    margin-bottom: 8px;
+}
+
+.settings-section-desc {
+    color: var(--color-text-maxcontrast);
+    margin-bottom: 20px;
+}
+
+/* Stats overview */
+.stats-overview {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 24px;
+}
+
+.stat-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    background: var(--color-background-hover);
+    border-radius: var(--border-radius-large);
+}
+
+.stat-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.stat-icon {
+    font-size: 1.5em;
+}
+
+.stat-label {
+    font-weight: 500;
+    color: var(--color-main-text);
+}
+
+.stat-value {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--color-primary);
+}
+
+.roomvox-settings {
     display: flex;
     flex-direction: column;
     gap: 16px;
+}
+
+/* About info */
+.about-info {
+    margin-top: 24px;
+    padding: 20px;
+    background: var(--color-background-hover);
+    border-radius: var(--border-radius-large);
+    border-left: 4px solid var(--color-primary-element);
+}
+
+.about-info h4 {
+    margin: 0 0 12px 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--color-main-text);
+}
+
+.about-info p {
+    margin: 0 0 12px 0;
+    color: var(--color-main-text);
+    line-height: 1.5;
+}
+
+.about-info p:last-child {
+    margin-bottom: 0;
+}
+
+/* Telemetry section */
+.telemetry-settings {
+    margin-top: 20px;
+}
+
+.engagement-option {
+    padding: 8px 0;
+}
+
+.option-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.option-label {
+    font-weight: 500;
+    color: var(--color-main-text);
+}
+
+.option-desc {
+    font-size: 12px;
+    color: var(--color-text-maxcontrast);
+}
+
+.telemetry-info {
+    margin-top: 16px;
+}
+
+.telemetry-details {
+    margin-top: 24px;
+    padding: 16px;
+    background: var(--color-background-hover);
+    border-radius: var(--border-radius-large);
+}
+
+.telemetry-details h4 {
+    margin: 0 0 12px 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-main-text);
+}
+
+.telemetry-details h4:not(:first-child) {
+    margin-top: 20px;
+}
+
+.telemetry-details ul {
+    margin: 0;
+    padding-left: 24px;
+    color: var(--color-text-maxcontrast);
+}
+
+.telemetry-details ul li {
+    margin-bottom: 6px;
+    line-height: 1.4;
+}
+
+.telemetry-details ul.not-collected {
+    list-style: none;
+    padding-left: 0;
+}
+
+.telemetry-details ul.not-collected li {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    color: var(--color-main-text);
+}
+
+.telemetry-details ul.not-collected li::before {
+    content: '✓';
+    color: var(--color-success, #2d7b43);
+    font-weight: 600;
+    flex-shrink: 0;
 }
 </style>

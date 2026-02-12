@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace OCA\ResaVox\Dav;
+namespace OCA\RoomVox\Dav;
 
-use OCA\ResaVox\Service\CalDAVService;
-use OCA\ResaVox\Service\MailService;
-use OCA\ResaVox\Service\PermissionService;
-use OCA\ResaVox\Service\RoomService;
+use OCA\RoomVox\Service\CalDAVService;
+use OCA\RoomVox\Service\MailService;
+use OCA\RoomVox\Service\PermissionService;
+use OCA\RoomVox\Service\RoomService;
 use OCP\IUserManager;
 use Psr\Log\LoggerInterface;
 use Sabre\DAV\Server;
@@ -62,13 +62,13 @@ class SchedulingPlugin extends ServerPlugin {
 
     public function getPluginInfo(): array {
         return [
-            'name' => 'resavox-scheduling',
+            'name' => 'roomvox-scheduling',
             'description' => 'Handles room booking scheduling via CalDAV',
         ];
     }
 
     public function getPluginName(): string {
-        return 'resavox-scheduling';
+        return 'roomvox-scheduling';
     }
 
     /**
@@ -92,12 +92,12 @@ class SchedulingPlugin extends ServerPlugin {
 
         $room = $this->roomService->getRoom($roomId);
         if ($room === null || !($room['active'] ?? true)) {
-            $this->logger->debug("ResaVox: Ignoring request for inactive/missing room {$roomId}");
+            $this->logger->debug("RoomVox: Ignoring request for inactive/missing room {$roomId}");
             return null;
         }
 
         $method = strtoupper($message->method ?? '');
-        $this->logger->info("ResaVox: Processing {$method} for room {$roomId} from {$message->sender}");
+        $this->logger->info("RoomVox: Processing {$method} for room {$roomId} from {$message->sender}");
 
         match ($method) {
             'REQUEST' => $this->handleRequest($message, $room),
@@ -143,13 +143,13 @@ class SchedulingPlugin extends ServerPlugin {
         if ($hasPermissions) {
             if ($senderId === null) {
                 // Sender could not be resolved to a NC user — deny when permissions are configured
-                $this->logger->info("ResaVox: Booking denied for unknown sender {$message->sender} on room {$roomId} — could not resolve user");
+                $this->logger->info("RoomVox: Booking denied for unknown sender {$message->sender} on room {$roomId} — could not resolve user");
                 $message->scheduleStatus = '3.7'; // Delivery refused
                 $this->setPartstat($message, 'DECLINED');
                 return;
             }
             if (!$this->permissionService->canBook($senderId, $roomId)) {
-                $this->logger->info("ResaVox: Booking denied for {$senderId} on room {$roomId} — no permission");
+                $this->logger->info("RoomVox: Booking denied for {$senderId} on room {$roomId} — no permission");
                 $message->scheduleStatus = '3.7'; // Delivery refused
                 $this->setPartstat($message, 'DECLINED');
                 return;
@@ -169,7 +169,7 @@ class SchedulingPlugin extends ServerPlugin {
 
         // 3. Availability check
         if ($dtStart !== null && $dtEnd !== null && !$this->isWithinAvailability($room, $dtStart, $dtEnd)) {
-            $this->logger->info("ResaVox: Booking outside availability hours for room {$roomId}");
+            $this->logger->info("RoomVox: Booking outside availability hours for room {$roomId}");
             $message->scheduleStatus = '3.7';
             $this->setPartstat($message, 'DECLINED');
             return;
@@ -177,7 +177,7 @@ class SchedulingPlugin extends ServerPlugin {
 
         // 3b. Max booking horizon check
         if ($vEvent !== null && !$this->isWithinHorizon($room, $vEvent)) {
-            $this->logger->info("ResaVox: Booking exceeds max horizon for room {$roomId}");
+            $this->logger->info("RoomVox: Booking exceeds max horizon for room {$roomId}");
             $message->scheduleStatus = '3.7';
             $this->setPartstat($message, 'DECLINED');
             return;
@@ -187,14 +187,14 @@ class SchedulingPlugin extends ServerPlugin {
         if ($vEvent !== null) {
             if ($dtStart !== null && $dtEnd !== null) {
                 if ($this->calDAVService->hasConflict($room['userId'], $dtStart, $dtEnd, $uid)) {
-                    $this->logger->info("ResaVox: Conflict detected for room {$roomId}");
+                    $this->logger->info("RoomVox: Conflict detected for room {$roomId}");
                     $message->scheduleStatus = '3.0'; // Delivery failed (conflict)
                     $this->setPartstat($message, 'DECLINED');
 
                     try {
                         $this->mailService->sendConflict($room, $message);
                     } catch (\Throwable $e) {
-                        $this->logger->error("ResaVox: Failed to send conflict email: " . $e->getMessage());
+                        $this->logger->error("RoomVox: Failed to send conflict email: " . $e->getMessage());
                     }
                     return;
                 }
@@ -204,10 +204,10 @@ class SchedulingPlugin extends ServerPlugin {
         // 5. Determine PARTSTAT based on auto-accept setting
         if ($room['autoAccept'] ?? false) {
             $partstat = 'ACCEPTED';
-            $this->logger->info("ResaVox: Auto-accepting booking for room {$roomId}");
+            $this->logger->info("RoomVox: Auto-accepting booking for room {$roomId}");
         } else {
             $partstat = 'TENTATIVE';
-            $this->logger->info("ResaVox: Booking for room {$roomId} requires approval");
+            $this->logger->info("RoomVox: Booking for room {$roomId} requires approval");
         }
 
         // 6. Fix room attendee metadata and add LOCATION
@@ -221,7 +221,7 @@ class SchedulingPlugin extends ServerPlugin {
         if ($calendarData !== null) {
             $delivered = $this->calDAVService->deliverToRoomCalendar($room['userId'], $calendarData);
             if (!$delivered) {
-                $this->logger->error("ResaVox: Failed to deliver to room calendar for {$roomId}");
+                $this->logger->error("RoomVox: Failed to deliver to room calendar for {$roomId}");
                 $message->scheduleStatus = '5.0'; // Delivery error
                 return;
             }
@@ -238,7 +238,7 @@ class SchedulingPlugin extends ServerPlugin {
                 $this->mailService->notifyManagers($room, $message);
             }
         } catch (\Throwable $e) {
-            $this->logger->error("ResaVox: Failed to send notification email: " . $e->getMessage());
+            $this->logger->error("RoomVox: Failed to send notification email: " . $e->getMessage());
         }
     }
 
@@ -246,7 +246,7 @@ class SchedulingPlugin extends ServerPlugin {
      * Handle a CANCEL (booking cancelled by organizer)
      */
     private function handleCancel(ITip\Message $message, array $room): void {
-        $this->logger->info("ResaVox: Booking cancelled for room {$room['id']}");
+        $this->logger->info("RoomVox: Booking cancelled for room {$room['id']}");
 
         // Delete from room calendar
         $vEvent = $this->extractVEvent($message);
@@ -262,7 +262,7 @@ class SchedulingPlugin extends ServerPlugin {
         try {
             $this->mailService->sendCancelled($room, $message);
         } catch (\Throwable $e) {
-            $this->logger->error("ResaVox: Failed to send cancellation email: " . $e->getMessage());
+            $this->logger->error("RoomVox: Failed to send cancellation email: " . $e->getMessage());
         }
     }
 
@@ -322,7 +322,7 @@ class SchedulingPlugin extends ServerPlugin {
                         if ($currentPartstat !== $this->scheduledPartstats[$email]) {
                             $attendee['PARTSTAT'] = $this->scheduledPartstats[$email];
                             $changed = true;
-                            $this->logger->info("ResaVox: Updated PARTSTAT to {$this->scheduledPartstats[$email]} for room {$email} in organizer event {$path}");
+                            $this->logger->info("RoomVox: Updated PARTSTAT to {$this->scheduledPartstats[$email]} for room {$email} in organizer event {$path}");
                         }
                     }
                 }
@@ -362,7 +362,7 @@ class SchedulingPlugin extends ServerPlugin {
                         }
 
                         $changed = true;
-                        $this->logger->info("ResaVox: Added room {$matchedRoom['id']} as ATTENDEE from LOCATION match");
+                        $this->logger->info("RoomVox: Added room {$matchedRoom['id']} as ATTENDEE from LOCATION match");
 
                         // Save first, then trigger scheduling
                         $node->put($vObject->serialize());
@@ -396,10 +396,10 @@ class SchedulingPlugin extends ServerPlugin {
 
             if ($changed) {
                 $node->put($vObject->serialize());
-                $this->logger->info("ResaVox: Fixed CUTYPE/LOCATION in organizer event {$path}");
+                $this->logger->info("RoomVox: Fixed CUTYPE/LOCATION in organizer event {$path}");
             }
         } catch (\Throwable $e) {
-            $this->logger->debug("ResaVox: fixOrganizerEvent skipped: " . $e->getMessage());
+            $this->logger->debug("RoomVox: fixOrganizerEvent skipped: " . $e->getMessage());
         }
     }
 
@@ -453,7 +453,7 @@ class SchedulingPlugin extends ServerPlugin {
 
             if ($dtStart !== null && $dtEnd !== null) {
                 if ($this->calDAVService->hasConflict($room['userId'], $dtStart, $dtEnd, $uid)) {
-                    $this->logger->info("ResaVox: Conflict detected for room {$roomId} (LOCATION booking)");
+                    $this->logger->info("RoomVox: Conflict detected for room {$roomId} (LOCATION booking)");
                     return;
                 }
             }
@@ -475,9 +475,9 @@ class SchedulingPlugin extends ServerPlugin {
             // Deliver to room calendar
             $this->calDAVService->deliverToRoomCalendar($room['userId'], $vObject->serialize());
 
-            $this->logger->info("ResaVox: Room {$roomId} booked via LOCATION match (partstat={$partstat})");
+            $this->logger->info("RoomVox: Room {$roomId} booked via LOCATION match (partstat={$partstat})");
         } catch (\Throwable $e) {
-            $this->logger->error("ResaVox: Failed to schedule room from LOCATION: " . $e->getMessage());
+            $this->logger->error("RoomVox: Failed to schedule room from LOCATION: " . $e->getMessage());
         }
     }
 
@@ -558,7 +558,7 @@ class SchedulingPlugin extends ServerPlugin {
         }
 
         // RRULE with neither UNTIL nor COUNT = infinite recurrence → always exceeds horizon
-        $this->logger->info("ResaVox: Recurring event without UNTIL or COUNT — exceeds horizon");
+        $this->logger->info("RoomVox: Recurring event without UNTIL or COUNT — exceeds horizon");
         return false;
     }
 
@@ -682,7 +682,7 @@ class SchedulingPlugin extends ServerPlugin {
                 $vEvent->LOCATION = $roomLocation;
             }
         } catch (\Throwable $e) {
-            $this->logger->warning("ResaVox: Failed to enrich room attendee: " . $e->getMessage());
+            $this->logger->warning("RoomVox: Failed to enrich room attendee: " . $e->getMessage());
         }
     }
 
@@ -711,7 +711,7 @@ class SchedulingPlugin extends ServerPlugin {
                 }
             }
         } catch (\Throwable $e) {
-            $this->logger->warning("ResaVox: Failed to set PARTSTAT: " . $e->getMessage());
+            $this->logger->warning("RoomVox: Failed to set PARTSTAT: " . $e->getMessage());
         }
     }
 
@@ -744,7 +744,7 @@ class SchedulingPlugin extends ServerPlugin {
                 return $users[0]->getUID();
             }
             // Multiple matches or none: return null (handled by caller)
-            $this->logger->debug("ResaVox: Could not resolve mailto:{$email} to a unique user (found " . count($users) . ")");
+            $this->logger->debug("RoomVox: Could not resolve mailto:{$email} to a unique user (found " . count($users) . ")");
             return null;
         }
 

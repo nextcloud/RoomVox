@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace OCA\ResaVox\Service;
+namespace OCA\RoomVox\Service;
 
-use OCA\ResaVox\AppInfo\Application;
+use OCA\RoomVox\AppInfo\Application;
 use OCP\IAppConfig;
 use OCP\IGroupManager;
 use Psr\Log\LoggerInterface;

@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace OCA\ResaVox\Controller;
+namespace OCA\RoomVox\Controller;
 
-use OCA\ResaVox\Service\CalDAVService;
-use OCA\ResaVox\Service\MailService;
-use OCA\ResaVox\Service\PermissionService;
-use OCA\ResaVox\Service\RoomService;
+use OCA\RoomVox\Service\CalDAVService;
+use OCA\RoomVox\Service\MailService;
+use OCA\RoomVox\Service\PermissionService;
+use OCA\RoomVox\Service\RoomService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\Calendar\Room\IManager as IRoomManager;
@@ -35,7 +35,9 @@ class RoomApiController extends Controller {
     }
 
     /**
-     * List all rooms (admin sees all, managers see managed rooms)
+     * List all rooms with user's permissions
+     *
+     * @NoAdminRequired
      */
     public function index(): JSONResponse {
         $userId = $this->getCurrentUserId();
@@ -44,23 +46,118 @@ class RoomApiController extends Controller {
         }
 
         $rooms = $this->roomService->getAllRooms();
+        $isAdmin = $this->groupManager->isAdmin($userId);
 
-        // Non-admins only see rooms they can manage
-        if (!$this->groupManager->isAdmin($userId)) {
-            $rooms = array_filter($rooms, function ($room) use ($userId) {
-                return $this->permissionService->canManage($userId, $room['id']);
-            });
-        }
-
-        // Strip SMTP passwords from response
-        $sanitized = array_map(function ($room) {
+        // Add permission info for each room
+        $sanitized = array_map(function ($room) use ($userId, $isAdmin) {
+            // Strip SMTP passwords from response
             if (!empty($room['smtpConfig']['password'])) {
                 $room['smtpConfig']['password'] = '***';
             }
+
+            // Add permission flags for this user
+            $room['canView'] = $isAdmin || $this->permissionService->canView($userId, $room['id']);
+            $room['canBook'] = $isAdmin || $this->permissionService->canBook($userId, $room['id']);
+            $room['canManage'] = $isAdmin || $this->permissionService->canManage($userId, $room['id']);
+
             return $room;
         }, array_values($rooms));
 
-        return new JSONResponse($sanitized);
+        // Filter to only rooms user can at least view
+        $sanitized = array_filter($sanitized, fn($r) => $r['canView']);
+
+        return new JSONResponse(array_values($sanitized));
+    }
+
+    /**
+     * Get all bookings across all rooms (or filtered by room)
+     *
+     * @NoAdminRequired
+     */
+    public function allBookings(): JSONResponse {
+        $userId = $this->getCurrentUserId();
+        if ($userId === null) {
+            return new JSONResponse(['error' => 'Not authenticated'], 401);
+        }
+
+        $roomId = $this->request->getParam('room');
+        $status = $this->request->getParam('status', 'all');
+        $from = $this->request->getParam('from');
+        $to = $this->request->getParam('to');
+
+        // Get all rooms the user can view (for availability/booking display)
+        $rooms = $this->roomService->getAllRooms();
+        $isAdmin = $this->groupManager->isAdmin($userId);
+
+        if (!$isAdmin) {
+            $rooms = array_filter($rooms, function ($room) use ($userId) {
+                return $this->permissionService->canView($userId, $room['id']);
+            });
+        }
+
+        // Filter to specific room if requested
+        if ($roomId !== null && $roomId !== '') {
+            $rooms = array_filter($rooms, fn($r) => $r['id'] === $roomId);
+        }
+
+        $allBookings = [];
+        $stats = [
+            'today' => 0,
+            'pending' => 0,
+            'thisWeek' => 0,
+        ];
+
+        $today = new \DateTimeImmutable('today');
+        $tomorrow = new \DateTimeImmutable('tomorrow');
+        $weekStart = new \DateTimeImmutable('monday this week');
+        $weekEnd = new \DateTimeImmutable('sunday this week 23:59:59');
+
+        foreach ($rooms as $room) {
+            $bookings = $this->calDAVService->getBookings($room['userId'], $from, $to);
+
+            foreach ($bookings as $booking) {
+                $booking['roomId'] = $room['id'];
+                $booking['roomName'] = $room['name'];
+
+                // Apply status filter
+                $partstat = $booking['partstat'] ?? '';
+                if ($status === 'pending' && $partstat !== 'TENTATIVE') {
+                    continue;
+                }
+                if ($status === 'accepted' && $partstat !== 'ACCEPTED') {
+                    continue;
+                }
+                if ($status === 'declined' && $partstat !== 'DECLINED') {
+                    continue;
+                }
+
+                // Calculate stats
+                $dtstart = isset($booking['dtstart']) ? new \DateTimeImmutable($booking['dtstart']) : null;
+                if ($dtstart !== null) {
+                    if ($dtstart >= $today && $dtstart < $tomorrow) {
+                        $stats['today']++;
+                    }
+                    if ($dtstart >= $weekStart && $dtstart <= $weekEnd) {
+                        $stats['thisWeek']++;
+                    }
+                }
+                if ($partstat === 'TENTATIVE') {
+                    $stats['pending']++;
+                }
+
+                $allBookings[] = $booking;
+            }
+        }
+
+        // Sort by date
+        usort($allBookings, function ($a, $b) {
+            return ($a['dtstart'] ?? '') <=> ($b['dtstart'] ?? '');
+        });
+
+        return new JSONResponse([
+            'bookings' => $allBookings,
+            'stats' => $stats,
+        ]);
     }
 
     /**
@@ -291,6 +388,63 @@ class RoomApiController extends Controller {
         }
 
         return new JSONResponse($results);
+    }
+
+    /**
+     * Debug endpoint to check what rooms are registered with Nextcloud's room manager.
+     * This shows exactly what Calendar sees when searching for rooms.
+     *
+     * @NoCSRFRequired
+     */
+    public function debug(): JSONResponse {
+        $userId = $this->getCurrentUserId();
+        if ($userId === null || !$this->groupManager->isAdmin($userId)) {
+            return new JSONResponse(['error' => 'Admin access required'], 403);
+        }
+
+        $result = [
+            'backends' => [],
+            'rooms' => [],
+            'raw_rooms' => [],
+        ];
+
+        // List all registered backends and their rooms
+        $backends = $this->roomManager->getBackends();
+        foreach ($backends as $backend) {
+            $backendId = $backend->getBackendIdentifier();
+            $result['backends'][] = $backendId;
+
+            // Get rooms from each backend
+            try {
+                $rooms = $backend->getAllRooms();
+                foreach ($rooms as $room) {
+                    $result['rooms'][] = [
+                        'id' => $room->getId(),
+                        'displayName' => $room->getDisplayName(),
+                        'email' => $room->getEMail(),
+                        'backend' => $backendId,
+                        'groupRestrictions' => $room->getGroupRestrictions(),
+                    ];
+                }
+            } catch (\Exception $e) {
+                $result['rooms'][] = [
+                    'error' => "Failed to get rooms from {$backendId}: " . $e->getMessage(),
+                ];
+            }
+        }
+
+        // Get raw rooms from our service for comparison
+        $rawRooms = $this->roomService->getAllRooms();
+        foreach ($rawRooms as $room) {
+            $result['raw_rooms'][] = [
+                'id' => $room['id'],
+                'name' => $room['name'],
+                'email' => $room['email'] ?? '',
+                'active' => $room['active'] ?? true,
+            ];
+        }
+
+        return new JSONResponse($result);
     }
 
     /**

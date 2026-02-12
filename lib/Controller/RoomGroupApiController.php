@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace OCA\ResaVox\Controller;
+namespace OCA\RoomVox\Controller;
 
-use OCA\ResaVox\Service\PermissionService;
-use OCA\ResaVox\Service\RoomGroupService;
-use OCA\ResaVox\Service\RoomService;
+use OCA\RoomVox\Service\PermissionService;
+use OCA\RoomVox\Service\RoomGroupService;
+use OCA\RoomVox\Service\RoomService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IGroupManager;

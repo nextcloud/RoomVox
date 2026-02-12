@@ -22,10 +22,10 @@ CalDAV-native room booking for Nextcloud. Rooms appear as bookable resources in 
 ```bash
 # Clone into Nextcloud apps directory
 cd /var/www/nextcloud/apps/
-git clone https://gitea.rikdekker.nl/sam/resavox.git
+git clone https://gitea.rikdekker.nl/sam/roomvox.git
 
 # Install PHP dependencies
-cd resavox
+cd roomvox
 composer install --no-dev
 
 # Build frontend
@@ -33,7 +33,7 @@ npm ci
 npm run build
 
 # Enable the app
-sudo -u www-data php /var/www/nextcloud/occ app:enable resavox
+sudo -u www-data php /var/www/nextcloud/occ app:enable roomvox
 ```
 
 ## Development
