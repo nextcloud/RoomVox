@@ -17,7 +17,7 @@ This guide covers the requirements and installation process for RoomVox.
 ```bash
 # Clone into Nextcloud apps directory
 cd /var/www/nextcloud/apps/
-git clone https://gitea.rikdekker.nl/sam/roomvox.git
+git clone https://github.com/nextcloud/roomvox.git
 
 # Install PHP dependencies
 cd roomvox
