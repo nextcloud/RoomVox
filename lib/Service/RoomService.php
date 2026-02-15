@@ -58,6 +58,25 @@ class RoomService {
             return null;
         }
 
+        // Migrate legacy fields to new model (roomNumber + address)
+        if (isset($room['building']) && !isset($room['roomNumber'])) {
+            $building = $room['building'] ?? '';
+            $address = $room['address'] ?? '';
+
+            if ($building !== '' && $address !== '') {
+                $room['address'] = $building . ', ' . $address;
+            } elseif ($building !== '') {
+                $room['address'] = $building;
+            }
+
+            $room['roomNumber'] = '';
+            unset($room['building'], $room['floor'], $room['location']);
+        } elseif (!empty($room['location']) && !isset($room['roomNumber'])) {
+            $room['address'] = $room['location'];
+            $room['roomNumber'] = '';
+            unset($room['location']);
+        }
+
         // Decrypt SMTP password if present
         if (!empty($room['smtpConfig']['password'])) {
             try {
@@ -103,10 +122,12 @@ class RoomService {
             'id' => $roomId,
             'userId' => $userId,
             'name' => $data['name'],
-            'email' => $data['email'] ?? '',
+            'email' => !empty($data['email']) ? $data['email'] : $roomId . '@roomvox.local',
             'description' => $data['description'] ?? '',
             'capacity' => (int)($data['capacity'] ?? 0),
-            'location' => $data['location'] ?? '',
+            'roomNumber' => $data['roomNumber'] ?? '',
+            'roomType' => $data['roomType'] ?? 'meeting-room',
+            'address' => $data['address'] ?? '',
             'facilities' => $data['facilities'] ?? [],
             'autoAccept' => (bool)($data['autoAccept'] ?? false),
             'groupId' => $data['groupId'] ?? null,
@@ -140,7 +161,7 @@ class RoomService {
             return null;
         }
 
-        $updatableFields = ['name', 'email', 'description', 'capacity', 'location', 'facilities', 'autoAccept', 'active', 'groupId', 'availabilityRules', 'maxBookingHorizon'];
+        $updatableFields = ['name', 'email', 'description', 'capacity', 'roomNumber', 'roomType', 'address', 'facilities', 'autoAccept', 'active', 'groupId', 'availabilityRules', 'maxBookingHorizon'];
 
         foreach ($updatableFields as $field) {
             if (array_key_exists($field, $data)) {
@@ -332,6 +353,51 @@ class RoomService {
             'password' => $config['password'] ?? '',
             'encryption' => $config['encryption'] ?? 'tls',
         ];
+    }
+
+    /**
+     * Build a LOCATION string from room fields.
+     * Format: "{Street} ({Building}, Room {Nr})" or simpler variants.
+     */
+    public function buildRoomLocation(array $room): string {
+        $address = trim($room['address'] ?? '');
+        $roomNumber = trim($room['roomNumber'] ?? '');
+
+        $buildingName = '';
+        $streetAddress = $address;
+        if ($address !== '' && str_contains($address, ',')) {
+            $parts = explode(',', $address, 2);
+            $buildingName = trim($parts[0]);
+            $streetAddress = trim($parts[1]);
+        }
+
+        if ($streetAddress !== '' && $buildingName !== '') {
+            $detail = $roomNumber !== '' ? $buildingName . ', Room ' . $roomNumber : $buildingName;
+            return $streetAddress . ' (' . $detail . ')';
+        }
+
+        if ($streetAddress !== '') {
+            if ($roomNumber !== '') {
+                return $streetAddress . ' (Room ' . $roomNumber . ')';
+            }
+            return $streetAddress;
+        }
+
+        if ($roomNumber !== '') {
+            return $room['name'] . ' — Room ' . $roomNumber;
+        }
+
+        return $room['name'];
+    }
+
+    /**
+     * Strip mailto: prefix from an email string
+     */
+    public static function stripMailto(string $email): string {
+        if (str_starts_with(strtolower($email), 'mailto:')) {
+            return substr($email, 7);
+        }
+        return $email;
     }
 
     /**

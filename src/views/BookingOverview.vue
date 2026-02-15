@@ -41,6 +41,21 @@
                     </button>
                 </div>
             </div>
+        </div>
+
+        <!-- Date range + View toggle row -->
+        <div class="filters-row">
+            <div class="filters-left">
+                <div class="status-tabs">
+                    <button
+                        v-for="tab in dateRangeTabs"
+                        :key="tab.value"
+                        :class="['status-tab', { active: dateRange === tab.value }]"
+                        @click="dateRange = tab.value">
+                        {{ tab.label }}
+                    </button>
+                </div>
+            </div>
 
             <div class="filters-right">
                 <div class="view-toggle">
@@ -78,13 +93,41 @@
         <!-- List View -->
         <div v-if="!loading && filteredBookings.length > 0 && viewMode === 'list'" class="booking-overview__card">
             <table class="booking-table">
+                <colgroup>
+                    <col style="width: 15%">
+                    <col style="width: 13%">
+                    <col style="width: 22%">
+                    <col style="width: 15%">
+                    <col style="width: 10%">
+                    <col style="width: 10%">
+                    <col style="width: 15%">
+                </colgroup>
                 <thead>
                     <tr>
-                        <th>{{ $t('Event') }}</th>
-                        <th>{{ $t('Room') }}</th>
-                        <th>{{ $t('When') }}</th>
-                        <th>{{ $t('Organizer') }}</th>
-                        <th>{{ $t('Status') }}</th>
+                        <th class="th-sortable" @click="toggleSort('summary')">
+                            {{ $t('Event') }}
+                            <span v-if="sortField === 'summary'" class="sort-icon">{{ sortDirection === 'asc' ? '▲' : '▼' }}</span>
+                        </th>
+                        <th class="th-sortable" @click="toggleSort('roomName')">
+                            {{ $t('Room') }}
+                            <span v-if="sortField === 'roomName'" class="sort-icon">{{ sortDirection === 'asc' ? '▲' : '▼' }}</span>
+                        </th>
+                        <th class="th-sortable" @click="toggleSort('roomLocation')">
+                            {{ $t('Location') }}
+                            <span v-if="sortField === 'roomLocation'" class="sort-icon">{{ sortDirection === 'asc' ? '▲' : '▼' }}</span>
+                        </th>
+                        <th class="th-sortable" @click="toggleSort('dtstart')">
+                            {{ $t('When') }}
+                            <span v-if="sortField === 'dtstart'" class="sort-icon">{{ sortDirection === 'asc' ? '▲' : '▼' }}</span>
+                        </th>
+                        <th class="th-sortable" @click="toggleSort('organizerName')">
+                            {{ $t('Organizer') }}
+                            <span v-if="sortField === 'organizerName'" class="sort-icon">{{ sortDirection === 'asc' ? '▲' : '▼' }}</span>
+                        </th>
+                        <th class="th-sortable" @click="toggleSort('partstat')">
+                            {{ $t('Status') }}
+                            <span v-if="sortField === 'partstat'" class="sort-icon">{{ sortDirection === 'asc' ? '▲' : '▼' }}</span>
+                        </th>
                         <th class="th-actions">{{ $t('Actions') }}</th>
                     </tr>
                 </thead>
@@ -92,6 +135,7 @@
                     <tr v-for="booking in filteredBookings" :key="booking.uid + booking.roomId">
                         <td class="booking-summary">{{ booking.summary || $t('Unnamed event') }}</td>
                         <td class="booking-room">{{ booking.roomName }}</td>
+                        <td>{{ booking.roomLocation || '—' }}</td>
                         <td class="booking-when">
                             <div class="when-date">{{ formatRelativeDate(booking.dtstart) }}</div>
                             <div class="when-time">{{ formatTime(booking.dtstart) }} – {{ formatTime(booking.dtend) }}</div>
@@ -176,7 +220,9 @@
 
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue'
+import { translate } from '@nextcloud/l10n'
 import { showError, showSuccess } from '@nextcloud/dialogs'
+
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcSelect from '@nextcloud/vue/components/NcSelect'
 import NcEmptyContent from '@nextcloud/vue/components/NcEmptyContent'
@@ -195,6 +241,8 @@ import ResourceCalendar from '../components/calendar/ResourceCalendar.vue'
 import { getAllBookings, respondToBooking, deleteBooking } from '../services/api.js'
 import { generateUrl } from '@nextcloud/router'
 
+const t = (text, vars = {}) => translate('roomvox', text, vars)
+
 const props = defineProps({
     rooms: { type: Array, default: () => [] },
 })
@@ -207,6 +255,9 @@ const deleting = ref(false)
 const deleteTarget = ref(null)
 const statusFilter = ref('all')
 const viewMode = ref('list')
+const dateRange = ref('upcoming')
+const sortField = ref('dtstart')
+const sortDirection = ref('asc')
 
 const stats = ref({
     today: 0,
@@ -214,32 +265,57 @@ const stats = ref({
     thisWeek: 0,
 })
 
-const statusTabs = [
-    { value: 'all', label: 'All' },
-    { value: 'pending', label: 'Pending' },
-    { value: 'accepted', label: 'Accepted' },
-    { value: 'declined', label: 'Declined' },
-]
+const statusTabs = computed(() => [
+    { value: 'all', label: t('All') },
+    { value: 'pending', label: t('Pending') },
+    { value: 'accepted', label: t('Accepted') },
+    { value: 'declined', label: t('Declined') },
+])
+
+const dateRangeTabs = computed(() => [
+    { value: 'upcoming', label: t('Upcoming') },
+    { value: 'thisWeek', label: t('This week') },
+    { value: 'thisMonth', label: t('This month') },
+    { value: 'all', label: t('All') },
+    { value: 'past', label: t('Past') },
+])
 
 const roomOptions = computed(() => [
-    { id: null, label: '— All rooms —' },
+    { id: null, label: t('All rooms') },
     ...props.rooms.map(r => ({ id: r.id, label: r.name })),
 ])
 
 const filteredBookings = computed(() => {
-    return bookings.value
+    const sorted = [...bookings.value]
+    sorted.sort((a, b) => {
+        let aVal = a[sortField.value] ?? ''
+        let bVal = b[sortField.value] ?? ''
+        // For organizerName, fall back to organizer
+        if (sortField.value === 'organizerName') {
+            aVal = a.organizerName || a.organizer || ''
+            bVal = b.organizerName || b.organizer || ''
+        }
+        let cmp = 0
+        if (sortField.value === 'dtstart' || sortField.value === 'dtend') {
+            cmp = new Date(aVal) - new Date(bVal)
+        } else {
+            cmp = String(aVal).localeCompare(String(bVal))
+        }
+        return sortDirection.value === 'asc' ? cmp : -cmp
+    })
+    return sorted
 })
 
 const emptyTitle = computed(() => {
-    if (statusFilter.value === 'pending') return 'No pending bookings'
-    if (statusFilter.value === 'accepted') return 'No accepted bookings'
-    if (statusFilter.value === 'declined') return 'No declined bookings'
-    return 'No bookings'
+    if (statusFilter.value === 'pending') return t('No pending bookings')
+    if (statusFilter.value === 'accepted') return t('No accepted bookings')
+    if (statusFilter.value === 'declined') return t('No declined bookings')
+    return t('No bookings')
 })
 
 const emptyDescription = computed(() => {
-    if (statusFilter.value === 'pending') return 'All booking requests have been processed'
-    return 'No events found for the selected filters'
+    if (statusFilter.value === 'pending') return t('All booking requests have been processed')
+    return t('No events found for the selected filters')
 })
 
 const roomsForCalendar = computed(() => {
@@ -249,10 +325,47 @@ const roomsForCalendar = computed(() => {
     return props.rooms
 })
 
+const getDateRangeParams = () => {
+    const now = new Date()
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+
+    switch (dateRange.value) {
+        case 'upcoming':
+            return { from: today.toISOString() }
+        case 'thisWeek': {
+            const day = today.getDay()
+            const monday = new Date(today)
+            monday.setDate(today.getDate() - (day === 0 ? 6 : day - 1))
+            const sunday = new Date(monday)
+            sunday.setDate(monday.getDate() + 6)
+            sunday.setHours(23, 59, 59)
+            return { from: monday.toISOString(), to: sunday.toISOString() }
+        }
+        case 'thisMonth': {
+            const firstDay = new Date(today.getFullYear(), today.getMonth(), 1)
+            const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0, 23, 59, 59)
+            return { from: firstDay.toISOString(), to: lastDay.toISOString() }
+        }
+        case 'past':
+            return { to: today.toISOString() }
+        default:
+            return {}
+    }
+}
+
+const toggleSort = (field) => {
+    if (sortField.value === field) {
+        sortDirection.value = sortDirection.value === 'asc' ? 'desc' : 'asc'
+    } else {
+        sortField.value = field
+        sortDirection.value = 'asc'
+    }
+}
+
 const loadBookings = async () => {
     loading.value = true
     try {
-        const params = {}
+        const params = { ...getDateRangeParams() }
         if (selectedRoom.value?.id) {
             params.room = selectedRoom.value.id
         }
@@ -264,7 +377,7 @@ const loadBookings = async () => {
         bookings.value = response.data.bookings || []
         stats.value = response.data.stats || { today: 0, pending: 0, thisWeek: 0 }
     } catch (e) {
-        showError('Failed to load bookings')
+        showError(t('Failed to load bookings'))
         bookings.value = []
     } finally {
         loading.value = false
@@ -275,10 +388,10 @@ const respond = async (roomId, bookingUid, action) => {
     responding.value = bookingUid
     try {
         await respondToBooking(roomId, bookingUid, action)
-        showSuccess(action === 'accept' ? 'Booking accepted' : 'Booking declined')
+        showSuccess(action === 'accept' ? t('Booking accepted') : t('Booking declined'))
         await loadBookings()
     } catch (e) {
-        showError('Failed to process response')
+        showError(t('Failed to process response'))
     } finally {
         responding.value = null
     }
@@ -292,10 +405,10 @@ const formatRelativeDate = (dateStr) => {
     tomorrow.setDate(today.getDate() + 1)
 
     if (d.toDateString() === today.toDateString()) {
-        return 'Today'
+        return t('Today')
     }
     if (d.toDateString() === tomorrow.toDateString()) {
-        return 'Tomorrow'
+        return t('Tomorrow')
     }
     return d.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' })
 }
@@ -317,11 +430,11 @@ const getStatusType = (partstat) => {
 
 const getStatusLabel = (partstat) => {
     switch (partstat) {
-        case 'ACCEPTED': return 'Accepted'
-        case 'DECLINED': return 'Declined'
-        case 'TENTATIVE': return 'Pending'
-        case 'NEEDS-ACTION': return 'Needs action'
-        default: return partstat || 'Unknown'
+        case 'ACCEPTED': return t('Accepted')
+        case 'DECLINED': return t('Declined')
+        case 'TENTATIVE': return t('Pending')
+        case 'NEEDS-ACTION': return t('Needs action')
+        default: return partstat || t('Unknown')
     }
 }
 
@@ -340,17 +453,17 @@ const executeDelete = async () => {
     deleting.value = true
     try {
         await deleteBooking(deleteTarget.value.roomId, deleteTarget.value.uid)
-        showSuccess('Booking deleted')
+        showSuccess(t('Booking deleted'))
         deleteTarget.value = null
         await loadBookings()
     } catch (e) {
-        showError('Failed to delete booking')
+        showError(t('Failed to delete booking'))
     } finally {
         deleting.value = false
     }
 }
 
-watch([selectedRoom, statusFilter], () => {
+watch([selectedRoom, statusFilter, dateRange], () => {
     loadBookings()
 })
 
@@ -404,6 +517,7 @@ onMounted(() => {
     margin-bottom: 20px;
     gap: 16px;
     flex-wrap: wrap;
+    min-width: 0;
 }
 
 .filters-left {
@@ -411,10 +525,11 @@ onMounted(() => {
     align-items: center;
     gap: 16px;
     flex-wrap: wrap;
+    min-width: 0;
 }
 
 .room-filter {
-    min-width: 200px;
+    min-width: 120px;
 }
 
 .status-tabs {
@@ -503,11 +618,12 @@ onMounted(() => {
 .booking-table {
     width: 100%;
     border-collapse: collapse;
+    table-layout: fixed;
 }
 
 .booking-table th {
     text-align: left;
-    padding: 12px 16px;
+    padding: 12px;
     background: var(--color-background-dark);
     font-weight: 600;
     color: var(--color-text-maxcontrast);
@@ -515,15 +631,34 @@ onMounted(() => {
     border-bottom: 1px solid var(--color-border);
 }
 
+.th-sortable {
+    cursor: pointer;
+    user-select: none;
+    white-space: nowrap;
+    transition: color 0.15s;
+}
+
+.th-sortable:hover {
+    color: var(--color-main-text);
+}
+
+.sort-icon {
+    font-size: 10px;
+    margin-left: 4px;
+    color: var(--color-primary-element);
+}
+
 .th-actions {
-    width: 100px;
     text-align: center !important;
 }
 
 .booking-table td {
-    padding: 12px 16px;
+    padding: 12px;
     border-bottom: 1px solid var(--color-border);
     vertical-align: middle;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .booking-table tbody tr:last-child td {

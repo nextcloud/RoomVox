@@ -76,7 +76,8 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
+import { translate } from '@nextcloud/l10n'
 import { showError, showSuccess } from '@nextcloud/dialogs'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
@@ -92,6 +93,8 @@ import {
     searchSharees,
 } from '../services/api.js'
 
+const t = (text, vars = {}) => translate('roomvox', text, vars)
+
 const props = defineProps({
     target: { type: Object, required: true },
     targetType: { type: String, default: 'room' }, // 'room' or 'group'
@@ -100,11 +103,11 @@ const props = defineProps({
 
 defineEmits(['back'])
 
-const roles = [
-    { key: 'viewers', label: 'Viewers', description: 'Groups that can see the room in their calendar, but cannot book.' },
-    { key: 'bookers', label: 'Bookers', description: 'Groups that can see and book the room. Bookings follow the auto-accept or approval workflow.' },
-    { key: 'managers', label: 'Managers', description: 'Groups that can see, book, and manage the room. Members receive approval requests and can accept/decline bookings.' },
-]
+const roles = computed(() => [
+    { key: 'viewers', label: t('Viewers'), description: t('Groups that can see the room in their calendar, but cannot book.') },
+    { key: 'bookers', label: t('Bookers'), description: t('Groups that can see and book the room. Bookings follow the auto-accept or approval workflow.') },
+    { key: 'managers', label: t('Managers'), description: t('Groups that can see, book, and manage the room. Members receive approval requests and can accept/decline bookings.') },
+])
 
 const loading = ref(true)
 const saving = ref(false)
@@ -128,7 +131,7 @@ const loadPermissions = async () => {
             Object.assign(permissions, response.data)
         }
     } catch (e) {
-        showError('Failed to load permissions')
+        showError(t('Failed to load permissions'))
     } finally {
         loading.value = false
     }
@@ -174,10 +177,10 @@ const save = async () => {
             managers: permissions.managers,
         })
         saved.value = true
-        showSuccess('Permissions saved')
+        showSuccess(t('Permissions saved'))
         setTimeout(() => { saved.value = false }, 3000)
     } catch (e) {
-        showError('Failed to save permissions')
+        showError(t('Failed to save permissions'))
     } finally {
         saving.value = false
     }

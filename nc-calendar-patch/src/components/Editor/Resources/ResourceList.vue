@@ -8,9 +8,6 @@
 		<span class="app-full-subtitle">
 			<MapMarker :size="20" />
 			{{ $t('calendar', 'Rooms') }}
-			<span v-if="resources.length" class="resource-picker__count">
-				({{ resources.length }})
-			</span>
 		</span>
 
 		<!-- Search and filter -->
@@ -24,24 +21,53 @@
 				trailing-button-icon="close"
 				@update:value="filterText = $event"
 				@trailing-button-click="filterText = ''" />
-			<div class="resource-picker__filters__toggles">
+
+			<div class="resource-picker__filters__row">
 				<NcCheckboxRadioSwitch
-					:checked.sync="filterAvailableOnly"
+					v-model="filterAvailableOnly"
 					type="switch">
 					{{ $t('calendar', 'Available only') }}
 				</NcCheckboxRadioSwitch>
-				<NcCheckboxRadioSwitch
-					:checked.sync="filterAccessible">
-					{{ $t('calendar', 'Wheelchair accessible') }}
-				</NcCheckboxRadioSwitch>
-				<NcCheckboxRadioSwitch
-					:checked.sync="filterProjector">
-					{{ $t('calendar', 'Projector') }}
-				</NcCheckboxRadioSwitch>
-				<NcCheckboxRadioSwitch
-					:checked.sync="filterWhiteboard">
-					{{ $t('calendar', 'Whiteboard') }}
-				</NcCheckboxRadioSwitch>
+				<div class="resource-picker__capacity">
+					<label for="min-capacity">{{ $t('calendar', 'Min.') }}</label>
+					<input
+						id="min-capacity"
+						v-model.number="filterMinCapacity"
+						type="number"
+						min="0"
+						:placeholder="$t('calendar', 'pers.')"
+						class="resource-picker__capacity-input" />
+				</div>
+			</div>
+
+			<!-- Dynamic building chips -->
+			<div v-if="allBuildings.length > 1" class="resource-picker__chips">
+				<span class="resource-picker__chips-label">
+					<OfficeBuildingOutline :size="14" />
+				</span>
+				<button
+					v-for="building in allBuildings"
+					:key="'b-' + building"
+					class="resource-picker__chip"
+					:class="{ 'resource-picker__chip--active': activeBuildings.includes(building) }"
+					@click="toggleBuilding(building)">
+					{{ building }}
+				</button>
+			</div>
+
+			<!-- Dynamic facility chips -->
+			<div v-if="allFacilities.length > 0" class="resource-picker__chips">
+				<span class="resource-picker__chips-label">
+					<Wrench :size="14" />
+				</span>
+				<button
+					v-for="facility in allFacilities"
+					:key="facility.id"
+					class="resource-picker__chip resource-picker__chip--facility"
+					:class="{ 'resource-picker__chip--active': activeFacilities.includes(facility.id) }"
+					@click="toggleFacility(facility.id)">
+					{{ facility.label }}
+				</button>
 			</div>
 		</div>
 
@@ -50,20 +76,42 @@
 			<NcLoadingIcon :size="32" />
 		</div>
 
-		<!-- Room cards list -->
+		<!-- Grouped room list -->
 		<div v-else class="resource-picker__list">
-			<ResourceRoomCard
-				v-for="room in sortedRooms"
-				:key="room.id"
-				:room="room"
-				:is-added="isRoomAdded(room)"
-				:is-read-only="isReadOnly"
-				:is-viewed-by-organizer="isViewedByOrganizer"
-				@add-room="addResource"
-				@remove-room="removeRoomByPrincipal" />
+			<div
+				v-for="group in groupedRooms"
+				:key="group.name"
+				class="resource-picker__group">
+				<button
+					class="resource-picker__group-header"
+					@click="toggleGroup(group.name)">
+					<ChevronDown
+						v-if="expandedGroups[group.name]"
+						:size="18" />
+					<ChevronRight
+						v-else
+						:size="18" />
+					<span class="resource-picker__group-name">{{ group.name }}</span>
+					<span class="resource-picker__group-count">
+						{{ group.availableCount }}/{{ group.rooms.length }}
+					</span>
+				</button>
+				<div v-if="expandedGroups[group.name]" class="resource-picker__group-rooms">
+					<ResourceRoomCard
+						v-for="room in group.rooms"
+						:key="room.id"
+						:room="room"
+						:is-added="isRoomAdded(room)"
+						:is-read-only="isReadOnly"
+						:is-viewed-by-organizer="isViewedByOrganizer"
+						:has-room-selected="resources.length > 0"
+						@add-room="addResource"
+						@remove-room="removeRoomByPrincipal" />
+				</div>
+			</div>
 
 			<p
-				v-if="sortedRooms.length === 0 && allRooms.length > 0"
+				v-if="totalFilteredCount === 0 && allRooms.length > 0"
 				class="resource-picker__empty">
 				{{ $t('calendar', 'No rooms found') }}
 			</p>
@@ -84,7 +132,12 @@ import debounce from 'debounce'
 import { mapStores } from 'pinia'
 import Vue from 'vue'
 import MapMarker from 'vue-material-design-icons/MapMarker.vue'
+import ChevronDown from 'vue-material-design-icons/ChevronDown.vue'
+import ChevronRight from 'vue-material-design-icons/ChevronRight.vue'
+import OfficeBuildingOutline from 'vue-material-design-icons/OfficeBuildingOutline.vue'
+import Wrench from 'vue-material-design-icons/Wrench.vue'
 import ResourceRoomCard from './ResourceRoomCard.vue'
+import { formatFacility } from '../../../models/resourceProps.js'
 import { checkResourceAvailability } from '../../../services/freeBusyService.js'
 import useCalendarObjectInstanceStore from '../../../store/calendarObjectInstance.js'
 import usePrincipalsStore from '../../../store/principals.js'
@@ -95,6 +148,10 @@ export default {
 	name: 'ResourceList',
 	components: {
 		MapMarker,
+		ChevronDown,
+		ChevronRight,
+		OfficeBuildingOutline,
+		Wrench,
 		NcCheckboxRadioSwitch,
 		NcLoadingIcon,
 		NcTextField,
@@ -118,9 +175,10 @@ export default {
 			isLoadingAvailability: false,
 			filterText: '',
 			filterAvailableOnly: true,
-			filterAccessible: false,
-			filterProjector: false,
-			filterWhiteboard: false,
+			filterMinCapacity: 0,
+			activeFacilities: [],
+			activeBuildings: [],
+			expandedGroups: {},
 		}
 	},
 
@@ -158,13 +216,51 @@ export default {
 			return loadState('calendar', 'resource_booking_enabled')
 		},
 
+		allBuildings() {
+			const buildings = new Set()
+			for (const room of this.allRooms) {
+				const name = room.roomBuildingName
+				if (name) buildings.add(name)
+			}
+			return [...buildings].sort()
+		},
+
+		allFacilities() {
+			const facilitySet = new Set()
+			for (const room of this.allRooms) {
+				const features = room.roomFeatures?.split(',') ?? []
+				for (const f of features) {
+					const trimmed = f.trim()
+					if (trimmed) facilitySet.add(trimmed)
+				}
+			}
+			return [...facilitySet].sort().map((id) => ({
+				id,
+				label: formatFacility(id),
+			}))
+		},
+
 		filteredRooms() {
 			return this.allRooms.filter((room) => {
+				// Always show rooms that are already added to the event
+				if (this.isRoomAdded(room)) {
+					return true
+				}
 				// Text filter
 				if (this.filterText) {
 					const q = this.filterText.toLowerCase()
 					if (!room.displayname?.toLowerCase().includes(q)
-						&& !room.roomAddress?.toLowerCase().includes(q)) {
+						&& !room.roomAddress?.toLowerCase().includes(q)
+						&& !room.roomBuildingAddress?.toLowerCase().includes(q)
+						&& !room.roomBuildingName?.toLowerCase().includes(q)
+						&& !room.roomNumber?.toLowerCase().includes(q)) {
+						return false
+					}
+				}
+				// Building filter
+				if (this.activeBuildings.length > 0) {
+					const building = room.roomBuildingName || ''
+					if (!this.activeBuildings.includes(building)) {
 						return false
 					}
 				}
@@ -172,16 +268,21 @@ export default {
 				if (this.filterAvailableOnly && !room.isAvailable) {
 					return false
 				}
-				// Feature filters
-				const features = room.roomFeatures?.split(',') ?? []
-				if (this.filterAccessible && !features.includes('WHEELCHAIR-ACCESSIBLE')) {
-					return false
+				// Capacity filter
+				if (this.filterMinCapacity > 0) {
+					const cap = parseInt(room.roomSeatingCapacity) || 0
+					if (cap < this.filterMinCapacity) {
+						return false
+					}
 				}
-				if (this.filterProjector && !features.includes('PROJECTOR')) {
-					return false
-				}
-				if (this.filterWhiteboard && !features.includes('WHITEBOARD')) {
-					return false
+				// Facility filters
+				if (this.activeFacilities.length > 0) {
+					const features = room.roomFeatures?.split(',').map((f) => f.trim()) ?? []
+					for (const required of this.activeFacilities) {
+						if (!features.includes(required)) {
+							return false
+						}
+					}
 				}
 				return true
 			})
@@ -202,6 +303,33 @@ export default {
 				// Alphabetically
 				return (a.displayname || '').localeCompare(b.displayname || '')
 			})
+		},
+
+		groupedRooms() {
+			const groups = {}
+
+			for (const room of this.sortedRooms) {
+				const groupName = room.roomBuildingName || this.$t('calendar', 'Other')
+				if (!groups[groupName]) {
+					groups[groupName] = { name: groupName, rooms: [], availableCount: 0 }
+				}
+				groups[groupName].rooms.push(room)
+				if (room.isAvailable) {
+					groups[groupName].availableCount++
+				}
+			}
+
+			// Sort groups: groups with added rooms first, then alphabetically
+			return Object.values(groups).sort((a, b) => {
+				const aHasAdded = a.rooms.some((r) => this.isRoomAdded(r)) ? 0 : 1
+				const bHasAdded = b.rooms.some((r) => this.isRoomAdded(r)) ? 0 : 1
+				if (aHasAdded !== bHasAdded) return aHasAdded - bHasAdded
+				return a.name.localeCompare(b.name)
+			})
+		},
+
+		totalFilteredCount() {
+			return this.sortedRooms.length
 		},
 	},
 
@@ -232,6 +360,18 @@ export default {
 
 			await this.loadAvailability()
 			this.isLoadingAvailability = false
+
+			// Initialize expanded groups after data is loaded
+			this.$nextTick(() => {
+				const groups = this.groupedRooms
+				const expanded = {}
+				if (groups.length <= 3) {
+					groups.forEach((g) => { expanded[g.name] = true })
+				} else if (groups.length > 0) {
+					expanded[groups[0].name] = true
+				}
+				this.expandedGroups = expanded
+			})
 		},
 
 		async loadAvailability() {
@@ -270,6 +410,28 @@ export default {
 			return this.alreadyInvitedEmails.includes(room.emailAddress)
 		},
 
+		toggleBuilding(building) {
+			const idx = this.activeBuildings.indexOf(building)
+			if (idx >= 0) {
+				this.activeBuildings.splice(idx, 1)
+			} else {
+				this.activeBuildings.push(building)
+			}
+		},
+
+		toggleFacility(facilityId) {
+			const idx = this.activeFacilities.indexOf(facilityId)
+			if (idx >= 0) {
+				this.activeFacilities.splice(idx, 1)
+			} else {
+				this.activeFacilities.push(facilityId)
+			}
+		},
+
+		toggleGroup(groupName) {
+			Vue.set(this.expandedGroups, groupName, !this.expandedGroups[groupName])
+		},
+
 		addResource({ commonName, email, calendarUserType, language, timezoneId, roomAddress }) {
 			this.calendarObjectInstanceStore.addAttendee({
 				calendarObjectInstance: this.calendarObjectInstance,
@@ -303,10 +465,7 @@ export default {
 		},
 
 		updateLocation(location) {
-			if (this.calendarObjectInstance.location || this.calendarObjectInstance.eventComponent.location) {
-				return
-			}
-			if (this.resources.length !== 1) {
+			if (!location) {
 				return
 			}
 			this.calendarObjectInstanceStore.changeLocation({
@@ -324,21 +483,88 @@ export default {
 	flex-direction: column;
 	gap: calc(var(--default-grid-baseline) * 2);
 
-	&__count {
-		font-size: var(--default-font-size);
-		color: var(--color-text-maxcontrast);
-		font-weight: normal;
-	}
-
 	&__filters {
 		display: flex;
 		flex-direction: column;
 		gap: calc(var(--default-grid-baseline) * 2);
 
-		&__toggles {
+		&__row {
 			display: flex;
-			flex-wrap: wrap;
-			gap: calc(var(--default-grid-baseline) * 1) calc(var(--default-grid-baseline) * 3);
+			align-items: center;
+			gap: calc(var(--default-grid-baseline) * 3);
+		}
+	}
+
+	&__capacity {
+		display: flex;
+		align-items: center;
+		gap: 4px;
+		font-size: calc(var(--default-font-size) * 0.9);
+
+		label {
+			white-space: nowrap;
+			color: var(--color-text-maxcontrast);
+		}
+	}
+
+	&__capacity-input {
+		width: 64px;
+		padding: 4px 6px;
+		border: 2px solid var(--color-border-maxcontrast);
+		border-radius: var(--border-radius);
+		background: var(--color-main-background);
+		color: var(--color-main-text);
+		font-size: calc(var(--default-font-size) * 0.9);
+
+		&:focus {
+			border-color: var(--color-primary-element);
+			outline: none;
+		}
+	}
+
+	&__chips {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 4px;
+	}
+
+	&__chips-label {
+		display: flex;
+		align-items: center;
+		color: var(--color-text-maxcontrast);
+		margin-right: 2px;
+	}
+
+	&__chip {
+		padding: 2px 10px;
+		border-radius: 12px;
+		border: 1px solid var(--color-border-maxcontrast);
+		background: var(--color-main-background);
+		color: var(--color-text-maxcontrast);
+		font-size: calc(var(--default-font-size) * 0.85);
+		cursor: pointer;
+		transition: all 0.15s;
+
+		&:hover {
+			border-color: var(--color-primary-element);
+			color: var(--color-primary-element);
+		}
+
+		&--facility {
+			border-style: dashed;
+		}
+
+		&--active {
+			background: var(--color-primary-element);
+			border-color: var(--color-primary-element);
+			color: var(--color-primary-element-text);
+			border-style: solid;
+
+			&:hover {
+				opacity: 0.85;
+				color: var(--color-primary-element-text);
+			}
 		}
 	}
 
@@ -351,9 +577,47 @@ export default {
 	&__list {
 		display: flex;
 		flex-direction: column;
-		gap: calc(var(--default-grid-baseline) * 2);
 		max-height: 400px;
 		overflow-y: auto;
+	}
+
+	&__group {
+		&-header {
+			display: flex;
+			align-items: center;
+			gap: 4px;
+			width: 100%;
+			padding: 6px 4px;
+			border: none;
+			background: none;
+			cursor: pointer;
+			font-size: calc(var(--default-font-size) * 0.9);
+			font-weight: 600;
+			color: var(--color-text-maxcontrast);
+
+			&:hover {
+				color: var(--color-main-text);
+			}
+		}
+
+		&-name {
+			flex: 1;
+			text-align: left;
+		}
+
+		&-count {
+			font-weight: normal;
+			font-size: calc(var(--default-font-size) * 0.8);
+			color: var(--color-text-maxcontrast);
+		}
+
+		&-rooms {
+			display: flex;
+			flex-direction: column;
+			gap: calc(var(--default-grid-baseline) * 1);
+			padding-left: 8px;
+			padding-bottom: 4px;
+		}
 	}
 
 	&__empty {

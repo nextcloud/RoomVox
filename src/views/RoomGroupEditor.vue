@@ -71,11 +71,14 @@
 
 <script setup>
 import { ref, reactive, watch } from 'vue'
+import { translate } from '@nextcloud/l10n'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
 import NcTextArea from '@nextcloud/vue/components/NcTextArea'
 import NcDialog from '@nextcloud/vue/components/NcDialog'
 import ArrowLeft from 'vue-material-design-icons/ArrowLeft.vue'
+
+const t = (text, vars = {}) => translate('roomvox', text, vars)
 
 const props = defineProps({
     group: { type: Object, default: null },
@@ -104,7 +107,7 @@ watch(() => props.group, (group) => {
 
 const save = () => {
     if (!form.name.trim()) {
-        errors.name = 'Group name is required'
+        errors.name = t('Group name is required')
         return
     }
     emit('save', { ...form })

@@ -89,6 +89,7 @@
 
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue'
+import { translate } from '@nextcloud/l10n'
 import { showSuccess, showError } from '@nextcloud/dialogs'
 
 import NcModal from '@nextcloud/vue/components/NcModal'
@@ -100,6 +101,8 @@ import NcDateTimePicker from '@nextcloud/vue/components/NcDateTimePicker'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 
 import { createBooking } from '../../services/api.js'
+
+const t = (text, vars = {}) => translate('roomvox', text, vars)
 
 const props = defineProps({
     roomId: { type: String, default: null },
@@ -181,13 +184,13 @@ async function handleSubmit() {
         const endISO = combineDateTime(form.value.date, form.value.endTime)
 
         if (!startISO || !endISO) {
-            error.value = 'Invalid date/time selection'
+            error.value = t('Invalid date/time selection')
             return
         }
 
         // Validate end is after start
         if (new Date(endISO) <= new Date(startISO)) {
-            error.value = 'End time must be after start time'
+            error.value = t('End time must be after start time')
             return
         }
 
@@ -198,7 +201,7 @@ async function handleSubmit() {
             description: form.value.description.trim(),
         })
 
-        showSuccess('Booking created successfully')
+        showSuccess(t('Booking created successfully'))
         emit('created')
     } catch (e) {
         const message = e.response?.data?.error || 'Failed to create booking'

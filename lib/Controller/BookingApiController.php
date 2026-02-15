@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace OCA\RoomVox\Controller;
 
 use OCA\RoomVox\Service\CalDAVService;
-use OCA\RoomVox\Service\MailService;
 use OCA\RoomVox\Service\PermissionService;
 use OCA\RoomVox\Service\RoomService;
 use OCP\AppFramework\Controller;
@@ -22,101 +21,11 @@ class BookingApiController extends Controller {
         private RoomService $roomService,
         private PermissionService $permissionService,
         private CalDAVService $calDAVService,
-        private MailService $mailService,
         private IUserSession $userSession,
         private IGroupManager $groupManager,
         private LoggerInterface $logger,
     ) {
         parent::__construct($appName, $request);
-    }
-
-    /**
-     * Get all bookings across all rooms (or filtered by room)
-     */
-    public function all(): JSONResponse {
-        $userId = $this->getCurrentUserId();
-        if ($userId === null) {
-            return new JSONResponse(['error' => 'Not authenticated'], 401);
-        }
-
-        $roomId = $this->request->getParam('room');
-        $status = $this->request->getParam('status', 'all');
-        $from = $this->request->getParam('from');
-        $to = $this->request->getParam('to');
-
-        // Get all rooms the user can manage
-        $rooms = $this->roomService->getAllRooms();
-        $isAdmin = $this->groupManager->isAdmin($userId);
-
-        if (!$isAdmin) {
-            $rooms = array_filter($rooms, function ($room) use ($userId) {
-                return $this->permissionService->canManage($userId, $room['id']);
-            });
-        }
-
-        // Filter to specific room if requested
-        if ($roomId !== null && $roomId !== '') {
-            $rooms = array_filter($rooms, fn($r) => $r['id'] === $roomId);
-        }
-
-        $allBookings = [];
-        $stats = [
-            'today' => 0,
-            'pending' => 0,
-            'thisWeek' => 0,
-        ];
-
-        $today = new \DateTimeImmutable('today');
-        $tomorrow = new \DateTimeImmutable('tomorrow');
-        $weekStart = new \DateTimeImmutable('monday this week');
-        $weekEnd = new \DateTimeImmutable('sunday this week 23:59:59');
-
-        foreach ($rooms as $room) {
-            $bookings = $this->calDAVService->getBookings($room['userId'], $from, $to);
-
-            foreach ($bookings as $booking) {
-                $booking['roomId'] = $room['id'];
-                $booking['roomName'] = $room['name'];
-
-                // Apply status filter
-                $partstat = $booking['partstat'] ?? '';
-                if ($status === 'pending' && $partstat !== 'TENTATIVE') {
-                    continue;
-                }
-                if ($status === 'accepted' && $partstat !== 'ACCEPTED') {
-                    continue;
-                }
-                if ($status === 'declined' && $partstat !== 'DECLINED') {
-                    continue;
-                }
-
-                // Calculate stats
-                $dtstart = isset($booking['dtstart']) ? new \DateTimeImmutable($booking['dtstart']) : null;
-                if ($dtstart !== null) {
-                    if ($dtstart >= $today && $dtstart < $tomorrow) {
-                        $stats['today']++;
-                    }
-                    if ($dtstart >= $weekStart && $dtstart <= $weekEnd) {
-                        $stats['thisWeek']++;
-                    }
-                }
-                if ($partstat === 'TENTATIVE') {
-                    $stats['pending']++;
-                }
-
-                $allBookings[] = $booking;
-            }
-        }
-
-        // Sort by date
-        usort($allBookings, function ($a, $b) {
-            return ($a['dtstart'] ?? '') <=> ($b['dtstart'] ?? '');
-        });
-
-        return new JSONResponse([
-            'bookings' => $allBookings,
-            'stats' => $stats,
-        ]);
     }
 
     /**

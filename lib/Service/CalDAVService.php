@@ -113,7 +113,7 @@ class CalDAVService {
                 $organizer = '';
                 $organizerName = '';
                 if ($vEvent->ORGANIZER) {
-                    $organizer = $this->stripMailto((string)$vEvent->ORGANIZER);
+                    $organizer = RoomService::stripMailto((string)$vEvent->ORGANIZER);
                     $organizerName = isset($vEvent->ORGANIZER['CN']) ? (string)$vEvent->ORGANIZER['CN'] : $organizer;
                 }
 
@@ -121,7 +121,7 @@ class CalDAVService {
                 // First try CUTYPE=ROOM, then fall back to non-organizer attendee
                 // (some clients like iOS send CUTYPE=INDIVIDUAL for rooms)
                 $partstat = 'NEEDS-ACTION';
-                $organizerEmail = $organizer ? strtolower($this->stripMailto($organizer)) : '';
+                $organizerEmail = $organizer ? strtolower(RoomService::stripMailto($organizer)) : '';
                 $attendees = $vEvent->select('ATTENDEE');
                 $fallbackPartstat = null;
                 foreach ($attendees as $attendee) {
@@ -132,7 +132,7 @@ class CalDAVService {
                         break;
                     }
                     // Track non-organizer attendee as fallback
-                    $attendeeEmail = strtolower($this->stripMailto((string)$attendee));
+                    $attendeeEmail = strtolower(RoomService::stripMailto((string)$attendee));
                     if ($attendeeEmail !== $organizerEmail && $fallbackPartstat === null) {
                         $fallbackPartstat = isset($attendee['PARTSTAT']) ? (string)$attendee['PARTSTAT'] : 'NEEDS-ACTION';
                     }
@@ -205,7 +205,7 @@ class CalDAVService {
                 // Update PARTSTAT for room attendee (CUTYPE=ROOM or non-organizer fallback)
                 $orgEmail = '';
                 if ($vEvent->ORGANIZER) {
-                    $orgEmail = strtolower($this->stripMailto((string)$vEvent->ORGANIZER));
+                    $orgEmail = strtolower(RoomService::stripMailto((string)$vEvent->ORGANIZER));
                 }
                 $attendees = $vEvent->select('ATTENDEE');
                 $updated = false;
@@ -220,7 +220,7 @@ class CalDAVService {
                 if (!$updated) {
                     // Fallback: update first non-organizer attendee
                     foreach ($attendees as $attendee) {
-                        $attendeeEmail = strtolower($this->stripMailto((string)$attendee));
+                        $attendeeEmail = strtolower(RoomService::stripMailto((string)$attendee));
                         if ($attendeeEmail !== $orgEmail) {
                             $attendee['PARTSTAT'] = $partstat;
                             break;
@@ -281,16 +281,31 @@ class CalDAVService {
             $objectUri = $uid . '.ics';
 
             // Check if this event already exists (update vs create)
+            // First try by expected URI, then search by UID in case it was
+            // stored with a different filename (e.g. from approval flow).
             $existing = null;
+            $existingUri = $objectUri;
             try {
                 $existing = $this->calDavBackend->getCalendarObject($calendarId, $objectUri);
             } catch (\Throwable $e) {
-                // Not found, will create
+                // Not found by URI
+            }
+
+            if ($existing === null) {
+                // Search all objects for matching UID
+                $objects = $this->calDavBackend->getCalendarObjects($calendarId);
+                foreach ($objects as $obj) {
+                    if (isset($obj['uid']) && $obj['uid'] === $uid) {
+                        $existingUri = $obj['uri'];
+                        $existing = $obj;
+                        break;
+                    }
+                }
             }
 
             if ($existing !== null) {
-                $this->calDavBackend->updateCalendarObject($calendarId, $objectUri, $calendarData);
-                $this->logger->info("RoomVox: Updated calendar object {$objectUri} in calendar {$calendarId}");
+                $this->calDavBackend->updateCalendarObject($calendarId, $existingUri, $calendarData);
+                $this->logger->info("RoomVox: Updated calendar object {$existingUri} in calendar {$calendarId}");
             } else {
                 $this->calDavBackend->createCalendarObject($calendarId, $objectUri, $calendarData);
                 $this->logger->info("RoomVox: Created calendar object {$objectUri} in calendar {$calendarId}");
@@ -684,7 +699,7 @@ class CalDAVService {
             // Extract organizer
             $organizer = '';
             if ($vEvent->ORGANIZER) {
-                $organizer = $this->stripMailto((string)$vEvent->ORGANIZER);
+                $organizer = RoomService::stripMailto((string)$vEvent->ORGANIZER);
             }
 
             return [
@@ -725,13 +740,4 @@ class CalDAVService {
         );
     }
 
-    /**
-     * Strip mailto: prefix from email
-     */
-    private function stripMailto(string $email): string {
-        if (str_starts_with(strtolower($email), 'mailto:')) {
-            return substr($email, 7);
-        }
-        return $email;
-    }
 }

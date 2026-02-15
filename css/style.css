@@ -1,17 +1,8 @@
 /* Room Booking App - Global Styles */
 
-#app-roomvox {
-    height: 100%;
-}
-
-/* Ensure the content area fills available space */
-#app-content-vue {
-    height: 100%;
-}
-
-/* Active nav item */
-.app-navigation-entry.active {
-    background-color: var(--color-primary-element-light) !important;
+/* Prevent horizontal overflow in the Nextcloud settings content area */
+#app-content {
+    overflow-x: hidden !important;
 }
 
 /* Smooth transitions */

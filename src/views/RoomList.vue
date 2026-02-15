@@ -81,6 +81,16 @@
                      class="room-group__body">
                     <div class="room-list__card">
                         <table class="room-list__table">
+                            <colgroup>
+                                <col class="col-name">
+                                <col class="col-nr">
+                                <col class="col-type">
+                                <col class="col-address">
+                                <col class="col-capacity">
+                                <col class="col-auto">
+                                <col class="col-status">
+                                <col class="col-actions">
+                            </colgroup>
                             <thead>
                                 <tr>
                                     <th @click="toggleSort('name')">
@@ -90,11 +100,25 @@
                                             <ChevronDown v-else-if="sortBy === 'name' && sortDir === 'desc'" :size="14" />
                                         </span>
                                     </th>
-                                    <th @click="toggleSort('location')">
+                                    <th @click="toggleSort('roomNumber')">
                                         <span class="th-sortable">
-                                            {{ $t('Location') }}
-                                            <ChevronUp v-if="sortBy === 'location' && sortDir === 'asc'" :size="14" />
-                                            <ChevronDown v-else-if="sortBy === 'location' && sortDir === 'desc'" :size="14" />
+                                            {{ $t('Room nr.') }}
+                                            <ChevronUp v-if="sortBy === 'roomNumber' && sortDir === 'asc'" :size="14" />
+                                            <ChevronDown v-else-if="sortBy === 'roomNumber' && sortDir === 'desc'" :size="14" />
+                                        </span>
+                                    </th>
+                                    <th @click="toggleSort('roomType')">
+                                        <span class="th-sortable">
+                                            {{ $t('Type') }}
+                                            <ChevronUp v-if="sortBy === 'roomType' && sortDir === 'asc'" :size="14" />
+                                            <ChevronDown v-else-if="sortBy === 'roomType' && sortDir === 'desc'" :size="14" />
+                                        </span>
+                                    </th>
+                                    <th @click="toggleSort('address')">
+                                        <span class="th-sortable">
+                                            {{ $t('Address') }}
+                                            <ChevronUp v-if="sortBy === 'address' && sortDir === 'asc'" :size="14" />
+                                            <ChevronDown v-else-if="sortBy === 'address' && sortDir === 'desc'" :size="14" />
                                         </span>
                                     </th>
                                     <th @click="toggleSort('capacity')">
@@ -120,7 +144,9 @@
                                             <span>{{ room.name }}</span>
                                         </span>
                                     </td>
-                                    <td>{{ room.location || '—' }}</td>
+                                    <td>{{ room.roomNumber || '—' }}</td>
+                                    <td>{{ formatRoomType(room.roomType) }}</td>
+                                    <td>{{ room.address || '—' }}</td>
                                     <td>{{ room.capacity || '—' }}</td>
                                     <td>
                                         <NcChip
@@ -179,6 +205,16 @@
                 <div v-if="expandedGroups.has('__ungrouped')" class="room-group__body">
                     <div class="room-list__card">
                         <table class="room-list__table">
+                            <colgroup>
+                                <col class="col-name">
+                                <col class="col-nr">
+                                <col class="col-type">
+                                <col class="col-address">
+                                <col class="col-capacity">
+                                <col class="col-auto">
+                                <col class="col-status">
+                                <col class="col-actions">
+                            </colgroup>
                             <thead>
                                 <tr>
                                     <th @click="toggleSort('name')">
@@ -188,11 +224,25 @@
                                             <ChevronDown v-else-if="sortBy === 'name' && sortDir === 'desc'" :size="14" />
                                         </span>
                                     </th>
-                                    <th @click="toggleSort('location')">
+                                    <th @click="toggleSort('roomNumber')">
                                         <span class="th-sortable">
-                                            {{ $t('Location') }}
-                                            <ChevronUp v-if="sortBy === 'location' && sortDir === 'asc'" :size="14" />
-                                            <ChevronDown v-else-if="sortBy === 'location' && sortDir === 'desc'" :size="14" />
+                                            {{ $t('Room nr.') }}
+                                            <ChevronUp v-if="sortBy === 'roomNumber' && sortDir === 'asc'" :size="14" />
+                                            <ChevronDown v-else-if="sortBy === 'roomNumber' && sortDir === 'desc'" :size="14" />
+                                        </span>
+                                    </th>
+                                    <th @click="toggleSort('roomType')">
+                                        <span class="th-sortable">
+                                            {{ $t('Type') }}
+                                            <ChevronUp v-if="sortBy === 'roomType' && sortDir === 'asc'" :size="14" />
+                                            <ChevronDown v-else-if="sortBy === 'roomType' && sortDir === 'desc'" :size="14" />
+                                        </span>
+                                    </th>
+                                    <th @click="toggleSort('address')">
+                                        <span class="th-sortable">
+                                            {{ $t('Address') }}
+                                            <ChevronUp v-if="sortBy === 'address' && sortDir === 'asc'" :size="14" />
+                                            <ChevronDown v-else-if="sortBy === 'address' && sortDir === 'desc'" :size="14" />
                                         </span>
                                     </th>
                                     <th @click="toggleSort('capacity')">
@@ -218,7 +268,9 @@
                                             <span>{{ room.name }}</span>
                                         </span>
                                     </td>
-                                    <td>{{ room.location || '—' }}</td>
+                                    <td>{{ room.roomNumber || '—' }}</td>
+                                    <td>{{ formatRoomType(room.roomType) }}</td>
+                                    <td>{{ room.address || '—' }}</td>
                                     <td>{{ room.capacity || '—' }}</td>
                                     <td>
                                         <NcChip
@@ -263,6 +315,7 @@
 
 <script setup>
 import { ref, computed } from 'vue'
+import { translate } from '@nextcloud/l10n'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
 import NcEmptyContent from '@nextcloud/vue/components/NcEmptyContent'
@@ -283,11 +336,19 @@ import ChevronRight from 'vue-material-design-icons/ChevronRight.vue'
 import FolderMove from 'vue-material-design-icons/FolderMove.vue'
 import Check from 'vue-material-design-icons/Check.vue'
 
+const t = (text, vars = {}) => translate('roomvox', text, vars)
+
 const props = defineProps({
     rooms: { type: Array, default: () => [] },
     roomGroups: { type: Array, default: () => [] },
+    roomTypes: { type: Array, default: () => [] },
     loading: { type: Boolean, default: false },
 })
+
+const formatRoomType = (type) => {
+    const found = props.roomTypes.find(t => t.id === type)
+    return found ? found.label : type || '—'
+}
 
 const emit = defineEmits(['select', 'create', 'create-group', 'edit-group', 'group-permissions', 'refresh', 'move-to-group'])
 
@@ -328,7 +389,8 @@ const matchesSearch = (room) => {
     if (!searchQuery.value.trim()) return true
     const q = searchQuery.value.toLowerCase()
     return (room.name || '').toLowerCase().includes(q)
-        || (room.location || '').toLowerCase().includes(q)
+        || (room.roomNumber || '').toLowerCase().includes(q)
+        || (room.address || '').toLowerCase().includes(q)
 }
 
 const groupedRooms = computed(() => {
@@ -392,7 +454,7 @@ const moveToGroupOptions = (room) => {
     // Add "No group" option
     options.push({
         id: null,
-        label: '— No group —',
+        label: '— ' + t('No group') + ' —',
         isCurrent: !room.groupId
     })
     return options
@@ -411,6 +473,7 @@ const handleMoveToGroup = (room, groupId) => {
     margin-bottom: 24px;
     flex-wrap: wrap;
     gap: 12px;
+    min-width: 0;
 }
 
 .room-list__header h2 {
@@ -422,10 +485,12 @@ const handleMoveToGroup = (room, groupId) => {
     display: flex;
     align-items: center;
     gap: 12px;
+    min-width: 0;
+    flex-wrap: wrap;
 }
 
 .search-field {
-    min-width: 180px;
+    min-width: 120px;
     max-width: 250px;
     flex: 1;
 }
@@ -509,11 +574,21 @@ const handleMoveToGroup = (room, groupId) => {
     width: 100%;
     border-collapse: separate;
     border-spacing: 0;
+    table-layout: fixed;
 }
+
+.room-list__table col.col-name { width: 20%; }
+.room-list__table col.col-nr { width: 9%; }
+.room-list__table col.col-type { width: 13%; }
+.room-list__table col.col-address { width: 24%; }
+.room-list__table col.col-capacity { width: 9%; }
+.room-list__table col.col-auto { width: 10%; }
+.room-list__table col.col-status { width: 9%; }
+.room-list__table col.col-actions { width: 6%; }
 
 .room-list__table th {
     text-align: left;
-    padding: 12px 16px;
+    padding: 12px;
     background: var(--color-background-dark);
     font-weight: 600;
     color: var(--color-text-maxcontrast);
@@ -542,8 +617,11 @@ const handleMoveToGroup = (room, groupId) => {
 }
 
 .room-list__table td {
-    padding: 12px 16px;
+    padding: 12px;
     border-bottom: 1px solid var(--color-border);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .room-list__row {

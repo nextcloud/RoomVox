@@ -90,6 +90,7 @@
 
 <script setup>
 import { computed, ref } from 'vue'
+import { translate } from '@nextcloud/l10n'
 import { generateUrl } from '@nextcloud/router'
 import { showSuccess, showError } from '@nextcloud/dialogs'
 
@@ -106,6 +107,8 @@ import DeleteIcon from 'vue-material-design-icons/Delete.vue'
 import OpenInNewIcon from 'vue-material-design-icons/OpenInNew.vue'
 
 import { respondToBooking, deleteBooking } from '../../services/api.js'
+
+const t = (text, vars = {}) => translate('roomvox', text, vars)
 
 const props = defineProps({
     booking: { type: Object, required: true },
@@ -129,10 +132,10 @@ const statusClass = computed(() => {
 
 const statusLabel = computed(() => {
     switch (props.booking.partstat) {
-        case 'ACCEPTED': return 'Accepted'
-        case 'TENTATIVE': return 'Pending'
-        case 'DECLINED': return 'Declined'
-        default: return props.booking.partstat || 'Unknown'
+        case 'ACCEPTED': return t('Accepted')
+        case 'TENTATIVE': return t('Pending')
+        case 'DECLINED': return t('Declined')
+        default: return props.booking.partstat || t('Unknown')
     }
 })
 
@@ -140,7 +143,7 @@ const statusLabel = computed(() => {
 const formattedDate = computed(() => {
     if (!props.booking.dtstart) return ''
     const date = new Date(props.booking.dtstart)
-    return date.toLocaleDateString('nl-NL', {
+    return date.toLocaleDateString(undefined, {
         weekday: 'long',
         day: 'numeric',
         month: 'long',
@@ -152,8 +155,8 @@ const formattedTime = computed(() => {
     if (!props.booking.dtstart || !props.booking.dtend) return ''
     const start = new Date(props.booking.dtstart)
     const end = new Date(props.booking.dtend)
-    const startTime = start.toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' })
-    const endTime = end.toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' })
+    const startTime = start.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })
+    const endTime = end.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })
     return `${startTime} - ${endTime}`
 })
 
@@ -170,27 +173,27 @@ async function handleRespond(action) {
     loading.value = true
     try {
         await respondToBooking(props.booking.roomId, props.booking.uid, action)
-        showSuccess(action === 'accept' ? 'Booking accepted' : 'Booking declined')
+        showSuccess(action === 'accept' ? t('Booking accepted') : t('Booking declined'))
         emit('updated')
     } catch (e) {
-        showError('Failed to respond to booking')
+        showError(t('Failed to respond to booking'))
     } finally {
         loading.value = false
     }
 }
 
 async function confirmDelete() {
-    if (!confirm('Are you sure you want to delete this booking?')) {
+    if (!confirm(t('Are you sure you want to delete this booking?'))) {
         return
     }
 
     loading.value = true
     try {
         await deleteBooking(props.booking.roomId, props.booking.uid)
-        showSuccess('Booking deleted')
+        showSuccess(t('Booking deleted'))
         emit('deleted')
     } catch (e) {
-        showError('Failed to delete booking')
+        showError(t('Failed to delete booking'))
     } finally {
         loading.value = false
     }

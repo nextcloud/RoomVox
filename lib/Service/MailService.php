@@ -202,7 +202,9 @@ class MailService {
             $message->setSubject($subject);
             $message->setPlainBody($body);
 
-            if ($fromEmail !== '') {
+            // Only use room email as From if it's a real external address.
+            // Internal CalDAV addresses (@roomvox.local) would be rejected by SMTP servers.
+            if ($fromEmail !== '' && !str_ends_with(strtolower($fromEmail), '@roomvox.local')) {
                 $message->setFrom([$fromEmail => $fromName]);
             }
 
@@ -297,7 +299,7 @@ class MailService {
         $organizerEmail = '';
         if ($vEvent->ORGANIZER) {
             $organizer = (string)$vEvent->ORGANIZER;
-            $organizerEmail = $this->stripMailto($organizer);
+            $organizerEmail = RoomService::stripMailto($organizer);
             $organizerName = isset($vEvent->ORGANIZER['CN']) ? (string)$vEvent->ORGANIZER['CN'] : $organizerEmail;
         }
 
@@ -361,10 +363,4 @@ class MailService {
             . "The room is now available for this time slot.";
     }
 
-    private function stripMailto(string $email): string {
-        if (str_starts_with(strtolower($email), 'mailto:')) {
-            return substr($email, 7);
-        }
-        return $email;
-    }
 }

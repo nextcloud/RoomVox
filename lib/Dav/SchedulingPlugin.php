@@ -82,6 +82,7 @@ class SchedulingPlugin extends ServerPlugin {
 
         // Only process messages for room accounts
         if (!$this->roomService->isRoomPrincipal($recipient)) {
+            $this->logger->debug("RoomVox: Passing through {$message->method} for non-room recipient {$recipient} (sender: {$message->sender})");
             return null; // Let Sabre handle non-room recipients
         }
 
@@ -113,7 +114,7 @@ class SchedulingPlugin extends ServerPlugin {
             $vEvent = $message->message->VEVENT ?? null;
             if ($vEvent !== null) {
                 foreach ($vEvent->select('ATTENDEE') as $att) {
-                    if (strtolower($this->stripMailto((string)$att)) === $roomEmail) {
+                    if (strtolower(RoomService::stripMailto((string)$att)) === $roomEmail) {
                         $ps = isset($att['PARTSTAT']) ? (string)$att['PARTSTAT'] : null;
                         if ($ps !== null) {
                             $this->scheduledPartstats[$roomEmail] = $ps;
@@ -304,7 +305,7 @@ class SchedulingPlugin extends ServerPlugin {
 
             // 1. Fix existing room attendees: CUTYPE + PARTSTAT write-back
             foreach ($attendees as $attendee) {
-                $email = strtolower($this->stripMailto((string)$attendee));
+                $email = strtolower(RoomService::stripMailto((string)$attendee));
                 $cutype = isset($attendee['CUTYPE']) ? (string)$attendee['CUTYPE'] : '';
 
                 if ($this->roomService->isRoomPrincipal('mailto:' . $email)) {
@@ -357,9 +358,7 @@ class SchedulingPlugin extends ServerPlugin {
                         ]);
 
                         // Update LOCATION to include room location
-                        if (!empty($matchedRoom['location'])) {
-                            $vEvent->LOCATION = $matchedRoom['name'] . ' — ' . $matchedRoom['location'];
-                        }
+                        $vEvent->LOCATION = $this->roomService->buildRoomLocation($matchedRoom);
 
                         $changed = true;
                         $this->logger->info("RoomVox: Added room {$matchedRoom['id']} as ATTENDEE from LOCATION match");
@@ -382,11 +381,7 @@ class SchedulingPlugin extends ServerPlugin {
                     $rooms = $this->roomService->getAllRooms();
                     foreach ($rooms as $room) {
                         if (strtolower($room['email'] ?? '') === $roomEmail) {
-                            $roomLocation = $room['name'];
-                            if (!empty($room['location'])) {
-                                $roomLocation .= ' — ' . $room['location'];
-                            }
-                            $vEvent->LOCATION = $roomLocation;
+                            $vEvent->LOCATION = $this->roomService->buildRoomLocation($room);
                             $changed = true;
                             break;
                         }
@@ -419,11 +414,9 @@ class SchedulingPlugin extends ServerPlugin {
             $roomName = strtolower($room['name'] ?? '');
             $roomEmail = strtolower($room['email'] ?? '');
             $emailLocal = explode('@', $roomEmail)[0] ?? '';
-            $nameWithLocation = !empty($room['location'])
-                ? strtolower($room['name'] . ' — ' . $room['location'])
-                : '';
+            $nameWithLocation = strtolower($this->roomService->buildRoomLocation($room));
 
-            if ($location === $roomName || $location === $roomEmail || $location === $emailLocal || ($nameWithLocation !== '' && $location === $nameWithLocation)) {
+            if ($location === $roomName || $location === $roomEmail || $location === $emailLocal || $location === $nameWithLocation) {
                 return $room;
             }
         }
@@ -465,7 +458,7 @@ class SchedulingPlugin extends ServerPlugin {
             $roomEmail = strtolower($room['email']);
             $attendees = $vEvent->select('ATTENDEE');
             foreach ($attendees as $attendee) {
-                $email = strtolower($this->stripMailto((string)$attendee));
+                $email = strtolower(RoomService::stripMailto((string)$attendee));
                 if ($email === $roomEmail) {
                     $attendee['PARTSTAT'] = $partstat;
                     break;
@@ -657,12 +650,12 @@ class SchedulingPlugin extends ServerPlugin {
                 return;
             }
 
-            $recipientEmail = strtolower($this->stripMailto($message->recipient));
+            $recipientEmail = strtolower(RoomService::stripMailto($message->recipient));
 
             // Fix CUTYPE on room attendee
             $attendees = $vEvent->select('ATTENDEE');
             foreach ($attendees as $attendee) {
-                $email = strtolower($this->stripMailto((string)$attendee));
+                $email = strtolower(RoomService::stripMailto((string)$attendee));
                 if ($email === $recipientEmail) {
                     $cutype = isset($attendee['CUTYPE']) ? (string)$attendee['CUTYPE'] : '';
                     if ($cutype !== 'ROOM') {
@@ -675,11 +668,7 @@ class SchedulingPlugin extends ServerPlugin {
             // Add LOCATION if not present
             $location = (string)($vEvent->LOCATION ?? '');
             if ($location === '') {
-                $roomLocation = $room['name'];
-                if (!empty($room['location'])) {
-                    $roomLocation .= ' — ' . $room['location'];
-                }
-                $vEvent->LOCATION = $roomLocation;
+                $vEvent->LOCATION = $this->roomService->buildRoomLocation($room);
             }
         } catch (\Throwable $e) {
             $this->logger->warning("RoomVox: Failed to enrich room attendee: " . $e->getMessage());
@@ -702,8 +691,8 @@ class SchedulingPlugin extends ServerPlugin {
 
             $attendees = $vEvent->select('ATTENDEE');
             foreach ($attendees as $attendee) {
-                $email = $this->stripMailto((string)$attendee);
-                $recipientEmail = $this->stripMailto($message->recipient);
+                $email = RoomService::stripMailto((string)$attendee);
+                $recipientEmail = RoomService::stripMailto($message->recipient);
 
                 if (strtolower($email) === strtolower($recipientEmail)) {
                     $attendee['PARTSTAT'] = $partstat;
@@ -751,13 +740,4 @@ class SchedulingPlugin extends ServerPlugin {
         return null;
     }
 
-    /**
-     * Strip mailto: prefix
-     */
-    private function stripMailto(string $email): string {
-        if (str_starts_with(strtolower($email), 'mailto:')) {
-            return substr($email, 7);
-        }
-        return $email;
-    }
 }

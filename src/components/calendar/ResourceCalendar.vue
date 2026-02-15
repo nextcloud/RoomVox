@@ -69,6 +69,9 @@ import dayGridPlugin from '@fullcalendar/daygrid'
 import timeGridPlugin from '@fullcalendar/timegrid'
 import interactionPlugin from '@fullcalendar/interaction'
 import { showError, showSuccess } from '@nextcloud/dialogs'
+import { translate, getLanguage } from '@nextcloud/l10n'
+const t = (text, vars = {}) => translate('roomvox', text, vars)
+const ncLocale = getLanguage().replace('_', '-')
 
 import NcButton from '@nextcloud/vue/components/NcButton'
 import ChevronLeft from 'vue-material-design-icons/ChevronLeft.vue'
@@ -121,20 +124,20 @@ const calendarOptions = computed(() => ({
     selectable: true,
     selectMirror: true,
     eventResizableFromStart: true,
-    resourceAreaWidth: '150px',
-    slotMinTime: '07:00:00',
-    slotMaxTime: '20:00:00',
-    slotDuration: '00:30:00',
+    resourceAreaWidth: '130px',
+    slotMinTime: '08:00:00',
+    slotMaxTime: '19:00:00',
+    slotDuration: '01:00:00',
     snapDuration: '00:15:00',
     scrollTime: '08:00:00',
-    weekends: true,
-    locale: 'nl',
+    weekends: false,
+    locale: ncLocale,
     firstDay: 1,
     buttonText: {
-        today: 'Vandaag',
-        day: 'Dag',
-        week: 'Week',
-        month: 'Maand',
+        today: t('Today'),
+        day: t('Day'),
+        week: t('Week'),
+        month: t('Month'),
     },
     resources: resources.value,
     events: events.value,
@@ -173,14 +176,14 @@ function handleDatesSet(dateInfo) {
     const end = dateInfo.end
 
     if (currentView.value === 'dayGridMonth') {
-        dateTitle.value = start.toLocaleDateString('nl-NL', { month: 'long', year: 'numeric' })
+        dateTitle.value = start.toLocaleDateString(ncLocale, { month: 'long', year: 'numeric' })
     } else if (currentView.value === 'resourceTimelineDay') {
-        dateTitle.value = start.toLocaleDateString('nl-NL', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+        dateTitle.value = start.toLocaleDateString(ncLocale, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
     } else {
         const endAdjusted = new Date(end)
         endAdjusted.setDate(endAdjusted.getDate() - 1)
-        const startMonth = start.toLocaleDateString('nl-NL', { month: 'short' })
-        const endMonth = endAdjusted.toLocaleDateString('nl-NL', { month: 'short' })
+        const startMonth = start.toLocaleDateString(ncLocale, { month: 'short' })
+        const endMonth = endAdjusted.toLocaleDateString(ncLocale, { month: 'short' })
         if (startMonth === endMonth) {
             dateTitle.value = `${start.getDate()} - ${endAdjusted.getDate()} ${startMonth} ${start.getFullYear()}`
         } else {
@@ -218,10 +221,10 @@ async function handleEventDrop(info) {
             end: event.end.toISOString(),
             roomId: newRoomId !== originalRoomId ? newRoomId : undefined,
         })
-        showSuccess('Booking rescheduled')
+        showSuccess(t('Booking rescheduled'))
         emit('reload')
     } catch (e) {
-        showError('Failed to reschedule booking')
+        showError(t('Failed to reschedule booking'))
         revert()
     }
 }
@@ -240,10 +243,10 @@ async function handleEventResize(info) {
             start: event.start.toISOString(),
             end: event.end.toISOString(),
         })
-        showSuccess('Booking updated')
+        showSuccess(t('Booking updated'))
         emit('reload')
     } catch (e) {
-        showError('Failed to update booking')
+        showError(t('Failed to update booking'))
         revert()
     }
 }
@@ -435,18 +438,18 @@ watch(() => props.rooms, () => {
 }
 
 :deep(.fc-timeline-slot) {
-    min-width: 60px;
+    min-width: 40px;
 }
 
 :deep(.fc-timeline-slot-label) {
-    font-size: 11px;
+    font-size: 10px;
     color: var(--color-text-maxcontrast);
 }
 
 :deep(.resource-label) {
     font-weight: 500;
-    font-size: 13px;
-    padding: 4px 8px;
+    font-size: 12px;
+    padding: 2px 6px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -466,11 +469,11 @@ watch(() => props.rooms, () => {
 }
 
 :deep(.fc-event-content) {
-    padding: 2px 6px;
-    font-size: 11px;
+    padding: 1px 4px;
+    font-size: 10px;
     display: flex;
     align-items: center;
-    gap: 4px;
+    gap: 3px;
     overflow: hidden;
 }
 
@@ -545,7 +548,7 @@ watch(() => props.rooms, () => {
     }
 
     :deep(.fc-timeline-slot) {
-        min-width: 40px;
+        min-width: 30px;
     }
 }
 </style>

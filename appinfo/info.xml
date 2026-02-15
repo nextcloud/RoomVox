@@ -31,8 +31,8 @@ Book meeting rooms directly from your calendar app. No separate booking interfac
     <bugs>https://gitea.rikdekker.nl/sam/roombooking/issues</bugs>
     <repository type="git">https://gitea.rikdekker.nl/sam/roombooking.git</repository>
     <dependencies>
-        <nextcloud min-version="32" max-version="32"/>
-        <php min-version="8.1"/>
+        <nextcloud min-version="32" max-version="33"/>
+        <php min-version="8.2"/>
     </dependencies>
     <types>
         <dav/>

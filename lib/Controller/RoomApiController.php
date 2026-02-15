@@ -118,6 +118,7 @@ class RoomApiController extends Controller {
             foreach ($bookings as $booking) {
                 $booking['roomId'] = $room['id'];
                 $booking['roomName'] = $room['name'];
+                $booking['roomLocation'] = $this->roomService->buildRoomLocation($room);
 
                 // Apply status filter
                 $partstat = $booking['partstat'] ?? '';
@@ -260,7 +261,7 @@ class RoomApiController extends Controller {
         }
 
         $data = [];
-        $updatableFields = ['name', 'email', 'description', 'capacity', 'location', 'facilities', 'autoAccept', 'active', 'smtpConfig', 'groupId', 'availabilityRules', 'maxBookingHorizon'];
+        $updatableFields = ['name', 'email', 'description', 'capacity', 'roomNumber', 'roomType', 'address', 'facilities', 'autoAccept', 'active', 'smtpConfig', 'groupId', 'availabilityRules', 'maxBookingHorizon'];
 
         foreach ($updatableFields as $field) {
             $value = $this->request->getParam($field);

@@ -8,27 +8,31 @@
 		class="room-card"
 		:class="{
 			'room-card--added': isAdded,
-			'room-card--unavailable': !room.isAvailable,
-		}">
+			'room-card--unavailable': !room.isAvailable && !isAdded,
+		}"
+		:title="room.roomBuildingAddress || ''">
 		<div class="room-card__row">
 			<div class="room-card__info">
 				<span class="room-card__name">{{ room.displayname }}</span>
 				<span class="room-card__meta">
 					<span
 						class="room-card__status"
-						:class="room.isAvailable ? 'room-card__status--free' : 'room-card__status--busy'">
-						{{ room.isAvailable ? $t('calendar', 'Available') : $t('calendar', 'Unavailable') }}
+						:class="statusClass">
+						{{ statusLabel }}
 					</span>
 					<template v-if="room.roomSeatingCapacity">
 						&middot; {{ room.roomSeatingCapacity }}p
 					</template>
-					<template v-if="formattedRoomType">
-						&middot; {{ formattedRoomType }}
+					<template v-if="subLocation">
+						&middot; {{ subLocation }}
+					</template>
+					<template v-if="roomTypeLabel">
+						&middot; {{ roomTypeLabel }}
 					</template>
 				</span>
 			</div>
 			<NcButton
-				v-if="isViewedByOrganizer && !isReadOnly && (isAdded || room.isAvailable)"
+				v-if="isViewedByOrganizer && !isReadOnly && (isAdded || (room.isAvailable && !hasRoomSelected))"
 				:type="isAdded ? 'tertiary' : 'secondary'"
 				class="room-card__action"
 				@click="toggleRoom">
@@ -46,7 +50,6 @@ import { NcButton } from '@nextcloud/vue'
 import Minus from 'vue-material-design-icons/Minus.vue'
 import Plus from 'vue-material-design-icons/Plus.vue'
 import { formatRoomType } from '../../../models/resourceProps.js'
-
 export default {
 	name: 'ResourceRoomCard',
 	components: {
@@ -72,11 +75,38 @@ export default {
 			type: Boolean,
 			default: false,
 		},
+		hasRoomSelected: {
+			type: Boolean,
+			default: false,
+		},
 	},
 
 	computed: {
-		formattedRoomType() {
-			return formatRoomType(this.room.roomType)
+		statusLabel() {
+			if (this.isAdded) {
+				return this.$t('calendar', 'Reserved')
+			}
+			return this.room.isAvailable
+				? this.$t('calendar', 'Available')
+				: this.$t('calendar', 'Unavailable')
+		},
+		statusClass() {
+			if (this.isAdded) {
+				return 'room-card__status--reserved'
+			}
+			return this.room.isAvailable
+				? 'room-card__status--free'
+				: 'room-card__status--busy'
+		},
+		subLocation() {
+			return this.room.roomNumber || ''
+		},
+		roomTypeLabel() {
+			const type = this.room.roomType
+			if (!type || type === 'meeting-room') {
+				return ''
+			}
+			return formatRoomType(type)
 		},
 	},
 
@@ -142,11 +172,18 @@ export default {
 
 	&__status {
 		&--free {
-			color: var(--color-success);
+			color: var(--color-success-text, #2d7a3a);
+			font-weight: 600;
 		}
 
 		&--busy {
-			color: var(--color-error);
+			color: var(--color-error-text, #c9302c);
+			font-weight: 600;
+		}
+
+		&--reserved {
+			color: var(--color-primary-element);
+			font-weight: 600;
 		}
 	}
 

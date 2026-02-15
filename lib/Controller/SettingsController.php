@@ -23,6 +23,15 @@ class SettingsController extends Controller {
         parent::__construct($appName, $request);
     }
 
+    private const DEFAULT_ROOM_TYPES = [
+        ['id' => 'meeting-room', 'label' => 'Meeting room'],
+        ['id' => 'rehearsal-room', 'label' => 'Rehearsal room'],
+        ['id' => 'studio', 'label' => 'Studio'],
+        ['id' => 'lecture-hall', 'label' => 'Lecture hall'],
+        ['id' => 'outdoor-area', 'label' => 'Outdoor area'],
+        ['id' => 'other', 'label' => 'Other'],
+    ];
+
     /**
      * Get global settings
      */
@@ -35,6 +44,7 @@ class SettingsController extends Controller {
         $settings = [
             'defaultAutoAccept' => $this->appConfig->getValueString(Application::APP_ID, 'default_auto_accept', 'false') === 'true',
             'emailEnabled' => $this->appConfig->getValueString(Application::APP_ID, 'email_enabled', 'true') === 'true',
+            'roomTypes' => $this->getRoomTypes(),
         ];
 
         return new JSONResponse($settings);
@@ -67,7 +77,34 @@ class SettingsController extends Controller {
             );
         }
 
+        $roomTypes = $this->request->getParam('roomTypes');
+        if ($roomTypes !== null && is_array($roomTypes)) {
+            $cleaned = [];
+            foreach ($roomTypes as $type) {
+                if (!empty($type['id']) && !empty($type['label'])) {
+                    $cleaned[] = [
+                        'id' => (string)$type['id'],
+                        'label' => (string)$type['label'],
+                    ];
+                }
+            }
+            $this->appConfig->setValueString(
+                Application::APP_ID,
+                'room_types',
+                json_encode($cleaned)
+            );
+        }
+
         return new JSONResponse(['status' => 'ok']);
+    }
+
+    private function getRoomTypes(): array {
+        $json = $this->appConfig->getValueString(Application::APP_ID, 'room_types', '');
+        if ($json === '') {
+            return self::DEFAULT_ROOM_TYPES;
+        }
+        $types = json_decode($json, true);
+        return is_array($types) ? $types : self::DEFAULT_ROOM_TYPES;
     }
 
     private function getCurrentUserId(): ?string {
