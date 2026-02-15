@@ -4,13 +4,7 @@
     <id>roomvox</id>
     <name>RoomVox</name>
     <summary>CalDAV-native room booking via any calendar app</summary>
-    <description><![CDATA[**⚠️ EVALUATION VERSION - NOT FOR PRODUCTION USE**
-
-This is an evaluation version intended for testing and demonstration purposes only. Do not use in production environments.
-
----
-
-RoomVox is a CalDAV-native room booking app for Nextcloud. Book meeting rooms directly from any calendar app — no separate booking interface needed.
+    <description><![CDATA[RoomVox is a CalDAV-native room booking app for Nextcloud. Book meeting rooms directly from any calendar app — no separate booking interface needed.
 
 **📋 Requirements:**
 * PHP 8.2 or higher

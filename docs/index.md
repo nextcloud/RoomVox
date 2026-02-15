@@ -26,6 +26,10 @@ Technical documentation and API reference.
 - [Architecture Overview](architecture/overview.md) — CalDAV backend, scheduling, data storage
 - [API Reference](architecture/api-reference.md) — All REST API endpoints with examples
 
+### Comparison
+
+- [RoomVox vs Calendar Resource Management](comparison.md) — Feature comparison with Nextcloud's built-in resource app
+
 ### Troubleshooting
 
 - [Troubleshooting](troubleshooting.md) — Common issues and solutions
