@@ -42,4 +42,7 @@ Book meeting rooms directly from your calendar app. No separate booking interfac
         <admin>OCA\RoomVox\Settings\AdminSettings</admin>
         <admin-section>OCA\RoomVox\Settings\AdminSection</admin-section>
     </settings>
+    <background-jobs>
+        <job>OCA\RoomVox\BackgroundJob\TelemetryJob</job>
+    </background-jobs>
 </info>
