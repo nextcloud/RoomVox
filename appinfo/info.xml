@@ -4,26 +4,37 @@
     <id>roomvox</id>
     <name>RoomVox</name>
     <summary>CalDAV-native room booking via any calendar app</summary>
-    <description><![CDATA[
-# Room Booking
+    <description><![CDATA[**⚠️ EVALUATION VERSION - NOT FOR PRODUCTION USE**
 
-Book meeting rooms directly from your calendar app. No separate booking interface needed.
+This is an evaluation version intended for testing and demonstration purposes only. Do not use in production environments.
 
-## Features
-- Rooms appear as CalDAV resources in any calendar app
-- Automatic availability checking and conflict detection
-- Auto-accept or manual approval workflow
-- Permission-based access (viewer/booker/manager roles)
-- Email notifications with iCalendar attachments
-- Per-room SMTP configuration
+---
 
-## How it works
-1. Admin creates rooms via the admin panel
-2. Rooms appear as bookable resources in calendar apps
-3. Users book rooms by adding them to calendar events
-4. The app automatically handles scheduling, conflicts, and notifications
+RoomVox is a CalDAV-native room booking app for Nextcloud. Book meeting rooms directly from any calendar app — no separate booking interface needed.
+
+**📋 Requirements:**
+* PHP 8.2 or higher
+* Nextcloud 32-33
+
+**Features:**
+* Rooms appear as CalDAV resources in any calendar app
+* Automatic availability checking and conflict detection
+* Auto-accept or manual approval workflow
+* Permission-based access (viewer/booker/manager roles)
+* Room groups with shared permissions
+* Availability rules and booking horizon
+* Email notifications with iCalendar attachments
+* Per-room SMTP configuration
+
+**Perfect for:**
+* Office room booking
+* Meeting room management
+* Shared space scheduling
+* Resource planning
+
+Built with Vue 3 and modern web technologies for a smooth, secure experience.
     ]]></description>
-    <version>1.0.0</version>
+    <version>0.2.0</version>
     <licence>agpl</licence>
     <author mail="sam@example.com">Sam Ditmeijer</author>
     <namespace>RoomVox</namespace>
