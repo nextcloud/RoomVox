@@ -2,12 +2,18 @@
 
 This guide covers creating, configuring, and organizing rooms in RoomVox.
 
+## Room Overview
+
+The Rooms tab shows all rooms organized by group, with columns for name, room number, type, address, capacity, auto-accept status, and active status.
+
+![Room overview — all rooms organized by group](../screenshots/rooms-overview.png)
+
 ## Creating Rooms
 
 1. Go to **Settings > Administration > RoomVox**
 2. Click the **Rooms** tab
-3. Click **Add room**
-4. Fill in the room details and click **Save**
+3. Click **+ New Room**
+4. Fill in the room details and click **Create Room**
 
 ### Room Properties
 
@@ -22,6 +28,8 @@ This guide covers creating, configuring, and organizing rooms in RoomVox.
 | Facilities | No | Available equipment (projector, whiteboard, video conferencing, etc.) |
 | Email | No | Custom email address for the room (see below) |
 | Room Group | No | Assign room to a group for shared permissions |
+
+![Room editor — general settings and location](../screenshots/Rooms-edit.png)
 
 ### Room Email Address
 
@@ -43,6 +51,8 @@ Available facility checkboxes:
 - Wheelchair accessible
 
 These are published as CalDAV room features and can be used for filtering in the calendar patch room browser.
+
+![Room editor — facilities, auto-accept, availability, and booking horizon](../screenshots/rooms-settings.png)
 
 ## Booking Behavior
 
@@ -108,6 +118,8 @@ Room types help categorize your rooms. They're shown in the room list and publis
 2. Find the **Room Types** section
 3. Add, edit, or remove types
 4. Drag to reorder
+
+![Settings — room types configuration](../screenshots/settings.png)
 
 ### Default Types
 

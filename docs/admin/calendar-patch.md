@@ -18,6 +18,8 @@ The default resource picker in Nextcloud Calendar is minimal:
 
 The patch replaces the resource picker with a full room browser:
 
+![Room browser — all rooms grouped by building with filters](../screenshots/bookroom-filter.png)
+
 | Feature | Standard | Patched |
 |---------|----------|---------|
 | All rooms visible | No (search or max 3 suggestions) | Yes, all rooms at once |
@@ -31,6 +33,8 @@ The patch replaces the resource picker with a full room browser:
 | Room cards | Name in dropdown only | Card with status, capacity, floor, add/remove |
 
 ### Room Card Component
+
+![Room selected and reserved in the browser](../screenshots/bookroom-selected.png)
 
 Each room is displayed as a compact card showing:
 

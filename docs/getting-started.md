@@ -24,6 +24,8 @@ Before creating rooms, review the app settings:
 3. Enable **Email notifications** — turn on booking confirmation and approval emails
 4. Configure **Room types** — add or modify room types (meeting room, studio, lecture hall, etc.)
 
+![Settings — general options and room types](screenshots/settings.png)
+
 ## Step 3: Create Your First Room
 
 1. Click the **Rooms** tab
@@ -39,7 +41,9 @@ Before creating rooms, review the app settings:
    - **Auto-accept** — automatically confirm bookings, or require manager approval
    - **Availability rules** — optionally restrict booking to specific days and times
    - **Booking horizon** — optionally limit how far in advance bookings can be made
-5. Click **Save**
+5. Click **Create Room**
+
+![Room editor — fill in details for your new room](screenshots/Rooms-edit.png)
 
 The room is now available as a CalDAV resource in calendar apps.
 
@@ -69,6 +73,8 @@ The room will respond with:
 - **Tentative** — if manager approval is required
 - **Declined** — if there's a scheduling conflict
 
+![Room browser — browse and add rooms from the calendar](screenshots/bookroom-start.png)
+
 ### From Other Calendar Apps
 
 Rooms appear as CalDAV resources in any compatible calendar app:
@@ -84,6 +90,8 @@ Rooms appear as CalDAV resources in any compatible calendar app:
 2. Filter by room, status, or date range
 3. For pending bookings (tentative), click **Approve** or **Decline**
 4. Approved bookings send confirmation emails to the organizer
+
+![Bookings overview — manage all bookings](screenshots/bookings-overview-list.png)
 
 ## Next Steps
 

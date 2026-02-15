@@ -357,34 +357,71 @@ class RoomService {
 
     /**
      * Build a LOCATION string from room fields.
-     * Format: "{Street} ({Building}, Room {Nr})" or simpler variants.
+     * Format: "Street, PostalCode City (Building, Room Nr)"
+     * Optimized for iOS/macOS Maps geocoding (street + postal code + city first).
+     *
+     * Address is stored as "Building, Street, PostalCode, City".
      */
     public function buildRoomLocation(array $room): string {
         $address = trim($room['address'] ?? '');
         $roomNumber = trim($room['roomNumber'] ?? '');
 
-        $buildingName = '';
-        $streetAddress = $address;
-        if ($address !== '' && str_contains($address, ',')) {
-            $parts = explode(',', $address, 2);
-            $buildingName = trim($parts[0]);
-            $streetAddress = trim($parts[1]);
-        }
+        // Parse address parts: "Building, Street, PostalCode, City"
+        $parts = array_map('trim', explode(',', $address));
+        $building = '';
+        $street = '';
+        $postalCode = '';
+        $city = '';
 
-        if ($streetAddress !== '' && $buildingName !== '') {
-            $detail = $roomNumber !== '' ? $buildingName . ', Room ' . $roomNumber : $buildingName;
-            return $streetAddress . ' (' . $detail . ')';
-        }
-
-        if ($streetAddress !== '') {
-            if ($roomNumber !== '') {
-                return $streetAddress . ' (Room ' . $roomNumber . ')';
+        if (count($parts) >= 4) {
+            $building = $parts[0];
+            $street = $parts[1];
+            $postalCode = $parts[2];
+            $city = implode(', ', array_slice($parts, 3));
+        } elseif (count($parts) === 3) {
+            $building = $parts[0];
+            $street = $parts[1];
+            // Detect if 3rd part is postal code (e.g. "3584 CS") or city
+            if (preg_match('/^\d{4}\s*[A-Z]{2}$/i', $parts[2])) {
+                $postalCode = $parts[2];
+            } else {
+                $city = $parts[2];
             }
-            return $streetAddress;
+        } elseif (count($parts) === 2) {
+            $building = $parts[0];
+            $street = $parts[1];
+        } elseif (count($parts) === 1 && $parts[0] !== '') {
+            $street = $parts[0];
         }
 
+        // Build geocodable address: "Street, PostalCode City"
+        $geocodable = $street;
+        $cityPart = trim($postalCode . ' ' . $city);
+        if ($geocodable !== '' && $cityPart !== '') {
+            $geocodable .= ', ' . $cityPart;
+        } elseif ($cityPart !== '') {
+            $geocodable = $cityPart;
+        }
+
+        // Build detail: "(Building, Room Nr)"
+        $detailParts = [];
+        if ($building !== '') {
+            $detailParts[] = $building;
+        }
         if ($roomNumber !== '') {
-            return $room['name'] . ' — Room ' . $roomNumber;
+            $detailParts[] = 'Room ' . $roomNumber;
+        }
+        $detail = implode(', ', $detailParts);
+
+        // Combine: "Street, PostalCode City (Building, Room Nr)"
+        if ($geocodable !== '' && $detail !== '') {
+            return $geocodable . ' (' . $detail . ')';
+        }
+        if ($geocodable !== '') {
+            return $geocodable;
+        }
+        if ($detail !== '') {
+            return $room['name'] . ' (' . $detail . ')';
         }
 
         return $room['name'];

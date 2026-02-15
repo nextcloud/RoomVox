@@ -34,6 +34,26 @@ If your administrator has installed the [calendar patch](../admin/calendar-patch
 - **Room cards** show status (available/unavailable), capacity, and floor
 - Click **+** to add a room, **-** to remove it
 
+![Room browser — browse all rooms grouped by building](../screenshots/bookroom-start.png)
+
+#### Searching Rooms
+
+Type in the search field to filter rooms by name, building, address, or floor number. Results update instantly as you type.
+
+![Search rooms by name](../screenshots/bookroom-search.png)
+
+#### Filtering by Building and Facilities
+
+Click the building or facility chips to filter rooms. Multiple filters can be combined — for example, select a building and a facility to find all rooms in that building with a projector.
+
+![Filter by building and facilities](../screenshots/bookroom-filter.png)
+
+#### Adding a Room
+
+Click the **+** button on a room card to add it to your event. The room appears as "Reserved" (blue) and the LOCATION field is automatically filled in.
+
+![Room selected and reserved](../screenshots/bookroom-selected.png)
+
 ## Booking from Apple Calendar
 
 Apple Calendar (macOS and iOS) supports CalDAV resources natively.

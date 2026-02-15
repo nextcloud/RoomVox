@@ -14,6 +14,8 @@ Use the filters at the top to narrow down the booking list:
 - **Status** — filter by All, Pending, Accepted, or Declined
 - **Date range** — set a start and end date
 
+![Bookings overview — list of all bookings with status and filters](../screenshots/bookings-overview-list.png)
+
 ### Booking Information
 
 Each booking shows:

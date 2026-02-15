@@ -66,6 +66,12 @@
                             :placeholder="$t('e.g. Heidelberglaan 8')" />
                     </div>
                     <div class="form-field">
+                        <label>{{ $t('Postal code') }}</label>
+                        <NcTextField
+                            v-model="form.postalCode"
+                            :placeholder="$t('e.g. 3584 CS')" />
+                    </div>
+                    <div class="form-field">
                         <label>{{ $t('City') }}</label>
                         <NcTextField
                             v-model="form.city"
@@ -398,6 +404,7 @@ const form = reactive({
     roomType: 'meeting-room',
     building: '',
     street: '',
+    postalCode: '',
     city: '',
     facilities: [],
     autoAccept: false,
@@ -460,11 +467,33 @@ const validate = () => {
 // Initialize form from room data
 watch(() => props.room, (room) => {
     if (room) {
-        // Parse address "Building, Street, City" into separate fields
+        // Parse address "Building, Street, PostalCode, City" into separate fields
         const addressParts = (room.address || '').split(',').map(s => s.trim())
-        const building = addressParts.length >= 2 ? addressParts[0] : ''
-        const street = addressParts.length >= 2 ? addressParts[1] : addressParts[0] || ''
-        const city = addressParts.length >= 3 ? addressParts.slice(2).join(', ') : ''
+        let building = '', street = '', postalCode = '', city = ''
+        if (addressParts.length >= 4) {
+            building = addressParts[0]
+            street = addressParts[1]
+            postalCode = addressParts[2]
+            city = addressParts.slice(3).join(', ')
+        } else if (addressParts.length === 3) {
+            // Legacy: "Building, Street, City" — detect postal code in 3rd part
+            const third = addressParts[2]
+            if (/^\d{4}\s*[A-Z]{2}$/i.test(third.trim())) {
+                // "Building, Street, PostalCode" (no city)
+                building = addressParts[0]
+                street = addressParts[1]
+                postalCode = third
+            } else {
+                building = addressParts[0]
+                street = addressParts[1]
+                city = third
+            }
+        } else if (addressParts.length === 2) {
+            building = addressParts[0]
+            street = addressParts[1]
+        } else if (addressParts.length === 1) {
+            street = addressParts[0]
+        }
 
         Object.assign(form, {
             name: room.name || '',
@@ -475,6 +504,7 @@ watch(() => props.room, (room) => {
             roomType: room.roomType || 'meeting-room',
             building,
             street,
+            postalCode,
             city,
             facilities: room.facilities || [],
             autoAccept: room.autoAccept || false,
@@ -543,11 +573,12 @@ const save = () => {
 
     const data = { ...form }
 
-    // Compose address from separate fields: "Building, Street, City"
-    const parts = [form.building, form.street, form.city].map(s => s.trim()).filter(Boolean)
+    // Compose address from separate fields: "Building, Street, PostalCode, City"
+    const parts = [form.building, form.street, form.postalCode, form.city].map(s => s.trim()).filter(Boolean)
     data.address = parts.join(', ')
     delete data.building
     delete data.street
+    delete data.postalCode
     delete data.city
 
     // Include availability rules

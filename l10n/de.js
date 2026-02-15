@@ -108,6 +108,8 @@ OC.L10N.register(
         "e.g. Building A" : "z.\u00a0B. Gebäude A",
         "Street and number" : "Straße und Hausnummer",
         "e.g. Heidelberglaan 8" : "z.\u00a0B. Heidelberglaan 8",
+        "Postal code" : "Postleitzahl",
+        "e.g. 3584 CS" : "z.\u00a0B. 3584 CS",
         "City" : "Stadt",
         "e.g. Utrecht" : "z.\u00a0B. Utrecht",
         "Description" : "Beschreibung",
