@@ -16,6 +16,12 @@
                 {{ $t('Bookings') }}
             </button>
             <button
+                :class="['tab-button', { active: isTabActive('import-export') }]"
+                @click="onTabClick('import-export')">
+                <SwapHorizontal :size="16" />
+                {{ $t('Import / Export') }}
+            </button>
+            <button
                 :class="['tab-button', { active: isTabActive('settings') }]"
                 @click="onTabClick('settings')">
                 <Cog :size="16" />
@@ -79,6 +85,204 @@
             <!-- Bookings -->
             <div v-if="currentView === 'bookings'" class="tab-content">
                 <BookingOverview :rooms="rooms" />
+            </div>
+
+            <!-- Import / Export -->
+            <div v-if="currentView === 'import-export'" class="tab-content">
+                <div class="import-export-tab">
+                    <div class="settings-section">
+                        <h2>{{ $t('Export Rooms') }}</h2>
+                        <p class="settings-section-desc">{{ $t('Download all rooms as a CSV file. This file can be imported into another RoomVox instance or edited in Excel/LibreOffice.') }}</p>
+                        <NcButton type="secondary" @click="handleExport">
+                            <template #icon>
+                                <Download :size="20" />
+                            </template>
+                            {{ $t('Export CSV') }}
+                        </NcButton>
+                    </div>
+
+                    <div class="settings-section">
+                        <h2>{{ $t('Import Rooms') }}</h2>
+                        <p class="settings-section-desc">{{ $t('Upload a CSV file to import rooms. RoomVox and MS365 formats are supported.') }}</p>
+
+                        <!-- Upload area (step 1) -->
+                        <div v-if="importStep === 'upload'" class="import-inline">
+                            <div class="upload-area"
+                                 :class="{ 'upload-area--drag': isDraggingImport }"
+                                 @dragover.prevent="isDraggingImport = true"
+                                 @dragleave="isDraggingImport = false"
+                                 @drop.prevent="handleImportDrop">
+                                <Upload :size="48" class="upload-icon" />
+                                <p>{{ $t('Drag and drop a CSV file here') }}</p>
+                                <p class="upload-or">{{ $t('or') }}</p>
+                                <NcButton type="secondary" @click="$refs.importFileInput.click()">
+                                    {{ $t('Choose file') }}
+                                </NcButton>
+                                <input
+                                    ref="importFileInput"
+                                    type="file"
+                                    accept=".csv,text/csv"
+                                    class="hidden-input"
+                                    @change="handleImportFileSelect" />
+                            </div>
+
+                            <div v-if="importError" class="import-error">
+                                <AlertCircle :size="16" />
+                                {{ importError }}
+                            </div>
+
+                            <div class="import-help">
+                                <h3>{{ $t('Supported formats') }}</h3>
+                                <ul>
+                                    <li><strong>RoomVox CSV</strong> — {{ $t('Exported from another RoomVox installation') }}</li>
+                                    <li><strong>Microsoft 365 / Exchange</strong> — {{ $t('Exported via PowerShell (Get-EXOMailbox | Get-Place | Export-Csv)') }}</li>
+                                </ul>
+                                <p class="import-help-note">{{ $t('Column names are automatically detected and mapped.') }}</p>
+                                <div class="sample-download">
+                                    <NcButton type="tertiary" @click="handleDownloadSample">
+                                        <template #icon>
+                                            <Download :size="20" />
+                                        </template>
+                                        {{ $t('Download sample CSV') }}
+                                    </NcButton>
+                                    <span class="sample-desc">{{ $t('Download an example file with headers and a sample row') }}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Preview (step 2) -->
+                        <div v-if="importStep === 'preview'" class="import-inline">
+                            <div class="preview-info">
+                                <p>
+                                    {{ $t('Detected format:') }}
+                                    <strong>{{ importFormatLabel }}</strong>
+                                </p>
+                                <p>
+                                    {{ $t('{count} rooms found', { count: importPreviewData.rows.length }) }}
+                                    —
+                                    {{ $t('{create} new, {update} existing, {errors} errors', {
+                                        create: importCreateCount,
+                                        update: importUpdateCount,
+                                        errors: importErrorCount
+                                    }) }}
+                                </p>
+                            </div>
+
+                            <div class="preview-table-wrap">
+                                <table class="preview-table">
+                                    <thead>
+                                        <tr>
+                                            <th>{{ $t('Action') }}</th>
+                                            <th>{{ $t('Name') }}</th>
+                                            <th>{{ $t('Email') }}</th>
+                                            <th>{{ $t('Capacity') }}</th>
+                                            <th>{{ $t('Building') }}</th>
+                                            <th>{{ $t('Facilities') }}</th>
+                                            <th>{{ $t('Issues') }}</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr v-for="row in importPreviewData.rows"
+                                            :key="row.line"
+                                            :class="{ 'row-error': row.errors.length > 0 }">
+                                            <td>
+                                                <NcChip
+                                                    :text="importActionLabel(row)"
+                                                    :variant="importActionVariant(row)"
+                                                    no-close />
+                                            </td>
+                                            <td>{{ row.data.name || '—' }}</td>
+                                            <td>{{ row.data.email || '—' }}</td>
+                                            <td>{{ row.data.capacity || '—' }}</td>
+                                            <td>{{ row.data.building || '—' }}</td>
+                                            <td>{{ row.data.facilities || '—' }}</td>
+                                            <td>
+                                                <span v-if="row.errors.length > 0" class="error-text">
+                                                    {{ row.errors.join(', ') }}
+                                                </span>
+                                                <span v-else-if="row.action === 'update'" class="match-text">
+                                                    {{ $t('Matches: {name}', { name: row.matchedName }) }}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <div class="import-mode">
+                                <label>{{ $t('Import mode:') }}</label>
+                                <div class="mode-options">
+                                    <NcCheckboxRadioSwitch
+                                        v-model="importMode"
+                                        value="create"
+                                        name="import-mode"
+                                        type="radio">
+                                        {{ $t('Only create new rooms (skip existing)') }}
+                                    </NcCheckboxRadioSwitch>
+                                    <NcCheckboxRadioSwitch
+                                        v-model="importMode"
+                                        value="update"
+                                        name="import-mode"
+                                        type="radio">
+                                        {{ $t('Create new + update existing rooms') }}
+                                    </NcCheckboxRadioSwitch>
+                                </div>
+                            </div>
+
+                            <div class="import-actions">
+                                <NcButton type="tertiary" @click="resetImport">
+                                    {{ $t('Back') }}
+                                </NcButton>
+                                <NcButton type="primary"
+                                          :disabled="importErrorCount === importPreviewData.rows.length || importing"
+                                          @click="executeImport">
+                                    <template v-if="importing" #icon>
+                                        <NcLoadingIcon :size="20" />
+                                    </template>
+                                    {{ importing ? $t('Importing...') : $t('Import') }}
+                                </NcButton>
+                            </div>
+                        </div>
+
+                        <!-- Result (step 3) -->
+                        <div v-if="importStep === 'result'" class="import-inline">
+                            <div class="result-summary">
+                                <div class="result-stat result-stat--success">
+                                    <span class="result-stat__number">{{ importResult.created }}</span>
+                                    <span class="result-stat__label">{{ $t('Created') }}</span>
+                                </div>
+                                <div class="result-stat result-stat--info">
+                                    <span class="result-stat__number">{{ importResult.updated }}</span>
+                                    <span class="result-stat__label">{{ $t('Updated') }}</span>
+                                </div>
+                                <div class="result-stat result-stat--warning">
+                                    <span class="result-stat__number">{{ importResult.skipped }}</span>
+                                    <span class="result-stat__label">{{ $t('Skipped') }}</span>
+                                </div>
+                                <div v-if="importResult.errors.length > 0" class="result-stat result-stat--error">
+                                    <span class="result-stat__number">{{ importResult.errors.length }}</span>
+                                    <span class="result-stat__label">{{ $t('Errors') }}</span>
+                                </div>
+                            </div>
+
+                            <div v-if="importResult.errors.length > 0" class="result-errors">
+                                <h3>{{ $t('Errors') }}</h3>
+                                <ul>
+                                    <li v-for="(err, idx) in importResult.errors" :key="idx">
+                                        <strong>{{ $t('Line {line}', { line: err.line }) }}:</strong>
+                                        {{ err.name }} — {{ err.errors.join(', ') }}
+                                    </li>
+                                </ul>
+                            </div>
+
+                            <div class="import-actions">
+                                <NcButton type="primary" @click="resetImport(); loadRooms()">
+                                    {{ $t('Done') }}
+                                </NcButton>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <!-- Statistics -->
@@ -164,6 +368,102 @@
 
             <!-- Settings -->
             <div v-if="currentView === 'settings'" class="roomvox-settings">
+                <NcSettingsSection :name="$t('API Tokens')">
+                    <p class="section-description">
+                        {{ $t('Manage API tokens for external integrations. Tokens allow external systems to access the RoomVox API.') }}
+                    </p>
+
+                    <!-- Token list -->
+                    <div v-if="apiTokens.length > 0" class="token-list">
+                        <table class="token-table">
+                            <thead>
+                                <tr>
+                                    <th>{{ $t('Name') }}</th>
+                                    <th>{{ $t('Scope') }}</th>
+                                    <th>{{ $t('Rooms') }}</th>
+                                    <th>{{ $t('Created') }}</th>
+                                    <th>{{ $t('Last used') }}</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="tok in apiTokens" :key="tok.id">
+                                    <td class="token-name">{{ tok.name }}</td>
+                                    <td>
+                                        <NcChip :text="tok.scope" no-close :variant="scopeVariant(tok.scope)" />
+                                    </td>
+                                    <td>{{ tok.roomIds && tok.roomIds.length > 0 ? tok.roomIds.join(', ') : $t('All rooms') }}</td>
+                                    <td>{{ formatDate(tok.createdAt) }}</td>
+                                    <td>{{ tok.lastUsedAt ? formatDate(tok.lastUsedAt) : '—' }}</td>
+                                    <td>
+                                        <NcButton type="tertiary-no-background"
+                                                  :aria-label="$t('Delete')"
+                                                  @click="onDeleteToken(tok.id)">
+                                            <template #icon>
+                                                <Close :size="20" />
+                                            </template>
+                                        </NcButton>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <p v-else class="no-tokens">{{ $t('No API tokens created yet.') }}</p>
+
+                    <!-- New token created banner -->
+                    <div v-if="newlyCreatedToken" class="new-token-banner">
+                        <AlertCircle :size="20" />
+                        <div class="new-token-info">
+                            <strong>{{ $t('Token created! Copy it now — it will not be shown again.') }}</strong>
+                            <div class="new-token-value">
+                                <code>{{ newlyCreatedToken }}</code>
+                                <NcButton type="tertiary" @click="copyToken">
+                                    <template #icon>
+                                        <ContentCopy :size="20" />
+                                    </template>
+                                    {{ tokenCopied ? $t('Copied!') : $t('Copy') }}
+                                </NcButton>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Create token form -->
+                    <div class="create-token-form">
+                        <div class="token-form-row">
+                            <input
+                                v-model="newTokenName"
+                                type="text"
+                                class="room-type-input"
+                                :placeholder="$t('Token name (e.g. Lobby Display)')" />
+                            <select v-model="newTokenScope" class="token-scope-select">
+                                <option value="read">read</option>
+                                <option value="book">book</option>
+                                <option value="admin">admin</option>
+                            </select>
+                            <NcButton type="secondary"
+                                      :disabled="!newTokenName.trim() || creatingToken"
+                                      @click="onCreateToken">
+                                <template v-if="creatingToken" #icon>
+                                    <NcLoadingIcon :size="20" />
+                                </template>
+                                {{ $t('Create token') }}
+                            </NcButton>
+                        </div>
+                    </div>
+
+                    <div class="token-help">
+                        <h4>{{ $t('Scopes') }}</h4>
+                        <ul>
+                            <li><strong>read</strong> — {{ $t('View rooms, availability, and calendar feed') }}</li>
+                            <li><strong>book</strong> — {{ $t('Everything in read + create and cancel bookings') }}</li>
+                            <li><strong>admin</strong> — {{ $t('Everything in book + manage rooms and view statistics') }}</li>
+                        </ul>
+                        <h4>{{ $t('Usage') }}</h4>
+                        <code class="token-example">curl -H "Authorization: Bearer rvx_..." {{ apiBaseUrl }}/api/v1/rooms</code>
+                    </div>
+                </NcSettingsSection>
+
                 <NcSettingsSection :name="'General'">
                     <NcCheckboxRadioSwitch
                         :model-value="settings.defaultAutoAccept"
@@ -240,6 +540,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { showError, showSuccess } from '@nextcloud/dialogs'
 import { translate } from '@nextcloud/l10n'
+import { generateUrl } from '@nextcloud/router'
 import NcCounterBubble from '@nextcloud/vue/components/NcCounterBubble'
 import NcSettingsSection from '@nextcloud/vue/components/NcSettingsSection'
 import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwitch'
@@ -252,6 +553,13 @@ import DragHorizontalVariant from 'vue-material-design-icons/DragHorizontalVaria
 import CalendarCheck from 'vue-material-design-icons/CalendarCheck.vue'
 import Cog from 'vue-material-design-icons/Cog.vue'
 import ChartBox from 'vue-material-design-icons/ChartBox.vue'
+import SwapHorizontal from 'vue-material-design-icons/SwapHorizontal.vue'
+import Download from 'vue-material-design-icons/Download.vue'
+import Upload from 'vue-material-design-icons/Upload.vue'
+import AlertCircle from 'vue-material-design-icons/AlertCircle.vue'
+import ContentCopy from 'vue-material-design-icons/ContentCopy.vue'
+import NcChip from '@nextcloud/vue/components/NcChip'
+import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 
 import RoomList from './views/RoomList.vue'
 import RoomEditor from './views/RoomEditor.vue'
@@ -263,6 +571,8 @@ import {
     getRooms, createRoom, updateRoom, deleteRoom,
     getRoomGroups, createRoomGroup, updateRoomGroup, deleteRoomGroup,
     getSettings, saveSettings,
+    exportRoomsUrl, sampleCsvUrl, importPreview as apiImportPreview, importRooms as apiImportRooms,
+    getApiTokens, createApiToken, deleteApiToken,
 } from './services/api.js'
 
 const t = (text, vars = {}) => translate('roomvox', text, vars)
@@ -284,6 +594,191 @@ const dragIndex = ref(null)
 const dragOverIndex = ref(null)
 const telemetryEnabled = ref(true)
 const telemetryLastReport = ref(null)
+
+// API Token state
+const apiTokens = ref([])
+const newTokenName = ref('')
+const newTokenScope = ref('read')
+const creatingToken = ref(false)
+const newlyCreatedToken = ref(null)
+const tokenCopied = ref(false)
+const apiBaseUrl = window.location.origin + generateUrl('/apps/roomvox')
+
+// Import/Export state
+const importStep = ref('upload')
+const isDraggingImport = ref(false)
+const importError = ref('')
+const importPreviewData = ref({ columns: [], rows: [], detected_format: 'unknown' })
+const importMode = ref('create')
+const importing = ref(false)
+const importResult = ref({ created: 0, updated: 0, skipped: 0, errors: [] })
+const importCsvFile = ref(null)
+
+const importFormatLabel = computed(() => {
+    const labels = {
+        roomvox: 'RoomVox CSV',
+        ms365: 'Microsoft 365 / Exchange',
+        unknown: t('Unknown format'),
+    }
+    return labels[importPreviewData.value.detected_format] || importPreviewData.value.detected_format
+})
+
+const importCreateCount = computed(() =>
+    importPreviewData.value.rows.filter(r => r.action === 'create' && r.errors.length === 0).length
+)
+const importUpdateCount = computed(() =>
+    importPreviewData.value.rows.filter(r => r.action === 'update' && r.errors.length === 0).length
+)
+const importErrorCount = computed(() =>
+    importPreviewData.value.rows.filter(r => r.errors.length > 0).length
+)
+
+const importActionLabel = (row) => {
+    if (row.errors.length > 0) return t('Error')
+    return row.action === 'create' ? t('New') : t('Update')
+}
+
+const importActionVariant = (row) => {
+    if (row.errors.length > 0) return 'error'
+    return row.action === 'create' ? 'success' : 'primary'
+}
+
+const handleExport = () => {
+    window.location.href = exportRoomsUrl()
+}
+
+const handleDownloadSample = () => {
+    window.location.href = sampleCsvUrl()
+}
+
+const handleImportFileSelect = (event) => {
+    const file = event.target.files[0]
+    if (file) uploadImportFile(file)
+}
+
+const handleImportDrop = (event) => {
+    isDraggingImport.value = false
+    const file = event.dataTransfer.files[0]
+    if (file) uploadImportFile(file)
+}
+
+const uploadImportFile = async (file) => {
+    importError.value = ''
+
+    if (!file.name.endsWith('.csv') && file.type !== 'text/csv') {
+        importError.value = t('Please select a CSV file')
+        return
+    }
+
+    importCsvFile.value = file
+
+    const formData = new FormData()
+    formData.append('file', file)
+
+    try {
+        const response = await apiImportPreview(formData)
+        importPreviewData.value = response.data
+
+        if (importPreviewData.value.rows.length === 0) {
+            importError.value = t('No rooms found in CSV file')
+            return
+        }
+
+        importStep.value = 'preview'
+    } catch (err) {
+        importError.value = err.response?.data?.message || t('Failed to parse CSV file')
+    }
+}
+
+const executeImport = async () => {
+    importing.value = true
+
+    const formData = new FormData()
+    formData.append('file', importCsvFile.value)
+    formData.append('mode', importMode.value)
+
+    try {
+        const response = await apiImportRooms(formData)
+        importResult.value = response.data
+        importStep.value = 'result'
+    } catch (err) {
+        importError.value = err.response?.data?.message || t('Import failed')
+        importStep.value = 'upload'
+    } finally {
+        importing.value = false
+    }
+}
+
+const resetImport = () => {
+    importStep.value = 'upload'
+    importError.value = ''
+    importPreviewData.value = { columns: [], rows: [], detected_format: 'unknown' }
+    importCsvFile.value = null
+    importMode.value = 'create'
+}
+
+// API Token handlers
+const loadApiTokens = async () => {
+    try {
+        const response = await getApiTokens()
+        apiTokens.value = response.data
+    } catch (e) {
+        // Tokens only accessible for admins
+    }
+}
+
+const onCreateToken = async () => {
+    creatingToken.value = true
+    newlyCreatedToken.value = null
+    tokenCopied.value = false
+    try {
+        const response = await createApiToken({
+            name: newTokenName.value.trim(),
+            scope: newTokenScope.value,
+        })
+        newlyCreatedToken.value = response.data.token
+        newTokenName.value = ''
+        newTokenScope.value = 'read'
+        await loadApiTokens()
+        showSuccess(t('API token created'))
+    } catch (e) {
+        showError(t('Failed to create API token') + ': ' + (e.response?.data?.error || e.message))
+    } finally {
+        creatingToken.value = false
+    }
+}
+
+const onDeleteToken = async (id) => {
+    try {
+        await deleteApiToken(id)
+        await loadApiTokens()
+        showSuccess(t('API token deleted'))
+    } catch (e) {
+        showError(t('Failed to delete API token'))
+    }
+}
+
+const copyToken = async () => {
+    if (newlyCreatedToken.value) {
+        try {
+            await navigator.clipboard.writeText(newlyCreatedToken.value)
+            tokenCopied.value = true
+            setTimeout(() => { tokenCopied.value = false }, 3000)
+        } catch {
+            showError(t('Failed to copy token'))
+        }
+    }
+}
+
+const scopeVariant = (scope) => {
+    return { read: 'primary', book: 'success', admin: 'error' }[scope] || 'primary'
+}
+
+const formatDate = (isoString) => {
+    if (!isoString) return '—'
+    const d = new Date(isoString)
+    return d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+}
 
 const isTabActive = (tabId) => {
     if (tabId === 'rooms') return currentView.value === 'rooms' || currentView.value === 'permissions'
@@ -506,6 +1001,7 @@ const toggleTelemetry = async (enabled) => {
 onMounted(() => {
     loadRooms()
     loadSettings()
+    loadApiTokens()
 })
 </script>
 
@@ -792,5 +1288,362 @@ onMounted(() => {
     color: var(--color-success, #2d7b43);
     font-weight: 600;
     flex-shrink: 0;
+}
+
+/* API Token management */
+.token-list {
+    margin-bottom: 20px;
+}
+
+.token-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+.token-table th {
+    text-align: left;
+    padding: 8px 12px;
+    font-weight: 600;
+    border-bottom: 2px solid var(--color-border);
+    white-space: nowrap;
+}
+
+.token-table td {
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.token-name {
+    font-weight: 500;
+}
+
+.no-tokens {
+    color: var(--color-text-maxcontrast);
+    font-style: italic;
+    margin-bottom: 16px;
+}
+
+.new-token-banner {
+    display: flex;
+    gap: 12px;
+    padding: 16px;
+    margin: 16px 0;
+    background: var(--color-warning-hover, #fff3e0);
+    border-radius: var(--border-radius-large);
+    border-left: 4px solid var(--color-warning, #e65100);
+}
+
+.new-token-info {
+    flex: 1;
+}
+
+.new-token-value {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.new-token-value code {
+    padding: 8px 12px;
+    background: var(--color-background-dark);
+    border-radius: var(--border-radius);
+    font-size: 13px;
+    word-break: break-all;
+    flex: 1;
+}
+
+.create-token-form {
+    margin: 16px 0;
+}
+
+.token-form-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.token-scope-select {
+    padding: 8px 12px;
+    border: 2px solid var(--color-border-maxcontrast);
+    border-radius: var(--border-radius-large);
+    background: var(--color-main-background);
+    color: var(--color-main-text);
+    font-size: 14px;
+}
+
+.token-help {
+    margin-top: 20px;
+    padding: 16px;
+    background: var(--color-background-hover);
+    border-radius: var(--border-radius-large);
+}
+
+.token-help h4 {
+    margin: 0 0 8px 0;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.token-help h4:not(:first-child) {
+    margin-top: 16px;
+}
+
+.token-help ul {
+    margin: 0;
+    padding-left: 20px;
+}
+
+.token-help ul li {
+    margin-bottom: 4px;
+    line-height: 1.5;
+}
+
+.token-example {
+    display: block;
+    margin-top: 8px;
+    padding: 8px 12px;
+    background: var(--color-background-dark);
+    border-radius: var(--border-radius);
+    font-size: 12px;
+    word-break: break-all;
+}
+
+/* Import / Export tab */
+.import-export-tab {
+    max-width: 900px;
+}
+
+.import-inline {
+    margin-top: 16px;
+}
+
+.upload-area {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 48px 24px;
+    border: 2px dashed var(--color-border);
+    border-radius: var(--border-radius-large);
+    text-align: center;
+    transition: border-color 0.2s, background-color 0.2s;
+}
+
+.upload-area--drag {
+    border-color: var(--color-primary);
+    background-color: var(--color-primary-element-light);
+}
+
+.upload-icon {
+    color: var(--color-text-maxcontrast);
+}
+
+.upload-or {
+    color: var(--color-text-maxcontrast);
+    font-size: 13px;
+}
+
+.hidden-input {
+    display: none;
+}
+
+.import-error {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 16px;
+    padding: 12px;
+    background: var(--color-error-hover);
+    border-radius: var(--border-radius);
+    color: var(--color-error-text);
+}
+
+.import-help {
+    margin-top: 24px;
+    padding: 16px 20px;
+    background: var(--color-background-hover);
+    border-radius: var(--border-radius-large);
+}
+
+.import-help h3 {
+    font-size: 15px;
+    font-weight: 600;
+    margin: 0 0 12px 0;
+}
+
+.import-help ul {
+    margin: 0;
+    padding-left: 20px;
+}
+
+.import-help ul li {
+    margin-bottom: 6px;
+    line-height: 1.5;
+}
+
+.import-help-note {
+    margin-top: 12px;
+    font-size: 13px;
+    color: var(--color-text-maxcontrast);
+}
+
+.sample-download {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--color-border);
+}
+
+.sample-desc {
+    font-size: 13px;
+    color: var(--color-text-maxcontrast);
+}
+
+.preview-info {
+    margin-bottom: 16px;
+    color: var(--color-text-maxcontrast);
+}
+
+.preview-info p {
+    margin: 4px 0;
+}
+
+.preview-table-wrap {
+    max-height: 400px;
+    overflow: auto;
+    border: 1px solid var(--color-border);
+    border-radius: var(--border-radius);
+    margin-bottom: 20px;
+}
+
+.preview-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+.preview-table th {
+    position: sticky;
+    top: 0;
+    background: var(--color-background-dark);
+    text-align: left;
+    padding: 8px 12px;
+    font-weight: 600;
+    border-bottom: 1px solid var(--color-border);
+    white-space: nowrap;
+}
+
+.preview-table td {
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--color-border);
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.row-error {
+    background: var(--color-error-hover);
+}
+
+.error-text {
+    color: var(--color-error);
+    font-size: 12px;
+}
+
+.match-text {
+    color: var(--color-text-maxcontrast);
+    font-size: 12px;
+}
+
+.import-mode {
+    margin-bottom: 20px;
+}
+
+.import-mode label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+.mode-options {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.import-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+.result-summary {
+    display: flex;
+    gap: 16px;
+    margin: 24px 0;
+    flex-wrap: wrap;
+}
+
+.result-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 16px 24px;
+    border-radius: var(--border-radius-large);
+    min-width: 100px;
+}
+
+.result-stat--success {
+    background: var(--color-success-hover, #e8f5e9);
+}
+
+.result-stat--info {
+    background: var(--color-info-hover, #e3f2fd);
+}
+
+.result-stat--warning {
+    background: var(--color-warning-hover, #fff3e0);
+}
+
+.result-stat--error {
+    background: var(--color-error-hover, #fce4ec);
+}
+
+.result-stat__number {
+    font-size: 28px;
+    font-weight: 700;
+}
+
+.result-stat__label {
+    font-size: 13px;
+    color: var(--color-text-maxcontrast);
+    margin-top: 4px;
+}
+
+.result-errors {
+    margin-bottom: 20px;
+}
+
+.result-errors h3 {
+    font-size: 15px;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+.result-errors ul {
+    list-style: none;
+    padding: 0;
+}
+
+.result-errors li {
+    padding: 6px 0;
+    border-bottom: 1px solid var(--color-border);
+    font-size: 13px;
 }
 </style>

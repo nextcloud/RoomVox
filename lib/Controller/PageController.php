@@ -6,6 +6,7 @@ namespace OCA\RoomVox\Controller;
 
 use OCA\RoomVox\AppInfo\Application;
 use OCP\AppFramework\Controller;
+use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
 use OCP\AppFramework\Http\TemplateResponse;
 use OCP\IRequest;
 use OCP\Util;
@@ -20,9 +21,8 @@ class PageController extends Controller {
 
     /**
      * Admin panel — loads the Vue admin UI
-     *
-     * @NoCSRFRequired
      */
+    #[NoCSRFRequired]
     public function index(): TemplateResponse {
         Util::addScript(Application::APP_ID, 'roomvox-main');
         Util::addStyle(Application::APP_ID, 'style');

@@ -7,6 +7,7 @@ namespace OCA\RoomVox\AppInfo;
 use OCA\DAV\Events\SabrePluginAuthInitEvent;
 use OCA\RoomVox\Connector\Room\RoomBackend;
 use OCA\RoomVox\Listener\SabrePluginListener;
+use OCA\RoomVox\Middleware\ApiTokenMiddleware;
 use OCA\RoomVox\Service\PermissionService;
 use OCA\RoomVox\Service\RoomService;
 use OCA\RoomVox\UserBackend\RoomUserBackend;
@@ -32,6 +33,9 @@ class Application extends App implements IBootstrap {
             SabrePluginAuthInitEvent::class,
             SabrePluginListener::class
         );
+
+        // Register API token middleware for public API authentication
+        $context->registerMiddleware(ApiTokenMiddleware::class);
     }
 
     public function boot(IBootContext $context): void {

@@ -5,6 +5,35 @@ All notable changes to RoomVox will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2026-02-15
+
+### Added
+- **Public REST API (v1)**: Full API for external integrations (displays, kiosks, digital signage, Power Automate, custom apps)
+  - `GET /api/v1/rooms` — List rooms with filters (active, type, capacity)
+  - `GET /api/v1/rooms/{id}` — Room details
+  - `GET /api/v1/rooms/{id}/status` — Real-time room status (free/busy/unavailable)
+  - `GET /api/v1/rooms/{id}/availability` — Time slot availability for a given date
+  - `GET /api/v1/rooms/{id}/bookings` — List bookings with date/status filters
+  - `POST /api/v1/rooms/{id}/bookings` — Create bookings via API
+  - `DELETE /api/v1/rooms/{id}/bookings/{uid}` — Cancel bookings via API
+  - `GET /api/v1/rooms/{id}/calendar.ics` — iCalendar feed per room
+  - `GET /api/v1/statistics` — Usage statistics and utilization data
+- **API Token Authentication**: Bearer token system for external API access
+  - Token management UI in admin Settings tab
+  - Three scopes: `read`, `book`, `admin` (hierarchical)
+  - Optional room restrictions per token
+  - Optional token expiry dates
+  - SHA-256 hashed token storage
+  - Automatic last-used tracking
+- **CSV Import/Export**: Bulk room management via CSV files
+  - Export all rooms as CSV (13 columns)
+  - Import from RoomVox CSV format
+  - Import from MS365/Exchange format (auto-detected)
+  - Preview before import with validation
+  - Two import modes: create-only or create + update existing
+  - Download sample CSV file
+- **Internationalization**: Added German (de) and French (fr) translations
+
 ## [0.2.0] - 2026-02-13 - Initial Release
 
 ### Added

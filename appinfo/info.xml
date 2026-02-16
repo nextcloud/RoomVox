@@ -4,37 +4,44 @@
     <id>roomvox</id>
     <name>RoomVox</name>
     <summary>CalDAV-native room booking via any calendar app</summary>
-    <description><![CDATA[RoomVox is a CalDAV-native room booking app for Nextcloud. Book meeting rooms directly from any calendar app — no separate booking interface needed.
+    <description><![CDATA[**Book meeting rooms from any calendar app.** RoomVox turns your Nextcloud into a complete room booking system. Rooms appear as standard CalDAV resources — users book them directly from Nextcloud Calendar, Apple Calendar, Outlook, Thunderbird, or eM Client. No separate interface needed.
 
-**📋 Requirements:**
-* PHP 8.2 or higher
-* Nextcloud 32-33
-
-**Features:**
-* Rooms appear as CalDAV resources in any calendar app
-* Automatic availability checking and conflict detection
-* Auto-accept or manual approval workflow
-* Permission-based access (viewer/booker/manager roles)
-* Room groups with shared permissions
-* Availability rules and booking horizon
+**Key features:**
+* Automatic conflict detection prevents double bookings
+* Auto-accept or manager approval workflow per room
+* Availability rules and booking horizon limits
+* Role-based permissions (Viewer / Booker / Manager)
+* Room groups with inherited permissions
 * Email notifications with iCalendar attachments
 * Per-room SMTP configuration
+* CSV import/export with MS365/Exchange migration support
+* Public REST API for displays, kiosks, and integrations
+* Zero database — all config stored in Nextcloud's IAppConfig
 
-**Perfect for:**
-* Office room booking
-* Meeting room management
-* Shared space scheduling
-* Resource planning
+**Works with:** Nextcloud Calendar, Apple Calendar (macOS/iOS), Microsoft Outlook, Thunderbird, eM Client — with automatic compatibility fixes for client quirks.
 
-Built with Vue 3 and modern web technologies for a smooth, secure experience.
+**Requirements:** Nextcloud 32–33, PHP 8.2+
     ]]></description>
-    <version>0.2.0</version>
+    <version>0.3.0</version>
     <licence>agpl</licence>
-    <author mail="sam@example.com">Sam Ditmeijer</author>
+    <author mail="sam@mief.info">Sam Ditmeijer</author>
+    <author mail="rik@shalution.nl">Rik Dekker</author>
     <namespace>RoomVox</namespace>
     <category>organization</category>
-    <bugs>https://gitea.rikdekker.nl/sam/roombooking/issues</bugs>
-    <repository type="git">https://gitea.rikdekker.nl/sam/roombooking.git</repository>
+    <bugs>https://github.com/nextcloud/roomvox/issues</bugs>
+    <repository type="git">https://github.com/nextcloud/roomvox.git</repository>
+    <website>https://github.com/nextcloud/roomvox</website>
+    <documentation>
+        <admin>https://github.com/nextcloud/roomvox/blob/main/docs/admin/installation.md</admin>
+        <user>https://github.com/nextcloud/roomvox/blob/main/docs/user/booking-rooms.md</user>
+        <developer>https://github.com/nextcloud/roomvox/blob/main/docs/architecture/api-reference.md</developer>
+    </documentation>
+    <screenshot>https://raw.githubusercontent.com/nextcloud/roomvox/main/screenshots/rooms-overview.png</screenshot>
+    <screenshot>https://raw.githubusercontent.com/nextcloud/roomvox/main/screenshots/bookroom-filter.png</screenshot>
+    <screenshot>https://raw.githubusercontent.com/nextcloud/roomvox/main/screenshots/bookings-overview-list.png</screenshot>
+    <screenshot>https://raw.githubusercontent.com/nextcloud/roomvox/main/screenshots/rooms-edit.png</screenshot>
+    <screenshot>https://raw.githubusercontent.com/nextcloud/roomvox/main/screenshots/import-rooms.png</screenshot>
+    <screenshot>https://raw.githubusercontent.com/nextcloud/roomvox/main/screenshots/confirmation-email.png</screenshot>
     <dependencies>
         <nextcloud min-version="32" max-version="33"/>
         <php min-version="8.2"/>

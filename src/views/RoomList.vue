@@ -310,6 +310,7 @@
                 </div>
             </div>
         </div>
+
     </div>
 </template>
 
@@ -335,7 +336,6 @@ import ChevronDown from 'vue-material-design-icons/ChevronDown.vue'
 import ChevronRight from 'vue-material-design-icons/ChevronRight.vue'
 import FolderMove from 'vue-material-design-icons/FolderMove.vue'
 import Check from 'vue-material-design-icons/Check.vue'
-
 const t = (text, vars = {}) => translate('roomvox', text, vars)
 
 const props = defineProps({

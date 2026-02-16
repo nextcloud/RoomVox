@@ -6,7 +6,7 @@ This document compares RoomVox with Nextcloud's built-in [Calendar Resource Mana
 
 | | **RoomVox** | **Calendar Resource Management** |
 |---|---|---|
-| Version | 0.2.0 | 0.12.0-dev.1 |
+| Version | 0.3.0 | 0.12.0-dev.1 |
 | License | AGPL-3.0 | AGPL-3.0 |
 | Nextcloud | 32–33 | 31–34 |
 | PHP | 8.2+ | 8.1–8.5 |
@@ -35,6 +35,9 @@ This document compares RoomVox with Nextcloud's built-in [Calendar Resource Mana
 | iOS compatibility fix | Yes (CUTYPE) | No |
 | eM Client compatibility fix | Yes (LOCATION) | No |
 | Recurring event validation | Yes (horizon + availability) | No conflict checking |
+| Public REST API | Yes (Bearer token auth) | No |
+| CSV import/export | Yes (RoomVox + MS365) | No |
+| Bulk room management | Yes (CSV import) | CLI only |
 | Zero database migrations | Yes | No |
 
 ## Why RoomVox

@@ -8,6 +8,7 @@ use OCA\RoomVox\Service\CalDAVService;
 use OCA\RoomVox\Service\PermissionService;
 use OCA\RoomVox\Service\RoomService;
 use OCP\AppFramework\Controller;
+use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IGroupManager;
 use OCP\IRequest;
@@ -56,9 +57,8 @@ class BookingApiController extends Controller {
 
     /**
      * Create a new booking in a room's calendar
-     *
-     * @NoAdminRequired
      */
+    #[NoAdminRequired]
     public function create(string $id): JSONResponse {
         $userId = $this->getCurrentUserId();
         if ($userId === null) {
@@ -118,9 +118,8 @@ class BookingApiController extends Controller {
 
     /**
      * Update a booking's times (reschedule)
-     *
-     * @NoAdminRequired
      */
+    #[NoAdminRequired]
     public function update(string $id, string $uid): JSONResponse {
         $userId = $this->getCurrentUserId();
         if ($userId === null) {
@@ -265,9 +264,8 @@ class BookingApiController extends Controller {
 
     /**
      * Delete a booking (admin/manager or owner)
-     *
-     * @NoAdminRequired
      */
+    #[NoAdminRequired]
     public function destroy(string $id, string $uid): JSONResponse {
         $userId = $this->getCurrentUserId();
         if ($userId === null) {

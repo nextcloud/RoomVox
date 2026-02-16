@@ -37,9 +37,20 @@ export const respondToBooking = (roomId, bookingUid, action) =>
 export const deleteBooking = (roomId, bookingUid) =>
     axios.delete(baseUrl(`/api/rooms/${roomId}/bookings/${bookingUid}`))
 
+// Import/Export
+export const exportRoomsUrl = () => baseUrl('/api/rooms/export')
+export const sampleCsvUrl = () => baseUrl('/api/rooms/sample-csv')
+export const importPreview = (formData) => axios.post(baseUrl('/api/rooms/import/preview'), formData)
+export const importRooms = (formData) => axios.post(baseUrl('/api/rooms/import'), formData)
+
 // Settings
 export const getSettings = () => axios.get(baseUrl('/api/settings'))
 export const saveSettings = (data) => axios.put(baseUrl('/api/settings'), data)
+
+// API Tokens
+export const getApiTokens = () => axios.get(baseUrl('/api/tokens'))
+export const createApiToken = (data) => axios.post(baseUrl('/api/tokens'), data)
+export const deleteApiToken = (id) => axios.delete(baseUrl(`/api/tokens/${id}`))
 
 // Sharee search
 export const searchSharees = (search) => axios.get(baseUrl('/api/sharees'), { params: { search } })

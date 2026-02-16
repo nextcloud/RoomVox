@@ -10,14 +10,24 @@ This guide covers the requirements and installation process for RoomVox.
 | PHP | 8.2 or higher |
 | SMTP | Configured in Nextcloud (for email notifications) |
 
+## Supported Languages
+
+RoomVox is available in English (en), Dutch (nl), German (de), and French (fr). The language is determined automatically by the user's Nextcloud language setting — no additional configuration is needed.
+
 ## Installation
+
+### From Nextcloud App Store
+
+1. Go to **Apps** in your Nextcloud instance
+2. Search for **RoomVox**
+3. Click **Install**
 
 ### From Source
 
 ```bash
 # Clone into Nextcloud apps directory
 cd /var/www/nextcloud/apps/
-git clone https://github.com/nextcloud/roomvox.git
+git clone https://gitea.rikdekker.nl/sam/RoomVox.git roomvox
 
 # Install PHP dependencies
 cd roomvox

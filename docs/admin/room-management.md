@@ -4,7 +4,7 @@ This guide covers creating, configuring, and organizing rooms in RoomVox.
 
 ## Room Overview
 
-The Rooms tab shows all rooms organized by group, with columns for name, room number, type, address, capacity, auto-accept status, and active status.
+The admin panel has five tabs: **Rooms**, **Bookings**, **Import / Export**, **Settings**, and **Statistics**. The Rooms tab shows all rooms organized by group, with columns for name, room number, type, address, capacity, auto-accept status, and active status.
 
 ![Room overview — all rooms organized by group](../screenshots/rooms-overview.png)
 
@@ -29,7 +29,7 @@ The Rooms tab shows all rooms organized by group, with columns for name, room nu
 | Email | No | Custom email address for the room (see below) |
 | Room Group | No | Assign room to a group for shared permissions |
 
-![Room editor — general settings and location](../screenshots/Rooms-edit.png)
+![Room editor — general settings and location](../screenshots/rooms-edit.png)
 
 ### Room Email Address
 
@@ -127,6 +127,7 @@ Room types help categorize your rooms. They're shown in the room list and publis
 - Rehearsal Room
 - Studio
 - Lecture Hall
+- Telephone Booth
 - Outdoor Area
 - Other
 

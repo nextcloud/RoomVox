@@ -5,10 +5,14 @@ declare(strict_types=1);
 namespace OCA\RoomVox\Controller;
 
 use OCA\RoomVox\Service\CalDAVService;
+use OCA\RoomVox\Service\ImportExportService;
 use OCA\RoomVox\Service\MailService;
 use OCA\RoomVox\Service\PermissionService;
 use OCA\RoomVox\Service\RoomService;
 use OCP\AppFramework\Controller;
+use OCP\AppFramework\Http\Attribute\NoAdminRequired;
+use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
+use OCP\AppFramework\Http\DataDownloadResponse;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\Calendar\Room\IManager as IRoomManager;
 use OCP\IGroupManager;
@@ -25,6 +29,7 @@ class RoomApiController extends Controller {
         private PermissionService $permissionService,
         private CalDAVService $calDAVService,
         private MailService $mailService,
+        private ImportExportService $importExportService,
         private IRoomManager $roomManager,
         private IUserSession $userSession,
         private IUserManager $userManager,
@@ -36,9 +41,8 @@ class RoomApiController extends Controller {
 
     /**
      * List all rooms with user's permissions
-     *
-     * @NoAdminRequired
      */
+    #[NoAdminRequired]
     public function index(): JSONResponse {
         $userId = $this->getCurrentUserId();
         if ($userId === null) {
@@ -71,9 +75,8 @@ class RoomApiController extends Controller {
 
     /**
      * Get all bookings across all rooms (or filtered by room)
-     *
-     * @NoAdminRequired
      */
+    #[NoAdminRequired]
     public function allBookings(): JSONResponse {
         $userId = $this->getCurrentUserId();
         if ($userId === null) {
@@ -392,11 +395,128 @@ class RoomApiController extends Controller {
     }
 
     /**
+     * Export all rooms as CSV
+     */
+    #[NoCSRFRequired]
+    public function exportRooms(): DataDownloadResponse {
+        $userId = $this->getCurrentUserId();
+        if ($userId === null || !$this->groupManager->isAdmin($userId)) {
+            return new DataDownloadResponse('', 'error.csv', 'text/csv');
+        }
+
+        $csv = $this->importExportService->exportCsv();
+        $filename = 'roomvox-rooms-' . date('Ymd') . '.csv';
+
+        return new DataDownloadResponse($csv, $filename, 'text/csv');
+    }
+
+    /**
+     * Download a sample CSV file with headers and example data
+     */
+    #[NoCSRFRequired]
+    public function sampleCsv(): DataDownloadResponse {
+        $csv = $this->importExportService->sampleCsv();
+        return new DataDownloadResponse($csv, 'roomvox-sample.csv', 'text/csv');
+    }
+
+    /**
+     * Preview CSV import (parse and validate, no changes)
+     */
+    public function importPreview(): JSONResponse {
+        $userId = $this->getCurrentUserId();
+        if ($userId === null || !$this->groupManager->isAdmin($userId)) {
+            return new JSONResponse(['error' => 'Admin access required'], 403);
+        }
+
+        $file = $this->request->getUploadedFile('file');
+        if ($file === null || !isset($file['tmp_name'])) {
+            return new JSONResponse(['error' => 'No file uploaded'], 400);
+        }
+
+        // Limit file size to 5MB
+        if (filesize($file['tmp_name']) > 5 * 1024 * 1024) {
+            return new JSONResponse(['error' => 'File too large (max 5MB)'], 413);
+        }
+
+        $csvContent = file_get_contents($file['tmp_name']);
+        if ($csvContent === false || $csvContent === '') {
+            return new JSONResponse(['error' => 'Empty or unreadable file'], 400);
+        }
+
+        // Strip UTF-8 BOM if present
+        if (str_starts_with($csvContent, "\xEF\xBB\xBF")) {
+            $csvContent = substr($csvContent, 3);
+        }
+
+        try {
+            $preview = $this->importExportService->parseCsv($csvContent);
+            return new JSONResponse($preview);
+        } catch (\Exception $e) {
+            return new JSONResponse(['error' => 'Failed to parse CSV: ' . $e->getMessage()], 400);
+        }
+    }
+
+    /**
+     * Execute CSV import
+     */
+    public function importRooms(): JSONResponse {
+        $userId = $this->getCurrentUserId();
+        if ($userId === null || !$this->groupManager->isAdmin($userId)) {
+            return new JSONResponse(['error' => 'Admin access required'], 403);
+        }
+
+        $file = $this->request->getUploadedFile('file');
+        if ($file === null || !isset($file['tmp_name'])) {
+            return new JSONResponse(['error' => 'No file uploaded'], 400);
+        }
+
+        // Limit file size to 5MB
+        if (filesize($file['tmp_name']) > 5 * 1024 * 1024) {
+            return new JSONResponse(['error' => 'File too large (max 5MB)'], 413);
+        }
+
+        $mode = $this->request->getParam('mode', 'create');
+        if (!in_array($mode, ['create', 'update'])) {
+            return new JSONResponse(['error' => 'Invalid mode. Use "create" or "update"'], 400);
+        }
+
+        $csvContent = file_get_contents($file['tmp_name']);
+        if ($csvContent === false || $csvContent === '') {
+            return new JSONResponse(['error' => 'Empty or unreadable file'], 400);
+        }
+
+        // Strip UTF-8 BOM
+        if (str_starts_with($csvContent, "\xEF\xBB\xBF")) {
+            $csvContent = substr($csvContent, 3);
+        }
+
+        try {
+            $result = $this->importExportService->importCsv(
+                $csvContent,
+                $mode,
+                $this->calDAVService,
+                $this->permissionService
+            );
+
+            // Sync room cache so new rooms appear immediately
+            if ($result['created'] > 0 || $result['updated'] > 0) {
+                $this->syncRoomCache();
+            }
+
+            $this->logger->info("Room import completed: {$result['created']} created, {$result['updated']} updated, {$result['skipped']} skipped");
+
+            return new JSONResponse($result);
+        } catch (\Exception $e) {
+            $this->logger->error("Room import failed: " . $e->getMessage());
+            return new JSONResponse(['error' => 'Import failed: ' . $e->getMessage()], 500);
+        }
+    }
+
+    /**
      * Debug endpoint to check what rooms are registered with Nextcloud's room manager.
      * This shows exactly what Calendar sees when searching for rooms.
-     *
-     * @NoCSRFRequired
      */
+    #[NoCSRFRequired]
     public function debug(): JSONResponse {
         $userId = $this->getCurrentUserId();
         if ($userId === null || !$this->groupManager->isAdmin($userId)) {

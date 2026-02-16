@@ -2,6 +2,8 @@
 
 CalDAV-native room booking for Nextcloud. Rooms appear as bookable resources in any calendar app — no separate booking interface needed.
 
+![Room overview](screenshots/rooms-overview.png)
+
 ## Features
 
 - **CalDAV Resources** — Rooms show up in Nextcloud Calendar, Apple Calendar, Outlook, eM Client, Thunderbird
@@ -14,8 +16,30 @@ CalDAV-native room booking for Nextcloud. Rooms appear as bookable resources in 
 - **Email notifications** — Booking confirmations, decline notices, approval requests with iCalendar attachments
 - **Per-room SMTP** — Each room can have its own SMTP config (passwords encrypted via ICrypto)
 - **Custom room types** — Define and manage room types (meeting room, studio, lecture hall, etc.)
+- **Public REST API** — Bearer token API for external integrations (displays, kiosks, digital signage)
+- **CSV Import/Export** — Bulk room management, with MS365/Exchange format support
 - **Client compatibility** — Fixes for iOS (CUTYPE=INDIVIDUAL) and eM Client (LOCATION-only booking)
 - **No database** — All configuration stored via Nextcloud's IAppConfig
+
+## Screenshots
+
+### Room Management
+![Room overview with groups, search, and status columns](screenshots/rooms-overview.png)
+
+### Booking Overview
+![Booking management with stats, filters, and status](screenshots/bookings-overview-list.png)
+
+### Room Browser (Calendar Integration)
+![Visual room browser with building and facility filters](screenshots/bookroom-filter.png)
+
+### Room Editor
+![Room editor with capacity, type, location, and facilities](screenshots/rooms-edit.png)
+
+### CSV Import
+![CSV import preview with format detection and validation](screenshots/import-rooms.png)
+
+### Email Notifications
+![Booking confirmation email with Accept/Decline buttons](screenshots/confirmation-email.png)
 
 ## Requirements
 
@@ -24,10 +48,18 @@ CalDAV-native room booking for Nextcloud. Rooms appear as bookable resources in 
 
 ## Installation
 
+### From Nextcloud App Store
+
+1. Go to **Apps** in your Nextcloud instance
+2. Search for **RoomVox**
+3. Click **Install**
+
+### From Source
+
 ```bash
 # Clone into Nextcloud apps directory
 cd /var/www/nextcloud/apps/
-git clone https://gitea.rikdekker.nl/sam/roomvox.git
+git clone https://gitea.rikdekker.nl/sam/RoomVox.git roomvox
 
 # Install PHP dependencies
 cd roomvox
@@ -57,7 +89,7 @@ sudo -u www-data php /var/www/nextcloud/occ config:app:set dav sendInvitations -
 3. **Users book rooms** by adding them to calendar events
 4. **RoomVox handles everything** — scheduling, conflict detection, permissions, and notifications
 
-## Feature Highlights
+## Technical Highlights
 
 | Feature | Description |
 |---------|-------------|
@@ -65,8 +97,6 @@ sudo -u www-data php /var/www/nextcloud/occ config:app:set dav sendInvitations -
 | Zero database | All data stored in Nextcloud's IAppConfig — no migrations needed |
 | Smart scheduling | Priority 99 Sabre plugin handles iTIP before Nextcloud's default handler |
 | Permission inheritance | Room groups share permissions with their rooms |
-| Availability rules | Restrict booking to specific days and time ranges |
-| Per-room SMTP | Rooms can send emails from their own address |
 | Client fixes | Automatic workarounds for iOS and eM Client quirks |
 
 ## CalDAV Client Compatibility
@@ -101,6 +131,6 @@ Full documentation is available in the [docs/](docs/index.md) directory:
 
 AGPL-3.0-or-later
 
-## Author
+## Authors
 
-Sam Ditmeijer
+Sam Ditmeijer & Rik Dekker

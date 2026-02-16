@@ -203,6 +203,52 @@ Common issues and solutions for RoomVox.
    ```
 3. If a specific room is broken, delete and recreate it
 
+## Public API Issues
+
+### 401 — "Missing or invalid Authorization header"
+
+**Cause:** The Bearer token is missing or malformed.
+
+**Solution:**
+1. Include the header: `Authorization: Bearer rvx_your_token_here`
+2. The header is case-insensitive (`bearer` works too)
+3. Check that the token starts with `rvx_`
+
+### 401 — "Invalid or expired API token"
+
+**Cause:** The token doesn't exist or has expired.
+
+**Solution:**
+1. Check if the token still exists in the admin panel (Settings > API Tokens)
+2. Check the token's expiration date
+3. Create a new token if needed
+
+### 403 — "Insufficient permissions"
+
+**Cause:** The token's scope is too low for the requested action.
+
+**Solution:**
+1. Check the token's scope (`read`, `book`, or `admin`)
+2. Creating bookings requires `book` scope, statistics require `admin`
+3. If the token is restricted to specific rooms, it can only access those rooms
+
+### 400 — "Date range must not exceed 365 days"
+
+**Cause:** The `from`/`to` parameters span more than 365 days.
+
+**Solution:**
+1. Reduce the date range to at most 365 days
+2. For statistics, use the default range (last 30 days) or specify a shorter period
+
+### CSV Import — "File too large (max 5MB)"
+
+**Cause:** The uploaded CSV file exceeds 5 MB.
+
+**Solution:**
+1. Split the file into smaller parts
+2. Remove unnecessary columns or rows
+3. Export from the source system with fewer fields
+
 ## Log Locations
 
 Check these logs for debugging:
