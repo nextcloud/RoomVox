@@ -813,6 +813,9 @@ const loadSettings = async () => {
     try {
         const response = await getSettings()
         settings.value = response.data
+        if (response.data.telemetryEnabled !== undefined) {
+            telemetryEnabled.value = response.data.telemetryEnabled
+        }
     } catch (e) {
         // Settings might not be accessible for non-admins
     }
@@ -986,8 +989,7 @@ const onDragEnd = () => {
 
 const toggleTelemetry = async (enabled) => {
     try {
-        // TODO: Implement API call to save telemetry setting
-        // const response = await axios.post(generateUrl('/apps/roomvox/api/statistics/telemetry'), { enabled })
+        await saveSettings({ telemetryEnabled: enabled })
         telemetryEnabled.value = enabled
         if (enabled) {
             showSuccess(t('Thank you for helping improve RoomVox!'))

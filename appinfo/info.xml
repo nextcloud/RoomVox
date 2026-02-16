@@ -4,21 +4,23 @@
     <id>roomvox</id>
     <name>RoomVox</name>
     <summary>CalDAV-native room booking via any calendar app</summary>
-    <description><![CDATA[**Book meeting rooms from any calendar app.** RoomVox turns your Nextcloud into a complete room booking system. Rooms appear as standard CalDAV resources — users book them directly from Nextcloud Calendar, Apple Calendar, Outlook, Thunderbird, or eM Client. No separate interface needed.
+    <description><![CDATA[RoomVox makes it easy to book and manage rooms in your organization. Whether it's meeting rooms, lecture halls, studios, or shared spaces — users simply add a room to their calendar event and RoomVox takes care of the rest: availability checking, conflict prevention, and booking confirmations.
 
-**Key features:**
-* Automatic conflict detection prevents double bookings
+No separate booking portal needed. Rooms appear directly in the calendar app your team already uses — Nextcloud Calendar, Apple Calendar, Outlook, Thunderbird, or eM Client.
+
+**For users:**
+* Book rooms directly from your calendar — no extra tools or interfaces
+* Instant confirmation or automatic approval requests
+* Email notifications with calendar attachments
+
+**For admins:**
+* Full room management with groups, permissions, and availability rules
 * Auto-accept or manager approval workflow per room
-* Availability rules and booking horizon limits
-* Role-based permissions (Viewer / Booker / Manager)
-* Room groups with inherited permissions
-* Email notifications with iCalendar attachments
-* Per-room SMTP configuration
-* CSV import/export with MS365/Exchange migration support
-* Public REST API for displays, kiosks, and integrations
+* Role-based access control (Viewer / Booker / Manager)
+* CSV import/export for easy migration from MS365/Exchange
+* Public REST API for displays, kiosks, and digital signage
+* Per-room email and SMTP configuration
 * Zero database — all config stored in Nextcloud's IAppConfig
-
-**Works with:** Nextcloud Calendar, Apple Calendar (macOS/iOS), Microsoft Outlook, Thunderbird, eM Client — with automatic compatibility fixes for client quirks.
 
 **Requirements:** Nextcloud 32–33, PHP 8.2+
     ]]></description>

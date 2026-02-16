@@ -44,6 +44,7 @@ class SettingsController extends Controller {
         $settings = [
             'defaultAutoAccept' => $this->appConfig->getValueString(Application::APP_ID, 'default_auto_accept', 'false') === 'true',
             'emailEnabled' => $this->appConfig->getValueString(Application::APP_ID, 'email_enabled', 'true') === 'true',
+            'telemetryEnabled' => $this->appConfig->getValueString(Application::APP_ID, 'telemetry_enabled', 'true') === 'true',
             'roomTypes' => $this->getRoomTypes(),
         ];
 
@@ -74,6 +75,15 @@ class SettingsController extends Controller {
                 Application::APP_ID,
                 'email_enabled',
                 $emailEnabled ? 'true' : 'false'
+            );
+        }
+
+        $telemetryEnabled = $this->request->getParam('telemetryEnabled');
+        if ($telemetryEnabled !== null) {
+            $this->appConfig->setValueString(
+                Application::APP_ID,
+                'telemetry_enabled',
+                $telemetryEnabled ? 'true' : 'false'
             );
         }
 
