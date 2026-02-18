@@ -292,6 +292,68 @@
                 </div>
             </div>
 
+            <div v-if="exchangeGlobalEnabled" class="form-section">
+                <h3>{{ $t('Exchange Calendar Sync') }}</h3>
+                <p class="section-description">
+                    {{ $t('Map this room to a Microsoft 365 Exchange room resource. Bookings will be synced bidirectionally.') }}
+                </p>
+
+                <div class="form-grid">
+                    <div class="form-field">
+                        <label>{{ $t('Exchange resource email') }}</label>
+                        <NcTextField
+                            v-model="exchange.resourceEmail"
+                            :placeholder="$t('e.g. conference-room@company.com')"
+                            type="email" />
+                    </div>
+                    <div class="form-field exchange-validate-field">
+                        <label>&nbsp;</label>
+                        <NcButton
+                            type="secondary"
+                            :disabled="exchangeValidating || !exchange.resourceEmail"
+                            @click="validateResource">
+                            <template v-if="exchangeValidating" #icon>
+                                <NcLoadingIcon :size="20" />
+                            </template>
+                            {{ exchangeValidating ? $t('Validating...') : $t('Validate') }}
+                        </NcButton>
+                    </div>
+                </div>
+
+                <NcNoteCard v-if="exchangeValidateResult" :type="exchangeValidateResult.success ? 'success' : 'error'" class="exchange-note">
+                    {{ exchangeValidateResult.message }}
+                </NcNoteCard>
+
+                <div class="form-field">
+                    <NcCheckboxRadioSwitch
+                        :model-value="exchange.syncEnabled"
+                        @update:model-value="exchange.syncEnabled = $event">
+                        {{ $t('Enable sync for this room') }}
+                    </NcCheckboxRadioSwitch>
+                </div>
+
+                <div v-if="!creating && exchange.resourceEmail" class="exchange-status">
+                    <div v-if="exchange.lastSyncAt" class="exchange-status-row">
+                        <span class="exchange-status-label">{{ $t('Last synced:') }}</span>
+                        <span>{{ new Date(exchange.lastSyncAt).toLocaleString() }}</span>
+                    </div>
+                    <div v-if="exchange.lastError" class="exchange-status-row exchange-status-error">
+                        <span class="exchange-status-label">{{ $t('Last error:') }}</span>
+                        <span>{{ exchange.lastError }}</span>
+                    </div>
+
+                    <NcButton
+                        type="secondary"
+                        :disabled="exchangeSyncing"
+                        @click="forceSync">
+                        <template v-if="exchangeSyncing" #icon>
+                            <NcLoadingIcon :size="20" />
+                        </template>
+                        {{ exchangeSyncing ? $t('Syncing...') : $t('Force Sync') }}
+                    </NcButton>
+                </div>
+            </div>
+
             <div class="form-actions">
                 <NcButton type="primary" @click="save">
                     {{ creating ? $t('Create Room') : $t('Save Changes') }}
@@ -342,7 +404,10 @@ import NcDialog from '@nextcloud/vue/components/NcDialog'
 import NcSelect from '@nextcloud/vue/components/NcSelect'
 import ArrowLeft from 'vue-material-design-icons/ArrowLeft.vue'
 import Close from 'vue-material-design-icons/Close.vue'
+import NcNoteCard from '@nextcloud/vue/components/NcNoteCard'
+import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import { translate } from '@nextcloud/l10n'
+import { validateExchangeResource, triggerExchangeSync, getSettings } from '../services/api.js'
 
 const t = (text, vars = {}) => translate('roomvox', text, vars)
 
@@ -432,6 +497,55 @@ const errors = reactive({
     capacity: '',
     smtpPort: '',
 })
+
+// Exchange sync state
+const exchangeGlobalEnabled = ref(false)
+const exchange = reactive({
+    resourceEmail: '',
+    syncEnabled: false,
+    lastSyncAt: null,
+    lastError: null,
+})
+const exchangeValidating = ref(false)
+const exchangeValidateResult = ref(null)
+const exchangeSyncing = ref(false)
+
+const loadExchangeGlobalState = async () => {
+    try {
+        const response = await getSettings()
+        exchangeGlobalEnabled.value = response.data.exchangeEnabled || false
+    } catch {
+        // ignore
+    }
+}
+loadExchangeGlobalState()
+
+const validateResource = async () => {
+    exchangeValidating.value = true
+    exchangeValidateResult.value = null
+    try {
+        const response = await validateExchangeResource(exchange.resourceEmail)
+        exchangeValidateResult.value = { success: true, message: response.data.displayName || t('Resource found') }
+    } catch (e) {
+        exchangeValidateResult.value = { success: false, message: e.response?.data?.error || t('Resource not found') }
+    } finally {
+        exchangeValidating.value = false
+    }
+}
+
+const forceSync = async () => {
+    if (!props.room?.id) return
+    exchangeSyncing.value = true
+    try {
+        await triggerExchangeSync(props.room.id, true)
+        exchange.lastSyncAt = new Date().toISOString()
+        exchange.lastError = null
+    } catch (e) {
+        exchange.lastError = e.response?.data?.error || t('Sync failed')
+    } finally {
+        exchangeSyncing.value = false
+    }
+}
 
 const clearError = (field) => {
     errors[field] = ''
@@ -523,6 +637,14 @@ watch(() => props.room, (room) => {
                 encryption: room.smtpConfig.encryption || 'tls',
             })
         }
+        if (room.exchangeConfig) {
+            Object.assign(exchange, {
+                resourceEmail: room.exchangeConfig.resourceEmail || '',
+                syncEnabled: room.exchangeConfig.syncEnabled || false,
+                lastSyncAt: room.exchangeConfig.lastSyncAt || null,
+                lastError: room.exchangeConfig.lastError || null,
+            })
+        }
         if (room.availabilityRules) {
             availability.enabled = room.availabilityRules.enabled || false
             availability.rules = (room.availabilityRules.rules || []).map(r => ({
@@ -600,6 +722,16 @@ const save = () => {
         }
     } else {
         data.smtpConfig = null
+    }
+
+    // Include Exchange config if resource email is set
+    if (exchange.resourceEmail) {
+        data.exchangeConfig = {
+            resourceEmail: exchange.resourceEmail,
+            syncEnabled: exchange.syncEnabled,
+        }
+    } else {
+        data.exchangeConfig = null
     }
 
     emit('save', data)
@@ -783,6 +915,40 @@ const save = () => {
     .facilities-grid {
         grid-template-columns: 1fr 1fr;
     }
+}
+
+/* Exchange sync section */
+.exchange-validate-field {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+}
+
+.exchange-note {
+    margin-bottom: 16px;
+}
+
+.exchange-status {
+    margin-top: 12px;
+    padding: 12px;
+    background: var(--color-background-dark);
+    border-radius: var(--border-radius-large);
+}
+
+.exchange-status-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 8px;
+    font-size: 13px;
+}
+
+.exchange-status-label {
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.exchange-status-error {
+    color: var(--color-error);
 }
 
 @media (max-width: 480px) {

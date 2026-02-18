@@ -14,6 +14,9 @@ class RoomService {
     private const ROOMS_INDEX_KEY = 'rooms_index';
     private const USER_PREFIX = 'rb_';
 
+    /** @var array<string, string>|null Cached email → userId map (built once per request) */
+    private ?array $emailToUserId = null;
+
     public function __construct(
         private IAppConfig $appConfig,
         private ICrypto $crypto,
@@ -136,6 +139,7 @@ class RoomService {
             'active' => true,
             'calendarUri' => '',
             'smtpConfig' => null,
+            'exchangeConfig' => null,
             'createdAt' => date('c'),
         ];
 
@@ -180,6 +184,18 @@ class RoomService {
                 $room['smtpConfig'] = null;
             } else {
                 $room['smtpConfig'] = $this->prepareSMTPConfig($data['smtpConfig']);
+            }
+        }
+
+        // Handle Exchange config update
+        if (array_key_exists('exchangeConfig', $data)) {
+            if ($data['exchangeConfig'] === null) {
+                $room['exchangeConfig'] = null;
+            } else {
+                $room['exchangeConfig'] = $this->prepareExchangeConfig(
+                    $data['exchangeConfig'],
+                    $room['exchangeConfig'] ?? null
+                );
             }
         }
 
@@ -267,19 +283,32 @@ class RoomService {
         // Also handle mailto: format — match room email or SMTP username
         if (str_starts_with(strtolower($principalUri), 'mailto:')) {
             $email = strtolower(substr($principalUri, 7));
-            foreach ($this->getAllRooms() as $room) {
-                if (strtolower($room['email']) === $email) {
-                    return $room['userId'];
-                }
-                // Also match SMTP username (clients sometimes use this as room email)
-                $smtpUser = strtolower($room['smtpConfig']['username'] ?? '');
-                if ($smtpUser !== '' && $smtpUser === $email) {
-                    return $room['userId'];
-                }
-            }
+            return $this->getEmailToUserIdMap()[$email] ?? null;
         }
 
         return null;
+    }
+
+    /**
+     * Get cached email → userId map (built once per request).
+     * Maps both room email and SMTP username to the room's userId.
+     * @return array<string, string>
+     */
+    private function getEmailToUserIdMap(): array {
+        if ($this->emailToUserId === null) {
+            $this->emailToUserId = [];
+            foreach ($this->getAllRooms() as $room) {
+                $email = strtolower($room['email'] ?? '');
+                if ($email !== '') {
+                    $this->emailToUserId[$email] = $room['userId'];
+                }
+                $smtpUser = strtolower($room['smtpConfig']['username'] ?? '');
+                if ($smtpUser !== '' && !isset($this->emailToUserId[$smtpUser])) {
+                    $this->emailToUserId[$smtpUser] = $room['userId'];
+                }
+            }
+        }
+        return $this->emailToUserId;
     }
 
     /**
@@ -353,6 +382,97 @@ class RoomService {
             'password' => $config['password'] ?? '',
             'encryption' => $config['encryption'] ?? 'tls',
         ];
+    }
+
+    /**
+     * Prepare Exchange config (validate and structure).
+     * Preserves lastSyncToken/lastSyncAt/lastError from existing config.
+     */
+    private function prepareExchangeConfig(array $config, ?array $existing): array {
+        return [
+            'resourceEmail' => $config['resourceEmail'] ?? ($existing['resourceEmail'] ?? ''),
+            'syncEnabled' => (bool)($config['syncEnabled'] ?? ($existing['syncEnabled'] ?? true)),
+            'lastSyncToken' => $existing['lastSyncToken'] ?? null,
+            'lastSyncAt' => $existing['lastSyncAt'] ?? null,
+            'lastError' => $existing['lastError'] ?? null,
+            'webhookSubscriptionId' => $existing['webhookSubscriptionId'] ?? null,
+            'webhookExpiresAt' => $existing['webhookExpiresAt'] ?? null,
+            'webhookClientState' => $existing['webhookClientState'] ?? null,
+        ];
+    }
+
+    /**
+     * Update Exchange sync state fields (called by ExchangeSyncService).
+     */
+    public function updateExchangeSyncState(string $roomId, ?string $deltaToken, ?string $lastError): void {
+        $room = $this->getRoom($roomId);
+        if ($room === null || $room['exchangeConfig'] === null) {
+            return;
+        }
+
+        if ($deltaToken !== null) {
+            $room['exchangeConfig']['lastSyncToken'] = $deltaToken;
+        }
+        $room['exchangeConfig']['lastSyncAt'] = date('c');
+        $room['exchangeConfig']['lastError'] = $lastError;
+
+        $this->saveRoom($room);
+    }
+
+    /**
+     * Update webhook subscription state fields for a room.
+     */
+    public function updateWebhookState(
+        string $roomId,
+        ?string $subscriptionId,
+        ?string $expiresAt,
+        ?string $clientState,
+    ): void {
+        $room = $this->getRoom($roomId);
+        if ($room === null || $room['exchangeConfig'] === null) {
+            return;
+        }
+
+        $oldSubscriptionId = $room['exchangeConfig']['webhookSubscriptionId'] ?? null;
+
+        $room['exchangeConfig']['webhookSubscriptionId'] = $subscriptionId;
+        $room['exchangeConfig']['webhookExpiresAt'] = $expiresAt;
+        if ($clientState !== null) {
+            $room['exchangeConfig']['webhookClientState'] = $clientState;
+        }
+
+        $this->saveRoom($room);
+        $this->updateSubscriptionLookup($roomId, $oldSubscriptionId, $subscriptionId);
+    }
+
+    /**
+     * Look up a room ID by webhook subscription ID (O(1) lookup).
+     */
+    public function getRoomIdBySubscriptionId(string $subscriptionId): ?string {
+        $map = $this->getSubscriptionLookup();
+        return $map[$subscriptionId] ?? null;
+    }
+
+    private function getSubscriptionLookup(): array {
+        $json = $this->appConfig->getValueString(Application::APP_ID, 'webhook_subscriptions', '{}');
+        return json_decode($json, true) ?: [];
+    }
+
+    private function updateSubscriptionLookup(string $roomId, ?string $oldId, ?string $newId): void {
+        $map = $this->getSubscriptionLookup();
+
+        if ($oldId !== null) {
+            unset($map[$oldId]);
+        }
+        if ($newId !== null) {
+            $map[$newId] = $roomId;
+        }
+
+        $this->appConfig->setValueString(
+            Application::APP_ID,
+            'webhook_subscriptions',
+            json_encode($map),
+        );
     }
 
     /**

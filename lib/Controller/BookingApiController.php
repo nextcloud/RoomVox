@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace OCA\RoomVox\Controller;
 
 use OCA\RoomVox\Service\CalDAVService;
+use OCA\RoomVox\Service\Exchange\ExchangeSyncService;
 use OCA\RoomVox\Service\PermissionService;
 use OCA\RoomVox\Service\RoomService;
 use OCP\AppFramework\Controller;
@@ -22,6 +23,7 @@ class BookingApiController extends Controller {
         private RoomService $roomService,
         private PermissionService $permissionService,
         private CalDAVService $calDAVService,
+        private ExchangeSyncService $exchangeSyncService,
         private IUserSession $userSession,
         private IGroupManager $groupManager,
         private LoggerInterface $logger,
@@ -91,8 +93,8 @@ class BookingApiController extends Controller {
             $startDt = new \DateTime($start);
             $endDt = new \DateTime($end);
 
-            // Check for conflicts
-            if ($this->calDAVService->hasConflict($room['userId'], $startDt, $endDt)) {
+            // Check for conflicts (local + Exchange)
+            if ($this->calDAVService->hasConflict($room['userId'], $startDt, $endDt, null, $room)) {
                 return new JSONResponse(['error' => 'Time slot conflicts with existing booking'], 409);
             }
 
@@ -108,6 +110,19 @@ class BookingApiController extends Controller {
             ]);
 
             $this->logger->info("Booking {$uid} created in room {$id} by {$userId}");
+
+            // Push to Exchange (synchronous, fail-safe)
+            try {
+                $this->exchangeSyncService->pushBookingToExchange($room, $uid, [
+                    'summary' => $summary,
+                    'start' => $startDt,
+                    'end' => $endDt,
+                    'description' => $description,
+                    'organizer' => $userId,
+                ]);
+            } catch (\Throwable $e) {
+                $this->logger->error("Exchange push failed (non-blocking): " . $e->getMessage());
+            }
 
             return new JSONResponse(['status' => 'ok', 'uid' => $uid], 201);
         } catch (\Exception $e) {
@@ -170,8 +185,8 @@ class BookingApiController extends Controller {
                     return new JSONResponse(['error' => 'No permission to move to target room'], 403);
                 }
 
-                // Check for conflicts in new room
-                if ($this->calDAVService->hasConflict($newRoom['userId'], $startDt, $endDt)) {
+                // Check for conflicts in new room (local + Exchange)
+                if ($this->calDAVService->hasConflict($newRoom['userId'], $startDt, $endDt, null, $newRoom)) {
                     return new JSONResponse(['error' => 'Time slot conflicts with existing booking in target room'], 409);
                 }
 
@@ -200,8 +215,8 @@ class BookingApiController extends Controller {
                 return new JSONResponse(['status' => 'ok', 'uid' => $newUid, 'moved' => true]);
             }
 
-            // Check for conflicts (excluding this booking)
-            if ($this->calDAVService->hasConflict($room['userId'], $startDt, $endDt, $uid)) {
+            // Check for conflicts (excluding this booking, local + Exchange)
+            if ($this->calDAVService->hasConflict($room['userId'], $startDt, $endDt, $uid, $room)) {
                 return new JSONResponse(['error' => 'Time slot conflicts with existing booking'], 409);
             }
 
@@ -213,6 +228,17 @@ class BookingApiController extends Controller {
             }
 
             $this->logger->info("Booking {$uid} in room {$id} rescheduled by {$userId}");
+
+            // Push update to Exchange
+            try {
+                $this->exchangeSyncService->updateBookingOnExchange($room, $uid, [
+                    'summary' => $existingBooking['summary'] ?? 'Booking',
+                    'start' => $startDt,
+                    'end' => $endDt,
+                ]);
+            } catch (\Throwable $e) {
+                $this->logger->error("Exchange update failed (non-blocking): " . $e->getMessage());
+            }
 
             return new JSONResponse(['status' => 'ok']);
         } catch (\Exception $e) {
@@ -293,6 +319,13 @@ class BookingApiController extends Controller {
         }
 
         try {
+            // Push delete to Exchange before removing locally (need iCal data for lookup)
+            try {
+                $this->exchangeSyncService->deleteBookingFromExchange($room, $uid);
+            } catch (\Throwable $e) {
+                $this->logger->error("Exchange delete failed (non-blocking): " . $e->getMessage());
+            }
+
             $success = $this->calDAVService->deleteBooking($room['userId'], $uid);
 
             if (!$success) {

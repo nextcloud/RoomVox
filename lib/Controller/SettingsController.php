@@ -11,12 +11,14 @@ use OCP\IAppConfig;
 use OCP\IGroupManager;
 use OCP\IRequest;
 use OCP\IUserSession;
+use OCP\Security\ICrypto;
 
 class SettingsController extends Controller {
     public function __construct(
         string $appName,
         IRequest $request,
         private IAppConfig $appConfig,
+        private ICrypto $crypto,
         private IUserSession $userSession,
         private IGroupManager $groupManager,
     ) {
@@ -46,6 +48,10 @@ class SettingsController extends Controller {
             'emailEnabled' => $this->appConfig->getValueString(Application::APP_ID, 'email_enabled', 'true') === 'true',
             'telemetryEnabled' => $this->appConfig->getValueString(Application::APP_ID, 'telemetry_enabled', 'true') === 'true',
             'roomTypes' => $this->getRoomTypes(),
+            'exchangeEnabled' => $this->appConfig->getValueString(Application::APP_ID, 'exchange_enabled', 'false') === 'true',
+            'exchangeTenantId' => $this->appConfig->getValueString(Application::APP_ID, 'exchange_tenant_id', ''),
+            'exchangeClientId' => $this->appConfig->getValueString(Application::APP_ID, 'exchange_client_id', ''),
+            'exchangeClientSecret' => $this->appConfig->getValueString(Application::APP_ID, 'exchange_client_secret', '') !== '' ? '***' : '',
         ];
 
         return new JSONResponse($settings);
@@ -84,6 +90,35 @@ class SettingsController extends Controller {
                 Application::APP_ID,
                 'telemetry_enabled',
                 $telemetryEnabled ? 'true' : 'false'
+            );
+        }
+
+        // Exchange settings
+        $exchangeEnabled = $this->request->getParam('exchangeEnabled');
+        if ($exchangeEnabled !== null) {
+            $this->appConfig->setValueString(
+                Application::APP_ID,
+                'exchange_enabled',
+                $exchangeEnabled ? 'true' : 'false'
+            );
+        }
+
+        $exchangeTenantId = $this->request->getParam('exchangeTenantId');
+        if ($exchangeTenantId !== null) {
+            $this->appConfig->setValueString(Application::APP_ID, 'exchange_tenant_id', (string)$exchangeTenantId);
+        }
+
+        $exchangeClientId = $this->request->getParam('exchangeClientId');
+        if ($exchangeClientId !== null) {
+            $this->appConfig->setValueString(Application::APP_ID, 'exchange_client_id', (string)$exchangeClientId);
+        }
+
+        $exchangeClientSecret = $this->request->getParam('exchangeClientSecret');
+        if ($exchangeClientSecret !== null && $exchangeClientSecret !== '' && $exchangeClientSecret !== '***') {
+            $this->appConfig->setValueString(
+                Application::APP_ID,
+                'exchange_client_secret',
+                $this->crypto->encrypt($exchangeClientSecret)
             );
         }
 
