@@ -4,9 +4,19 @@
     <id>roomvox</id>
     <name>RoomVox</name>
     <summary>CalDAV-native room booking via any calendar app</summary>
-    <description><![CDATA[RoomVox makes it easy to book and manage rooms in your organization. Whether it's meeting rooms, lecture halls, studios, or shared spaces — users simply add a room to their calendar event and RoomVox takes care of the rest: availability checking, conflict prevention, and booking confirmations.
+    <description><![CDATA[**⚠️ EVALUATION VERSION - NOT FOR PRODUCTION USE**
+
+This is an evaluation version intended for testing and demonstration purposes only. Do not use in production environments.
+
+---
+
+RoomVox makes it easy to book and manage rooms in your organization. Whether it's meeting rooms, lecture halls, studios, or shared spaces — users simply add a room to their calendar event and RoomVox takes care of the rest: availability checking, conflict prevention, and booking confirmations.
 
 No separate booking portal needed. Rooms appear directly in the calendar app your team already uses — Nextcloud Calendar, Apple Calendar, Outlook, Thunderbird, or eM Client.
+
+**📋 Requirements:**
+* PHP 8.2 or higher
+* Nextcloud 32 or 33
 
 **For users:**
 * Book rooms directly from your calendar — no extra tools or interfaces
@@ -22,9 +32,16 @@ No separate booking portal needed. Rooms appear directly in the calendar app you
 * Per-room email and SMTP configuration
 * Zero database — all config stored in Nextcloud's IAppConfig
 
-**Requirements:** Nextcloud 32–33, PHP 8.2+
+**Compatible with:**
+* Nextcloud Calendar
+* Apple Calendar (iOS/macOS)
+* Microsoft Outlook
+* Mozilla Thunderbird
+* eM Client
+
+Built with Vue 3 and CalDAV standards for seamless integration with any calendar app.
     ]]></description>
-    <version>0.3.0</version>
+    <version>0.3.1</version>
     <licence>agpl</licence>
     <author mail="sam@mief.info">Sam Ditmeijer</author>
     <author mail="rik@shalution.nl">Rik Dekker</author>
