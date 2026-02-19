@@ -57,7 +57,7 @@ Each room is displayed as a compact card showing:
 
 ```bash
 # Build and deploy the calendar patch to a server
-./deploy-calendar.sh 3dev    # or 1dev, prod
+./deploy-calendar.sh <target>
 ```
 
 The deploy script:

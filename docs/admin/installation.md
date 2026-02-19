@@ -27,7 +27,7 @@ RoomVox is available in English (en), Dutch (nl), German (de), and French (fr). 
 ```bash
 # Clone into Nextcloud apps directory
 cd /var/www/nextcloud/apps/
-git clone https://gitea.rikdekker.nl/sam/RoomVox.git roomvox
+git clone https://github.com/nextcloud/RoomVox.git roomvox
 
 # Install PHP dependencies
 cd roomvox

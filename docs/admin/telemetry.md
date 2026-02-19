@@ -40,7 +40,7 @@ RoomVox sends the following anonymous data once every 24 hours:
 
 ## Where Data Is Sent
 
-Telemetry data is sent to `https://licenses.voxcloud.nl/api/telemetry/roomvox`.
+Telemetry data is sent to the RoomVox telemetry server.
 
 ## How to Disable Telemetry
 

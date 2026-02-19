@@ -62,8 +62,8 @@ New to RoomVox? Start with our [Getting Started Guide](getting-started.md) to se
 
 ## Support
 
-- **Issues & Feature Requests:** [Gitea Issues](https://gitea.rikdekker.nl/sam/RoomVox/issues)
-- **Source Code:** [Gitea Repository](https://gitea.rikdekker.nl/sam/RoomVox) | [GitHub Mirror](https://github.com/nextcloud/roomvox)
+- **Issues & Feature Requests:** [GitHub Issues](https://github.com/nextcloud/roomvox/issues)
+- **Source Code:** [GitHub Repository](https://github.com/nextcloud/RoomVox)
 
 ## License
 
