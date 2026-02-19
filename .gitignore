@@ -10,3 +10,8 @@ package-lock.json
 composer.lock
 seed-rooms.sh
 seed-bookings.sh
+*.key
+*.crt
+*.pem
+*.env
+*.tar.gz
