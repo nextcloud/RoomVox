@@ -13,11 +13,17 @@
 
 set -e
 
+# Load deploy configuration
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+if [ ! -f "$SCRIPT_DIR/deploy.conf" ]; then
+    echo "Missing deploy.conf — copy deploy.conf.example and fill in your values"
+    exit 1
+fi
+source "$SCRIPT_DIR/deploy.conf"
+
 # Configuration
-REMOTE_USER="rdekker"
-SSH_KEY="~/.ssh/sur"
 REMOTE_PATH="/var/www/nextcloud"
-LOCAL_PATH="$(cd "$(dirname "$0")" && pwd)"
+LOCAL_PATH="$SCRIPT_DIR"
 PATCH_DIR="$LOCAL_PATH/nc-calendar-patch"
 CALENDAR_VERSION="v6.2.0"
 BUILD_DIR="/tmp/nc-calendar-build"
@@ -25,11 +31,11 @@ BUILD_DIR="/tmp/nc-calendar-build"
 # Server selection (same as deploy.sh)
 case "${1:-3dev}" in
     1dev|1)
-        REMOTE_HOST="145.38.193.235"
+        REMOTE_HOST="$SERVERS_1DEV"
         SERVER_NAME="1dev"
         ;;
     3dev|3|"")
-        REMOTE_HOST="145.38.188.218"
+        REMOTE_HOST="$SERVERS_3DEV"
         SERVER_NAME="3dev"
         ;;
     *)

@@ -5,21 +5,27 @@
 
 set -e
 
+# Load deploy configuration
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+if [ ! -f "$SCRIPT_DIR/deploy.conf" ]; then
+    echo "Missing deploy.conf — copy deploy.conf.example and fill in your values"
+    exit 1
+fi
+source "$SCRIPT_DIR/deploy.conf"
+
 # Configuration
 APP_NAME="roomvox"
-REMOTE_USER="rdekker"
 REMOTE_PATH="/var/www/nextcloud/apps"
-SSH_KEY="~/.ssh/sur"
 LOCAL_PATH="$(pwd)"
 
 # Server selection based on argument (default: 3dev)
 case "${1:-3dev}" in
     1dev|1)
-        REMOTE_HOST="145.38.193.235"
+        REMOTE_HOST="$SERVERS_1DEV"
         SERVER_NAME="1dev"
         ;;
     3dev|3|"")
-        REMOTE_HOST="145.38.188.218"
+        REMOTE_HOST="$SERVERS_3DEV"
         SERVER_NAME="3dev"
         ;;
     *)

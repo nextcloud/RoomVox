@@ -1,0 +1,10 @@
+# RoomVox Deploy Configuration
+# Copy this file to deploy.conf and fill in your values:
+#   cp deploy.conf.example deploy.conf
+
+REMOTE_USER="your-username"
+SSH_KEY="~/.ssh/your-key"
+
+# Server IP addresses
+SERVERS_1DEV="0.0.0.0"
+SERVERS_3DEV="0.0.0.0"

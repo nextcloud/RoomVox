@@ -15,3 +15,4 @@ seed-bookings.sh
 *.pem
 *.env
 *.tar.gz
+deploy.conf
