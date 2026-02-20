@@ -1,7 +1,7 @@
 # Testverslag RoomVox — Dubbele Boekingen Preventie
 
 **Datum:** 20 februari 2026
-**Totaal:** 158 tests, 263 assertions — alle groen
+**Totaal:** 173 tests, 302 assertions — alle groen
 **PHP versie:** 8.4.13
 **PHPUnit versie:** 10.5.63
 
@@ -244,7 +244,7 @@ De Graph API retourneert een `showAs` veld per event. Alleen events die de kalen
 
 ---
 
-### 7. Webhook Controller — Inline Sync, Throttle & Rate Limit (14 tests)
+### 7. Webhook Controller — Inline Sync, Throttle & Rate Limit (17 tests)
 
 **Bestand:** `tests/Unit/Controller/WebhookControllerTest.php`
 **Bron:** `lib/Controller/WebhookController.php` regel 46-150
@@ -291,6 +291,16 @@ Beschermt tegen 300 aparte webhook requests die tegelijk binnenkomen. Gebruikt e
 | Test | Scenario | Resultaat |
 |------|----------|-----------|
 | 3 notificaties zelfde room | created + updated + deleted voor room1 | Slechts 1x sync |
+
+#### Performance
+
+Valideert dat de webhook handler snel genoeg reageert voor Microsoft Graph's 3-seconden deadline, ook bij grote aantallen rooms. Mocks simuleren de volledige flow (lookup, sync, queue) om de overhead van de controller-logica zelf te meten.
+
+| Test | Rooms | Max inline | Limiet | Resultaat |
+|------|-------|------------|--------|-----------|
+| 50 rooms | 50 | 1 | < 100ms | 1 inline, 49 queued — ruim binnen limiet |
+| 300 rooms | 300 | 1 | < 500ms | 1 inline, 299 queued — simuleert worst-case bulk |
+| 300 rooms, max 5 | 300 | 5 | < 500ms | 5 inline, 295 queued — hogere inline limiet |
 
 ---
 
@@ -341,6 +351,56 @@ Naast de hierboven beschreven tests (secties 1-8) zijn er 67 bestaande unit test
 
 ---
 
+### 10. Performance Tests (12 tests)
+
+**Bestand:** `tests/Unit/PerformanceTest.php`
+
+Valideert dat kritieke code-paden snel genoeg zijn bij realistische datavolumes. Alle externe afhankelijkheden (database, Exchange API, SMTP) zijn gemockt — de tests meten de overhead van de PHP-logica zelf.
+
+#### Conflictdetectie schaling
+
+| Test | Events in kalender | Limiet | Beschrijving |
+|------|--------------------|--------|-------------|
+| 50 events | 50 | < 50ms | Volledige scan door 50 kalenderobjecten |
+| 200 events | 200 | < 150ms | Stress test met drukke kamer |
+
+#### Scheduling plugin (iTIP flow)
+
+| Test | Scenario | Limiet | Beschrijving |
+|------|----------|--------|-------------|
+| Full flow | Permissie → beschikbaarheid → horizon → conflict → delivery | < 50ms | Complete iTIP REQUEST verwerking |
+| Complexe availability | 6 regels (ma-za, elk andere tijden) | < 30ms | Worst-case regel matching |
+
+#### Booking API
+
+| Test | Scenario | Limiet | Beschrijving |
+|------|----------|--------|-------------|
+| Enkele boeking | create() met alle checks | < 50ms | Conflict check + aanmaken + response |
+| 10 sequentiële boekingen | 10x create() achter elkaar | < 200ms | Simuleert bulk import via API |
+
+#### Room listing
+
+| Test | Rooms | Limiet | Beschrijving |
+|------|-------|--------|-------------|
+| 100 kamers | 100 JSON decode + index | < 50ms | Typisch gebruik |
+| 500 kamers | 500 JSON decode + index | < 200ms | Grootschalige installatie |
+
+#### CSV import parsing
+
+| Test | Rijen | Limiet | Beschrijving |
+|------|-------|--------|-------------|
+| 100 rijen | 100 rooms met faciliteiten | < 100ms | Standaard import |
+| 500 rijen | 500 rooms met faciliteiten | < 400ms | Bulk import |
+
+#### Exchange conflict check
+
+| Test | Events | Limiet | Beschrijving |
+|------|--------|--------|-------------|
+| 50 events | 50 showAs=free events | < 50ms | Volledige scan (alle free = worst case) |
+| 200 events | 200 showAs=free events | < 150ms | Stress test |
+
+---
+
 ## Niet getest (bekende beperkingen)
 
 | Onderwerp | Reden |
@@ -369,6 +429,9 @@ vendor/bin/phpunit tests/Unit/Controller/PublicApiConflictTest.php
 # Webhook & settings tests
 vendor/bin/phpunit tests/Unit/Controller/WebhookControllerTest.php
 vendor/bin/phpunit tests/Unit/Controller/SettingsControllerTest.php
+
+# Performance tests
+vendor/bin/phpunit tests/Unit/PerformanceTest.php
 ```
 
 ---
@@ -390,3 +453,4 @@ De testsuite valideert dat:
 11. **Webhook inline sync met throttle** — eerste N rooms syncen inline voor near-realtime delivery, rest wordt via background jobs afgehandeld om Microsoft's 3-seconden deadline te halen
 12. **Globale rate limit beschermt tegen burst traffic** — bij 300 gelijktijdige webhook requests wordt het inline sync budget (distributed cache, 10s window) gerespecteerd; overschot gaat naar background jobs
 13. **Settings API is beveiligd** — alleen admins kunnen instellingen lezen/wijzigen, client secrets worden gemaskeerd
+14. **Performance is acceptabel bij schaal** — conflictdetectie (200 events < 150ms), CSV import (500 rijen < 400ms), room listing (500 kamers < 200ms), Exchange conflict check (200 events < 150ms), batch boekingen (10x < 200ms)

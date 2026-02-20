@@ -528,6 +528,122 @@ class WebhookControllerTest extends TestCase {
         $this->assertSame(202, $response->getStatus());
     }
 
+    // ── Performance: large payloads ─────────────────────────────────
+
+    public function testPerformance50RoomsUnder100ms(): void {
+        $this->assertBulkWebhookPerformance(50, 100);
+    }
+
+    public function testPerformance300RoomsUnder500ms(): void {
+        $this->assertBulkWebhookPerformance(300, 500);
+    }
+
+    public function testPerformance300RoomsMaxInline5(): void {
+        // With max 5 inline, 295 should be queued to background jobs
+        $rooms = $this->generateRooms(300);
+        $controller = $this->buildBulkController($rooms, '5', '5');
+
+        $payload = ['value' => []];
+        foreach ($rooms as $room) {
+            $payload['value'][] = [
+                'subscriptionId' => $room['exchangeConfig']['webhookSubscriptionId'],
+                'clientState' => $room['exchangeConfig']['webhookClientState'],
+                'changeType' => 'created',
+            ];
+        }
+
+        $start = hrtime(true);
+        $response = $this->callReceiveWithPayload($payload, $controller);
+        $elapsed = (hrtime(true) - $start) / 1_000_000;
+
+        $this->assertSame(202, $response->getStatus());
+        $this->assertLessThan(500, $elapsed, "300 rooms with max 5 inline took {$elapsed}ms (limit: 500ms)");
+    }
+
+    private function assertBulkWebhookPerformance(int $roomCount, float $maxMs): void {
+        $rooms = $this->generateRooms($roomCount);
+        $controller = $this->buildBulkController($rooms, '1', '5');
+
+        $payload = ['value' => []];
+        foreach ($rooms as $room) {
+            $payload['value'][] = [
+                'subscriptionId' => $room['exchangeConfig']['webhookSubscriptionId'],
+                'clientState' => $room['exchangeConfig']['webhookClientState'],
+                'changeType' => 'created',
+            ];
+        }
+
+        $start = hrtime(true);
+        $response = $this->callReceiveWithPayload($payload, $controller);
+        $elapsed = (hrtime(true) - $start) / 1_000_000;
+
+        $this->assertSame(202, $response->getStatus());
+        $this->assertLessThan($maxMs, $elapsed, "{$roomCount} rooms took {$elapsed}ms (limit: {$maxMs}ms)");
+    }
+
+    private function generateRooms(int $count): array {
+        $rooms = [];
+        for ($i = 1; $i <= $count; $i++) {
+            $rooms["room{$i}"] = [
+                'id' => "room{$i}",
+                'exchangeConfig' => [
+                    'resourceEmail' => "room{$i}@company.com",
+                    'syncEnabled' => true,
+                    'webhookSubscriptionId' => "sub-{$i}",
+                    'webhookClientState' => "state-{$i}",
+                ],
+            ];
+        }
+        return $rooms;
+    }
+
+    private function buildBulkController(array $rooms, string $maxPerRequest, string $rateLimit): WebhookController {
+        $appConfig = $this->createMock(IAppConfig::class);
+        $appConfig->method('getValueString')
+            ->willReturnCallback(fn (string $app, string $key, string $default) => match ($key) {
+                'exchange_webhook_max_inline_sync' => $maxPerRequest,
+                'exchange_webhook_rate_limit' => $rateLimit,
+                default => $default,
+            });
+
+        $webhookService = $this->createMock(WebhookService::class);
+        $webhookService->method('findRoomBySubscriptionId')
+            ->willReturnCallback(function (string $subId) use ($rooms): ?array {
+                foreach ($rooms as $room) {
+                    if ($room['exchangeConfig']['webhookSubscriptionId'] === $subId) {
+                        return $room;
+                    }
+                }
+                return null;
+            });
+
+        $roomService = $this->createMock(RoomService::class);
+        $roomService->method('getRoom')
+            ->willReturnCallback(fn (string $id) => $rooms[$id] ?? null);
+
+        $syncService = $this->createMock(ExchangeSyncService::class);
+        $syncService->method('isExchangeRoom')->willReturn(true);
+        $syncService->method('pullExchangeChanges')->willReturn(new SyncResult());
+
+        $cache = $this->createMock(ICache::class);
+        $cache->method('get')->willReturn(0);
+        $cache->method('set')->willReturn(true);
+        $cacheFactory = $this->createMock(ICacheFactory::class);
+        $cacheFactory->method('createDistributed')->willReturn($cache);
+
+        return new WebhookController(
+            'roomvox',
+            $this->request,
+            $webhookService,
+            $syncService,
+            $roomService,
+            $this->createMock(IJobList::class),
+            $appConfig,
+            $cacheFactory,
+            $this->createMock(LoggerInterface::class),
+        );
+    }
+
     // ── Helper ─────────────────────────────────────────────────────
 
     private function callReceiveWithPayload(array $payload, ?WebhookController $controller = null): \OCP\AppFramework\Http\Response {
