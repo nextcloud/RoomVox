@@ -431,7 +431,7 @@ class ExchangeSyncService {
                 [
                     'startDateTime' => $start->format('Y-m-d\TH:i:s\Z'),
                     'endDateTime' => $end->format('Y-m-d\TH:i:s\Z'),
-                    '$select' => 'id,subject,start,end,isCancelled,singleValueExtendedProperties',
+                    '$select' => 'id,subject,start,end,isCancelled,showAs,singleValueExtendedProperties',
                     '$expand' => 'singleValueExtendedProperties($filter=id eq \'' . GraphApiClient::ROOMVOX_UID_PROP . '\')',
                     '$top' => '50',
                 ]
@@ -440,6 +440,12 @@ class ExchangeSyncService {
             $events = $result['value'] ?? [];
             foreach ($events as $event) {
                 if ($event['isCancelled'] ?? false) {
+                    continue;
+                }
+
+                // Skip events that don't block the calendar
+                $showAs = $event['showAs'] ?? 'busy';
+                if ($showAs === 'free') {
                     continue;
                 }
 

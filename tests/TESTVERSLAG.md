@@ -1,7 +1,7 @@
 # Testverslag RoomVox — Dubbele Boekingen Preventie
 
 **Datum:** 20 februari 2026
-**Totaal:** 124 tests, 201 assertions — alle groen
+**Totaal:** 133 tests, 210 assertions — alle groen
 **PHP versie:** 8.4.13
 **PHPUnit versie:** 10.5.63
 
@@ -214,7 +214,37 @@ Test de validatielogica die de Public API v1 (bearer token) gebruikt voor extern
 
 ---
 
-### 6. Bestaande Tests (67 tests)
+### 6. Exchange Conflict Check — `hasExchangeConflict()` (9 tests)
+
+**Bestand:** `tests/Unit/Service/Exchange/ExchangeSyncServiceTest.php`
+**Bron:** `lib/Service/Exchange/ExchangeSyncService.php` regel 416-464
+
+Controleert dat de Exchange-zijde (Microsoft Graph API) correct wordt geraadpleegd bij het boeken. Voorkomt dat boekingen worden aangemaakt in RoomVox die in Exchange als duplicaten verschijnen.
+
+#### showAs filtering
+
+De Graph API retourneert een `showAs` veld per event. Alleen events die de kalender daadwerkelijk bezet houden mogen als conflict tellen.
+
+| Test | showAs waarde | Resultaat | Waarom |
+|------|---------------|-----------|--------|
+| Busy | `busy` | **CONFLICT** | Standaard — kalender bezet |
+| Tentative | `tentative` | **CONFLICT** | Voorlopig — kalender bezet |
+| Free | `free` | **VRIJ** | Vrij gemarkeerd — geen blokkade |
+| Out of Office | `oof` | **CONFLICT** | Afwezig — kalender bezet |
+| Working Elsewhere | `workingElsewhere` | **CONFLICT** | Elders werkend — kalender bezet |
+
+#### Overige scenarios
+
+| Test | Scenario | Resultaat | Waarom |
+|------|----------|-----------|--------|
+| Cancelled event | `isCancelled=true` | **VRIJ** | Geannuleerd blokkeert niet |
+| Exclude UID | RoomVox UID match met `excludeUid` | **VRIJ** | Eigen boeking wordt overgeslagen bij reschedule |
+| Geen events | Leeg tijdslot op Exchange | **VRIJ** | Niets blokkeert |
+| Geen Exchange room | Room zonder Exchange config | **VRIJ** | Check wordt overgeslagen |
+
+---
+
+### 7. Bestaande Tests (67 tests)
 
 Naast de nieuwe conflict-tests zijn er 67 bestaande tests die de overige logica dekken:
 
@@ -225,7 +255,7 @@ Naast de nieuwe conflict-tests zijn er 67 bestaande tests die de overige logica 
 | PermissionServiceTest | 6 | Rolhiërarchie, groepsovererving, admin bypass |
 | ImportExportServiceTest | 13 | CSV delimiter, kolomdetectie, faciliteiten, adres parsing |
 | ApiTokenServiceTest | 8 | Scope hiërarchie (read < book < admin), kamertoegang |
-| ExchangeSyncServiceTest | 6 | Exchange room validatie, sync skip |
+| ExchangeSyncServiceTest | 15 | Exchange room validatie, sync skip, Exchange conflict check (showAs filtering) |
 | WebhookServiceTest | 6 | Webhook renewal, HTTPS-vereiste |
 | SchedulingPluginTest | 9 | bookingFitsRule, isWithinAvailability |
 
@@ -272,3 +302,4 @@ De testsuite valideert dat:
 7. **Beschikbaarheidsregels worden afgedwongen** — dag- en tijdcontroles
 8. **Booking horizon werkt voor herhalende events** — RRULE met UNTIL, COUNT, en oneindig
 9. **Exchange-fouten blokkeren lokale boekingen niet** — fail-safe design
+10. **Exchange conflict check filtert op showAs** — alleen `busy`, `tentative`, `oof` en `workingElsewhere` blokkeren; `free` events worden overgeslagen
