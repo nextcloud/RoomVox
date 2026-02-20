@@ -72,8 +72,10 @@ Assign a role to an entire Nextcloud group — all members of the group inherit 
 Permissions set on a room group are inherited by all rooms in that group.
 
 1. In the room groups section, click the **permissions icon** for the group
-2. Add viewers, bookers, and managers
-3. Click **Save**
+2. Add viewers, bookers, and managers using the search fields
+3. Click **Save Permissions**
+
+![Group-level permission editor — assign viewers, bookers, and managers to a room group](../screenshots/rooms-permissions.png)
 
 ### How Inheritance Works
 

@@ -151,8 +151,11 @@ When editing a room, select a **Room Group** from the dropdown. The room inherit
 Set permissions at the group level to apply them to all rooms in the group:
 
 1. Click the permissions icon on the group
-2. Add viewers, bookers, and managers
-3. These permissions are merged (union) with each room's individual permissions
+2. Add viewers, bookers, and managers using the search fields
+3. Click **Save Permissions**
+4. These permissions are merged (union) with each room's individual permissions
+
+![Group-level permission editor — viewers, bookers, and managers](../screenshots/rooms-permissions.png)
 
 ### Deleting Groups
 
