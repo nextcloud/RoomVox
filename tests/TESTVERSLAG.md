@@ -1,7 +1,7 @@
 # Testverslag RoomVox — Dubbele Boekingen Preventie
 
 **Datum:** 20 februari 2026
-**Totaal:** 133 tests, 210 assertions — alle groen
+**Totaal:** 153 tests, 248 assertions — alle groen
 **PHP versie:** 8.4.13
 **PHPUnit versie:** 10.5.63
 
@@ -244,7 +244,75 @@ De Graph API retourneert een `showAs` veld per event. Alleen events die de kalen
 
 ---
 
-### 7. Bestaande Tests (67 tests)
+### 7. Webhook Controller — Inline Sync & Throttle (10 tests)
+
+**Bestand:** `tests/Unit/Controller/WebhookControllerTest.php`
+**Bron:** `lib/Controller/WebhookController.php` regel 46-123
+
+Test de webhook endpoint die notificaties van Microsoft Graph ontvangt. Valideert de volledige flow: validation handshake, inline delta sync, throttle-limiet, en fallback naar background jobs.
+
+#### Validation handshake
+
+| Test | Scenario | Resultaat |
+|------|----------|-----------|
+| Token aanwezig | Microsoft stuurt `validationToken` | HTTP 200, token teruggestuurd |
+| Token leeg | Lege validationToken | HTTP 400 |
+| Ongeldige JSON | Geen body / ongeldig JSON | HTTP 400 |
+
+#### Inline sync & security
+
+| Test | Scenario | Resultaat |
+|------|----------|-----------|
+| Enkele room | 1 notificatie, geldige clientState | Delta sync inline, geen background job |
+| clientState mismatch | Verkeerde clientState | Room wordt geskipt, geen sync |
+| Onbekende subscription | subscriptionId niet gevonden | Room wordt geskipt |
+| Sync failure | pullExchangeChanges gooit exception | Fallback naar WebhookSyncJob |
+
+#### Throttle (exchange_webhook_max_inline_sync)
+
+| Test | Scenario | Max inline | Resultaat |
+|------|----------|------------|-----------|
+| 3 rooms, max=1 | Bulk notificatie | 1 | 1 inline, 2 naar background jobs |
+| 2 rooms, max=3 | Ruim onder limiet | 3 | Beide inline, geen background jobs |
+| 1 room, max=0 | Alles uitgeschakeld | 0 | Alles naar background jobs |
+
+#### Deduplicatie
+
+| Test | Scenario | Resultaat |
+|------|----------|-----------|
+| 3 notificaties zelfde room | created + updated + deleted voor room1 | Slechts 1x sync |
+
+---
+
+### 8. Settings Controller (10 tests)
+
+**Bestand:** `tests/Unit/Controller/SettingsControllerTest.php`
+**Bron:** `lib/Controller/SettingsController.php` regel 40-151
+
+Test de globale instellingen API voor het admin paneel, inclusief de nieuwe webhook throttle-instelling.
+
+#### GET settings
+
+| Test | Scenario | Resultaat |
+|------|----------|-----------|
+| Max inline sync = 5 | Setting opgeslagen als `"5"` | Retourneert `5` als int |
+| Geen setting opgeslagen | Default waarde | Retourneert `1` |
+| Niet-admin gebruiker | isAdmin=false | HTTP 403 |
+| Client secret aanwezig | Encrypted secret opgeslagen | Toont `***` |
+| Client secret leeg | Geen secret opgeslagen | Toont lege string |
+
+#### SAVE settings
+
+| Test | Scenario | Resultaat |
+|------|----------|-----------|
+| Waarde 3 opslaan | exchangeWebhookMaxInlineSync=3 | Opgeslagen als `"3"` |
+| Negatieve waarde | exchangeWebhookMaxInlineSync=-5 | Geclampt naar `"0"` |
+| Niet meegegeven | Param ontbreekt | Geen update |
+| Niet-admin gebruiker | isAdmin=false | HTTP 403 |
+
+---
+
+### 9. Bestaande Tests (67 tests)
 
 Naast de nieuwe conflict-tests zijn er 67 bestaande tests die de overige logica dekken:
 
@@ -258,6 +326,8 @@ Naast de nieuwe conflict-tests zijn er 67 bestaande tests die de overige logica 
 | ExchangeSyncServiceTest | 15 | Exchange room validatie, sync skip, Exchange conflict check (showAs filtering) |
 | WebhookServiceTest | 6 | Webhook renewal, HTTPS-vereiste |
 | SchedulingPluginTest | 9 | bookingFitsRule, isWithinAvailability |
+| WebhookControllerTest | 10 | Validation handshake, inline sync, throttle, deduplicatie, fallback |
+| SettingsControllerTest | 10 | GET/SAVE settings, admin access, webhook throttle, secret masking |
 
 ---
 
@@ -285,6 +355,10 @@ vendor/bin/phpunit tests/Unit/Controller/BookingApiConflictTest.php
 vendor/bin/phpunit tests/Unit/Dav/SchedulingPluginRequestTest.php
 vendor/bin/phpunit tests/Unit/Dav/SchedulingPluginHorizonTest.php
 vendor/bin/phpunit tests/Unit/Controller/PublicApiConflictTest.php
+
+# Webhook & settings tests
+vendor/bin/phpunit tests/Unit/Controller/WebhookControllerTest.php
+vendor/bin/phpunit tests/Unit/Controller/SettingsControllerTest.php
 ```
 
 ---
@@ -303,3 +377,5 @@ De testsuite valideert dat:
 8. **Booking horizon werkt voor herhalende events** — RRULE met UNTIL, COUNT, en oneindig
 9. **Exchange-fouten blokkeren lokale boekingen niet** — fail-safe design
 10. **Exchange conflict check filtert op showAs** — alleen `busy`, `tentative`, `oof` en `workingElsewhere` blokkeren; `free` events worden overgeslagen
+11. **Webhook inline sync met throttle** — eerste N rooms syncen inline voor near-realtime delivery, rest wordt via background jobs afgehandeld om Microsoft's 3-seconden deadline te halen
+12. **Settings API is beveiligd** — alleen admins kunnen instellingen lezen/wijzigen, client secrets worden gemaskeerd
