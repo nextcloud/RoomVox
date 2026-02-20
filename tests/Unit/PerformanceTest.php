@@ -343,10 +343,10 @@ class PerformanceTest extends TestCase {
             "{$bookingCount} sequential bookings took {$elapsed}ms (limit: 200ms)");
     }
 
-    // ── 9. Load simulation: 300 rooms × 1 booking/hour ───────────────
+    // ── 9. Load simulation: 1500 rooms × 1 booking/hour ──────────────
 
     /**
-     * Simulates 300 bookings across 300 different rooms via the internal API.
+     * Simulates 1500 bookings across 1500 different rooms via the internal API.
      * Each booking goes through: auth → room lookup → conflict check → create → Exchange push attempt.
      *
      * With mocked I/O this measures pure PHP overhead. Real-world adds:
@@ -354,10 +354,10 @@ class PerformanceTest extends TestCase {
      * - ~1-2ms per createBooking (DB insert)
      * - ~50-200ms per Exchange push (HTTP, but fail-safe/non-blocking)
      *
-     * Budget: 300 × ~5ms PHP overhead = ~1.5 seconds. Over 1 hour = 5 bookings/minute = trivial.
+     * Budget: 1500 × ~5ms PHP overhead = ~7.5s. Over 1 hour = 25 bookings/minute = trivial.
      */
-    public function testLoad300BookingsAcross300RoomsUnder2s(): void {
-        $roomCount = 300;
+    public function testLoad1500BookingsAcross1500RoomsUnder10s(): void {
+        $roomCount = 1500;
 
         $rooms = [];
         for ($i = 0; $i < $roomCount; $i++) {
@@ -413,16 +413,16 @@ class PerformanceTest extends TestCase {
         $perBooking = $elapsed / $roomCount;
 
         $this->assertSame($roomCount, $successCount);
-        $this->assertLessThan(2000, $elapsed,
-            "300 bookings across 300 rooms took {$elapsed}ms ({$perBooking}ms/booking, limit: 2000ms)");
+        $this->assertLessThan(10000, $elapsed,
+            "1500 bookings across 1500 rooms took {$elapsed}ms ({$perBooking}ms/booking, limit: 10000ms)");
     }
 
     /**
      * Same load but via CalDAV scheduling (iTIP flow) — the path that
      * CalDAV clients like Thunderbird/Apple Calendar use.
      */
-    public function testLoad300BookingsViaCalDAVSchedulingUnder2s(): void {
-        $roomCount = 300;
+    public function testLoad1500BookingsViaCalDAVSchedulingUnder10s(): void {
+        $roomCount = 1500;
 
         $rooms = [];
         for ($i = 0; $i < $roomCount; $i++) {
@@ -495,19 +495,19 @@ class PerformanceTest extends TestCase {
         $perBooking = $elapsed / $roomCount;
 
         $this->assertSame($roomCount, $deliveredCount);
-        $this->assertLessThan(2000, $elapsed,
-            "300 iTIP bookings took {$elapsed}ms ({$perBooking}ms/booking, limit: 2000ms)");
+        $this->assertLessThan(10000, $elapsed,
+            "1500 iTIP bookings took {$elapsed}ms ({$perBooking}ms/booking, limit: 10000ms)");
     }
 
     /**
-     * Combined scenario: 300 rooms with varying existing bookings (5-20 per room).
+     * Combined scenario: 1500 rooms with 10 existing bookings each.
      * Tests conflict check at scale — every new booking must scan existing events.
      *
      * This simulates a busy Monday morning where all rooms have existing bookings
-     * and 300 new bookings arrive within the same hour.
+     * and 1500 new bookings arrive within the same hour.
      */
-    public function testLoad300BookingsWithConflictChecksUnder3s(): void {
-        $roomCount = 300;
+    public function testLoad1500BookingsWithConflictChecksUnder15s(): void {
+        $roomCount = 1500;
         $existingPerRoom = 10; // 10 existing bookings per room
 
         $calDavBackend = $this->createMock(CalDavBackend::class);
@@ -565,8 +565,8 @@ class PerformanceTest extends TestCase {
         $perCheck = $elapsed / $roomCount;
 
         $this->assertSame($roomCount, $noConflictCount);
-        $this->assertLessThan(3000, $elapsed,
-            "300 conflict checks (10 events/room) took {$elapsed}ms ({$perCheck}ms/check, limit: 3000ms)");
+        $this->assertLessThan(15000, $elapsed,
+            "1500 conflict checks (10 events/room) took {$elapsed}ms ({$perCheck}ms/check, limit: 15000ms)");
     }
 
     // ── Helpers ─────────────────────────────────────────────────────
