@@ -19,10 +19,17 @@ use OCP\AppFramework\Http\Response;
 use OCP\AppFramework\Http\TextPlainResponse;
 use OCP\BackgroundJob\IJobList;
 use OCP\IAppConfig;
+use OCP\ICache;
+use OCP\ICacheFactory;
 use OCP\IRequest;
 use Psr\Log\LoggerInterface;
 
 class WebhookController extends Controller {
+    private const RATE_LIMIT_CACHE_KEY = 'webhook_inline_count';
+    private const RATE_LIMIT_WINDOW_SECONDS = 10;
+
+    private ICache $cache;
+
     public function __construct(
         string $appName,
         IRequest $request,
@@ -31,9 +38,11 @@ class WebhookController extends Controller {
         private RoomService $roomService,
         private IJobList $jobList,
         private IAppConfig $appConfig,
+        ICacheFactory $cacheFactory,
         private LoggerInterface $logger,
     ) {
         parent::__construct($appName, $request);
+        $this->cache = $cacheFactory->createDistributed('roomvox_webhook');
     }
 
     /**
@@ -82,42 +91,69 @@ class WebhookController extends Controller {
             $roomIds[$room['id']] = true;
         }
 
-        // Throttle: sync up to N rooms inline, queue the rest as background jobs
-        $maxInline = (int) $this->appConfig->getValueString(
+        // Per-request throttle: max rooms to sync inline in this request
+        $maxPerRequest = (int) $this->appConfig->getValueString(
             Application::APP_ID,
             'exchange_webhook_max_inline_sync',
             '1'
         );
+        // Global rate limit: max inline syncs across all requests in a time window
+        $maxPerWindow = (int) $this->appConfig->getValueString(
+            Application::APP_ID,
+            'exchange_webhook_rate_limit',
+            '5'
+        );
+
         $allRoomIds = array_keys($roomIds);
-        $inlineRoomIds = array_slice($allRoomIds, 0, $maxInline);
-        $queuedRoomIds = array_slice($allRoomIds, $maxInline);
+        $inlineCount = 0;
+        $queuedCount = 0;
 
-        // Sync first batch inline for immediate delivery
-        foreach ($inlineRoomIds as $roomId) {
-            try {
-                $room = $this->roomService->getRoom($roomId);
-                if ($room === null || !$this->syncService->isExchangeRoom($room)) {
-                    continue;
+        foreach ($allRoomIds as $roomId) {
+            // Check both limits: per-request and global rate limit
+            if ($inlineCount < $maxPerRequest && $this->acquireInlineSlot($maxPerWindow)) {
+                try {
+                    $room = $this->roomService->getRoom($roomId);
+                    if ($room === null || !$this->syncService->isExchangeRoom($room)) {
+                        continue;
+                    }
+
+                    $result = $this->syncService->pullExchangeChanges($room);
+                    $this->logger->info("Webhook: Synced room {$roomId} inline: "
+                        . "{$result->created} created, {$result->updated} updated, {$result->deleted} deleted");
+                    $inlineCount++;
+                } catch (\Throwable $e) {
+                    $this->logger->warning("Webhook: Inline sync failed for room {$roomId}, queuing background job: " . $e->getMessage());
+                    $this->jobList->add(WebhookSyncJob::class, ['roomId' => $roomId]);
+                    $queuedCount++;
                 }
-
-                $result = $this->syncService->pullExchangeChanges($room);
-                $this->logger->info("Webhook: Synced room {$roomId} inline: "
-                    . "{$result->created} created, {$result->updated} updated, {$result->deleted} deleted");
-            } catch (\Throwable $e) {
-                // Inline sync failed — fall back to background job
-                $this->logger->warning("Webhook: Inline sync failed for room {$roomId}, queuing background job: " . $e->getMessage());
+            } else {
                 $this->jobList->add(WebhookSyncJob::class, ['roomId' => $roomId]);
+                $queuedCount++;
             }
         }
 
-        // Queue remaining rooms as background jobs
-        foreach ($queuedRoomIds as $roomId) {
-            $this->jobList->add(WebhookSyncJob::class, ['roomId' => $roomId]);
-        }
-        if (count($queuedRoomIds) > 0) {
-            $this->logger->info("Webhook: Queued " . count($queuedRoomIds) . " rooms for background sync (max inline: {$maxInline})");
+        if ($queuedCount > 0) {
+            $this->logger->info("Webhook: Queued {$queuedCount} rooms for background sync (inline: {$inlineCount}, max/request: {$maxPerRequest}, max/window: {$maxPerWindow})");
         }
 
         return new DataResponse(null, Http::STATUS_ACCEPTED);
+    }
+
+    /**
+     * Try to acquire an inline sync slot from the global rate limiter.
+     * Returns true if a slot is available, false if the limit is reached.
+     */
+    private function acquireInlineSlot(int $maxPerWindow): bool {
+        if ($maxPerWindow <= 0) {
+            return false;
+        }
+
+        $current = (int) ($this->cache->get(self::RATE_LIMIT_CACHE_KEY) ?? 0);
+        if ($current >= $maxPerWindow) {
+            return false;
+        }
+
+        $this->cache->set(self::RATE_LIMIT_CACHE_KEY, $current + 1, self::RATE_LIMIT_WINDOW_SECONDS);
+        return true;
     }
 }

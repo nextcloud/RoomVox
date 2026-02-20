@@ -11,6 +11,8 @@ use OCA\RoomVox\Service\Exchange\WebhookService;
 use OCA\RoomVox\Service\RoomService;
 use OCP\BackgroundJob\IJobList;
 use OCP\IAppConfig;
+use OCP\ICache;
+use OCP\ICacheFactory;
 use OCP\IRequest;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -22,6 +24,7 @@ class WebhookControllerTest extends TestCase {
     private RoomService $roomService;
     private IJobList $jobList;
     private IAppConfig $appConfig;
+    private ICache $cache;
     private IRequest $request;
 
     private array $testRoom = [
@@ -41,11 +44,22 @@ class WebhookControllerTest extends TestCase {
         $this->roomService = $this->createMock(RoomService::class);
         $this->jobList = $this->createMock(IJobList::class);
         $this->appConfig = $this->createMock(IAppConfig::class);
-        $logger = $this->createMock(LoggerInterface::class);
+        $this->cache = $this->createMock(ICache::class);
 
-        // Default: max 1 inline sync
+        // Default: max 1 inline per request, max 5 per window
         $this->appConfig->method('getValueString')
-            ->willReturn('1');
+            ->willReturnCallback(fn (string $app, string $key, string $default) => match ($key) {
+                'exchange_webhook_max_inline_sync' => '1',
+                'exchange_webhook_rate_limit' => '5',
+                default => $default,
+            });
+
+        // Default: cache returns 0 (no previous syncs in window)
+        $this->cache->method('get')->willReturn(0);
+        $this->cache->method('set')->willReturn(true);
+
+        $cacheFactory = $this->createMock(ICacheFactory::class);
+        $cacheFactory->method('createDistributed')->willReturn($this->cache);
 
         $this->controller = new WebhookController(
             'roomvox',
@@ -55,13 +69,23 @@ class WebhookControllerTest extends TestCase {
             $this->roomService,
             $this->jobList,
             $this->appConfig,
-            $logger,
+            $cacheFactory,
+            $this->createMock(LoggerInterface::class),
         );
     }
 
-    private function buildController(string $maxInline = '1'): WebhookController {
+    private function buildController(string $maxPerRequest = '1', string $rateLimit = '5', ?ICache $cache = null): WebhookController {
         $appConfig = $this->createMock(IAppConfig::class);
-        $appConfig->method('getValueString')->willReturn($maxInline);
+        $appConfig->method('getValueString')
+            ->willReturnCallback(fn (string $app, string $key, string $default) => match ($key) {
+                'exchange_webhook_max_inline_sync' => $maxPerRequest,
+                'exchange_webhook_rate_limit' => $rateLimit,
+                default => $default,
+            });
+
+        $mockCache = $cache ?? $this->cache;
+        $cacheFactory = $this->createMock(ICacheFactory::class);
+        $cacheFactory->method('createDistributed')->willReturn($mockCache);
 
         return new WebhookController(
             'roomvox',
@@ -71,6 +95,7 @@ class WebhookControllerTest extends TestCase {
             $this->roomService,
             $this->jobList,
             $appConfig,
+            $cacheFactory,
             $this->createMock(LoggerInterface::class),
         );
     }
@@ -93,7 +118,6 @@ class WebhookControllerTest extends TestCase {
             ->with('validationToken')
             ->willReturn('');
 
-        // No body → bad request
         $response = $this->controller->receive();
         $this->assertSame(400, $response->getStatus());
     }
@@ -134,11 +158,9 @@ class WebhookControllerTest extends TestCase {
             ->with($this->testRoom)
             ->willReturn($result);
 
-        // Should NOT queue a background job
         $this->jobList->expects($this->never())
             ->method('add');
 
-        // Simulate php://input via a custom stream — we test the flow via mocks
         $response = $this->callReceiveWithPayload([
             'value' => [
                 [
@@ -163,7 +185,6 @@ class WebhookControllerTest extends TestCase {
             ->with('sub-123')
             ->willReturn($this->testRoom);
 
-        // Should never attempt sync
         $this->syncService->expects($this->never())
             ->method('pullExchangeChanges');
 
@@ -225,7 +246,6 @@ class WebhookControllerTest extends TestCase {
         $this->syncService->method('pullExchangeChanges')
             ->willThrowException(new \RuntimeException('API timeout'));
 
-        // Should queue a background job as fallback
         $this->jobList->expects($this->once())
             ->method('add');
 
@@ -242,7 +262,7 @@ class WebhookControllerTest extends TestCase {
         $this->assertSame(202, $response->getStatus());
     }
 
-    // ── Throttle: multiple rooms, max 1 inline ─────────────────────
+    // ── Per-request throttle: multiple rooms, max 1 inline ─────────
 
     public function testThrottleQueuesExcessRooms(): void {
         $room2 = [
@@ -288,12 +308,10 @@ class WebhookControllerTest extends TestCase {
         $this->syncService->method('isExchangeRoom')->willReturn(true);
 
         $result = new SyncResult();
-        // Only 1 inline sync (max=1), should call pullExchangeChanges exactly once
         $this->syncService->expects($this->once())
             ->method('pullExchangeChanges')
             ->willReturn($result);
 
-        // Should queue 2 background jobs for the remaining rooms
         $this->jobList->expects($this->exactly(2))
             ->method('add');
 
@@ -308,7 +326,7 @@ class WebhookControllerTest extends TestCase {
         $this->assertSame(202, $response->getStatus());
     }
 
-    // ── Throttle: max 3 → all inline ───────────────────────────────
+    // ── Per-request throttle: max 3 → all inline ───────────────────
 
     public function testThrottleMax3AllInline(): void {
         $room2 = [
@@ -346,7 +364,6 @@ class WebhookControllerTest extends TestCase {
             ->method('pullExchangeChanges')
             ->willReturn(new SyncResult());
 
-        // No background jobs needed
         $this->jobList->expects($this->never())
             ->method('add');
 
@@ -360,7 +377,7 @@ class WebhookControllerTest extends TestCase {
         $this->assertSame(202, $response->getStatus());
     }
 
-    // ── Throttle: max 0 → all queued ───────────────────────────────
+    // ── Per-request throttle: max 0 → all queued ───────────────────
 
     public function testThrottleMax0AllQueued(): void {
         $controller = $this->buildController('0');
@@ -372,11 +389,9 @@ class WebhookControllerTest extends TestCase {
         $this->webhookService->method('findRoomBySubscriptionId')
             ->willReturn($this->testRoom);
 
-        // No inline sync at all
         $this->syncService->expects($this->never())
             ->method('pullExchangeChanges');
 
-        // All queued
         $this->jobList->expects($this->once())
             ->method('add');
 
@@ -404,7 +419,6 @@ class WebhookControllerTest extends TestCase {
 
         $this->syncService->method('isExchangeRoom')->willReturn(true);
 
-        // Should sync only once despite 3 notifications for same room
         $this->syncService->expects($this->once())
             ->method('pullExchangeChanges')
             ->willReturn(new SyncResult());
@@ -420,15 +434,105 @@ class WebhookControllerTest extends TestCase {
         $this->assertSame(202, $response->getStatus());
     }
 
+    // ── Global rate limit ──────────────────────────────────────────
+
+    public function testGlobalRateLimitExceededQueuesAll(): void {
+        // Cache reports 5 syncs already done (limit = 5) → budget exhausted
+        $cache = $this->createMock(ICache::class);
+        $cache->method('get')->willReturn(5);
+
+        $controller = $this->buildController('1', '5', $cache);
+
+        $this->request->method('getParam')
+            ->with('validationToken')
+            ->willReturn(null);
+
+        $this->webhookService->method('findRoomBySubscriptionId')
+            ->willReturn($this->testRoom);
+
+        // No inline sync — rate limit hit
+        $this->syncService->expects($this->never())
+            ->method('pullExchangeChanges');
+
+        // Queued instead
+        $this->jobList->expects($this->once())
+            ->method('add');
+
+        $response = $this->callReceiveWithPayload([
+            'value' => [
+                ['subscriptionId' => 'sub-123', 'clientState' => 'secret-state-abc', 'changeType' => 'created'],
+            ],
+        ], $controller);
+
+        $this->assertSame(202, $response->getStatus());
+    }
+
+    public function testGlobalRateLimitZeroQueuesAll(): void {
+        // Rate limit set to 0 → all queued regardless
+        $controller = $this->buildController('1', '0');
+
+        $this->request->method('getParam')
+            ->with('validationToken')
+            ->willReturn(null);
+
+        $this->webhookService->method('findRoomBySubscriptionId')
+            ->willReturn($this->testRoom);
+
+        $this->syncService->expects($this->never())
+            ->method('pullExchangeChanges');
+
+        $this->jobList->expects($this->once())
+            ->method('add');
+
+        $response = $this->callReceiveWithPayload([
+            'value' => [
+                ['subscriptionId' => 'sub-123', 'clientState' => 'secret-state-abc', 'changeType' => 'created'],
+            ],
+        ], $controller);
+
+        $this->assertSame(202, $response->getStatus());
+    }
+
+    public function testGlobalRateLimitIncrementsCache(): void {
+        // Cache starts at 3, limit is 5 → 2 slots available
+        $cache = $this->createMock(ICache::class);
+        $cache->method('get')->willReturn(3);
+        // Expect cache to be set to 4 (incremented)
+        $cache->expects($this->once())
+            ->method('set')
+            ->with('webhook_inline_count', 4, 10);
+
+        $controller = $this->buildController('1', '5', $cache);
+
+        $this->request->method('getParam')
+            ->with('validationToken')
+            ->willReturn(null);
+
+        $this->webhookService->method('findRoomBySubscriptionId')
+            ->willReturn($this->testRoom);
+
+        $this->roomService->method('getRoom')
+            ->willReturn($this->testRoom);
+
+        $this->syncService->method('isExchangeRoom')->willReturn(true);
+        $this->syncService->expects($this->once())
+            ->method('pullExchangeChanges')
+            ->willReturn(new SyncResult());
+
+        $response = $this->callReceiveWithPayload([
+            'value' => [
+                ['subscriptionId' => 'sub-123', 'clientState' => 'secret-state-abc', 'changeType' => 'created'],
+            ],
+        ], $controller);
+
+        $this->assertSame(202, $response->getStatus());
+    }
+
     // ── Helper ─────────────────────────────────────────────────────
 
-    /**
-     * Call receive() with a simulated JSON payload via php://input stream wrapper.
-     */
     private function callReceiveWithPayload(array $payload, ?WebhookController $controller = null): \OCP\AppFramework\Http\Response {
         $json = json_encode($payload);
 
-        // Register a custom stream wrapper to simulate php://input
         stream_wrapper_unregister('php');
         stream_wrapper_register('php', PhpInputStreamMock::class);
         PhpInputStreamMock::$data = $json;
@@ -452,7 +556,6 @@ class PhpInputStreamMock {
     public $context;
 
     public function stream_open(string $path, string $mode, int $options, ?string &$opened_path): bool {
-        // Only handle php://input
         if ($path !== 'php://input') {
             return false;
         }

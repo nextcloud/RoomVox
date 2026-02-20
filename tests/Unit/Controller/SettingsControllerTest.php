@@ -51,6 +51,7 @@ class SettingsControllerTest extends TestCase {
         $this->appConfig->method('getValueString')
             ->willReturnCallback(fn (string $app, string $key, string $default) => match ($key) {
                 'exchange_webhook_max_inline_sync' => '5',
+                'exchange_webhook_rate_limit' => '10',
                 'exchange_client_secret' => '',
                 'room_types' => '',
                 default => $default,
@@ -62,6 +63,7 @@ class SettingsControllerTest extends TestCase {
         $this->assertSame(200, $response->getStatus());
         $data = $response->getData();
         $this->assertSame(5, $data['exchangeWebhookMaxInlineSync']);
+        $this->assertSame(10, $data['exchangeWebhookRateLimit']);
     }
 
     public function testGetSettingsDefaultWebhookMaxInlineSync(): void {
@@ -74,6 +76,7 @@ class SettingsControllerTest extends TestCase {
         $this->assertSame(200, $response->getStatus());
         $data = $response->getData();
         $this->assertSame(1, $data['exchangeWebhookMaxInlineSync']);
+        $this->assertSame(5, $data['exchangeWebhookRateLimit']);
     }
 
     public function testGetSettingsNonAdminReturns403(): void {
@@ -129,6 +132,40 @@ class SettingsControllerTest extends TestCase {
         // Should not call setValueString at all when nothing is sent
         $this->appConfig->expects($this->never())
             ->method('setValueString');
+
+        $controller = $this->buildController();
+        $response = $controller->save();
+
+        $this->assertSame(200, $response->getStatus());
+    }
+
+    public function testSaveWebhookRateLimit(): void {
+        $this->request->method('getParam')
+            ->willReturnCallback(fn (string $key, $default = null) => match ($key) {
+                'exchangeWebhookRateLimit' => 10,
+                default => null,
+            });
+
+        $this->appConfig->expects($this->once())
+            ->method('setValueString')
+            ->with(Application::APP_ID, 'exchange_webhook_rate_limit', '10');
+
+        $controller = $this->buildController();
+        $response = $controller->save();
+
+        $this->assertSame(200, $response->getStatus());
+    }
+
+    public function testSaveWebhookRateLimitClampsNegative(): void {
+        $this->request->method('getParam')
+            ->willReturnCallback(fn (string $key, $default = null) => match ($key) {
+                'exchangeWebhookRateLimit' => -3,
+                default => null,
+            });
+
+        $this->appConfig->expects($this->once())
+            ->method('setValueString')
+            ->with(Application::APP_ID, 'exchange_webhook_rate_limit', '0');
 
         $controller = $this->buildController();
         $response = $controller->save();

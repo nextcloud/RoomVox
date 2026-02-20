@@ -521,14 +521,25 @@
                                         @change="saveExchangeSettings" />
                                 </div>
                                 <div class="form-field">
-                                    <label>{{ $t('Webhook max inline sync') }}</label>
+                                    <label>{{ $t('Max inline sync per request') }}</label>
                                     <input
                                         v-model.number="exchangeWebhookMaxInlineSync"
                                         type="number"
                                         min="0"
                                         max="10"
                                         class="room-type-input exchange-input"
-                                        :placeholder="$t('Rooms to sync immediately (default: 1)')"
+                                        :placeholder="$t('Rooms per request (default: 1)')"
+                                        @change="saveExchangeSettings" />
+                                </div>
+                                <div class="form-field">
+                                    <label>{{ $t('Rate limit (per 10 sec)') }}</label>
+                                    <input
+                                        v-model.number="exchangeWebhookRateLimit"
+                                        type="number"
+                                        min="0"
+                                        max="100"
+                                        class="room-type-input exchange-input"
+                                        :placeholder="$t('Max inline syncs per 10 sec (default: 5)')"
                                         @change="saveExchangeSettings" />
                                 </div>
                             </div>
@@ -686,6 +697,7 @@ const exchangeTenantId = ref('')
 const exchangeClientId = ref('')
 const exchangeClientSecret = ref('')
 const exchangeWebhookMaxInlineSync = ref(1)
+const exchangeWebhookRateLimit = ref(5)
 const exchangeTesting = ref(false)
 const exchangeTestResult = ref(null)
 
@@ -917,6 +929,9 @@ const loadSettings = async () => {
         if (response.data.exchangeWebhookMaxInlineSync !== undefined) {
             exchangeWebhookMaxInlineSync.value = response.data.exchangeWebhookMaxInlineSync
         }
+        if (response.data.exchangeWebhookRateLimit !== undefined) {
+            exchangeWebhookRateLimit.value = response.data.exchangeWebhookRateLimit
+        }
     } catch (e) {
         // Settings might not be accessible for non-admins
     }
@@ -1022,6 +1037,7 @@ const saveExchangeSettings = async () => {
             exchangeClientId: exchangeClientId.value,
             exchangeClientSecret: exchangeClientSecret.value,
             exchangeWebhookMaxInlineSync: exchangeWebhookMaxInlineSync.value,
+            exchangeWebhookRateLimit: exchangeWebhookRateLimit.value,
         })
         settingsSaved.value = true
         setTimeout(() => { settingsSaved.value = false }, 3000)
@@ -1041,6 +1057,7 @@ const testExchange = async () => {
             exchangeClientId: exchangeClientId.value,
             exchangeClientSecret: exchangeClientSecret.value,
             exchangeWebhookMaxInlineSync: exchangeWebhookMaxInlineSync.value,
+            exchangeWebhookRateLimit: exchangeWebhookRateLimit.value,
         })
         const response = await testExchangeConnection()
         exchangeTestResult.value = { success: true, message: response.data.message || t('Connection successful') }
