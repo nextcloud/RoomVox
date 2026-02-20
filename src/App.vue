@@ -520,6 +520,17 @@
                                         :placeholder="exchangeClientSecret === '***' ? $t('(saved — enter new value to change)') : $t('App registration client secret')"
                                         @change="saveExchangeSettings" />
                                 </div>
+                                <div class="form-field">
+                                    <label>{{ $t('Webhook max inline sync') }}</label>
+                                    <input
+                                        v-model.number="exchangeWebhookMaxInlineSync"
+                                        type="number"
+                                        min="0"
+                                        max="10"
+                                        class="room-type-input exchange-input"
+                                        :placeholder="$t('Rooms to sync immediately (default: 1)')"
+                                        @change="saveExchangeSettings" />
+                                </div>
                             </div>
 
                             <div class="exchange-test">
@@ -674,6 +685,7 @@ const exchangeEnabled = ref(false)
 const exchangeTenantId = ref('')
 const exchangeClientId = ref('')
 const exchangeClientSecret = ref('')
+const exchangeWebhookMaxInlineSync = ref(1)
 const exchangeTesting = ref(false)
 const exchangeTestResult = ref(null)
 
@@ -902,6 +914,9 @@ const loadSettings = async () => {
         if (response.data.exchangeClientSecret !== undefined) {
             exchangeClientSecret.value = response.data.exchangeClientSecret
         }
+        if (response.data.exchangeWebhookMaxInlineSync !== undefined) {
+            exchangeWebhookMaxInlineSync.value = response.data.exchangeWebhookMaxInlineSync
+        }
     } catch (e) {
         // Settings might not be accessible for non-admins
     }
@@ -1006,6 +1021,7 @@ const saveExchangeSettings = async () => {
             exchangeTenantId: exchangeTenantId.value,
             exchangeClientId: exchangeClientId.value,
             exchangeClientSecret: exchangeClientSecret.value,
+            exchangeWebhookMaxInlineSync: exchangeWebhookMaxInlineSync.value,
         })
         settingsSaved.value = true
         setTimeout(() => { settingsSaved.value = false }, 3000)
@@ -1024,6 +1040,7 @@ const testExchange = async () => {
             exchangeTenantId: exchangeTenantId.value,
             exchangeClientId: exchangeClientId.value,
             exchangeClientSecret: exchangeClientSecret.value,
+            exchangeWebhookMaxInlineSync: exchangeWebhookMaxInlineSync.value,
         })
         const response = await testExchangeConnection()
         exchangeTestResult.value = { success: true, message: response.data.message || t('Connection successful') }

@@ -52,6 +52,7 @@ class SettingsController extends Controller {
             'exchangeTenantId' => $this->appConfig->getValueString(Application::APP_ID, 'exchange_tenant_id', ''),
             'exchangeClientId' => $this->appConfig->getValueString(Application::APP_ID, 'exchange_client_id', ''),
             'exchangeClientSecret' => $this->appConfig->getValueString(Application::APP_ID, 'exchange_client_secret', '') !== '' ? '***' : '',
+            'exchangeWebhookMaxInlineSync' => (int) $this->appConfig->getValueString(Application::APP_ID, 'exchange_webhook_max_inline_sync', '1'),
         ];
 
         return new JSONResponse($settings);
@@ -111,6 +112,12 @@ class SettingsController extends Controller {
         $exchangeClientId = $this->request->getParam('exchangeClientId');
         if ($exchangeClientId !== null) {
             $this->appConfig->setValueString(Application::APP_ID, 'exchange_client_id', (string)$exchangeClientId);
+        }
+
+        $maxInlineSync = $this->request->getParam('exchangeWebhookMaxInlineSync');
+        if ($maxInlineSync !== null) {
+            $value = max(0, (int) $maxInlineSync);
+            $this->appConfig->setValueString(Application::APP_ID, 'exchange_webhook_max_inline_sync', (string) $value);
         }
 
         $exchangeClientSecret = $this->request->getParam('exchangeClientSecret');
