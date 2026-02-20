@@ -7,6 +7,7 @@ const isDev = process.env.NODE_ENV !== 'production'
 module.exports = {
     entry: {
         main: path.join(__dirname, 'src', 'main.js'),
+        personal: path.join(__dirname, 'src', 'personal.js'),
     },
     output: {
         path: path.resolve(__dirname, 'js'),

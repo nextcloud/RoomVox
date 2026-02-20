@@ -320,7 +320,22 @@
         "Date & Time": "Datum & Tijd",
         "(No title)": "(Geen titel)",
         "Overview": "Overzicht",
-        "Role": "Rol"
+        "Role": "Rol",
+        "My Rooms": "Mijn kamers",
+        "Approvals": "Goedkeuringen",
+        "Requested by": "Aangevraagd door",
+        "Cannot delete: this facility is in use": "Kan niet verwijderen: deze faciliteit is in gebruik",
+        "Configure the available facilities for rooms. Facilities that are in use cannot be deleted.": "Configureer de beschikbare faciliteiten voor kamers. Faciliteiten die in gebruik zijn kunnen niet verwijderd worden.",
+        "New facility...": "Nieuwe faciliteit...",
+        "No rooms": "Geen kamers",
+        "You don't have access to any rooms yet. Ask an administrator to grant you access.": "Je hebt nog geen toegang tot kamers. Vraag een beheerder om je toegang te verlenen.",
+        "Admin": "Beheerder",
+        "Manager": "Beheerder",
+        "Booker": "Boeker",
+        "Viewer": "Bekijker",
+        "No pending approvals": "Geen openstaande goedkeuringen",
+        "All booking requests have been processed.": "Alle boekingsverzoeken zijn verwerkt.",
+        "Failed to load approvals": "Goedkeuringen laden mislukt"
     },
     "pluralForm": "nplurals=2; plural=(n != 1);"
 }

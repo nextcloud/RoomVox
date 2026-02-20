@@ -320,7 +320,22 @@
         "Date & Time": "Date & Time",
         "(No title)": "(No title)",
         "Overview": "Overview",
-        "Role": "Role"
+        "Role": "Role",
+        "My Rooms": "My Rooms",
+        "Approvals": "Approvals",
+        "Requested by": "Requested by",
+        "Cannot delete: this facility is in use": "Cannot delete: this facility is in use",
+        "Configure the available facilities for rooms. Facilities that are in use cannot be deleted.": "Configure the available facilities for rooms. Facilities that are in use cannot be deleted.",
+        "New facility...": "New facility...",
+        "No rooms": "No rooms",
+        "You don't have access to any rooms yet. Ask an administrator to grant you access.": "You don't have access to any rooms yet. Ask an administrator to grant you access.",
+        "Admin": "Admin",
+        "Manager": "Manager",
+        "Booker": "Booker",
+        "Viewer": "Viewer",
+        "No pending approvals": "No pending approvals",
+        "All booking requests have been processed.": "All booking requests have been processed.",
+        "Failed to load approvals": "Failed to load approvals"
     },
     "pluralForm": "nplurals=2; plural=(n != 1);"
 }

@@ -320,7 +320,22 @@
         "Date & Time": "Date et heure",
         "(No title)": "(Sans titre)",
         "Overview": "Aperçu",
-        "Role": "Rôle"
+        "Role": "Rôle",
+        "My Rooms": "Mes salles",
+        "Approvals": "Approbations",
+        "Requested by": "Demandé par",
+        "Cannot delete: this facility is in use": "Impossible de supprimer : cet équipement est utilisé",
+        "Configure the available facilities for rooms. Facilities that are in use cannot be deleted.": "Configurez les équipements disponibles pour les salles. Les équipements utilisés ne peuvent pas être supprimés.",
+        "New facility...": "Nouvel équipement...",
+        "No rooms": "Aucune salle",
+        "You don't have access to any rooms yet. Ask an administrator to grant you access.": "Vous n'avez pas encore accès à des salles. Demandez à un administrateur de vous accorder l'accès.",
+        "Admin": "Administrateur",
+        "Manager": "Gestionnaire",
+        "Booker": "Réservateur",
+        "Viewer": "Observateur",
+        "No pending approvals": "Aucune approbation en attente",
+        "All booking requests have been processed.": "Toutes les demandes de réservation ont été traitées.",
+        "Failed to load approvals": "Impossible de charger les approbations"
     },
     "pluralForm": "nplurals=2; plural=(n > 1);"
 }

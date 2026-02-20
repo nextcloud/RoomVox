@@ -52,6 +52,10 @@ export const getApiTokens = () => axios.get(baseUrl('/api/tokens'))
 export const createApiToken = (data) => axios.post(baseUrl('/api/tokens'), data)
 export const deleteApiToken = (id) => axios.delete(baseUrl(`/api/tokens/${id}`))
 
+// Personal API
+export const getMyRooms = () => axios.get(baseUrl('/api/personal/rooms'))
+export const getMyApprovals = () => axios.get(baseUrl('/api/personal/approvals'))
+
 // Sharee search
 export const searchSharees = (search) => axios.get(baseUrl('/api/sharees'), { params: { search } })
 

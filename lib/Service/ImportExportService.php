@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace OCA\RoomVox\Service;
 
+use OCA\RoomVox\AppInfo\Application;
+use OCP\IAppConfig;
 use Psr\Log\LoggerInterface;
 
 class ImportExportService {
@@ -29,16 +31,27 @@ class ImportExportService {
         'iswheelchairaccessible' => '_wheelchair',
     ];
 
-    /** Known facility names for normalization */
-    private const KNOWN_FACILITIES = [
-        'projector', 'whiteboard', 'video-conference',
-        'audio-system', 'display-screen', 'wheelchair-accessible',
+    /** Default facility IDs (matching frontend canonical IDs) */
+    private const DEFAULT_FACILITY_IDS = [
+        'projector', 'whiteboard', 'videoconf', 'audio', 'display', 'wheelchair',
     ];
 
     public function __construct(
         private RoomService $roomService,
+        private IAppConfig $appConfig,
         private LoggerInterface $logger,
     ) {
+    }
+
+    private function getKnownFacilityIds(): array {
+        $json = $this->appConfig->getValueString(Application::APP_ID, 'facilities', '');
+        if ($json !== '') {
+            $facilities = json_decode($json, true);
+            if (is_array($facilities)) {
+                return array_map(fn($f) => $f['id'], $facilities);
+            }
+        }
+        return self::DEFAULT_FACILITY_IDS;
     }
 
     /**
@@ -109,11 +122,13 @@ class ImportExportService {
         $existingRooms = $this->roomService->getAllRooms();
         $existingByName = [];
         $existingByEmail = [];
+        $existingById = [];
         foreach ($existingRooms as $room) {
             $existingByName[strtolower($room['name'])] = $room;
-            if (!empty($room['email']) && !str_ends_with($room['email'], '@roomvox.local')) {
+            if (!empty($room['email'])) {
                 $existingByEmail[strtolower($room['email'])] = $room;
             }
+            $existingById[$room['id']] = $room;
         }
 
         $rows = [];
@@ -146,7 +161,7 @@ class ImportExportService {
             }
             $seenNames[$nameLower] = true;
 
-            // Determine action
+            // Determine action: match by email, name, or generated slug ID
             $action = 'create';
             $matchedRoom = null;
             if (!empty($row['email']) && isset($existingByEmail[strtolower($row['email'])])) {
@@ -155,6 +170,13 @@ class ImportExportService {
             } elseif ($nameLower !== '' && isset($existingByName[$nameLower])) {
                 $action = 'update';
                 $matchedRoom = $existingByName[$nameLower];
+            } elseif ($nameLower !== '') {
+                // Match by slug: if the name generates the same ID as an existing room
+                $slug = $this->generateSlug($row['name']);
+                if ($slug !== '' && isset($existingById[$slug])) {
+                    $action = 'update';
+                    $matchedRoom = $existingById[$slug];
+                }
             }
 
             $rows[] = [
@@ -322,13 +344,13 @@ class ImportExportService {
             }
         }
 
-        // Append wheelchair-accessible to facilities if detected
+        // Append wheelchair to facilities if detected from MS365 column
         if ($wheelchair) {
             $facilities = $row['facilities'];
             if ($facilities !== '') {
-                $facilities .= ',wheelchair-accessible';
+                $facilities .= ',wheelchair';
             } else {
-                $facilities = 'wheelchair-accessible';
+                $facilities = 'wheelchair';
             }
             $row['facilities'] = $facilities;
         }
@@ -408,29 +430,38 @@ class ImportExportService {
             return null;
         }
 
-        // Direct match
-        if (in_array($lower, self::KNOWN_FACILITIES)) {
+        $knownIds = $this->getKnownFacilityIds();
+
+        // Direct match against configured facility IDs
+        if (in_array($lower, $knownIds)) {
             return $lower;
         }
 
-        // Common aliases
+        // Common aliases (map legacy/external names to canonical IDs)
         $aliases = [
             'beamer' => 'projector',
-            'videoconference' => 'video-conference',
-            'videoconferencing' => 'video-conference',
-            'video conferencing' => 'video-conference',
-            'video conference' => 'video-conference',
-            'screen' => 'display-screen',
-            'display' => 'display-screen',
-            'tv' => 'display-screen',
-            'monitor' => 'display-screen',
-            'audio' => 'audio-system',
-            'speakers' => 'audio-system',
-            'wheelchair' => 'wheelchair-accessible',
-            'accessible' => 'wheelchair-accessible',
+            'video-conference' => 'videoconf',
+            'videoconference' => 'videoconf',
+            'videoconferencing' => 'videoconf',
+            'video conferencing' => 'videoconf',
+            'video conference' => 'videoconf',
+            'display-screen' => 'display',
+            'screen' => 'display',
+            'tv' => 'display',
+            'monitor' => 'display',
+            'audio-system' => 'audio',
+            'speakers' => 'audio',
+            'wheelchair-accessible' => 'wheelchair',
+            'accessible' => 'wheelchair',
         ];
 
-        return $aliases[$lower] ?? $lower;
+        $mapped = $aliases[$lower] ?? null;
+        if ($mapped !== null && in_array($mapped, $knownIds)) {
+            return $mapped;
+        }
+
+        // Pass through unknown facilities as-is
+        return $lower;
     }
 
     /**
@@ -449,7 +480,7 @@ class ImportExportService {
             'Heidelberglaan 8',
             '3584 CS',
             'Utrecht',
-            'projector,whiteboard,video-conference',
+            'projector,whiteboard,videoconf',
             'Large meeting room on 2nd floor',
             'true',
             'true',
@@ -508,5 +539,16 @@ class ImportExportService {
         }
 
         return $result;
+    }
+
+    /**
+     * Generate a URL-safe slug from a name (same logic as RoomService)
+     */
+    private function generateSlug(string $name): string {
+        $slug = strtolower(trim($name));
+        $slug = preg_replace('/[^a-z0-9\s-]/', '', $slug);
+        $slug = preg_replace('/[\s-]+/', '-', $slug);
+        $slug = trim($slug, '-');
+        return $slug ?: 'room';
     }
 }

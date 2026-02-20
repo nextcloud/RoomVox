@@ -32,6 +32,15 @@ class SettingsController extends Controller {
         ['id' => 'other', 'label' => 'Other'],
     ];
 
+    private const DEFAULT_FACILITIES = [
+        ['id' => 'projector', 'label' => 'Projector'],
+        ['id' => 'whiteboard', 'label' => 'Whiteboard'],
+        ['id' => 'videoconf', 'label' => 'Video conference'],
+        ['id' => 'audio', 'label' => 'Audio system'],
+        ['id' => 'display', 'label' => 'Display screen'],
+        ['id' => 'wheelchair', 'label' => 'Wheelchair accessible'],
+    ];
+
     /**
      * Get global settings
      */
@@ -46,6 +55,7 @@ class SettingsController extends Controller {
             'emailEnabled' => $this->appConfig->getValueString(Application::APP_ID, 'email_enabled', 'true') === 'true',
             'telemetryEnabled' => $this->appConfig->getValueString(Application::APP_ID, 'telemetry_enabled', 'true') === 'true',
             'roomTypes' => $this->getRoomTypes(),
+            'facilities' => $this->getFacilities(),
         ];
 
         return new JSONResponse($settings);
@@ -105,6 +115,24 @@ class SettingsController extends Controller {
             );
         }
 
+        $facilities = $this->request->getParam('facilities');
+        if ($facilities !== null && is_array($facilities)) {
+            $cleaned = [];
+            foreach ($facilities as $facility) {
+                if (!empty($facility['id']) && !empty($facility['label'])) {
+                    $cleaned[] = [
+                        'id' => (string)$facility['id'],
+                        'label' => (string)$facility['label'],
+                    ];
+                }
+            }
+            $this->appConfig->setValueString(
+                Application::APP_ID,
+                'facilities',
+                json_encode($cleaned)
+            );
+        }
+
         return new JSONResponse(['status' => 'ok']);
     }
 
@@ -115,6 +143,15 @@ class SettingsController extends Controller {
         }
         $types = json_decode($json, true);
         return is_array($types) ? $types : self::DEFAULT_ROOM_TYPES;
+    }
+
+    private function getFacilities(): array {
+        $json = $this->appConfig->getValueString(Application::APP_ID, 'facilities', '');
+        if ($json === '') {
+            return self::DEFAULT_FACILITIES;
+        }
+        $facilities = json_decode($json, true);
+        return is_array($facilities) ? $facilities : self::DEFAULT_FACILITIES;
     }
 
     private function getCurrentUserId(): ?string {

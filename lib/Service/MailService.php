@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace OCA\RoomVox\Service;
 
+use OCA\RoomVox\AppInfo\Application;
 use OCP\IAppConfig;
+use OCP\IURLGenerator;
 use OCP\Mail\IMailer;
 use OCP\Security\ICrypto;
 use Psr\Log\LoggerInterface;
@@ -19,6 +21,7 @@ class MailService {
         private IAppConfig $appConfig,
         private ICrypto $crypto,
         private PermissionService $permissionService,
+        private IURLGenerator $urlGenerator,
         private LoggerInterface $logger,
     ) {
     }
@@ -346,12 +349,15 @@ class MailService {
     }
 
     private function buildApprovalRequestBody(array $room, array $event): string {
+        $settingsUrl = $this->urlGenerator->getAbsoluteURL('/settings/user/' . Application::APP_ID);
+
         return "A new booking request requires your approval.\n\n"
             . "Room: {$room['name']}\n"
             . "Event: {$event['summary']}\n"
             . "Date: {$event['dtstartFormatted']} – {$event['dtendFormatted']}\n"
             . "Requested by: {$event['organizerName']} ({$event['organizerEmail']})\n\n"
-            . "Please log in to the Room Booking admin panel to approve or decline this request.";
+            . "Review and respond:\n{$settingsUrl}\n\n"
+            . "Log in to approve or decline this booking request.";
     }
 
     private function buildCancelledBody(array $room, array $event): string {

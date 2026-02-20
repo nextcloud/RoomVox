@@ -5,11 +5,24 @@ All notable changes to RoomVox will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.3.1] - 2026-02-19
+## [0.4.0] - 2026-02-20
+
+### Added
+- **Configurable Facilities**: Admins can now add, edit, remove, and reorder facility options (projector, whiteboard, etc.) in the Settings tab — same UI pattern as room types
+- **Personal Settings page**: All users now see a "RoomVox" section under Settings > Personal with two tabs:
+  - **My Rooms** — overview of rooms the user has access to, with role badges (Admin/Manager/Booker/Viewer)
+  - **Approvals** — pending booking requests for rooms where the user is a manager, with accept/decline buttons
+- Slug-based duplicate detection during CSV import: rooms are matched by generated ID in addition to email and name
 
 ### Changed
 - Updated App Store description with evaluation disclaimer and improved formatting
 - Added compatible calendar clients list to description
+- Approval notification emails now include a direct link to Personal Settings instead of referencing "admin panel"
+- CSV import now matches `@roomvox.local` emails for duplicate detection (previously excluded)
+
+### Fixed
+- Fixed facility ID mismatch between frontend and ImportExportService (`videoconf` vs `video-conference`, `audio` vs `audio-system`, etc.)
+- Fixed CSV import creating duplicate rooms when re-importing exported data with `@roomvox.local` emails
 
 ## [0.3.0] - 2026-02-15
 

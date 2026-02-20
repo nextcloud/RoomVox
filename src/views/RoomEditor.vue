@@ -351,6 +351,7 @@ const props = defineProps({
     creating: { type: Boolean, default: false },
     roomGroups: { type: Array, default: () => [] },
     roomTypes: { type: Array, default: () => [] },
+    facilities: { type: Array, default: () => [] },
 })
 
 const emit = defineEmits(['save', 'cancel', 'delete', 'manage-permissions'])
@@ -358,14 +359,20 @@ const emit = defineEmits(['save', 'cancel', 'delete', 'manage-permissions'])
 const showDeleteDialog = ref(false)
 const showEmailField = ref(false)
 
-const availableFacilities = computed(() => [
-    { id: 'projector', label: t('Projector') },
-    { id: 'whiteboard', label: t('Whiteboard') },
-    { id: 'videoconf', label: t('Video conference') },
-    { id: 'audio', label: t('Audio system') },
-    { id: 'display', label: t('Display screen') },
-    { id: 'wheelchair', label: t('Wheelchair accessible') },
-])
+const availableFacilities = computed(() => {
+    if (props.facilities.length > 0) {
+        return props.facilities
+    }
+    // Fallback defaults if settings haven't loaded yet
+    return [
+        { id: 'projector', label: 'Projector' },
+        { id: 'whiteboard', label: 'Whiteboard' },
+        { id: 'videoconf', label: 'Video conference' },
+        { id: 'audio', label: 'Audio system' },
+        { id: 'display', label: 'Display screen' },
+        { id: 'wheelchair', label: 'Wheelchair accessible' },
+    ]
+})
 
 const weekDays = computed(() => [
     { value: 1, label: t('Mon') },

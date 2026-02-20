@@ -45,6 +45,10 @@ return [
         ['name' => 'settings#get', 'url' => '/api/settings', 'verb' => 'GET'],
         ['name' => 'settings#save', 'url' => '/api/settings', 'verb' => 'PUT'],
 
+        // Personal API
+        ['name' => 'personal_api#rooms', 'url' => '/api/personal/rooms', 'verb' => 'GET'],
+        ['name' => 'personal_api#approvals', 'url' => '/api/personal/approvals', 'verb' => 'GET'],
+
         // User/Group search (for permission editor)
         ['name' => 'room_api#search_sharees', 'url' => '/api/sharees', 'verb' => 'GET'],
 

@@ -59,6 +59,7 @@
                 :creating="creatingRoom"
                 :room-groups="roomGroups"
                 :room-types="settings.roomTypes"
+                :facilities="settings.facilities"
                 @save="onSaveRoom"
                 @cancel="selectedRoom = null; creatingRoom = false"
                 @delete="onDeleteRoom"
@@ -528,6 +529,57 @@
                     </div>
                 </NcSettingsSection>
 
+                <NcSettingsSection :name="'Facilities'">
+                    <p class="section-description">
+                        {{ $t('Configure the available facilities for rooms. Facilities that are in use cannot be deleted.') }}
+                    </p>
+                    <ul class="room-type-list">
+                        <li v-for="(facility, index) in settings.facilities"
+                            :key="facility.id"
+                            :class="['room-type-item', { 'room-type-item--dragging': facilityDragIndex === index, 'room-type-item--over': facilityDragOverIndex === index && facilityDragIndex !== index }]"
+                            draggable="true"
+                            @dragstart="onFacilityDragStart(index, $event)"
+                            @dragover.prevent="onFacilityDragOver(index)"
+                            @dragend="onFacilityDragEnd">
+                            <span class="room-type-handle">
+                                <DragHorizontalVariant :size="20" />
+                            </span>
+                            <input
+                                type="text"
+                                :value="facility.label"
+                                class="room-type-input"
+                                @change="updateFacilityLabel(index, $event.target.value)" />
+                            <span class="room-type-id">{{ facility.id }}</span>
+                            <NcButton
+                                type="tertiary"
+                                :aria-label="$t('Delete')"
+                                :disabled="isFacilityInUse(facility.id)"
+                                @click="removeFacility(index)">
+                                <template #icon>
+                                    <Close :size="20" />
+                                </template>
+                            </NcButton>
+                        </li>
+                    </ul>
+                    <div class="room-type-add">
+                        <input
+                            type="text"
+                            v-model="newFacilityLabel"
+                            class="room-type-input"
+                            :placeholder="$t('New facility...')"
+                            @keyup.enter="addFacility" />
+                        <NcButton
+                            type="secondary"
+                            :aria-label="$t('Add')"
+                            :disabled="!newFacilityLabel.trim()"
+                            @click="addFacility">
+                            <template #icon>
+                                <Plus :size="20" />
+                            </template>
+                        </NcButton>
+                    </div>
+                </NcSettingsSection>
+
                 <NcNoteCard v-if="settingsSaved" type="success">
                     {{ $t('Settings saved') }}
                 </NcNoteCard>
@@ -587,11 +639,14 @@ const creatingRoomGroup = ref(false)
 const permissionTarget = ref(null)
 const permissionTargetType = ref('room')
 const loadingRooms = ref(true)
-const settings = ref({ defaultAutoAccept: false, emailEnabled: true, roomTypes: [] })
+const settings = ref({ defaultAutoAccept: false, emailEnabled: true, roomTypes: [], facilities: [] })
 const settingsSaved = ref(false)
 const newRoomTypeLabel = ref('')
 const dragIndex = ref(null)
 const dragOverIndex = ref(null)
+const newFacilityLabel = ref('')
+const facilityDragIndex = ref(null)
+const facilityDragOverIndex = ref(null)
 const telemetryEnabled = ref(true)
 const telemetryLastReport = ref(null)
 
@@ -985,6 +1040,63 @@ const onDragEnd = () => {
     }
     dragIndex.value = null
     dragOverIndex.value = null
+}
+
+// Facility helpers
+const isFacilityInUse = (facilityId) => {
+    return rooms.value.some(r => (r.facilities || []).includes(facilityId))
+}
+
+const addFacility = () => {
+    const label = newFacilityLabel.value.trim()
+    if (!label) return
+
+    let id = slugify(label)
+    const existingIds = settings.value.facilities.map(f => f.id)
+    if (existingIds.includes(id)) {
+        let i = 2
+        while (existingIds.includes(id + '-' + i)) i++
+        id = id + '-' + i
+    }
+
+    settings.value.facilities.push({ id, label })
+    newFacilityLabel.value = ''
+    saveGlobalSettings()
+}
+
+const removeFacility = (index) => {
+    const facility = settings.value.facilities[index]
+    if (isFacilityInUse(facility.id)) {
+        showError(t('Cannot delete: this facility is in use'))
+        return
+    }
+    settings.value.facilities.splice(index, 1)
+    saveGlobalSettings()
+}
+
+const updateFacilityLabel = (index, newLabel) => {
+    settings.value.facilities[index].label = newLabel
+    saveGlobalSettings()
+}
+
+const onFacilityDragStart = (index, event) => {
+    facilityDragIndex.value = index
+    event.dataTransfer.effectAllowed = 'move'
+}
+
+const onFacilityDragOver = (index) => {
+    facilityDragOverIndex.value = index
+}
+
+const onFacilityDragEnd = () => {
+    if (facilityDragIndex.value !== null && facilityDragOverIndex.value !== null && facilityDragIndex.value !== facilityDragOverIndex.value) {
+        const items = settings.value.facilities
+        const [moved] = items.splice(facilityDragIndex.value, 1)
+        items.splice(facilityDragOverIndex.value, 0, moved)
+        saveGlobalSettings()
+    }
+    facilityDragIndex.value = null
+    facilityDragOverIndex.value = null
 }
 
 const toggleTelemetry = async (enabled) => {

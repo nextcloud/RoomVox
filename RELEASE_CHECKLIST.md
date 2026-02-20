@@ -33,14 +33,7 @@ Follow this checklist for every release to the Nextcloud App Store.
 
 ---
 
-## 1. Pre-Release: Remove Evaluation Notices
-
-- [ ] Remove "EVALUATION VERSION" notice from `appinfo/info.xml` description
-- [ ] Update any evaluation-related restrictions in the code (if applicable)
-
----
-
-## 2. Code Quality & Security
+## 1. Code Quality & Security
 
 - [ ] Remove all debug `console.log()` statements from JavaScript (`src/`)
   - `console.error()` in catch blocks is OK (useful in production)
@@ -56,11 +49,11 @@ Follow this checklist for every release to the Nextcloud App Store.
   ```
 - [ ] Run `npm audit` — fix critical issues if possible
   - Upstream @nextcloud dependency vulnerabilities are usually not fixable
-- [ ] **Check tarball for sensitive data** (see Section 8.2)
+- [ ] **Check tarball for sensitive data** (see Section 7.2)
 
 ---
 
-## 3. Translations (l10n/)
+## 2. Translations (l10n/)
 
 Supported languages: **EN, NL, DE, FR**
 
@@ -85,7 +78,7 @@ Supported languages: **EN, NL, DE, FR**
 
 ---
 
-## 4. Version Management
+## 3. Version Management
 
 - [ ] Determine new version number (semantic versioning: MAJOR.MINOR.PATCH)
 - [ ] Update version — both files must match:
@@ -102,7 +95,7 @@ Supported languages: **EN, NL, DE, FR**
 
 ---
 
-## 5. Build & Testing
+## 4. Build & Testing
 
 - [ ] Run `npm run build` without errors
 - [ ] Test core functionalities on test server:
@@ -129,7 +122,7 @@ Supported languages: **EN, NL, DE, FR**
 
 ---
 
-## 6. Nextcloud Compatibility
+## 5. Nextcloud Compatibility
 
 - [ ] Check `appinfo/info.xml`:
   ```
@@ -140,7 +133,7 @@ Supported languages: **EN, NL, DE, FR**
 
 ---
 
-## 7. Git & Repository
+## 6. Git & Repository
 
 - [ ] All changes committed
 - [ ] No uncommitted changes: `git status`
@@ -151,9 +144,9 @@ Supported languages: **EN, NL, DE, FR**
 
 ---
 
-## 8. Release Package
+## 7. Release Package
 
-### 8.1 Create Tarball
+### 7.1 Create Tarball
 
 **Root folder must be `roomvox` (lowercase, no version number)**
 
@@ -183,7 +176,7 @@ mv roomvox-X.Y.Z.tar.gz /Users/rikdekker/Documents/Development/RoomVox/ && \
 rm -rf "$TEMP_DIR"
 ```
 
-### 8.2 Tarball Security Check (CRITICAL!)
+### 7.2 Tarball Security Check (CRITICAL!)
 
 ```bash
 # Verify no sensitive files
@@ -201,7 +194,7 @@ done
 tar -tzf roomvox-X.Y.Z.tar.gz | grep 'src/' | wc -l
 ```
 
-### 8.3 Commit, Tag & Push
+### 7.3 Commit, Tag & Push
 
 ```bash
 git add -A
@@ -211,20 +204,20 @@ git push origin main --tags
 git push github main --tags
 ```
 
-### 8.4 Deploy to Test Server
+### 7.4 Deploy to Test Server
 
 ```bash
 ./deploy.sh
 ```
 
-### 8.5 Generate Signature (for App Store)
+### 7.5 Generate Signature (for App Store)
 
 ```bash
 # Generate signature using the LOCAL key in project root:
 openssl dgst -sha512 -sign roomvox.key roomvox-X.Y.Z.tar.gz | openssl base64 -A
 ```
 
-### 8.6 GitHub Release
+### 7.6 GitHub Release
 
 ```bash
 gh release create vX.Y.Z roomvox-X.Y.Z.tar.gz \
@@ -245,7 +238,7 @@ EOF
 https://github.com/nextcloud/roomvox/releases/download/vX.Y.Z/roomvox-X.Y.Z.tar.gz
 ```
 
-### 8.7 App Store Upload
+### 7.7 App Store Upload
 
 - **URL:** GitHub release download URL (lowercase `roomvox` in filename!)
 - **Signature:** Output from step 8.5
@@ -253,7 +246,7 @@ https://github.com/nextcloud/roomvox/releases/download/vX.Y.Z/roomvox-X.Y.Z.tar.
 
 ---
 
-## 9. Post-Release Verification
+## 8. Post-Release Verification
 
 - [ ] Install from App Store on clean test server
 - [ ] Verify version displayed correctly
@@ -263,7 +256,7 @@ https://github.com/nextcloud/roomvox/releases/download/vX.Y.Z/roomvox-X.Y.Z.tar.
 
 ---
 
-## 10. Rollback Plan
+## 9. Rollback Plan
 
 - [ ] Previous release tarball available
 - [ ] Test server available for emergencies
@@ -286,7 +279,7 @@ git tag -a vX.Y.Z -m "Release vX.Y.Z - [Label]"
 git push origin main --tags
 git push github main --tags
 
-# 4. Tarball (see section 8.1)
+# 4. Tarball (see section 7.1)
 
 # 5. Deploy & test
 ./deploy.sh
@@ -294,7 +287,7 @@ git push github main --tags
 # 6. Sign
 openssl dgst -sha512 -sign roomvox.key roomvox-X.Y.Z.tar.gz | openssl base64 -A
 
-# 7. GitHub release & App Store upload (see sections 8.6-8.7)
+# 7. GitHub release & App Store upload (see sections 7.6-7.7)
 ```
 
 ---
