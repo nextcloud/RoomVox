@@ -1,7 +1,7 @@
 # Testverslag RoomVox — Dubbele Boekingen Preventie
 
 **Datum:** 20 februari 2026
-**Totaal:** 153 tests, 248 assertions — alle groen
+**Totaal:** 158 tests, 263 assertions — alle groen
 **PHP versie:** 8.4.13
 **PHPUnit versie:** 10.5.63
 
@@ -244,12 +244,12 @@ De Graph API retourneert een `showAs` veld per event. Alleen events die de kalen
 
 ---
 
-### 7. Webhook Controller — Inline Sync & Throttle (10 tests)
+### 7. Webhook Controller — Inline Sync, Throttle & Rate Limit (14 tests)
 
 **Bestand:** `tests/Unit/Controller/WebhookControllerTest.php`
-**Bron:** `lib/Controller/WebhookController.php` regel 46-123
+**Bron:** `lib/Controller/WebhookController.php` regel 46-150
 
-Test de webhook endpoint die notificaties van Microsoft Graph ontvangt. Valideert de volledige flow: validation handshake, inline delta sync, throttle-limiet, en fallback naar background jobs.
+Test de webhook endpoint die notificaties van Microsoft Graph ontvangt. Valideert de volledige flow: validation handshake, inline delta sync, per-request throttle, globale rate limit, en fallback naar background jobs.
 
 #### Validation handshake
 
@@ -268,13 +268,23 @@ Test de webhook endpoint die notificaties van Microsoft Graph ontvangt. Valideer
 | Onbekende subscription | subscriptionId niet gevonden | Room wordt geskipt |
 | Sync failure | pullExchangeChanges gooit exception | Fallback naar WebhookSyncJob |
 
-#### Throttle (exchange_webhook_max_inline_sync)
+#### Per-request throttle (exchange_webhook_max_inline_sync)
 
 | Test | Scenario | Max inline | Resultaat |
 |------|----------|------------|-----------|
 | 3 rooms, max=1 | Bulk notificatie | 1 | 1 inline, 2 naar background jobs |
 | 2 rooms, max=3 | Ruim onder limiet | 3 | Beide inline, geen background jobs |
 | 1 room, max=0 | Alles uitgeschakeld | 0 | Alles naar background jobs |
+
+#### Globale rate limit (exchange_webhook_rate_limit)
+
+Beschermt tegen 300 aparte webhook requests die tegelijk binnenkomen. Gebruikt een distributed cache (ICacheFactory) met een 10-seconden sliding window.
+
+| Test | Scenario | Resultaat |
+|------|----------|-----------|
+| Budget op (5/5 gebruikt) | Cache meldt 5 syncs in window | Alles naar background jobs |
+| Rate limit = 0 | Inline sync volledig uitgeschakeld | Alles naar background jobs |
+| Budget beschikbaar (3/5) | Cache meldt 3 syncs, limiet 5 | Inline sync + cache teller verhoogd naar 4 |
 
 #### Deduplicatie
 
@@ -284,19 +294,19 @@ Test de webhook endpoint die notificaties van Microsoft Graph ontvangt. Valideer
 
 ---
 
-### 8. Settings Controller (10 tests)
+### 8. Settings Controller (11 tests)
 
 **Bestand:** `tests/Unit/Controller/SettingsControllerTest.php`
-**Bron:** `lib/Controller/SettingsController.php` regel 40-151
+**Bron:** `lib/Controller/SettingsController.php` regel 40-166
 
-Test de globale instellingen API voor het admin paneel, inclusief de nieuwe webhook throttle-instelling.
+Test de globale instellingen API voor het admin paneel, inclusief de webhook throttle- en rate limit-instellingen.
 
 #### GET settings
 
 | Test | Scenario | Resultaat |
 |------|----------|-----------|
-| Max inline sync = 5 | Setting opgeslagen als `"5"` | Retourneert `5` als int |
-| Geen setting opgeslagen | Default waarde | Retourneert `1` |
+| Max inline sync = 5, rate limit = 10 | Settings opgeslagen | Retourneert `5` en `10` als int |
+| Geen settings opgeslagen | Default waarden | Retourneert `1` (max inline) en `5` (rate limit) |
 | Niet-admin gebruiker | isAdmin=false | HTTP 403 |
 | Client secret aanwezig | Encrypted secret opgeslagen | Toont `***` |
 | Client secret leeg | Geen secret opgeslagen | Toont lege string |
@@ -305,29 +315,29 @@ Test de globale instellingen API voor het admin paneel, inclusief de nieuwe webh
 
 | Test | Scenario | Resultaat |
 |------|----------|-----------|
-| Waarde 3 opslaan | exchangeWebhookMaxInlineSync=3 | Opgeslagen als `"3"` |
-| Negatieve waarde | exchangeWebhookMaxInlineSync=-5 | Geclampt naar `"0"` |
+| Max inline = 3 | exchangeWebhookMaxInlineSync=3 | Opgeslagen als `"3"` |
+| Max inline negatief | exchangeWebhookMaxInlineSync=-5 | Geclampt naar `"0"` |
+| Rate limit = 10 | exchangeWebhookRateLimit=10 | Opgeslagen als `"10"` |
+| Rate limit negatief | exchangeWebhookRateLimit=-3 | Geclampt naar `"0"` |
 | Niet meegegeven | Param ontbreekt | Geen update |
 | Niet-admin gebruiker | isAdmin=false | HTTP 403 |
 
 ---
 
-### 9. Bestaande Tests (67 tests)
+### 9. Overige Tests (67 tests)
 
-Naast de nieuwe conflict-tests zijn er 67 bestaande tests die de overige logica dekken:
+Naast de hierboven beschreven tests (secties 1-8) zijn er 67 bestaande unit tests die de overige logica dekken:
 
 | Bestand | Tests | Beschrijving |
 |---------|-------|-------------|
 | RoomServiceTest | 13 | stripMailto, isRoomAccount, extractUserIdFromPrincipal, buildRoomLocation, getRoomByUserId |
 | CalDAVServiceTest | 4 | iCal escaping, VAVAILABILITY generatie |
 | PermissionServiceTest | 6 | Rolhiërarchie, groepsovererving, admin bypass |
-| ImportExportServiceTest | 13 | CSV delimiter, kolomdetectie, faciliteiten, adres parsing |
+| ImportExportServiceTest | 15 | CSV delimiter, kolomdetectie, faciliteiten, adres parsing |
 | ApiTokenServiceTest | 8 | Scope hiërarchie (read < book < admin), kamertoegang |
-| ExchangeSyncServiceTest | 15 | Exchange room validatie, sync skip, Exchange conflict check (showAs filtering) |
+| ExchangeSyncServiceTest | 6 | Exchange room validatie, sync skip (aanvullend op sectie 6) |
 | WebhookServiceTest | 6 | Webhook renewal, HTTPS-vereiste |
 | SchedulingPluginTest | 9 | bookingFitsRule, isWithinAvailability |
-| WebhookControllerTest | 10 | Validation handshake, inline sync, throttle, deduplicatie, fallback |
-| SettingsControllerTest | 10 | GET/SAVE settings, admin access, webhook throttle, secret masking |
 
 ---
 
@@ -378,4 +388,5 @@ De testsuite valideert dat:
 9. **Exchange-fouten blokkeren lokale boekingen niet** — fail-safe design
 10. **Exchange conflict check filtert op showAs** — alleen `busy`, `tentative`, `oof` en `workingElsewhere` blokkeren; `free` events worden overgeslagen
 11. **Webhook inline sync met throttle** — eerste N rooms syncen inline voor near-realtime delivery, rest wordt via background jobs afgehandeld om Microsoft's 3-seconden deadline te halen
-12. **Settings API is beveiligd** — alleen admins kunnen instellingen lezen/wijzigen, client secrets worden gemaskeerd
+12. **Globale rate limit beschermt tegen burst traffic** — bij 300 gelijktijdige webhook requests wordt het inline sync budget (distributed cache, 10s window) gerespecteerd; overschot gaat naar background jobs
+13. **Settings API is beveiligd** — alleen admins kunnen instellingen lezen/wijzigen, client secrets worden gemaskeerd
