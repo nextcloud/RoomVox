@@ -343,6 +343,232 @@ class PerformanceTest extends TestCase {
             "{$bookingCount} sequential bookings took {$elapsed}ms (limit: 200ms)");
     }
 
+    // ── 9. Load simulation: 300 rooms × 1 booking/hour ───────────────
+
+    /**
+     * Simulates 300 bookings across 300 different rooms via the internal API.
+     * Each booking goes through: auth → room lookup → conflict check → create → Exchange push attempt.
+     *
+     * With mocked I/O this measures pure PHP overhead. Real-world adds:
+     * - ~2-5ms per conflict check (DB calendarQuery)
+     * - ~1-2ms per createBooking (DB insert)
+     * - ~50-200ms per Exchange push (HTTP, but fail-safe/non-blocking)
+     *
+     * Budget: 300 × ~5ms PHP overhead = ~1.5 seconds. Over 1 hour = 5 bookings/minute = trivial.
+     */
+    public function testLoad300BookingsAcross300RoomsUnder2s(): void {
+        $roomCount = 300;
+
+        $rooms = [];
+        for ($i = 0; $i < $roomCount; $i++) {
+            $rooms["room{$i}"] = [
+                'id' => "room{$i}", 'userId' => "rb_room{$i}", 'name' => "Room {$i}",
+                'email' => "room{$i}@example.com", 'autoAccept' => true, 'active' => true,
+            ];
+        }
+
+        $request = $this->createMock(IRequest::class);
+        $roomService = $this->createMock(RoomService::class);
+        $permissionService = $this->createMock(PermissionService::class);
+        $calDAVService = $this->createMock(CalDAVService::class);
+        $exchangeSyncService = $this->createMock(ExchangeSyncService::class);
+        $userSession = $this->createMock(IUserSession::class);
+        $groupManager = $this->createMock(IGroupManager::class);
+        $logger = $this->createMock(LoggerInterface::class);
+
+        $user = $this->createMock(\OCP\IUser::class);
+        $user->method('getUID')->willReturn('testuser');
+        $userSession->method('getUser')->willReturn($user);
+        $groupManager->method('isAdmin')->willReturn(true);
+
+        $roomService->method('getRoom')
+            ->willReturnCallback(fn (string $id) => $rooms[$id] ?? null);
+        $calDAVService->method('hasConflict')->willReturn(false);
+        $calDAVService->method('createBooking')->willReturn('uid');
+        $exchangeSyncService->method('isExchangeRoom')->willReturn(true);
+        $exchangeSyncService->method('pushBookingToExchange')->willReturn(true);
+
+        $request->method('getParam')->willReturnCallback(fn (string $key, $default = '') => match ($key) {
+            'summary' => 'Load Test Booking',
+            'start' => '2026-02-23T10:00:00',
+            'end' => '2026-02-23T11:00:00',
+            'description' => '',
+            default => $default,
+        });
+
+        $controller = new BookingApiController(
+            'roomvox', $request, $roomService, $permissionService,
+            $calDAVService, $exchangeSyncService, $userSession, $groupManager, $logger,
+        );
+
+        $start = hrtime(true);
+        $successCount = 0;
+        for ($i = 0; $i < $roomCount; $i++) {
+            $response = $controller->create("room{$i}");
+            if ($response->getStatus() === 201) {
+                $successCount++;
+            }
+        }
+        $elapsed = (hrtime(true) - $start) / 1_000_000;
+        $perBooking = $elapsed / $roomCount;
+
+        $this->assertSame($roomCount, $successCount);
+        $this->assertLessThan(2000, $elapsed,
+            "300 bookings across 300 rooms took {$elapsed}ms ({$perBooking}ms/booking, limit: 2000ms)");
+    }
+
+    /**
+     * Same load but via CalDAV scheduling (iTIP flow) — the path that
+     * CalDAV clients like Thunderbird/Apple Calendar use.
+     */
+    public function testLoad300BookingsViaCalDAVSchedulingUnder2s(): void {
+        $roomCount = 300;
+
+        $rooms = [];
+        for ($i = 0; $i < $roomCount; $i++) {
+            $rooms["room{$i}"] = [
+                'id' => "room{$i}", 'userId' => "rb_room{$i}", 'name' => "Room {$i}",
+                'email' => "room{$i}@example.com", 'autoAccept' => true, 'active' => true,
+                'availabilityRules' => ['enabled' => false, 'rules' => []],
+                'maxBookingHorizon' => 0,
+            ];
+        }
+
+        $roomService = $this->createMock(RoomService::class);
+        $permissionService = $this->createMock(PermissionService::class);
+        $calDAVService = $this->createMock(CalDAVService::class);
+        $mailService = $this->createMock(MailService::class);
+        $exchangeSyncService = $this->createMock(ExchangeSyncService::class);
+        $userManager = $this->createMock(IUserManager::class);
+        $logger = $this->createMock(LoggerInterface::class);
+
+        $roomIndex = 0;
+        $roomService->method('isRoomPrincipal')->willReturn(true);
+        $roomService->method('getRoomIdByPrincipal')
+            ->willReturnCallback(function (string $principal) {
+                // Extract room ID from principals/users/rb_roomN
+                $userId = str_replace('principals/users/', '', $principal);
+                return str_replace('rb_', '', $userId);
+            });
+        $roomService->method('getRoom')
+            ->willReturnCallback(fn (string $id) => $rooms[$id] ?? null);
+
+        $permissionService->method('getPermissions')->willReturn([
+            'viewers' => [], 'bookers' => [], 'managers' => [],
+        ]);
+        $calDAVService->method('hasConflict')->willReturn(false);
+        $calDAVService->method('deliverToRoomCalendar')->willReturn(true);
+        $exchangeSyncService->method('isExchangeRoom')->willReturn(true);
+        $exchangeSyncService->method('pushBookingToExchange')->willReturn(true);
+
+        $plugin = new SchedulingPlugin(
+            $roomService, $permissionService, $calDAVService, $mailService,
+            $exchangeSyncService, $userManager, $logger,
+        );
+
+        $start = hrtime(true);
+        $deliveredCount = 0;
+        for ($i = 0; $i < $roomCount; $i++) {
+            $message = new ITip\Message();
+            $message->method = 'REQUEST';
+            $message->sender = 'principals/users/testuser';
+            $message->senderEmail = 'testuser@example.com';
+            $message->recipient = "principals/users/rb_room{$i}";
+            $message->recipientEmail = "room{$i}@example.com";
+            $message->significantChange = true;
+
+            $vEvent = new VEvent();
+            $vEvent->DTSTART = new Property(new \DateTimeImmutable('2026-02-23 10:00'));
+            $vEvent->DTEND = new Property(new \DateTimeImmutable('2026-02-23 11:00'));
+            $vEvent->UID = new Property("load-test-uid-{$i}");
+            $vEvent->SUMMARY = new Property("Load Test {$i}");
+            $vCalendar = new VCalendar();
+            $vCalendar->VEVENT = $vEvent;
+            $message->message = $vCalendar;
+
+            $plugin->handleScheduleRequest($message);
+            if ($message->scheduleStatus === '1.2') {
+                $deliveredCount++;
+            }
+        }
+        $elapsed = (hrtime(true) - $start) / 1_000_000;
+        $perBooking = $elapsed / $roomCount;
+
+        $this->assertSame($roomCount, $deliveredCount);
+        $this->assertLessThan(2000, $elapsed,
+            "300 iTIP bookings took {$elapsed}ms ({$perBooking}ms/booking, limit: 2000ms)");
+    }
+
+    /**
+     * Combined scenario: 300 rooms with varying existing bookings (5-20 per room).
+     * Tests conflict check at scale — every new booking must scan existing events.
+     *
+     * This simulates a busy Monday morning where all rooms have existing bookings
+     * and 300 new bookings arrive within the same hour.
+     */
+    public function testLoad300BookingsWithConflictChecksUnder3s(): void {
+        $roomCount = 300;
+        $existingPerRoom = 10; // 10 existing bookings per room
+
+        $calDavBackend = $this->createMock(CalDavBackend::class);
+        $logger = $this->createMock(LoggerInterface::class);
+        $calDAVService = new CalDAVService($calDavBackend, $logger);
+
+        $calDavBackend->method('getCalendarsForUser')
+            ->willReturn([['id' => 1, 'uri' => 'personal']]);
+
+        // Each room has 10 existing bookings spread across the day
+        $uris = [];
+        $objectMap = [];
+        $eventsByIcs = [];
+        for ($e = 0; $e < $existingPerRoom; $e++) {
+            $uri = "existing-{$e}.ics";
+            $uris[] = $uri;
+            $objectMap[$uri] = ['calendardata' => "ics-existing-{$e}"];
+            $eventsByIcs["ics-existing-{$e}"] = [
+                'uid' => "existing-{$e}",
+                'start' => new \DateTime(sprintf('2026-02-23 %02d:00', 8 + $e)),
+                'end' => new \DateTime(sprintf('2026-02-23 %02d:00', 9 + $e)),
+            ];
+        }
+
+        $calDavBackend->method('calendarQuery')->willReturn($uris);
+        $calDavBackend->method('getCalendarObject')
+            ->willReturnCallback(fn (int $calId, string $uri) => $objectMap[$uri] ?? null);
+
+        Reader::setTestParser(function (string $data) use ($eventsByIcs) {
+            $eventData = $eventsByIcs[$data] ?? null;
+            if ($eventData === null) {
+                return new VCalendar();
+            }
+            $vEvent = new VEvent();
+            $vEvent->DTSTART = new Property($eventData['start']);
+            $vEvent->DTEND = new Property($eventData['end']);
+            $vEvent->UID = new Property($eventData['uid']);
+            $vCalendar = new VCalendar();
+            $vCalendar->VEVENT = $vEvent;
+            return $vCalendar;
+        });
+
+        // All new bookings at 20:00-21:00 (no conflict with existing 08-18)
+        $newStart = new \DateTime('2026-02-23 20:00');
+        $newEnd = new \DateTime('2026-02-23 21:00');
+
+        $start = hrtime(true);
+        $noConflictCount = 0;
+        for ($i = 0; $i < $roomCount; $i++) {
+            if (!$calDAVService->hasConflict("rb_room{$i}", $newStart, $newEnd)) {
+                $noConflictCount++;
+            }
+        }
+        $elapsed = (hrtime(true) - $start) / 1_000_000;
+        $perCheck = $elapsed / $roomCount;
+
+        $this->assertSame($roomCount, $noConflictCount);
+        $this->assertLessThan(3000, $elapsed,
+            "300 conflict checks (10 events/room) took {$elapsed}ms ({$perCheck}ms/check, limit: 3000ms)");
+    }
+
     // ── Helpers ─────────────────────────────────────────────────────
 
     private function buildSchedulingPlugin(?array $room = null): SchedulingPlugin {

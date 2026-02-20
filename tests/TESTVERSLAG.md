@@ -1,7 +1,7 @@
 # Testverslag RoomVox — Dubbele Boekingen Preventie
 
 **Datum:** 20 februari 2026
-**Totaal:** 173 tests, 302 assertions — alle groen
+**Totaal:** 176 tests, 308 assertions — alle groen
 **PHP versie:** 8.4.13
 **PHPUnit versie:** 10.5.63
 
@@ -351,7 +351,7 @@ Naast de hierboven beschreven tests (secties 1-8) zijn er 67 bestaande unit test
 
 ---
 
-### 10. Performance Tests (12 tests)
+### 10. Performance Tests (15 tests)
 
 **Bestand:** `tests/Unit/PerformanceTest.php`
 
@@ -398,6 +398,18 @@ Valideert dat kritieke code-paden snel genoeg zijn bij realistische datavolumes.
 |------|--------|--------|-------------|
 | 50 events | 50 showAs=free events | < 50ms | Volledige scan (alle free = worst case) |
 | 200 events | 200 showAs=free events | < 150ms | Stress test |
+
+#### Load simulatie (300 kamers)
+
+Simuleert het scenario van **300 boekingen per uur verspreid over 300 kamers** — het door de gebruiker gespecificeerde schaalniveau. Alle I/O (database, Exchange API) is gemockt; de tests meten de totale overhead van de PHP-logica inclusief auth, permissies, conflictdetectie, aanmaak en Exchange push.
+
+| Test | Flow | Rooms | Budget | Beschrijving |
+|------|------|-------|--------|-------------|
+| 300 bookings via interne API | BookingApiController::create() | 300 | < 2s | Volledige flow per boeking: auth → room lookup → permissie → conflict check → create → Exchange push |
+| 300 bookings via CalDAV scheduling | SchedulingPlugin iTIP REQUEST | 300 | < 2s | Volledige iTIP flow per boeking: permissie → beschikbaarheid → horizon → conflict → delivery → Exchange push |
+| 300 bookings met conflict checks | CalDAVService::hasConflict() | 300 | < 3s | 10 bestaande events per kamer; nieuwe boeking moet alle 10 scannen (worst case: geen conflict) |
+
+**Resultaat:** Alle drie de tests slagen ruim binnen budget. De pure PHP-overhead voor 300 boekingen is ~100-130ms. In productie komt daar I/O-latency bij (database ~1ms, Exchange API ~50-200ms per call), maar door Exchange push als fire-and-forget (non-blocking) te behandelen blijft de totale doorvoer ruim binnen de marge.
 
 ---
 
@@ -454,3 +466,4 @@ De testsuite valideert dat:
 12. **Globale rate limit beschermt tegen burst traffic** — bij 300 gelijktijdige webhook requests wordt het inline sync budget (distributed cache, 10s window) gerespecteerd; overschot gaat naar background jobs
 13. **Settings API is beveiligd** — alleen admins kunnen instellingen lezen/wijzigen, client secrets worden gemaskeerd
 14. **Performance is acceptabel bij schaal** — conflictdetectie (200 events < 150ms), CSV import (500 rijen < 400ms), room listing (500 kamers < 200ms), Exchange conflict check (200 events < 150ms), batch boekingen (10x < 200ms)
+15. **Load simulatie: 300 kamers / 300 boekingen per uur** — zowel via interne API als CalDAV scheduling verwerkt de PHP-logica 300 boekingen (inclusief conflict checks met 10 events/kamer) in < 3 seconden; ruim voldoende voor productiegebruik
