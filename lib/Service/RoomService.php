@@ -395,6 +395,8 @@ class RoomService {
             'lastSyncToken' => $existing['lastSyncToken'] ?? null,
             'lastSyncAt' => $existing['lastSyncAt'] ?? null,
             'lastError' => $existing['lastError'] ?? null,
+            'initialSyncStatus' => $existing['initialSyncStatus'] ?? null,
+            'initialSyncError' => $existing['initialSyncError'] ?? null,
             'webhookSubscriptionId' => $existing['webhookSubscriptionId'] ?? null,
             'webhookExpiresAt' => $existing['webhookExpiresAt'] ?? null,
             'webhookClientState' => $existing['webhookClientState'] ?? null,
@@ -415,6 +417,21 @@ class RoomService {
         }
         $room['exchangeConfig']['lastSyncAt'] = date('c');
         $room['exchangeConfig']['lastError'] = $lastError;
+
+        $this->saveRoom($room);
+    }
+
+    /**
+     * Update initial Exchange sync status for a room.
+     */
+    public function updateExchangeInitialSyncStatus(string $roomId, string $status, ?string $error): void {
+        $room = $this->getRoom($roomId);
+        if ($room === null || $room['exchangeConfig'] === null) {
+            return;
+        }
+
+        $room['exchangeConfig']['initialSyncStatus'] = $status;
+        $room['exchangeConfig']['initialSyncError'] = $error;
 
         $this->saveRoom($room);
     }

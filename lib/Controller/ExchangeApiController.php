@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace OCA\RoomVox\Controller;
 
+use OCA\RoomVox\BackgroundJob\InitialExchangeSyncJob;
 use OCA\RoomVox\Service\Exchange\ExchangeSyncService;
 use OCA\RoomVox\Service\Exchange\GraphApiClient;
 use OCA\RoomVox\Service\Exchange\WebhookService;
 use OCA\RoomVox\Service\RoomService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\JSONResponse;
+use OCP\BackgroundJob\IJobList;
 use OCP\IGroupManager;
 use OCP\IRequest;
 use OCP\IUserSession;
@@ -23,6 +25,7 @@ class ExchangeApiController extends Controller {
         private ExchangeSyncService $syncService,
         private WebhookService $webhookService,
         private RoomService $roomService,
+        private IJobList $jobList,
         private IUserSession $userSession,
         private IGroupManager $groupManager,
         private LoggerInterface $logger,
@@ -64,9 +67,10 @@ class ExchangeApiController extends Controller {
     }
 
     /**
-     * Trigger a manual sync for a specific room.
+     * Trigger (or retry) initial Exchange sync for a room.
+     * Queues a background job that runs fullSync().
      */
-    public function syncRoom(string $id): JSONResponse {
+    public function initialSync(string $id): JSONResponse {
         if (!$this->requireAdmin()) {
             return new JSONResponse(['error' => 'Admin access required'], 403);
         }
@@ -80,21 +84,10 @@ class ExchangeApiController extends Controller {
             return new JSONResponse(['error' => 'Room does not have Exchange sync configured'], 400);
         }
 
-        $fullSync = $this->request->getParam('full', false);
+        $this->roomService->updateExchangeInitialSyncStatus($id, 'pending', null);
+        $this->jobList->add(InitialExchangeSyncJob::class, ['roomId' => $id]);
 
-        try {
-            $result = $fullSync
-                ? $this->syncService->fullSync($room)
-                : $this->syncService->pullExchangeChanges($room);
-
-            return new JSONResponse([
-                'status' => 'ok',
-                'result' => $result->toArray(),
-            ]);
-        } catch (\Throwable $e) {
-            $this->logger->error("Exchange manual sync failed for room {$id}: " . $e->getMessage());
-            return new JSONResponse(['error' => 'Sync failed: ' . $e->getMessage()], 500);
-        }
+        return new JSONResponse(['status' => 'queued']);
     }
 
     /**

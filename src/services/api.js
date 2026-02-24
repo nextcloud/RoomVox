@@ -58,7 +58,7 @@ export const searchSharees = (search) => axios.get(baseUrl('/api/sharees'), { pa
 // Exchange sync
 export const testExchangeConnection = () => axios.post(baseUrl('/api/exchange/test'))
 export const validateExchangeResource = (email) => axios.post(baseUrl('/api/exchange/validate-resource'), { email })
-export const triggerExchangeSync = (roomId, full = false) =>
-    axios.post(baseUrl(`/api/rooms/${roomId}/exchange/sync`), { full })
+export const retryInitialExchangeSync = (roomId) =>
+    axios.post(baseUrl(`/api/rooms/${roomId}/exchange/initial-sync`))
 export const getExchangeSyncStatus = () => axios.get(baseUrl('/api/exchange/status'))
 

@@ -60,5 +60,6 @@ No separate booking portal needed. Rooms appear directly in the calendar app you
         <job>OCA\RoomVox\BackgroundJob\TelemetryJob</job>
         <job>OCA\RoomVox\BackgroundJob\ExchangeSyncJob</job>
         <job>OCA\RoomVox\BackgroundJob\WebhookRenewalJob</job>
+        <job>OCA\RoomVox\BackgroundJob\InitialExchangeSyncJob</job>
     </background-jobs>
 </info>

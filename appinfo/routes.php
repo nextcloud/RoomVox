@@ -59,7 +59,7 @@ return [
         // Exchange sync API (admin only)
         ['name' => 'exchange_api#test_connection', 'url' => '/api/exchange/test', 'verb' => 'POST'],
         ['name' => 'exchange_api#validate_resource', 'url' => '/api/exchange/validate-resource', 'verb' => 'POST'],
-        ['name' => 'exchange_api#sync_room', 'url' => '/api/rooms/{id}/exchange/sync', 'verb' => 'POST'],
+        ['name' => 'exchange_api#initial_sync', 'url' => '/api/rooms/{id}/exchange/initial-sync', 'verb' => 'POST'],
         ['name' => 'exchange_api#sync_status', 'url' => '/api/exchange/status', 'verb' => 'GET'],
         ['name' => 'exchange_api#webhook_status', 'url' => '/api/exchange/webhooks', 'verb' => 'GET'],
         ['name' => 'exchange_api#create_webhooks', 'url' => '/api/exchange/webhooks', 'verb' => 'POST'],

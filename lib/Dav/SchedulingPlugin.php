@@ -169,6 +169,15 @@ class SchedulingPlugin extends ServerPlugin {
             }
         }
 
+        // 1b. Block bookings while initial Exchange sync is running
+        $syncStatus = $room['exchangeConfig']['initialSyncStatus'] ?? null;
+        if ($syncStatus !== null && $syncStatus !== 'completed') {
+            $this->logger->info("RoomVox: Booking denied for room {$roomId} — initial Exchange sync in progress (status: {$syncStatus})");
+            $message->scheduleStatus = '5.3'; // Temporary failure
+            $this->setPartstat($message, 'DECLINED');
+            return;
+        }
+
         // 2. Extract event data (used by availability + conflict check)
         $vEvent = $this->extractVEvent($message);
         $dtStart = null;

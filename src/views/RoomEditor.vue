@@ -333,6 +333,25 @@
                 </div>
 
                 <div v-if="!creating && exchange.resourceEmail" class="exchange-status">
+                    <div v-if="exchange.initialSyncStatus === 'pending' || exchange.initialSyncStatus === 'syncing'"
+                         class="exchange-initial-sync">
+                        <NcLoadingIcon :size="20" />
+                        <span>{{ exchange.initialSyncStatus === 'pending'
+                            ? $t('Exchange sync queued...')
+                            : $t('Syncing Exchange calendar...') }}</span>
+                    </div>
+
+                    <div v-if="exchange.initialSyncStatus === 'failed'" class="exchange-initial-sync exchange-sync-failed">
+                        <span>{{ $t('Initial sync failed:') }} {{ exchange.initialSyncError }}</span>
+                        <NcButton type="secondary" @click="retryInitialSync">
+                            {{ $t('Retry') }}
+                        </NcButton>
+                    </div>
+
+                    <NcNoteCard v-if="exchange.initialSyncStatus === 'completed'" type="success" class="exchange-note">
+                        {{ $t('Exchange calendar synced successfully') }}
+                    </NcNoteCard>
+
                     <div v-if="exchange.lastSyncAt" class="exchange-status-row">
                         <span class="exchange-status-label">{{ $t('Last synced:') }}</span>
                         <span>{{ new Date(exchange.lastSyncAt).toLocaleString() }}</span>
@@ -341,16 +360,6 @@
                         <span class="exchange-status-label">{{ $t('Last error:') }}</span>
                         <span>{{ exchange.lastError }}</span>
                     </div>
-
-                    <NcButton
-                        type="secondary"
-                        :disabled="exchangeSyncing"
-                        @click="forceSync">
-                        <template v-if="exchangeSyncing" #icon>
-                            <NcLoadingIcon :size="20" />
-                        </template>
-                        {{ exchangeSyncing ? $t('Syncing...') : $t('Force Sync') }}
-                    </NcButton>
                 </div>
             </div>
 
@@ -394,7 +403,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, watch } from 'vue'
+import { ref, reactive, computed, watch, onBeforeUnmount } from 'vue'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
 import NcTextArea from '@nextcloud/vue/components/NcTextArea'
@@ -407,7 +416,7 @@ import Close from 'vue-material-design-icons/Close.vue'
 import NcNoteCard from '@nextcloud/vue/components/NcNoteCard'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import { translate } from '@nextcloud/l10n'
-import { validateExchangeResource, triggerExchangeSync, getSettings } from '../services/api.js'
+import { validateExchangeResource, retryInitialExchangeSync, getSettings, getRoom } from '../services/api.js'
 
 const t = (text, vars = {}) => translate('roomvox', text, vars)
 
@@ -505,10 +514,12 @@ const exchange = reactive({
     syncEnabled: false,
     lastSyncAt: null,
     lastError: null,
+    initialSyncStatus: null,
+    initialSyncError: null,
 })
 const exchangeValidating = ref(false)
 const exchangeValidateResult = ref(null)
-const exchangeSyncing = ref(false)
+let syncPollInterval = null
 
 const loadExchangeGlobalState = async () => {
     try {
@@ -533,19 +544,44 @@ const validateResource = async () => {
     }
 }
 
-const forceSync = async () => {
+const retryInitialSync = async () => {
     if (!props.room?.id) return
-    exchangeSyncing.value = true
     try {
-        await triggerExchangeSync(props.room.id, true)
-        exchange.lastSyncAt = new Date().toISOString()
-        exchange.lastError = null
+        await retryInitialExchangeSync(props.room.id)
+        exchange.initialSyncStatus = 'pending'
+        exchange.initialSyncError = null
+        startSyncPolling()
     } catch (e) {
-        exchange.lastError = e.response?.data?.error || t('Sync failed')
-    } finally {
-        exchangeSyncing.value = false
+        exchange.initialSyncError = e.response?.data?.error || t('Failed to queue sync')
     }
 }
+
+const startSyncPolling = () => {
+    if (syncPollInterval) return
+    syncPollInterval = setInterval(async () => {
+        try {
+            const res = await getRoom(props.room.id)
+            const config = res.data.exchangeConfig
+            exchange.initialSyncStatus = config?.initialSyncStatus ?? null
+            exchange.initialSyncError = config?.initialSyncError ?? null
+            exchange.lastSyncAt = config?.lastSyncAt ?? null
+            exchange.lastError = config?.lastError ?? null
+            if (!['pending', 'syncing'].includes(exchange.initialSyncStatus)) {
+                clearInterval(syncPollInterval)
+                syncPollInterval = null
+            }
+        } catch {
+            // ignore polling errors
+        }
+    }, 5000)
+}
+
+onBeforeUnmount(() => {
+    if (syncPollInterval) {
+        clearInterval(syncPollInterval)
+        syncPollInterval = null
+    }
+})
 
 const clearError = (field) => {
     errors[field] = ''
@@ -643,7 +679,13 @@ watch(() => props.room, (room) => {
                 syncEnabled: room.exchangeConfig.syncEnabled || false,
                 lastSyncAt: room.exchangeConfig.lastSyncAt || null,
                 lastError: room.exchangeConfig.lastError || null,
+                initialSyncStatus: room.exchangeConfig.initialSyncStatus || null,
+                initialSyncError: room.exchangeConfig.initialSyncError || null,
             })
+            // Start polling if initial sync is in progress
+            if (['pending', 'syncing'].includes(exchange.initialSyncStatus)) {
+                startSyncPolling()
+            }
         }
         if (room.availabilityRules) {
             availability.enabled = room.availabilityRules.enabled || false
@@ -949,6 +991,19 @@ const save = () => {
 
 .exchange-status-error {
     color: var(--color-error);
+}
+
+.exchange-initial-sync {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+    font-size: 13px;
+}
+
+.exchange-sync-failed {
+    color: var(--color-error);
+    flex-wrap: wrap;
 }
 
 @media (max-width: 480px) {
