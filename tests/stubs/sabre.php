@@ -206,6 +206,7 @@ if (!class_exists(\OCA\DAV\CalDAV\CalDavBackend::class)) {
         public function deleteCalendarObject(int $calendarId, string $objectUri, int $type = 0, bool $permanent = false): void {}
         public function createCalendar(string $principalUri, string $calendarUri, array $properties): void {}
         public function deleteCalendar(int $calendarId): void {}
+        public function getMultipleCalendarObjects(int $calendarId, array $uris, int $calendarType = 0): array { return []; }
         public function calendarQuery(int $calendarId, array $filters, int $calendarType = 0): array { return []; }
     }
 }

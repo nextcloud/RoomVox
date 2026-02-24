@@ -276,13 +276,14 @@ class ExchangeSyncService {
         $backend = $this->getCalDavBackend();
         $objects = $backend->getCalendarObjects($calendarId);
 
-        foreach ($objects as $object) {
-            try {
-                $fullObject = $backend->getCalendarObject($calendarId, $object['uri']);
-                if ($fullObject === null) {
-                    continue;
-                }
+        // Batch fetch all calendar data in chunks of 100 (instead of N+1 queries)
+        $uris = array_map(fn($o) => $o['uri'], $objects);
+        $fullObjects = !empty($uris)
+            ? $backend->getMultipleCalendarObjects($calendarId, $uris)
+            : [];
 
+        foreach ($fullObjects as $fullObject) {
+            try {
                 $vObject = Reader::read($fullObject['calendardata'] ?? '');
                 $vEvent = $vObject->VEVENT ?? null;
                 if ($vEvent === null) {
