@@ -5,14 +5,25 @@ declare(strict_types=1);
 namespace OCA\RoomVox\Service;
 
 use OCA\DAV\CalDAV\CalDavBackend;
+use OCA\RoomVox\Service\Exchange\ExchangeSyncService;
 use Psr\Log\LoggerInterface;
 use Sabre\VObject\Reader;
 
 class CalDAVService {
+    private ?ExchangeSyncService $exchangeSyncService = null;
+
     public function __construct(
         private CalDavBackend $calDavBackend,
         private LoggerInterface $logger,
     ) {
+    }
+
+    /**
+     * Set the Exchange sync service for enhanced conflict checking.
+     * Called via late injection from Application::boot().
+     */
+    public function setExchangeSyncService(ExchangeSyncService $service): void {
+        $this->exchangeSyncService = $service;
     }
 
     /**
@@ -304,6 +315,8 @@ class CalDAVService {
             }
 
             if ($existing !== null) {
+                // Preserve Exchange sync properties from existing object
+                $calendarData = $this->preserveSyncProperties($calendarId, $existingUri, $calendarData);
                 $this->calDavBackend->updateCalendarObject($calendarId, $existingUri, $calendarData);
                 $this->logger->info("RoomVox: Updated calendar object {$existingUri} in calendar {$calendarId}");
             } else {
@@ -315,6 +328,53 @@ class CalDAVService {
         } catch (\Throwable $e) {
             $this->logger->error("RoomVox: Failed to deliver to room calendar: " . $e->getMessage());
             return false;
+        }
+    }
+
+    /**
+     * Preserve X-EXCHANGE-EVENT-ID and X-ROOMVOX-SYNC-SOURCE from an existing
+     * calendar object when it is being overwritten by an iTIP update.
+     */
+    private function preserveSyncProperties(int $calendarId, string $uri, string $newCalendarData): string {
+        $syncProps = ['X-EXCHANGE-EVENT-ID', 'X-ROOMVOX-SYNC-SOURCE'];
+
+        try {
+            $existingObj = $this->calDavBackend->getCalendarObject($calendarId, $uri);
+            if ($existingObj === null || empty($existingObj['calendardata'])) {
+                return $newCalendarData;
+            }
+
+            $oldVObj = Reader::read($existingObj['calendardata']);
+            $oldEvent = $oldVObj->VEVENT ?? null;
+            if ($oldEvent === null) {
+                return $newCalendarData;
+            }
+
+            $propsToCarry = [];
+            foreach ($syncProps as $prop) {
+                if (isset($oldEvent->{$prop})) {
+                    $propsToCarry[$prop] = (string) $oldEvent->{$prop};
+                }
+            }
+
+            if (empty($propsToCarry)) {
+                return $newCalendarData;
+            }
+
+            $newVObj = Reader::read($newCalendarData);
+            $newEvent = $newVObj->VEVENT ?? null;
+            if ($newEvent === null) {
+                return $newCalendarData;
+            }
+
+            foreach ($propsToCarry as $prop => $value) {
+                $newEvent->{$prop} = $value;
+            }
+
+            return $newVObj->serialize();
+        } catch (\Throwable $e) {
+            $this->logger->warning("RoomVox: Failed to preserve sync properties: " . $e->getMessage());
+            return $newCalendarData;
         }
     }
 
@@ -340,8 +400,8 @@ class CalDAVService {
         try {
             $existing = $this->calDavBackend->getCalendarObject($calendarId, $objectUri);
             if ($existing !== null) {
-                $this->calDavBackend->deleteCalendarObject($calendarId, $objectUri);
-                $this->logger->info("RoomVox: Deleted calendar object {$objectUri} from calendar {$calendarId}");
+                $this->calDavBackend->deleteCalendarObject($calendarId, $objectUri, CalDavBackend::CALENDAR_TYPE_CALENDAR, true);
+                $this->logger->info("RoomVox: Permanently deleted calendar object {$objectUri} from calendar {$calendarId}");
                 return true;
             }
         } catch (\Throwable $e) {
@@ -352,18 +412,39 @@ class CalDAVService {
     }
 
     /**
-     * Check for conflicting bookings
+     * Check for conflicting bookings (local + optional Exchange).
+     * Accepts optional room data for Exchange conflict checking.
      */
-    public function hasConflict(string $roomUserId, \DateTimeInterface $start, \DateTimeInterface $end, ?string $excludeUid = null): bool {
+    public function hasConflict(string $roomUserId, \DateTimeInterface $start, \DateTimeInterface $end, ?string $excludeUid = null, ?array $room = null): bool {
         $calendarId = $this->getRoomCalendarId($roomUserId);
         if ($calendarId === null) {
             return false;
         }
 
-        $objects = $this->calDavBackend->getCalendarObjects($calendarId);
+        // Use calendarQuery() with time-range filter: DB-level filtering on
+        // firstoccurence/lastoccurence avoids loading all calendar objects.
+        $filters = [
+            'name' => 'VCALENDAR',
+            'prop-filters' => [],
+            'comp-filters' => [
+                [
+                    'name' => 'VEVENT',
+                    'is-not-defined' => false,
+                    'comp-filters' => [],
+                    'prop-filters' => [],
+                    'time-range' => [
+                        'start' => new \DateTimeImmutable('@' . $start->getTimestamp()),
+                        'end' => new \DateTimeImmutable('@' . $end->getTimestamp()),
+                    ],
+                ],
+            ],
+        ];
 
-        foreach ($objects as $object) {
-            $fullObject = $this->calDavBackend->getCalendarObject($calendarId, $object['uri']);
+        // calendarQuery returns URIs only (filtered at DB level), then we fetch full objects
+        $uris = $this->calDavBackend->calendarQuery($calendarId, $filters);
+
+        foreach ($uris as $uri) {
+            $fullObject = $this->calDavBackend->getCalendarObject($calendarId, $uri);
             if ($fullObject === null) {
                 continue;
             }
@@ -399,6 +480,17 @@ class CalDAVService {
                 }
             } catch (\Exception $e) {
                 continue;
+            }
+        }
+
+        // Also check Exchange if configured and room data provided
+        if ($room !== null && $this->exchangeSyncService !== null) {
+            try {
+                if ($this->exchangeSyncService->hasExchangeConflict($room, $start, $end, $excludeUid)) {
+                    return true;
+                }
+            } catch (\Throwable $e) {
+                $this->logger->warning("Exchange conflict check failed (falling back to local-only): " . $e->getMessage());
             }
         }
 

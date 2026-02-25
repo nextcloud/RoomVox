@@ -8,6 +8,7 @@ use OCA\RoomVox\Middleware\ApiTokenMiddleware;
 use OCA\RoomVox\Middleware\ApiTokenException;
 use OCA\RoomVox\Service\ApiTokenService;
 use OCA\RoomVox\Service\CalDAVService;
+use OCA\RoomVox\Service\Exchange\ExchangeSyncService;
 use OCA\RoomVox\Service\RoomService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\DataDownloadResponse;
@@ -24,6 +25,7 @@ class PublicApiController extends Controller {
         IRequest $request,
         private RoomService $roomService,
         private CalDAVService $calDAVService,
+        private ExchangeSyncService $exchangeSyncService,
         private ApiTokenMiddleware $tokenMiddleware,
         private ApiTokenService $tokenService,
         private LoggerInterface $logger,
@@ -382,8 +384,8 @@ class PublicApiController extends Controller {
             return new JSONResponse(['error' => 'End time must be after start time'], 400);
         }
 
-        // Check for conflicts (expects DateTimeInterface)
-        if ($this->calDAVService->hasConflict($room['userId'], $startDt, $endDt)) {
+        // Check for conflicts (local + Exchange)
+        if ($this->calDAVService->hasConflict($room['userId'], $startDt, $endDt, null, $room)) {
             return new JSONResponse(['error' => 'Room is already booked during this time'], 409);
         }
 
@@ -429,6 +431,19 @@ class PublicApiController extends Controller {
         try {
             $uid = $this->calDAVService->createBooking($room['userId'], $bookingData);
 
+            // Push to Exchange (synchronous, fail-safe)
+            try {
+                $this->exchangeSyncService->pushBookingToExchange($room, $uid, [
+                    'summary' => $title,
+                    'start' => $startDt,
+                    'end' => $endDt,
+                    'description' => $description,
+                    'organizer' => $organizer,
+                ]);
+            } catch (\Throwable $e) {
+                $this->logger->error("Exchange push failed (non-blocking): " . $e->getMessage());
+            }
+
             $status = ($room['autoAccept'] ?? false) ? 'accepted' : 'pending';
 
             return new JSONResponse([
@@ -459,6 +474,13 @@ class PublicApiController extends Controller {
         }
 
         try {
+            // Push delete to Exchange before removing locally
+            try {
+                $this->exchangeSyncService->deleteBookingFromExchange($room, $uid);
+            } catch (\Throwable $e) {
+                $this->logger->error("Exchange delete failed (non-blocking): " . $e->getMessage());
+            }
+
             $this->calDAVService->deleteBooking($room['userId'], $uid);
             return new JSONResponse(['status' => 'ok']);
         } catch (\Exception $e) {

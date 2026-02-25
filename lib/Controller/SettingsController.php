@@ -11,12 +11,14 @@ use OCP\IAppConfig;
 use OCP\IGroupManager;
 use OCP\IRequest;
 use OCP\IUserSession;
+use OCP\Security\ICrypto;
 
 class SettingsController extends Controller {
     public function __construct(
         string $appName,
         IRequest $request,
         private IAppConfig $appConfig,
+        private ICrypto $crypto,
         private IUserSession $userSession,
         private IGroupManager $groupManager,
     ) {
@@ -56,6 +58,12 @@ class SettingsController extends Controller {
             'telemetryEnabled' => $this->appConfig->getValueString(Application::APP_ID, 'telemetry_enabled', 'true') === 'true',
             'roomTypes' => $this->getRoomTypes(),
             'facilities' => $this->getFacilities(),
+            'exchangeEnabled' => $this->appConfig->getValueString(Application::APP_ID, 'exchange_enabled', 'false') === 'true',
+            'exchangeTenantId' => $this->appConfig->getValueString(Application::APP_ID, 'exchange_tenant_id', ''),
+            'exchangeClientId' => $this->appConfig->getValueString(Application::APP_ID, 'exchange_client_id', ''),
+            'exchangeClientSecret' => $this->appConfig->getValueString(Application::APP_ID, 'exchange_client_secret', '') !== '' ? '***' : '',
+            'exchangeWebhookMaxInlineSync' => (int) $this->appConfig->getValueString(Application::APP_ID, 'exchange_webhook_max_inline_sync', '1'),
+            'exchangeWebhookRateLimit' => (int) $this->appConfig->getValueString(Application::APP_ID, 'exchange_webhook_rate_limit', '5'),
         ];
 
         return new JSONResponse($settings);
@@ -94,6 +102,47 @@ class SettingsController extends Controller {
                 Application::APP_ID,
                 'telemetry_enabled',
                 $telemetryEnabled ? 'true' : 'false'
+            );
+        }
+
+        // Exchange settings
+        $exchangeEnabled = $this->request->getParam('exchangeEnabled');
+        if ($exchangeEnabled !== null) {
+            $this->appConfig->setValueString(
+                Application::APP_ID,
+                'exchange_enabled',
+                $exchangeEnabled ? 'true' : 'false'
+            );
+        }
+
+        $exchangeTenantId = $this->request->getParam('exchangeTenantId');
+        if ($exchangeTenantId !== null) {
+            $this->appConfig->setValueString(Application::APP_ID, 'exchange_tenant_id', (string)$exchangeTenantId);
+        }
+
+        $exchangeClientId = $this->request->getParam('exchangeClientId');
+        if ($exchangeClientId !== null) {
+            $this->appConfig->setValueString(Application::APP_ID, 'exchange_client_id', (string)$exchangeClientId);
+        }
+
+        $maxInlineSync = $this->request->getParam('exchangeWebhookMaxInlineSync');
+        if ($maxInlineSync !== null) {
+            $value = max(0, (int) $maxInlineSync);
+            $this->appConfig->setValueString(Application::APP_ID, 'exchange_webhook_max_inline_sync', (string) $value);
+        }
+
+        $rateLimit = $this->request->getParam('exchangeWebhookRateLimit');
+        if ($rateLimit !== null) {
+            $value = max(0, (int) $rateLimit);
+            $this->appConfig->setValueString(Application::APP_ID, 'exchange_webhook_rate_limit', (string) $value);
+        }
+
+        $exchangeClientSecret = $this->request->getParam('exchangeClientSecret');
+        if ($exchangeClientSecret !== null && $exchangeClientSecret !== '' && $exchangeClientSecret !== '***') {
+            $this->appConfig->setValueString(
+                Application::APP_ID,
+                'exchange_client_secret',
+                $this->crypto->encrypt($exchangeClientSecret)
             );
         }
 

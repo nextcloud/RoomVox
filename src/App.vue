@@ -489,6 +489,92 @@
                     </NcCheckboxRadioSwitch>
                 </NcSettingsSection>
 
+                <NcSettingsSection :name="$t('Microsoft Exchange Sync')">
+                    <p class="section-description">
+                        {{ $t('Connect RoomVox to Microsoft 365 Exchange to sync room calendars. Requires an Azure AD app registration with Calendars.ReadWrite and User.Read.All application permissions.') }}
+                    </p>
+
+                    <div class="exchange-settings">
+                        <div class="form-field">
+                            <NcCheckboxRadioSwitch
+                                :model-value="exchangeEnabled"
+                                @update:model-value="exchangeEnabled = $event; saveExchangeSettings()">
+                                {{ $t('Enable Exchange calendar sync') }}
+                            </NcCheckboxRadioSwitch>
+                        </div>
+
+                        <div v-if="exchangeEnabled" class="exchange-fields">
+                            <div class="exchange-grid">
+                                <div class="form-field">
+                                    <label>{{ $t('Azure AD Tenant ID') }}</label>
+                                    <input
+                                        v-model="exchangeTenantId"
+                                        type="text"
+                                        class="room-type-input exchange-input"
+                                        :placeholder="$t('e.g. 12345678-abcd-...')"
+                                        @change="saveExchangeSettings" />
+                                </div>
+                                <div class="form-field">
+                                    <label>{{ $t('Client ID') }}</label>
+                                    <input
+                                        v-model="exchangeClientId"
+                                        type="text"
+                                        class="room-type-input exchange-input"
+                                        :placeholder="$t('App registration client ID')"
+                                        @change="saveExchangeSettings" />
+                                </div>
+                                <div class="form-field">
+                                    <label>{{ $t('Client Secret') }}</label>
+                                    <input
+                                        v-model="exchangeClientSecret"
+                                        type="password"
+                                        class="room-type-input exchange-input"
+                                        :placeholder="exchangeClientSecret === '***' ? $t('(saved — enter new value to change)') : $t('App registration client secret')"
+                                        @change="saveExchangeSettings" />
+                                </div>
+                                <div class="form-field">
+                                    <label>{{ $t('Max inline sync per request') }}</label>
+                                    <input
+                                        v-model.number="exchangeWebhookMaxInlineSync"
+                                        type="number"
+                                        min="0"
+                                        max="10"
+                                        class="room-type-input exchange-input"
+                                        :placeholder="$t('Rooms per request (default: 1)')"
+                                        @change="saveExchangeSettings" />
+                                </div>
+                                <div class="form-field">
+                                    <label>{{ $t('Rate limit (per 10 sec)') }}</label>
+                                    <input
+                                        v-model.number="exchangeWebhookRateLimit"
+                                        type="number"
+                                        min="0"
+                                        max="100"
+                                        class="room-type-input exchange-input"
+                                        :placeholder="$t('Max inline syncs per 10 sec (default: 5)')"
+                                        @change="saveExchangeSettings" />
+                                </div>
+                            </div>
+
+                            <div class="exchange-test">
+                                <NcButton
+                                    type="secondary"
+                                    :disabled="exchangeTesting || !exchangeTenantId || !exchangeClientId"
+                                    @click="testExchange">
+                                    <template v-if="exchangeTesting" #icon>
+                                        <NcLoadingIcon :size="20" />
+                                    </template>
+                                    {{ exchangeTesting ? $t('Testing...') : $t('Test Connection') }}
+                                </NcButton>
+
+                                <NcNoteCard v-if="exchangeTestResult" :type="exchangeTestResult.success ? 'success' : 'error'">
+                                    {{ exchangeTestResult.message }}
+                                </NcNoteCard>
+                            </div>
+                        </div>
+                    </div>
+                </NcSettingsSection>
+
                 <NcSettingsSection :name="'Room types'">
                     <p class="section-description">
                         {{ $t('Configure the available room types. Types that are in use cannot be deleted.') }}
@@ -636,6 +722,7 @@ import {
     getSettings, saveSettings,
     exportRoomsUrl, sampleCsvUrl, importPreview as apiImportPreview, importRooms as apiImportRooms,
     getApiTokens, createApiToken, deleteApiToken,
+    testExchangeConnection,
 } from './services/api.js'
 
 const t = (text, vars = {}) => translate('roomvox', text, vars)
@@ -669,6 +756,16 @@ const creatingToken = ref(false)
 const newlyCreatedToken = ref(null)
 const tokenCopied = ref(false)
 const apiBaseUrl = window.location.origin + generateUrl('/apps/roomvox')
+
+// Exchange sync state
+const exchangeEnabled = ref(false)
+const exchangeTenantId = ref('')
+const exchangeClientId = ref('')
+const exchangeClientSecret = ref('')
+const exchangeWebhookMaxInlineSync = ref(1)
+const exchangeWebhookRateLimit = ref(5)
+const exchangeTesting = ref(false)
+const exchangeTestResult = ref(null)
 
 // Import/Export state
 const importStep = ref('upload')
@@ -890,6 +987,25 @@ const loadSettings = async () => {
         if (response.data.telemetryEnabled !== undefined) {
             telemetryEnabled.value = response.data.telemetryEnabled
         }
+        // Load Exchange settings
+        if (response.data.exchangeEnabled !== undefined) {
+            exchangeEnabled.value = response.data.exchangeEnabled
+        }
+        if (response.data.exchangeTenantId !== undefined) {
+            exchangeTenantId.value = response.data.exchangeTenantId
+        }
+        if (response.data.exchangeClientId !== undefined) {
+            exchangeClientId.value = response.data.exchangeClientId
+        }
+        if (response.data.exchangeClientSecret !== undefined) {
+            exchangeClientSecret.value = response.data.exchangeClientSecret
+        }
+        if (response.data.exchangeWebhookMaxInlineSync !== undefined) {
+            exchangeWebhookMaxInlineSync.value = response.data.exchangeWebhookMaxInlineSync
+        }
+        if (response.data.exchangeWebhookRateLimit !== undefined) {
+            exchangeWebhookRateLimit.value = response.data.exchangeWebhookRateLimit
+        }
     } catch (e) {
         // Settings might not be accessible for non-admins
     }
@@ -983,6 +1099,46 @@ const onMoveToGroup = async ({ room, groupId }) => {
         await loadRooms()
     } catch (e) {
         showError(t('Failed to move room') + ': ' + (e.response?.data?.error || e.message))
+    }
+}
+
+// Exchange settings handlers
+const saveExchangeSettings = async () => {
+    try {
+        await saveSettings({
+            exchangeEnabled: exchangeEnabled.value,
+            exchangeTenantId: exchangeTenantId.value,
+            exchangeClientId: exchangeClientId.value,
+            exchangeClientSecret: exchangeClientSecret.value,
+            exchangeWebhookMaxInlineSync: exchangeWebhookMaxInlineSync.value,
+            exchangeWebhookRateLimit: exchangeWebhookRateLimit.value,
+        })
+        settingsSaved.value = true
+        setTimeout(() => { settingsSaved.value = false }, 3000)
+    } catch (e) {
+        showError(t('Failed to save Exchange settings'))
+    }
+}
+
+const testExchange = async () => {
+    exchangeTesting.value = true
+    exchangeTestResult.value = null
+    try {
+        // Save first to ensure latest credentials are used
+        await saveSettings({
+            exchangeEnabled: exchangeEnabled.value,
+            exchangeTenantId: exchangeTenantId.value,
+            exchangeClientId: exchangeClientId.value,
+            exchangeClientSecret: exchangeClientSecret.value,
+            exchangeWebhookMaxInlineSync: exchangeWebhookMaxInlineSync.value,
+            exchangeWebhookRateLimit: exchangeWebhookRateLimit.value,
+        })
+        const response = await testExchangeConnection()
+        exchangeTestResult.value = { success: true, message: response.data.message || t('Connection successful') }
+    } catch (e) {
+        exchangeTestResult.value = { success: false, message: e.response?.data?.error || t('Connection failed') }
+    } finally {
+        exchangeTesting.value = false
     }
 }
 
@@ -1778,5 +1934,45 @@ onMounted(() => {
     padding: 6px 0;
     border-bottom: 1px solid var(--color-border);
     font-size: 13px;
+}
+
+/* Exchange settings */
+.exchange-settings .form-field {
+    margin-bottom: 12px;
+}
+
+.exchange-settings .form-field label {
+    display: block;
+    font-weight: 500;
+    margin-bottom: 4px;
+    font-size: 14px;
+}
+
+.exchange-fields {
+    margin-top: 16px;
+}
+
+.exchange-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.exchange-input {
+    width: 100%;
+    max-width: none;
+}
+
+.exchange-test {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.exchange-test .notecard {
+    flex: 1;
+    min-width: 200px;
 }
 </style>

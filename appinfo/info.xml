@@ -77,5 +77,8 @@ Built with Vue 3 and CalDAV standards for seamless integration with any calendar
     </settings>
     <background-jobs>
         <job>OCA\RoomVox\BackgroundJob\TelemetryJob</job>
+        <job>OCA\RoomVox\BackgroundJob\ExchangeSyncJob</job>
+        <job>OCA\RoomVox\BackgroundJob\WebhookRenewalJob</job>
+        <job>OCA\RoomVox\BackgroundJob\InitialExchangeSyncJob</job>
     </background-jobs>
 </info>
