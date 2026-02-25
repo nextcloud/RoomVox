@@ -333,6 +333,14 @@
 							v-if="!isLoading"
 							:calendar-object-instance="calendarObjectInstance"
 							:is-read-only="isReadOnly || isViewedByOrganizer === false" />
+						<div class="room-finder-modal__footer">
+							<NcButton
+								variant="primary"
+								wide
+								@click="showRoomFinder = false">
+								{{ $t('calendar', 'Done') }}
+							</NcButton>
+						</div>
 					</div>
 				</NcModal>
 				<!-- ── /RoomVox ──── -->
@@ -1018,6 +1026,12 @@ export default {
 // RoomVox: Room Finder modal content
 .room-finder-modal {
 	margin: calc(var(--default-grid-baseline) * 6);
+
+	&__footer {
+		display: flex;
+		justify-content: flex-end;
+		padding-top: calc(var(--default-grid-baseline) * 4);
+	}
 }
 
 .modal-mask {

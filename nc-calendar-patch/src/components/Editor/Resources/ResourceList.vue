@@ -445,7 +445,7 @@ export default {
 			this.selectedFeatures = []
 		},
 
-		addResource({ commonName, email, calendarUserType, language, timezoneId, roomAddress }) {
+		addResource({ commonName, email, calendarUserType, language, timezoneId, roomAddress, roomBuildingAddress, roomBuildingName, roomNumber, roomSeatingCapacity, roomFeatures }) {
 			this.calendarObjectInstanceStore.addAttendee({
 				calendarObjectInstance: this.calendarObjectInstance,
 				commonName,
@@ -458,7 +458,35 @@ export default {
 				timezoneId,
 				organizer: this.principalsStore.getCurrentUserPrincipal,
 			})
-			this.updateLocation(roomAddress)
+			// Build location: "Room Name, Building Address, Room X.XX"
+			const location = this.buildLocationString({ commonName, roomAddress, roomBuildingAddress, roomBuildingName, roomNumber })
+			this.updateLocation(location)
+
+			// Set filters to match the selected room's properties
+			if (roomBuildingName && this.buildingOptions.includes(roomBuildingName)) {
+				this.selectedBuilding = roomBuildingName
+			}
+			if (roomNumber) {
+				const floor = this.extractFloor(roomNumber)
+				if (floor && this.floorOptions.includes(floor)) {
+					this.selectedFloor = floor
+				}
+			}
+			if (roomSeatingCapacity) {
+				const cap = parseInt(roomSeatingCapacity) || 0
+				// Find the highest capacity option that fits
+				const match = [...this.capacityOptions].reverse().find((o) => cap >= o.value)
+				if (match) {
+					this.selectedCapacity = match.value
+				}
+			}
+			if (roomFeatures) {
+				const features = roomFeatures.split(',').map((f) => f.trim()).filter(Boolean)
+				const validFeatures = features.filter((f) => this.featureOptions.some((o) => o.id === f))
+				if (validFeatures.length > 0) {
+					this.selectedFeatures = validFeatures
+				}
+			}
 		},
 
 		removeResource(resource) {
@@ -474,7 +502,23 @@ export default {
 			)
 			if (attendee) {
 				this.removeResource(attendee)
+				// Clear location when room is removed
+				this.calendarObjectInstanceStore.changeLocation({
+					calendarObjectInstance: this.calendarObjectInstance,
+					location: '',
+				})
+				// Clear filters
+				this.clearFilters()
 			}
+		},
+
+		buildLocationString({ commonName, roomAddress, roomBuildingAddress, roomBuildingName, roomNumber }) {
+			// Build: "Room Name, Building Address, Room X.XX"
+			const parts = []
+			if (commonName) parts.push(commonName)
+			if (roomBuildingAddress) parts.push(roomBuildingAddress)
+			if (roomNumber) parts.push('Room ' + roomNumber)
+			return parts.join(', ') || commonName || ''
 		},
 
 		updateLocation(location) {

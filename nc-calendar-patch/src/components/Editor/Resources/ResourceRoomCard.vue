@@ -120,6 +120,11 @@ export default {
 					email: this.room.emailAddress,
 					calendarUserType: this.room.calendarUserType,
 					roomAddress: this.room.roomAddress,
+					roomBuildingAddress: this.room.roomBuildingAddress,
+					roomBuildingName: this.room.roomBuildingName,
+					roomNumber: this.room.roomNumber,
+					roomSeatingCapacity: this.room.roomSeatingCapacity,
+					roomFeatures: this.room.roomFeatures,
 				})
 			}
 		},
