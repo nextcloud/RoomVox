@@ -373,7 +373,7 @@ export default {
 	},
 
 	async mounted() {
-		if (this.resourceBookingEnabled) {
+		if (this.resourceBookingEnabled && this.isViewedByOrganizer) {
 			await this.loadAllRooms()
 		}
 	},
