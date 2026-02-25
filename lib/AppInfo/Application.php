@@ -8,6 +8,8 @@ use OCA\DAV\Events\SabrePluginAuthInitEvent;
 use OCA\RoomVox\Connector\Room\RoomBackend;
 use OCA\RoomVox\Listener\SabrePluginListener;
 use OCA\RoomVox\Middleware\ApiTokenMiddleware;
+use OCA\RoomVox\Service\CalDAVService;
+use OCA\RoomVox\Service\Exchange\ExchangeSyncService;
 use OCA\RoomVox\Service\PermissionService;
 use OCA\RoomVox\Service\RoomService;
 use OCA\RoomVox\UserBackend\RoomUserBackend;
@@ -48,5 +50,14 @@ class Application extends App implements IBootstrap {
         // Wire up late injection to avoid circular dependency
         $permissionService = $server->get(PermissionService::class);
         $permissionService->setRoomService($server->get(RoomService::class));
+
+        // Wire Exchange sync service into CalDAV service for conflict checking
+        try {
+            $exchangeSyncService = $server->get(ExchangeSyncService::class);
+            $calDAVService = $server->get(CalDAVService::class);
+            $calDAVService->setExchangeSyncService($exchangeSyncService);
+        } catch (\Throwable $e) {
+            // Exchange service not available — features gracefully degrade
+        }
     }
 }

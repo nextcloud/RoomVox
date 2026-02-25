@@ -59,3 +59,10 @@ export const getMyApprovals = () => axios.get(baseUrl('/api/personal/approvals')
 // Sharee search
 export const searchSharees = (search) => axios.get(baseUrl('/api/sharees'), { params: { search } })
 
+// Exchange sync
+export const testExchangeConnection = () => axios.post(baseUrl('/api/exchange/test'))
+export const validateExchangeResource = (email) => axios.post(baseUrl('/api/exchange/validate-resource'), { email })
+export const retryInitialExchangeSync = (roomId) =>
+    axios.post(baseUrl(`/api/rooms/${roomId}/exchange/initial-sync`))
+export const getExchangeSyncStatus = () => axios.get(baseUrl('/api/exchange/status'))
+

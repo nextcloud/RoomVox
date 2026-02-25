@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace OCA\RoomVox\Dav;
 
 use OCA\RoomVox\Service\CalDAVService;
+use OCA\RoomVox\Service\Exchange\ExchangeSyncService;
 use OCA\RoomVox\Service\MailService;
 use OCA\RoomVox\Service\PermissionService;
 use OCA\RoomVox\Service\RoomService;
@@ -35,11 +36,21 @@ class SchedulingPlugin extends ServerPlugin {
     /** @var array<string, string> room email → PARTSTAT set during this request */
     private array $scheduledPartstats = [];
 
+    /** @var array<string> room emails cancelled in this request (prevent LOCATION re-add) */
+    private array $cancelledRoomEmails = [];
+
+    /** @var array<string, array>|null Cached email → room map (built once per request) */
+    private ?array $roomsByEmail = null;
+
+    /** Re-entrancy guard for fixOrganizerEvent (node->put triggers afterWriteContent again) */
+    private bool $isFixing = false;
+
     public function __construct(
         private RoomService $roomService,
         private PermissionService $permissionService,
         private CalDAVService $calDAVService,
         private MailService $mailService,
+        private ExchangeSyncService $exchangeSyncService,
         private IUserManager $userManager,
         private LoggerInterface $logger,
     ) {
@@ -113,11 +124,12 @@ class SchedulingPlugin extends ServerPlugin {
         if ($roomEmail !== '' && $message->message !== null) {
             $vEvent = $message->message->VEVENT ?? null;
             if ($vEvent !== null) {
+                $eventUid = (string)($vEvent->UID ?? '');
                 foreach ($vEvent->select('ATTENDEE') as $att) {
                     if (strtolower(RoomService::stripMailto((string)$att)) === $roomEmail) {
                         $ps = isset($att['PARTSTAT']) ? (string)$att['PARTSTAT'] : null;
                         if ($ps !== null) {
-                            $this->scheduledPartstats[$roomEmail] = $ps;
+                            $this->scheduledPartstats[$roomEmail . '|' . $eventUid] = $ps;
                         }
                         break;
                     }
@@ -157,6 +169,15 @@ class SchedulingPlugin extends ServerPlugin {
             }
         }
 
+        // 1b. Block bookings while initial Exchange sync is running
+        $syncStatus = $room['exchangeConfig']['initialSyncStatus'] ?? null;
+        if ($syncStatus !== null && $syncStatus !== 'completed') {
+            $this->logger->info("RoomVox: Booking denied for room {$roomId} — initial Exchange sync in progress (status: {$syncStatus})");
+            $message->scheduleStatus = '5.3'; // Temporary failure
+            $this->setPartstat($message, 'DECLINED');
+            return;
+        }
+
         // 2. Extract event data (used by availability + conflict check)
         $vEvent = $this->extractVEvent($message);
         $dtStart = null;
@@ -187,8 +208,8 @@ class SchedulingPlugin extends ServerPlugin {
         // 4. Conflict check
         if ($vEvent !== null) {
             if ($dtStart !== null && $dtEnd !== null) {
-                if ($this->calDAVService->hasConflict($room['userId'], $dtStart, $dtEnd, $uid)) {
-                    $this->logger->info("RoomVox: Conflict detected for room {$roomId}");
+                if ($this->calDAVService->hasConflict($room['userId'], $dtStart, $dtEnd, $uid, $room)) {
+                    $this->logger->info("RoomVox: Booking conflict for room {$roomId} (uid={$uid})");
                     $message->scheduleStatus = '3.0'; // Delivery failed (conflict)
                     $this->setPartstat($message, 'DECLINED');
 
@@ -231,6 +252,21 @@ class SchedulingPlugin extends ServerPlugin {
         // 7. Set success status
         $message->scheduleStatus = '1.2'; // Delivered successfully
 
+        // 7b. Push to Exchange (synchronous, fail-safe)
+        try {
+            if ($dtStart !== null && $dtEnd !== null) {
+                $this->exchangeSyncService->pushBookingToExchange($room, $uid, [
+                    'summary' => (string)($vEvent->SUMMARY ?? 'Booking'),
+                    'start' => $dtStart,
+                    'end' => $dtEnd,
+                    'description' => (string)($vEvent->DESCRIPTION ?? ''),
+                    'organizer' => $this->extractUserId($message->sender) ?? '',
+                ]);
+            }
+        } catch (\Throwable $e) {
+            $this->logger->error("RoomVox: Exchange push failed (non-blocking): " . $e->getMessage());
+        }
+
         // 8. Send notifications
         try {
             if ($partstat === 'ACCEPTED') {
@@ -249,11 +285,24 @@ class SchedulingPlugin extends ServerPlugin {
     private function handleCancel(ITip\Message $message, array $room): void {
         $this->logger->info("RoomVox: Booking cancelled for room {$room['id']}");
 
-        // Delete from room calendar
+        // Track cancelled room to prevent LOCATION-based re-add in fixOrganizerEvent
+        $roomEmail = strtolower($room['email'] ?? '');
+        if ($roomEmail !== '') {
+            $this->cancelledRoomEmails[] = $roomEmail;
+        }
+
+        // Delete from room calendar + Exchange
         $vEvent = $this->extractVEvent($message);
         if ($vEvent !== null) {
             $uid = (string)($vEvent->UID ?? '');
             if ($uid !== '') {
+                // Push delete to Exchange before removing locally (need iCal data for lookup)
+                try {
+                    $this->exchangeSyncService->deleteBookingFromExchange($room, $uid);
+                } catch (\Throwable $e) {
+                    $this->logger->error("RoomVox: Exchange delete failed (non-blocking): " . $e->getMessage());
+                }
+
                 $this->calDAVService->deleteFromRoomCalendar($room['userId'], $uid);
             }
         }
@@ -268,12 +317,33 @@ class SchedulingPlugin extends ServerPlugin {
     }
 
     /**
+     * Get a cached email → room lookup map (built once per request).
+     * @return array<string, array> lowercase email → room data
+     */
+    private function getRoomsByEmail(): array {
+        if ($this->roomsByEmail === null) {
+            $this->roomsByEmail = [];
+            foreach ($this->roomService->getAllRooms() as $room) {
+                $email = strtolower($room['email'] ?? '');
+                if ($email !== '') {
+                    $this->roomsByEmail[$email] = $room;
+                }
+            }
+        }
+        return $this->roomsByEmail;
+    }
+
+    /**
      * After a calendar object is written, fix room attendees in the
      * organizer's event:
      * - iOS: CUTYPE=INDIVIDUAL → CUTYPE=ROOM, add LOCATION
      * - eM Client: LOCATION matches room name but no ATTENDEE → add room as ATTENDEE + deliver
      */
     public function fixOrganizerEvent(string $path): void {
+        if ($this->isFixing) {
+            return;
+        }
+        $this->isFixing = true;
         try {
             // Only process .ics files in calendar paths
             if (!str_ends_with($path, '.ics') || !str_contains($path, 'calendars/')) {
@@ -301,15 +371,23 @@ class SchedulingPlugin extends ServerPlugin {
 
             $changed = false;
             $roomEmails = [];
+            /** @var array<string, array{id: string, userId: string}> email → room info for tracker */
+            $currentRoomInfo = [];
             $attendees = $vEvent->select('ATTENDEE');
+            $roomMap = $this->getRoomsByEmail(); // One cached lookup for all checks
 
             // 1. Fix existing room attendees: CUTYPE + PARTSTAT write-back
             foreach ($attendees as $attendee) {
                 $email = strtolower(RoomService::stripMailto((string)$attendee));
                 $cutype = isset($attendee['CUTYPE']) ? (string)$attendee['CUTYPE'] : '';
 
-                if ($this->roomService->isRoomPrincipal('mailto:' . $email)) {
+                $matchedRoom = $roomMap[$email] ?? null;
+                if ($matchedRoom !== null) {
                     $roomEmails[] = $email;
+                    $currentRoomInfo[$email] = [
+                        'id' => $matchedRoom['id'],
+                        'userId' => $matchedRoom['userId'],
+                    ];
 
                     if ($cutype !== 'ROOM') {
                         $attendee['CUTYPE'] = 'ROOM';
@@ -317,21 +395,73 @@ class SchedulingPlugin extends ServerPlugin {
                     }
 
                     // Write back PARTSTAT that was set during scheduling
-                    // (Sabre doesn't do this because we handle delivery ourselves)
-                    if (isset($this->scheduledPartstats[$email])) {
+                    // (Sabre won't do this because we handle delivery ourselves)
+                    $uid = (string)($vEvent->UID ?? '');
+                    $partstatKey = $email . '|' . $uid;
+                    if (isset($this->scheduledPartstats[$partstatKey])) {
                         $currentPartstat = isset($attendee['PARTSTAT']) ? (string)$attendee['PARTSTAT'] : '';
-                        if ($currentPartstat !== $this->scheduledPartstats[$email]) {
-                            $attendee['PARTSTAT'] = $this->scheduledPartstats[$email];
+                        if ($currentPartstat !== $this->scheduledPartstats[$partstatKey]) {
+                            $attendee['PARTSTAT'] = $this->scheduledPartstats[$partstatKey];
                             $changed = true;
-                            $this->logger->info("RoomVox: Updated PARTSTAT to {$this->scheduledPartstats[$email]} for room {$email} in organizer event {$path}");
+                            $this->logger->info("RoomVox: Updated PARTSTAT to {$this->scheduledPartstats[$partstatKey]} for room {$email} in organizer event {$path}");
                         }
                     }
                 }
             }
 
-            // 2. eM Client fix: LOCATION matches a room name but no room ATTENDEE
+            // 2. Detect removed room attendees using X-ROOMVOX-ROOMS tracker.
+            //    Format: "email|roomId|userId,email2|roomId2|userId2"
+            //    All data needed for removal is stored in the property — no DB lookups.
+            $uid = (string)($vEvent->UID ?? '');
+            $previousRooms = (string)($vEvent->{'X-ROOMVOX-ROOMS'} ?? '');
+            $removedRoomEmails = [];
+            if ($uid !== '' && $previousRooms !== '') {
+                $prevEntries = array_filter(explode(',', $previousRooms));
+                foreach ($prevEntries as $entry) {
+                    $parts = explode('|', trim($entry));
+                    $prevEmail = strtolower($parts[0] ?? '');
+                    $prevRoomId = $parts[1] ?? '';
+                    $prevUserId = $parts[2] ?? '';
+                    if ($prevEmail === '' || in_array($prevEmail, $roomEmails, true)) {
+                        continue; // Still an attendee
+                    }
+                    if ($prevRoomId === '' || $prevUserId === '') {
+                        continue; // Incomplete tracker data (legacy)
+                    }
+                    // This room was removed — delete booking directly using stored info
+                    $this->logger->info("RoomVox: Room {$prevRoomId} removed as attendee from event {$uid} — deleting booking");
+                    $removedRoom = $this->roomService->getRoom($prevRoomId);
+                    if ($removedRoom !== null) {
+                        try {
+                            $this->exchangeSyncService->deleteBookingFromExchange($removedRoom, $uid);
+                        } catch (\Throwable $e) {
+                            $this->logger->error("RoomVox: Exchange delete failed (non-blocking): " . $e->getMessage());
+                        }
+                    }
+                    $this->calDAVService->deleteFromRoomCalendar($prevUserId, $uid);
+                    $removedRoomEmails[] = $prevEmail;
+                }
+            }
+
+            // Update X-ROOMVOX-ROOMS tracker: store email|roomId|userId per room
+            $trackerEntries = [];
+            foreach ($currentRoomInfo as $email => $info) {
+                $trackerEntries[] = $email . '|' . $info['id'] . '|' . $info['userId'];
+            }
+            $newRoomsValue = implode(',', $trackerEntries);
+            if ($newRoomsValue !== $previousRooms) {
+                if ($newRoomsValue !== '') {
+                    $vEvent->{'X-ROOMVOX-ROOMS'} = $newRoomsValue;
+                } elseif (isset($vEvent->{'X-ROOMVOX-ROOMS'})) {
+                    unset($vEvent->{'X-ROOMVOX-ROOMS'});
+                }
+                $changed = true;
+            }
+
+            // 3. eM Client fix: LOCATION matches a room name but no room ATTENDEE
             //    → add the room as ATTENDEE and deliver to room calendar
-            if (empty($roomEmails)) {
+            //    Skip if rooms were just removed (by CANCEL or attendee removal)
+            if (empty($roomEmails) && empty($removedRoomEmails) && empty($this->cancelledRoomEmails)) {
                 $location = strtolower(trim((string)($vEvent->LOCATION ?? '')));
                 if ($location !== '') {
                     $matchedRoom = $this->findRoomByLocation($location);
@@ -373,18 +503,15 @@ class SchedulingPlugin extends ServerPlugin {
                 }
             }
 
-            // 3. Add LOCATION if room attendees exist but no location
+            // 4. Add LOCATION if room attendees exist but no location
             if (!empty($roomEmails)) {
                 $location = (string)($vEvent->LOCATION ?? '');
                 if ($location === '') {
                     $roomEmail = $roomEmails[0];
-                    $rooms = $this->roomService->getAllRooms();
-                    foreach ($rooms as $room) {
-                        if (strtolower($room['email'] ?? '') === $roomEmail) {
-                            $vEvent->LOCATION = $this->roomService->buildRoomLocation($room);
-                            $changed = true;
-                            break;
-                        }
+                    $locRoom = $roomMap[$roomEmail] ?? null;
+                    if ($locRoom !== null) {
+                        $vEvent->LOCATION = $this->roomService->buildRoomLocation($locRoom);
+                        $changed = true;
                     }
                 }
             }
@@ -395,6 +522,8 @@ class SchedulingPlugin extends ServerPlugin {
             }
         } catch (\Throwable $e) {
             $this->logger->debug("RoomVox: fixOrganizerEvent skipped: " . $e->getMessage());
+        } finally {
+            $this->isFixing = false;
         }
     }
 
@@ -403,14 +532,11 @@ class SchedulingPlugin extends ServerPlugin {
      */
     private function findRoomByLocation(string $location): ?array {
         $location = strtolower(trim($location));
-        $rooms = $this->roomService->getAllRooms();
 
-        foreach ($rooms as $room) {
+        foreach ($this->getRoomsByEmail() as $room) {
             if (!($room['active'] ?? true)) {
                 continue;
             }
-            // Match on room name, email (without domain), email prefix,
-            // or combined "Name — Location" format (as shown in CalDAV clients)
             $roomName = strtolower($room['name'] ?? '');
             $roomEmail = strtolower($room['email'] ?? '');
             $emailLocal = explode('@', $roomEmail)[0] ?? '';
@@ -445,7 +571,7 @@ class SchedulingPlugin extends ServerPlugin {
             $uid = (string)($vEvent->UID ?? '');
 
             if ($dtStart !== null && $dtEnd !== null) {
-                if ($this->calDAVService->hasConflict($room['userId'], $dtStart, $dtEnd, $uid)) {
+                if ($this->calDAVService->hasConflict($room['userId'], $dtStart, $dtEnd, $uid, $room)) {
                     $this->logger->info("RoomVox: Conflict detected for room {$roomId} (LOCATION booking)");
                     return;
                 }

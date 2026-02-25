@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace OCA\RoomVox\Controller;
 
+use OCA\RoomVox\BackgroundJob\InitialExchangeSyncJob;
 use OCA\RoomVox\Service\CalDAVService;
 use OCA\RoomVox\Service\ImportExportService;
 use OCA\RoomVox\Service\MailService;
@@ -14,6 +15,7 @@ use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
 use OCP\AppFramework\Http\DataDownloadResponse;
 use OCP\AppFramework\Http\JSONResponse;
+use OCP\BackgroundJob\IJobList;
 use OCP\Calendar\Room\IManager as IRoomManager;
 use OCP\IGroupManager;
 use OCP\IRequest;
@@ -34,6 +36,7 @@ class RoomApiController extends Controller {
         private IUserSession $userSession,
         private IUserManager $userManager,
         private IGroupManager $groupManager,
+        private IJobList $jobList,
         private LoggerInterface $logger,
     ) {
         parent::__construct($appName, $request);
@@ -264,7 +267,7 @@ class RoomApiController extends Controller {
         }
 
         $data = [];
-        $updatableFields = ['name', 'email', 'description', 'capacity', 'roomNumber', 'roomType', 'address', 'facilities', 'autoAccept', 'active', 'smtpConfig', 'groupId', 'availabilityRules', 'maxBookingHorizon'];
+        $updatableFields = ['name', 'email', 'description', 'capacity', 'roomNumber', 'roomType', 'address', 'facilities', 'autoAccept', 'active', 'smtpConfig', 'exchangeConfig', 'groupId', 'availabilityRules', 'maxBookingHorizon'];
 
         foreach ($updatableFields as $field) {
             $value = $this->request->getParam($field);
@@ -274,6 +277,10 @@ class RoomApiController extends Controller {
         }
 
         try {
+            // Capture existing Exchange config before update (for initial sync detection)
+            $existingRoom = $this->roomService->getRoom($id);
+            $oldConfig = $existingRoom['exchangeConfig'] ?? null;
+
             $room = $this->roomService->updateRoom($id, $data);
             if ($room === null) {
                 return new JSONResponse(['error' => 'Room not found'], 404);
@@ -282,6 +289,17 @@ class RoomApiController extends Controller {
             // Publish/remove VAVAILABILITY when availability rules change
             if (array_key_exists('availabilityRules', $data)) {
                 $this->calDAVService->publishAvailability($room['userId'], $room);
+            }
+
+            // Trigger initial Exchange sync if newly linked or email changed
+            $newConfig = $room['exchangeConfig'] ?? null;
+            $wasEnabled = !empty($oldConfig['resourceEmail']) && ($oldConfig['syncEnabled'] ?? false);
+            $isEnabled = !empty($newConfig['resourceEmail']) && ($newConfig['syncEnabled'] ?? false);
+            $emailChanged = ($oldConfig['resourceEmail'] ?? '') !== ($newConfig['resourceEmail'] ?? '');
+
+            if ($isEnabled && (!$wasEnabled || $emailChanged)) {
+                $this->roomService->updateExchangeInitialSyncStatus($id, 'pending', null);
+                $this->jobList->add(InitialExchangeSyncJob::class, ['roomId' => $id]);
             }
 
             // Sync room cache
