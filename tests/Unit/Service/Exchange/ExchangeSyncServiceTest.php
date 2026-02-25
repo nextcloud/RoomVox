@@ -109,6 +109,7 @@ class ExchangeSyncServiceTest extends TestCase {
 
     private array $exchangeRoom = [
         'id' => 'room1',
+        'userId' => 'rb_room1',
         'exchangeConfig' => [
             'resourceEmail' => 'room@company.com',
             'syncEnabled' => true,
