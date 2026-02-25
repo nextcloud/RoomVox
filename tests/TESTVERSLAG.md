@@ -1,7 +1,7 @@
 # Testverslag RoomVox — Dubbele Boekingen Preventie
 
-**Datum:** 23 februari 2026
-**Unit tests:** 176 tests, 308 assertions — alle groen (PHPUnit)
+**Datum:** 25 februari 2026
+**Unit tests:** 186 tests, 318 assertions — alle groen (PHPUnit)
 **Integratietests:** 50 tests, 0 gefaald — alle groen (live database, 115 kamers)
 **Benchmark:** 115 kamers, 214 conflict checks, 108 boekingen — alle operaties binnen budget
 **PHP versie:** 8.4.13
@@ -13,7 +13,7 @@
 
 De testsuite bestaat uit twee lagen:
 
-1. **176 unit tests** (PHPUnit) — draaien standalone zonder Nextcloud-instance, alle externe afhankelijkheden worden gemockt
+1. **186 unit tests** (PHPUnit) — draaien standalone zonder Nextcloud-instance, alle externe afhankelijkheden worden gemockt
 2. **50 integratietests** — draaien tegen de live Nextcloud-database met echte kamers, echte kalenders en echte Exchange-verbinding
 
 Samen valideren ze dat RoomVox **geen dubbele boekingen** kan aanmaken. Alle drie de boekingspaden (CalDAV-client, interne API, publieke API) worden getest op correcte conflictdetectie, permissiecontrole, beschikbaarheidsregels en booking horizon — zowel met mocks als met echte data.
@@ -222,7 +222,7 @@ Test de validatielogica die de Public API v1 (bearer token) gebruikt voor extern
 ### 6. Exchange Conflict Check — `hasExchangeConflict()` (9 tests)
 
 **Bestand:** `tests/Unit/Service/Exchange/ExchangeSyncServiceTest.php`
-**Bron:** `lib/Service/Exchange/ExchangeSyncService.php` regel 416-464
+**Bron:** `lib/Service/Exchange/ExchangeSyncService.php` regel 417-488
 
 Controleert dat de Exchange-zijde (Microsoft Graph API) correct wordt geraadpleegd bij het boeken. Voorkomt dat boekingen worden aangemaakt in RoomVox die in Exchange als duplicaten verschijnen.
 
@@ -246,6 +246,45 @@ De Graph API retourneert een `showAs` veld per event. Alleen events die de kalen
 | Exclude UID | RoomVox UID match met `excludeUid` | **VRIJ** | Eigen boeking wordt overgeslagen bij reschedule |
 | Geen events | Leeg tijdslot op Exchange | **VRIJ** | Niets blokkeert |
 | Geen Exchange room | Room zonder Exchange config | **VRIJ** | Check wordt overgeslagen |
+
+---
+
+### 6b. Exchange Conflict Exclusion bij Updates (10 tests)
+
+**Bestand:** `tests/Unit/Service/Exchange/ExchangeConflictExcludeTest.php`
+**Bron:** `lib/Service/Exchange/ExchangeSyncService.php` regel 417-488
+
+**Achtergrond:** Wanneer een event wordt bijgewerkt vanuit Nextcloud Calendar, moet de Exchange conflict check het event's eigen kopie op Exchange overslaan. Dit gaat via twee mechanismes:
+
+1. **ROOMVOX_UID_PROP** — extended property op het Exchange event (gezet bij push)
+2. **Exchange event ID** — lokaal opgeslagen in `X-EXCHANGE-EVENT-ID` in de CalDAV data
+
+Het tweede mechanisme is nodig omdat Exchange bij auto-accept soms het event aanmaakt zonder de extended property. Dit was de oorzaak van een bug waarbij event updates vanuit Nextcloud Calendar werden afgewezen als "Booking conflict" met het event's eigen kopie op Exchange.
+
+#### Exclude via ROOMVOX_UID_PROP
+
+| Test | Scenario | Resultaat | Waarom |
+|------|----------|-----------|--------|
+| UID prop matcht | Exchange event heeft `ROOMVOX_UID_PROP=booking-123`, excludeUid=`booking-123` | **VRIJ** | Eigen boeking overgeslagen |
+| UID prop verschilt | Exchange event heeft `ROOMVOX_UID_PROP=other-booking` | **CONFLICT** | Ander event blokkeert |
+
+#### Exclude via Exchange event ID (de fix)
+
+| Test | Scenario | Resultaat | Waarom |
+|------|----------|-----------|--------|
+| **Exchange ID matcht** | **Exchange event zonder ROOMVOX_UID_PROP, maar lokale CalDAV data bevat `X-EXCHANGE-EVENT-ID` dat matcht** | **VRIJ** | **Eigen boeking herkend via Exchange ID** |
+| Exchange ID verschilt | Lokaal opgeslagen Exchange ID matcht niet | **CONFLICT** | Ander event |
+| Geen lokaal Exchange ID | Lokaal event heeft geen `X-EXCHANGE-EVENT-ID` | **CONFLICT** | Kan niet matchen, veilige aanname |
+
+#### Gecombineerde scenarios
+
+| Test | Scenario | Resultaat | Waarom |
+|------|----------|-----------|--------|
+| Beide mechanismes matchen | UID prop + Exchange ID match beide | **VRIJ** | Dubbele bevestiging |
+| Eigen event + ander event | 2 events: eigen (match via Exchange ID) + ander | **CONFLICT** | Eigen overgeslagen, ander blokkeert |
+| Alleen eigen event | 1 event op Exchange, match via Exchange ID | **VRIJ** | Geen echt conflict |
+| Geen excludeUid | Normaal boeken, geen update | **CONFLICT** | Bestaand event blokkeert |
+| Geen kalender voor room | getRoomCalendarId() → null | **CONFLICT** | Exchange ID lookup faalt, veilige aanname |
 
 ---
 
@@ -350,7 +389,7 @@ Naast de hierboven beschreven tests (secties 1-8) zijn er 67 bestaande unit test
 | PermissionServiceTest | 6 | Rolhiërarchie, groepsovererving, admin bypass |
 | ImportExportServiceTest | 15 | CSV delimiter, kolomdetectie, faciliteiten, adres parsing |
 | ApiTokenServiceTest | 8 | Scope hiërarchie (read < book < admin), kamertoegang |
-| ExchangeSyncServiceTest | 6 | Exchange room validatie, sync skip (aanvullend op sectie 6) |
+| ExchangeSyncServiceTest | 6 | Exchange room validatie, sync skip (aanvullend op secties 6 en 6b) |
 | WebhookServiceTest | 6 | Webhook renewal, HTTPS-vereiste |
 | SchedulingPluginTest | 9 | bookingFitsRule, isWithinAvailability |
 
@@ -606,6 +645,9 @@ vendor/bin/phpunit tests/Unit/Dav/SchedulingPluginRequestTest.php
 vendor/bin/phpunit tests/Unit/Dav/SchedulingPluginHorizonTest.php
 vendor/bin/phpunit tests/Unit/Controller/PublicApiConflictTest.php
 
+# Exchange conflict exclusion tests
+vendor/bin/phpunit tests/Unit/Service/Exchange/ExchangeConflictExcludeTest.php
+
 # Webhook & settings tests
 vendor/bin/phpunit tests/Unit/Controller/WebhookControllerTest.php
 vendor/bin/phpunit tests/Unit/Controller/SettingsControllerTest.php
@@ -631,7 +673,7 @@ cd /var/www/nextcloud && sudo -u www-data php apps/roomvox/tests/integration-ful
 
 ## Conclusie
 
-De testsuite (176 unit tests + 50 integratietests) valideert dat:
+De testsuite (186 unit tests + 50 integratietests) valideert dat:
 
 ### Conflictdetectie
 1. **Overlappende boekingen worden gedetecteerd** — alle 5 overlap-varianten (exact, begin, einde, omvattend, omvat), zowel in mocks als op echte database
@@ -655,14 +697,15 @@ De testsuite (176 unit tests + 50 integratietests) valideert dat:
 13. **Exchange conflict check filtert op showAs** — alleen `busy`, `tentative`, `oof` en `workingElsewhere` blokkeren; `free` events worden overgeslagen
 14. **Exchange conflict check werkt live** — `hasExchangeConflict()` bevraagt de echte Microsoft Graph API en retourneert correct resultaat
 15. **Exchange operaties op non-Exchange kamers crashen niet** — push, update en delete retourneren false zonder exceptie
+16. **Event updates worden niet geblokkeerd door eigen Exchange-kopie** — wanneer Exchange het event auto-accept (zonder ROOMVOX_UID_PROP), matcht de conflict check op Exchange event ID als fallback
 
 ### Webhooks & settings
-16. **Webhook inline sync met throttle** — eerste N rooms syncen inline, rest via background jobs
-17. **Globale rate limit beschermt tegen burst traffic** — distributed cache met 10s sliding window
-18. **Settings API is beveiligd** — alleen admins, client secrets gemaskeerd
+17. **Webhook inline sync met throttle** — eerste N rooms syncen inline, rest via background jobs
+18. **Globale rate limit beschermt tegen burst traffic** — distributed cache met 10s sliding window
+19. **Settings API is beveiligd** — alleen admins, client secrets gemaskeerd
 
 ### Performance & schaal
-19. **Performance op echte database** — conflict check 1.12ms/kamer, booking create 5.88ms, delete 4.25ms op 107 kamers
-20. **Bulk operaties werken betrouwbaar** — 107 kamers: create+verify+delete allemaal 100% succesvol
-21. **Load simulatie: 1500 kamers** — PHP-logica verwerkt 1500 boekingen (inclusief conflict checks) in ~330ms
-22. **Performance is acceptabel bij schaal** — conflictdetectie (200 events < 150ms), CSV import (500 rijen < 400ms), room listing (500 kamers < 200ms)
+20. **Performance op echte database** — conflict check 1.12ms/kamer, booking create 5.88ms, delete 4.25ms op 107 kamers
+21. **Bulk operaties werken betrouwbaar** — 107 kamers: create+verify+delete allemaal 100% succesvol
+22. **Load simulatie: 1500 kamers** — PHP-logica verwerkt 1500 boekingen (inclusief conflict checks) in ~330ms
+23. **Performance is acceptabel bij schaal** — conflictdetectie (200 events < 150ms), CSV import (500 rijen < 400ms), room listing (500 kamers < 200ms)
