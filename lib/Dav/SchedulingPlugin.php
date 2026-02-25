@@ -209,7 +209,7 @@ class SchedulingPlugin extends ServerPlugin {
         if ($vEvent !== null) {
             if ($dtStart !== null && $dtEnd !== null) {
                 if ($this->calDAVService->hasConflict($room['userId'], $dtStart, $dtEnd, $uid, $room)) {
-                    $this->logger->info("RoomVox: Conflict detected for room {$roomId}");
+                    $this->logger->info("RoomVox: Booking conflict for room {$roomId} (uid={$uid})");
                     $message->scheduleStatus = '3.0'; // Delivery failed (conflict)
                     $this->setPartstat($message, 'DECLINED');
 

@@ -426,6 +426,14 @@ class ExchangeSyncService {
 
         $resourceEmail = $room['exchangeConfig']['resourceEmail'];
 
+        // Look up the Exchange event ID for the event being updated,
+        // so we can also match by ID (not just by ROOMVOX_UID_PROP which
+        // may not be present on events auto-accepted by Exchange).
+        $excludeExchangeId = null;
+        if ($excludeUid !== null) {
+            $excludeExchangeId = $this->getExchangeEventId($room, $excludeUid);
+        }
+
         try {
             $result = $this->graphClient->get(
                 '/users/' . urlencode($resourceEmail) . '/calendarView',
@@ -450,13 +458,22 @@ class ExchangeSyncService {
                     continue;
                 }
 
-                // Skip the event being updated (by RoomVox UID)
+                // Skip the event being updated — match by RoomVox UID extended property
                 if ($excludeUid !== null) {
                     $props = $event['singleValueExtendedProperties'] ?? [];
                     foreach ($props as $prop) {
                         if ($prop['id'] === GraphApiClient::ROOMVOX_UID_PROP && $prop['value'] === $excludeUid) {
                             continue 2;
                         }
+                    }
+                }
+
+                // Also skip by Exchange event ID (for events where the extended
+                // property wasn't set, e.g. auto-accepted by Exchange)
+                if ($excludeExchangeId !== null) {
+                    $eventId = $event['id'] ?? '';
+                    if ($eventId === $excludeExchangeId) {
+                        continue;
                     }
                 }
 
