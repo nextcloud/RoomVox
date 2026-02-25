@@ -230,6 +230,17 @@
                                 </div>
                             </div>
 
+                            <div v-if="importPreviewData.detected_format === 'ms365' && importHasEmails" class="import-mode">
+                                <NcCheckboxRadioSwitch
+                                    :model-value="importEnableExchangeSync"
+                                    @update:model-value="importEnableExchangeSync = $event">
+                                    {{ $t('Enable Exchange calendar sync for imported rooms') }}
+                                </NcCheckboxRadioSwitch>
+                                <p class="import-help-note">
+                                    {{ $t('Links each room to its MS365 mailbox for bidirectional calendar sync. Requires Exchange sync to be configured in settings.') }}
+                                </p>
+                            </div>
+
                             <div class="import-actions">
                                 <NcButton type="tertiary" @click="resetImport">
                                     {{ $t('Back') }}
@@ -665,6 +676,7 @@ const isDraggingImport = ref(false)
 const importError = ref('')
 const importPreviewData = ref({ columns: [], rows: [], detected_format: 'unknown' })
 const importMode = ref('create')
+const importEnableExchangeSync = ref(false)
 const importing = ref(false)
 const importResult = ref({ created: 0, updated: 0, skipped: 0, errors: [] })
 const importCsvFile = ref(null)
@@ -686,6 +698,9 @@ const importUpdateCount = computed(() =>
 )
 const importErrorCount = computed(() =>
     importPreviewData.value.rows.filter(r => r.errors.length > 0).length
+)
+const importHasEmails = computed(() =>
+    importPreviewData.value.rows.some(r => r.data.email)
 )
 
 const importActionLabel = (row) => {
@@ -751,6 +766,9 @@ const executeImport = async () => {
     const formData = new FormData()
     formData.append('file', importCsvFile.value)
     formData.append('mode', importMode.value)
+    if (importEnableExchangeSync.value) {
+        formData.append('enableExchangeSync', '1')
+    }
 
     try {
         const response = await apiImportRooms(formData)
@@ -770,6 +788,7 @@ const resetImport = () => {
     importPreviewData.value = { columns: [], rows: [], detected_format: 'unknown' }
     importCsvFile.value = null
     importMode.value = 'create'
+    importEnableExchangeSync.value = false
 }
 
 // API Token handlers

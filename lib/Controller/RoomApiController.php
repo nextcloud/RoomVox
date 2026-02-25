@@ -480,6 +480,8 @@ class RoomApiController extends Controller {
             return new JSONResponse(['error' => 'Invalid mode. Use "create" or "update"'], 400);
         }
 
+        $enableExchangeSync = (bool)$this->request->getParam('enableExchangeSync', false);
+
         $csvContent = file_get_contents($file['tmp_name']);
         if ($csvContent === false || $csvContent === '') {
             return new JSONResponse(['error' => 'Empty or unreadable file'], 400);
@@ -495,7 +497,8 @@ class RoomApiController extends Controller {
                 $csvContent,
                 $mode,
                 $this->calDAVService,
-                $this->permissionService
+                $this->permissionService,
+                $enableExchangeSync
             );
 
             // Sync room cache so new rooms appear immediately

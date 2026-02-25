@@ -5,6 +5,18 @@ All notable changes to RoomVox will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- **Improved MS365 import**: Extended column mapping for Street, PostalCode, device names (AudioDeviceName, VideoDeviceName, DisplayDeviceName → facilities), Nickname (→ description), and BookingType (Standard → auto-accept)
+- **Exchange sync on import**: New checkbox in MS365 import preview to automatically link imported rooms to their MS365 mailbox for bidirectional calendar sync
+
+### Changed
+- **MS365 export documentation**: Replaced broken one-liner (`Get-EXOMailbox | Get-Place | Export-Csv`) with two options — a simple `Get-Place` export and a recommended full script that preserves email addresses by joining `Get-EXOMailbox` with `Get-Place` data
+
+### Fixed
+- **MS365 import missing email**: The previously documented PowerShell command lost the email address because `Get-Place` returns a different object type than `Get-EXOMailbox`. Documentation now explains this and provides a correct export script
+
 ## [0.4.0] - 2026-02-20
 
 ### Added

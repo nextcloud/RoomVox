@@ -18,17 +18,29 @@ class ImportExportService {
 
     /** MS365 column name → RoomVox field mapping */
     private const MS365_COLUMN_MAP = [
+        // Identity
         'displayname' => 'name',
         'primarysmtpaddress' => 'email',
         'emailaddress' => 'email',
+        // Capacity (Get-EXOMailbox uses ResourceCapacity, Get-Place uses Capacity)
         'capacity' => 'capacity',
         'resourcecapacity' => 'capacity',
+        // Location
         'building' => 'building',
         'floor' => 'roomNumber',
         'floorlabel' => 'roomNumber',
+        'street' => 'street',
+        'postalcode' => 'postalCode',
         'city' => 'city',
+        // Facilities
         'tags' => 'facilities',
         'iswheelchairaccessible' => '_wheelchair',
+        'audiodevicename' => '_audio',
+        'videodevicename' => '_videoconf',
+        'displaydevicename' => '_display',
+        // Metadata
+        'nickname' => 'description',
+        'bookingtype' => '_bookingType',
     ];
 
     /** Default facility IDs (matching frontend canonical IDs) */
@@ -203,8 +215,9 @@ class ImportExportService {
      * @param string $mode 'create' (skip existing) or 'update' (create + update)
      * @return array{created: int, updated: int, skipped: int, errors: array}
      */
-    public function importCsv(string $csvContent, string $mode, CalDAVService $calDAVService, PermissionService $permissionService): array {
+    public function importCsv(string $csvContent, string $mode, CalDAVService $calDAVService, PermissionService $permissionService, bool $enableExchangeSync = false): array {
         $parsed = $this->parseCsv($csvContent);
+        $isMs365 = $parsed['detected_format'] === 'ms365';
         $result = ['created' => 0, 'updated' => 0, 'skipped' => 0, 'errors' => []];
 
         foreach ($parsed['rows'] as $row) {
@@ -220,6 +233,14 @@ class ImportExportService {
 
             $data = $row['data'];
             $roomData = $this->buildRoomData($data);
+
+            // Set Exchange config when importing from MS365 with sync enabled
+            if ($enableExchangeSync && $isMs365 && !empty($data['email'])) {
+                $roomData['exchangeConfig'] = [
+                    'resourceEmail' => $data['email'],
+                    'syncEnabled' => true,
+                ];
+            }
 
             if ($row['action'] === 'update' && $mode === 'update') {
                 // Update existing room
@@ -329,6 +350,9 @@ class ImportExportService {
         ];
 
         $wheelchair = false;
+        $audioDevice = false;
+        $videoDevice = false;
+        $displayDevice = false;
 
         foreach ($header as $i => $col) {
             $value = trim($fields[$i] ?? '');
@@ -338,21 +362,48 @@ class ImportExportService {
                 $wheelchair = strtolower($value) === 'true' || $value === '1';
                 continue;
             }
+            if ($target === '_audio') {
+                $audioDevice = $value !== '';
+                continue;
+            }
+            if ($target === '_videoconf') {
+                $videoDevice = $value !== '';
+                continue;
+            }
+            if ($target === '_display') {
+                $displayDevice = $value !== '';
+                continue;
+            }
+            if ($target === '_bookingType') {
+                if (strtolower($value) === 'standard') {
+                    $row['autoAccept'] = 'true';
+                }
+                continue;
+            }
 
             if ($target !== null && array_key_exists($target, $row)) {
                 $row[$target] = $value;
             }
         }
 
-        // Append wheelchair to facilities if detected from MS365 column
+        // Append inferred facilities from MS365 columns
+        $inferred = [];
         if ($wheelchair) {
-            $facilities = $row['facilities'];
-            if ($facilities !== '') {
-                $facilities .= ',wheelchair';
-            } else {
-                $facilities = 'wheelchair';
-            }
-            $row['facilities'] = $facilities;
+            $inferred[] = 'wheelchair';
+        }
+        if ($audioDevice) {
+            $inferred[] = 'audio';
+        }
+        if ($videoDevice) {
+            $inferred[] = 'videoconf';
+        }
+        if ($displayDevice) {
+            $inferred[] = 'display';
+        }
+
+        if (!empty($inferred)) {
+            $existing = $row['facilities'] !== '' ? explode(',', $row['facilities']) : [];
+            $row['facilities'] = implode(',', array_unique(array_merge($existing, $inferred)));
         }
 
         return $row;
