@@ -55,6 +55,7 @@ function getDefaultPrincipalObject(props) {
 		roomType: null,
 		roomAddress: null,
 		roomFeatures: null,
+		roomFloor: null,
 		roomBuildingName: null,
 		roomBuildingAddress: null,
 		roomNumber: null,
@@ -99,15 +100,20 @@ function mapDavToPrincipal(dav) {
 	const url = dav.principalUrl
 	const userId = dav.userId
 
-	// Extract room-specific properties from DAV object using standard cdav-library getters
-	const roomSeatingCapacity = dav.roomSeatingCapacity ?? null
-	const roomType = dav.roomType ?? null
-	const roomFeatures = dav.roomFeatures ?? null
-	const roomBuildingAddress = dav.roomBuildingAddress ?? null
-	// Derive building name from address (everything before first comma): "Poppodium, Kerkstraat 10" → "Poppodium"
+	// Extract room-specific properties from DAV object, trimming all string values
+	const roomSeatingCapacity = (dav.roomSeatingCapacity ?? '').toString().trim() || null
+	const roomType = (dav.roomType ?? '').toString().trim() || null
+	const roomFeatures = (dav.roomFeatures ?? '').toString().trim() || null
+	const rawBuildingAddress = dav.roomBuildingAddress ?? null
+	// Strip leading/trailing commas and whitespace (e.g. ", Science Park 140, 1098 XG, Amsterdam")
+	const roomBuildingAddress = rawBuildingAddress ? rawBuildingAddress.replace(/^[\s,]+|[\s,]+$/g, '').trim() || null : null
+	// Derive building name from address (everything before first comma): "SURF Amsterdam, Science Park 140, ..." → "SURF Amsterdam"
 	const roomBuildingName = roomBuildingAddress ? roomBuildingAddress.split(',')[0].trim() : null
 	// Room number (floor.room format, e.g. "2.17") is stored in room-building-room-number
-	const roomNumber = dav.roomBuildingRoomNumber ?? null
+	const roomNumber = (dav.roomBuildingRoomNumber ?? '').toString().trim() || null
+	// Floor: explicit value from room-building-floor, or extracted from roomNumber
+	const rawFloor = (dav.roomBuildingFloor ?? '').toString().trim() || null
+	const roomFloor = rawFloor || (roomNumber ? (roomNumber.match(/^([A-Za-z]?\d+)/) || [])[1] || null : null)
 
 	// Construct roomAddress for event LOCATION field from available properties
 	// Format: "Street (Building, Room X.XX)" — street-first for map/navigation apps
@@ -146,6 +152,7 @@ function mapDavToPrincipal(dav) {
 		roomType,
 		roomAddress,
 		roomFeatures,
+		roomFloor,
 		roomBuildingName,
 		roomBuildingAddress,
 		roomNumber,

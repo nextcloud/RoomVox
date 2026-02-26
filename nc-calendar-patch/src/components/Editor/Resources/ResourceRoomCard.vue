@@ -99,7 +99,8 @@ export default {
 				: 'room-card__status--busy'
 		},
 		subLocation() {
-			return this.room.roomNumber || ''
+			// Prefer roomNumber (more specific, e.g. "2.12"), fallback to floor
+			return this.room.roomNumber || this.room.roomFloor || ''
 		},
 		roomTypeLabel() {
 			const type = this.room.roomType
@@ -123,6 +124,7 @@ export default {
 					roomBuildingAddress: this.room.roomBuildingAddress,
 					roomBuildingName: this.room.roomBuildingName,
 					roomNumber: this.room.roomNumber,
+					roomFloor: this.room.roomFloor,
 					roomSeatingCapacity: this.room.roomSeatingCapacity,
 					roomFeatures: this.room.roomFeatures,
 				})
@@ -138,6 +140,7 @@ export default {
 	border-radius: var(--border-radius-large);
 	border: 1px solid var(--color-border);
 	background: var(--color-main-background);
+	min-width: 0;
 
 	&--added {
 		border-left: 3px solid var(--color-primary);

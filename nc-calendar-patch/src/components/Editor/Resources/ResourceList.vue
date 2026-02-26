@@ -27,20 +27,20 @@
 				</button>
 			</div>
 
-			<!-- Building -->
-			<div v-if="buildingOptions.length > 1" class="room-finder__field">
-				<label class="room-finder__label">{{ $t('calendar', 'Building') }}</label>
-				<NcSelect
-					v-model="selectedBuilding"
-					:options="buildingOptions"
-					:placeholder="$t('calendar', 'Select a building')"
-					:clearable="true"
-					input-id="room-finder-building" />
-			</div>
-
-			<!-- Capacity + Floor -->
-			<div class="room-finder__row">
-				<div class="room-finder__field room-finder__field--half">
+			<!-- Building + Capacity + Floor on one row -->
+			<div class="room-finder__row room-finder__row--filters">
+				<div v-if="buildingOptions.length > 0" class="room-finder__field">
+					<label class="room-finder__label">{{ $t('calendar', 'Building') }}</label>
+					<NcSelect
+						v-model="selectedBuilding"
+						:options="buildingOptions"
+						:placeholder="$t('calendar', 'Any')"
+						:clearable="true"
+						label="label"
+						:reduce="opt => opt.id"
+						input-id="room-finder-building" />
+				</div>
+				<div class="room-finder__field">
 					<label class="room-finder__label">{{ $t('calendar', 'Capacity') }}</label>
 					<NcSelect
 						v-model="selectedCapacity"
@@ -51,24 +51,26 @@
 						:reduce="opt => opt.value"
 						input-id="room-finder-capacity" />
 				</div>
-				<div v-if="floorOptions.length > 0" class="room-finder__field room-finder__field--half">
+				<div v-if="floorOptions.length > 0" class="room-finder__field">
 					<label class="room-finder__label">{{ $t('calendar', 'Floor') }}</label>
 					<NcSelect
 						v-model="selectedFloor"
 						:options="floorOptions"
 						:placeholder="$t('calendar', 'Any')"
 						:clearable="true"
+						label="label"
+						:reduce="opt => opt.id"
 						input-id="room-finder-floor" />
 				</div>
 			</div>
 
-			<!-- Features -->
+			<!-- Features (only if available) -->
 			<div v-if="featureOptions.length > 0" class="room-finder__field">
 				<label class="room-finder__label">{{ $t('calendar', 'Features') }}</label>
 				<NcSelect
 					v-model="selectedFeatures"
 					:options="featureOptions"
-					:placeholder="$t('calendar', 'No features available')"
+					:placeholder="$t('calendar', 'Any')"
 					:multiple="true"
 					:close-on-select="false"
 					label="label"
@@ -224,7 +226,7 @@ export default {
 				const name = room.roomBuildingName
 				if (name) buildings.add(name)
 			}
-			return [...buildings].sort()
+			return [...buildings].sort().map((name) => ({ id: name, label: name }))
 		},
 
 		capacityOptions() {
@@ -241,10 +243,11 @@ export default {
 		floorOptions() {
 			const floors = new Set()
 			for (const room of this.allRooms) {
-				const floor = this.extractFloor(room.roomNumber)
-				if (floor !== null) floors.add(floor)
+				if (room.roomFloor) floors.add(room.roomFloor)
 			}
-			return [...floors].sort((a, b) => a.localeCompare(b, undefined, { numeric: true }))
+			return [...floors]
+				.sort((a, b) => a.localeCompare(b, undefined, { numeric: true }))
+				.map((floor) => ({ id: floor, label: floor }))
 		},
 
 		featureOptions() {
@@ -295,8 +298,7 @@ export default {
 				}
 				// Building filter
 				if (this.selectedBuilding) {
-					const building = room.roomBuildingName || ''
-					if (building !== this.selectedBuilding) {
+					if ((room.roomBuildingName || '') !== this.selectedBuilding) {
 						return false
 					}
 				}
@@ -309,8 +311,7 @@ export default {
 				}
 				// Floor filter
 				if (this.selectedFloor) {
-					const floor = this.extractFloor(room.roomNumber)
-					if (floor !== this.selectedFloor) {
+					if ((room.roomFloor || '') !== this.selectedFloor) {
 						return false
 					}
 				}
@@ -428,15 +429,6 @@ export default {
 			return this.alreadyInvitedEmails.includes(room.emailAddress)
 		},
 
-		/**
-		 * Extract floor number from roomNumber (e.g. "3.14" → "3", "B2" → "B2")
-		 */
-		extractFloor(roomNumber) {
-			if (!roomNumber) return null
-			const match = roomNumber.match(/^([A-Za-z]?\d+)/)
-			return match ? match[1] : null
-		},
-
 		clearFilters() {
 			this.filterText = ''
 			this.selectedBuilding = null
@@ -445,7 +437,7 @@ export default {
 			this.selectedFeatures = []
 		},
 
-		addResource({ commonName, email, calendarUserType, language, timezoneId, roomAddress, roomBuildingAddress, roomBuildingName, roomNumber, roomSeatingCapacity, roomFeatures }) {
+		addResource({ commonName, email, calendarUserType, language, timezoneId, roomAddress, roomBuildingAddress, roomBuildingName, roomNumber, roomFloor, roomSeatingCapacity, roomFeatures }) {
 			this.calendarObjectInstanceStore.addAttendee({
 				calendarObjectInstance: this.calendarObjectInstance,
 				commonName,
@@ -463,14 +455,11 @@ export default {
 			this.updateLocation(location)
 
 			// Set filters to match the selected room's properties
-			if (roomBuildingName && this.buildingOptions.includes(roomBuildingName)) {
+			if (roomBuildingName && this.buildingOptions.some((o) => o.id === roomBuildingName)) {
 				this.selectedBuilding = roomBuildingName
 			}
-			if (roomNumber) {
-				const floor = this.extractFloor(roomNumber)
-				if (floor && this.floorOptions.includes(floor)) {
-					this.selectedFloor = floor
-				}
+			if (roomFloor && this.floorOptions.some((o) => o.id === roomFloor)) {
+				this.selectedFloor = roomFloor
 			}
 			if (roomSeatingCapacity) {
 				const cap = parseInt(roomSeatingCapacity) || 0
@@ -539,7 +528,7 @@ export default {
 	display: flex;
 	flex-direction: column;
 	gap: calc(var(--default-grid-baseline) * 2);
-	padding: calc(var(--default-grid-baseline) * 3) calc(var(--default-grid-baseline) * 4);
+	padding: calc(var(--default-grid-baseline) * 2) calc(var(--default-grid-baseline) * 4);
 
 	&__search-row {
 		display: flex;
@@ -572,16 +561,21 @@ export default {
 		display: flex;
 		flex-direction: column;
 		gap: 2px;
-
-		&--half {
-			flex: 1;
-			min-width: 0;
-		}
+		min-width: 0;
 	}
 
 	&__row {
 		display: flex;
-		gap: calc(var(--default-grid-baseline) * 2);
+		gap: calc(var(--default-grid-baseline) * 3);
+
+		&--filters {
+			align-items: flex-end;
+			flex-wrap: wrap;
+
+			.room-finder__field {
+				flex: 1 1 180px;
+			}
+		}
 	}
 
 	&__label {
@@ -615,9 +609,18 @@ export default {
 	}
 
 	&__list {
-		display: flex;
-		flex-direction: column;
+		display: grid;
+		grid-template-columns: repeat(2, 1fr);
 		gap: calc(var(--default-grid-baseline) * 1);
+
+		@media (max-width: 500px) {
+			grid-template-columns: 1fr;
+		}
+	}
+
+	&__show-more,
+	&__empty {
+		grid-column: 1 / -1;
 	}
 
 	&__show-more {

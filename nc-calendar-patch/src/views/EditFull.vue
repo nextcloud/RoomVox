@@ -213,19 +213,7 @@
 								{{ t('calendar', 'Add Talk conversation') }}
 							</NcButton>
 						</div>
-						<!-- RoomVox: Room Finder toggle -->
-						<div
-							v-if="!isReadOnly && isViewedByOrganizer !== false"
-							class="property-add-talk">
-							<MapMarker :size="20" class="property-text__icon property-add-talk__icon" />
-							<NcButton
-								class="property-add-talk__button"
-								style="width: 100%"
-								@click="showRoomFinder = !showRoomFinder">
-								{{ $t('calendar', 'Room Finder') }}
-							</NcButton>
-						</div>
-						<PropertySelect
+							<PropertySelect
 							:is-read-only="isReadOnly"
 							:prop-model="rfcProps.status"
 							:value="status"
@@ -311,6 +299,27 @@
 					</div>
 				</NcModal>
 
+				<!-- ── RoomVox: Inline Room Finder ──── -->
+				<div
+					v-if="!isReadOnly && isViewedByOrganizer !== false"
+					class="room-finder-inline">
+					<div class="room-finder-inline__toggle">
+						<MapMarker :size="20" class="property-text__icon" />
+						<NcButton
+							style="width: 100%"
+							@click="showRoomFinder = !showRoomFinder">
+							{{ $t('calendar', 'Room Finder') }}
+						</NcButton>
+					</div>
+					<div v-if="showRoomFinder" class="room-finder-inline__body">
+						<ResourceList
+							v-if="!isLoading"
+							:calendar-object-instance="calendarObjectInstance"
+							:is-read-only="isReadOnly || isViewedByOrganizer === false" />
+					</div>
+				</div>
+				<!-- ── /RoomVox ──── -->
+
 				<div class="app-full-footer">
 					<InviteesList
 						v-if="!isLoading"
@@ -322,28 +331,6 @@
 						@update-dates="updateDates" />
 				</div>
 
-				<!-- ── RoomVox: Room Finder modal ──── -->
-				<NcModal
-					v-if="showRoomFinder"
-					:name="$t('calendar', 'Room Finder')"
-					size="small"
-					@close="showRoomFinder = false">
-					<div class="room-finder-modal">
-						<ResourceList
-							v-if="!isLoading"
-							:calendar-object-instance="calendarObjectInstance"
-							:is-read-only="isReadOnly || isViewedByOrganizer === false" />
-						<div class="room-finder-modal__footer">
-							<NcButton
-								variant="primary"
-								wide
-								@click="showRoomFinder = false">
-								{{ $t('calendar', 'Done') }}
-							</NcButton>
-						</div>
-					</div>
-				</NcModal>
-				<!-- ── /RoomVox ──── -->
 			</div>
 		</div>
 		<NcDialog
@@ -380,6 +367,8 @@ import ContentDuplicate from 'vue-material-design-icons/ContentDuplicate.vue'
 import HelpCircleIcon from 'vue-material-design-icons/HelpCircleOutline.vue'
 import Delete from 'vue-material-design-icons/TrashCanOutline.vue'
 import Download from 'vue-material-design-icons/TrayArrowDown.vue'
+import ChevronDown from 'vue-material-design-icons/ChevronDown.vue'
+import ChevronRight from 'vue-material-design-icons/ChevronRight.vue'
 import MapMarker from 'vue-material-design-icons/MapMarker.vue'
 import IconVideo from 'vue-material-design-icons/VideoOutline.vue'
 import AddTalkModal from '../components/Editor/AddTalkModal.vue'
@@ -440,6 +429,8 @@ export default {
 		IconVideo,
 		HelpCircleIcon,
 		MapMarker,
+		ChevronDown,
+		ChevronRight,
 		NcActions,
 		Close,
 	},
@@ -1023,14 +1014,18 @@ export default {
 	padding-bottom: calc(var(--default-grid-baseline) * 8);
 }
 
-// RoomVox: Room Finder modal content
-.room-finder-modal {
-	margin: calc(var(--default-grid-baseline) * 6);
-
-	&__footer {
+// RoomVox: Inline Room Finder
+.room-finder-inline {
+	&__toggle {
 		display: flex;
-		justify-content: flex-end;
-		padding-top: calc(var(--default-grid-baseline) * 4);
+		align-items: center;
+		gap: 0;
+	}
+
+	&__body {
+		margin-top: calc(var(--default-grid-baseline) * 2);
+		border: 1px solid var(--color-border);
+		border-radius: var(--border-radius-large);
 	}
 }
 
