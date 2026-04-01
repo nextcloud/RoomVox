@@ -43,13 +43,13 @@ Built with Vue 3 and CalDAV standards for seamless integration with any calendar
     ]]></description>
     <version>0.4.0</version>
     <licence>agpl</licence>
-    <author mail="sam@mief.info">Sam Ditmeijer</author>
-    <author mail="rik@shalution.nl">Rik Dekker</author>
+    <author mail="info@voxcloud.nl">Sam Ditmeijer</author>
+    <author mail="info@voxcloud.nl">Rik Dekker</author>
     <namespace>RoomVox</namespace>
     <category>organization</category>
     <bugs>https://github.com/nextcloud/roomvox/issues</bugs>
     <repository type="git">https://github.com/nextcloud/roomvox.git</repository>
-    <website>https://github.com/nextcloud/roomvox</website>
+    <website>https://voxcloud.nl</website>
     <documentation>
         <admin>https://github.com/nextcloud/roomvox/blob/main/docs/admin/installation.md</admin>
         <user>https://github.com/nextcloud/roomvox/blob/main/docs/user/booking-rooms.md</user>
