@@ -47,14 +47,26 @@ Telemetry data is sent to the RoomVox telemetry server.
 ### Via Admin Panel
 
 1. Go to **Settings > Administration > RoomVox**
-2. Click the **Settings** tab
-3. Disable the **Telemetry** toggle
+2. Click the **Support** tab
+3. Disable the **Send anonymous usage statistics** toggle
 
 ### Via Command Line
 
 ```bash
 sudo -u www-data php occ config:app:set roomvox telemetry_enabled --value false
 ```
+
+## Manual Report
+
+You can send a telemetry report immediately from the Support tab:
+
+1. Go to **Settings > Administration > RoomVox**
+2. Click the **Support** tab
+3. Click **Send report now**
+
+The button shows clear feedback:
+- **Success**: confirms the report was sent and updates the timestamp
+- **Error**: shows the specific server error message (e.g., rate limit, connectivity issue)
 
 ## Technical Details
 

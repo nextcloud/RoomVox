@@ -76,6 +76,16 @@ Restrict when rooms can be booked:
 
 Bookings outside these rules are automatically declined.
 
+### Show/Hide Weekends
+
+Control whether weekends are visible in the booking calendar:
+
+1. Go to **Settings > Administration > RoomVox**
+2. Click the **Settings** tab
+3. Toggle **Show weekends in calendar** on or off
+
+This setting affects the calendar display only. To prevent weekend bookings, use Availability Rules with weekday-only days instead.
+
 ### Maximum Booking Horizon
 
 Limit how far in advance rooms can be booked:

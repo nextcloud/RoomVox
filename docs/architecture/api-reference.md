@@ -1151,6 +1151,61 @@ Search for Nextcloud users and groups to add in the permission editor.
 }
 ```
 
+## License & Telemetry
+
+### Get License Stats
+
+```
+GET /api/license/stats
+```
+
+**Required:** Admin
+
+Returns license status, usage statistics, and telemetry state.
+
+### Save License Key
+
+```
+POST /api/settings/license
+```
+
+**Required:** Admin
+
+**Body:**
+```json
+{ "licenseKey": "RVOX-XXXX-XXXX-XXXX-XXXX" }
+```
+
+### Validate License
+
+```
+POST /api/license/validate
+```
+
+**Required:** Admin
+
+Validates the stored license key with the license server.
+
+### Send Telemetry Report
+
+```
+POST /api/license/telemetry
+```
+
+**Required:** Admin
+
+Immediately sends anonymous usage statistics to the telemetry server.
+
+**Response:**
+```json
+{ "success": true, "lastReport": 1712678400 }
+```
+
+On failure, includes the specific error:
+```json
+{ "success": false, "reason": "error", "message": "Rate limit exceeded" }
+```
+
 ## Debug
 
 ### Debug Room Registration

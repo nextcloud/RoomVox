@@ -6,13 +6,17 @@ This guide covers how to view, approve, decline, reschedule, and cancel bookings
 
 The **Bookings** tab in the admin panel (Settings > Administration > RoomVox) shows all bookings across rooms.
 
+### Recurring Events
+
+Recurring bookings (e.g., weekly meetings) are displayed as individual occurrences in the overview. Each occurrence can be managed independently — you can approve, decline, or cancel specific dates within a series.
+
 ### Filtering Bookings
 
 Use the filters at the top to narrow down the booking list:
 
 - **Room** — select a specific room or view all rooms
 - **Status** — filter by All, Pending, Accepted, or Declined
-- **Date range** — set a start and end date
+- **Date range** — set a start and end date (recurring events are expanded within this range)
 
 ![Bookings overview — list of all bookings with status and filters](../screenshots/bookings-overview-list.png)
 

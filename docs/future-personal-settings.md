@@ -1,7 +1,7 @@
 # Future Consideration: Personal Settings Page
 
-**Status**: Removed in v0.3.0 (Feb 2026)
-**Reason**: Insufficient added value over existing Nextcloud features
+**Status**: Removed in v0.3.0 (Feb 2026). Re-introduced in v0.4.0 as a simplified Personal Settings page with My Rooms and Approvals tabs.
+**Reason**: Original version had insufficient added value; the current version focuses on room visibility and manager approvals.
 
 ## What was built
 
