@@ -50,6 +50,8 @@ The room is now available as a CalDAV resource in calendar apps.
 
 ## Step 4: Set Permissions
 
+> **Important:** RoomVox uses its own permission system, separate from Nextcloud Calendar's sharing permissions. Without RoomVox permissions configured, **all authenticated users can book all rooms**. If you want to restrict who can book, you must set permissions here.
+
 1. In the room list, click the **permissions icon** for your room
 2. Add users or groups with the appropriate role:
    - **Viewer** — can see the room in calendar apps
@@ -57,7 +59,7 @@ The room is now available as a CalDAV resource in calendar apps.
    - **Manager** — can approve/decline bookings and manage the room
 3. Click **Save**
 
-If no permissions are configured, the room is visible and bookable by everyone.
+**Tip:** Use Nextcloud groups (e.g., "staff", "students") rather than individual users — group permissions also control room visibility in calendar apps. See [Permissions](admin/permissions.md) for details.
 
 ## Step 5: Book a Room
 

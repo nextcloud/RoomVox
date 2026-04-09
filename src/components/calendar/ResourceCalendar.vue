@@ -85,6 +85,7 @@ import { updateBooking } from '../../services/api.js'
 const props = defineProps({
     rooms: { type: Array, default: () => [] },
     bookings: { type: Array, default: () => [] },
+    showWeekends: { type: Boolean, default: true },
 })
 
 const emit = defineEmits(['reload'])
@@ -130,7 +131,7 @@ const calendarOptions = computed(() => ({
     slotDuration: '01:00:00',
     snapDuration: '00:15:00',
     scrollTime: '08:00:00',
-    weekends: false,
+    weekends: props.showWeekends,
     locale: ncLocale,
     firstDay: 1,
     buttonText: {

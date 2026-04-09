@@ -41,7 +41,7 @@ No separate booking portal needed. Rooms appear directly in the calendar app you
 
 Built with Vue 3 and CalDAV standards for seamless integration with any calendar app.
     ]]></description>
-    <version>0.4.0</version>
+    <version>1.0.0</version>
     <licence>agpl</licence>
     <author mail="info@voxcloud.nl">Sam Ditmeijer</author>
     <author mail="info@voxcloud.nl">Rik Dekker</author>
@@ -76,6 +76,7 @@ Built with Vue 3 and CalDAV standards for seamless integration with any calendar
         <personal-section>OCA\RoomVox\Settings\PersonalSection</personal-section>
     </settings>
     <background-jobs>
+        <job>OCA\RoomVox\BackgroundJob\LicenseUsageJob</job>
         <job>OCA\RoomVox\BackgroundJob\TelemetryJob</job>
         <job>OCA\RoomVox\BackgroundJob\ExchangeSyncJob</job>
         <job>OCA\RoomVox\BackgroundJob\WebhookRenewalJob</job>

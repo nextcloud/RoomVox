@@ -195,6 +195,7 @@
             v-if="!loading && viewMode === 'calendar'"
             :rooms="roomsForCalendar"
             :bookings="bookings"
+            :show-weekends="showWeekends"
             @reload="loadBookings" />
         <!-- Delete Confirmation Dialog -->
         <NcDialog
@@ -245,6 +246,7 @@ const t = (text, vars = {}) => translate('roomvox', text, vars)
 
 const props = defineProps({
     rooms: { type: Array, default: () => [] },
+    showWeekends: { type: Boolean, default: true },
 })
 
 const selectedRoom = ref(null)

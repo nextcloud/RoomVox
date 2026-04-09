@@ -129,6 +129,7 @@ class RoomService {
             'description' => $data['description'] ?? '',
             'capacity' => (int)($data['capacity'] ?? 0),
             'roomNumber' => $data['roomNumber'] ?? '',
+            'floor' => $data['floor'] ?? '',
             'roomType' => $data['roomType'] ?? 'meeting-room',
             'address' => $data['address'] ?? '',
             'facilities' => $data['facilities'] ?? [],
@@ -165,7 +166,7 @@ class RoomService {
             return null;
         }
 
-        $updatableFields = ['name', 'email', 'description', 'capacity', 'roomNumber', 'roomType', 'address', 'facilities', 'autoAccept', 'active', 'groupId', 'availabilityRules', 'maxBookingHorizon'];
+        $updatableFields = ['name', 'email', 'description', 'capacity', 'roomNumber', 'floor', 'roomType', 'address', 'facilities', 'autoAccept', 'active', 'groupId', 'availabilityRules', 'maxBookingHorizon'];
 
         foreach ($updatableFields as $field) {
             if (array_key_exists($field, $data)) {

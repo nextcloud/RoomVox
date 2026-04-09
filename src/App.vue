@@ -33,6 +33,12 @@
                 <ChartBox :size="16" />
                 {{ $t('Statistics') }}
             </button>
+            <button
+                :class="['tab-button', { active: isTabActive('support') }]"
+                @click="onTabClick('support')">
+                <Heart :size="16" />
+                {{ $t('Support') }}
+            </button>
         </nav>
 
         <!-- Content -->
@@ -85,7 +91,7 @@
 
             <!-- Bookings -->
             <div v-if="currentView === 'bookings'" class="tab-content">
-                <BookingOverview :rooms="rooms" />
+                <BookingOverview :rooms="rooms" :show-weekends="settings.showWeekends" />
             </div>
 
             <!-- Import / Export -->
@@ -378,6 +384,9 @@
                 </div>
             </div>
 
+            <!-- Support -->
+            <SupportSettings v-if="currentView === 'support'" />
+
             <!-- Settings -->
             <div v-if="currentView === 'settings'" class="roomvox-settings">
                 <NcSettingsSection :name="$t('API Tokens')">
@@ -486,6 +495,11 @@
                         :model-value="settings.emailEnabled"
                         @update:model-value="settings.emailEnabled = $event; saveGlobalSettings()">
                         {{ $t('Enable email notifications') }}
+                    </NcCheckboxRadioSwitch>
+                    <NcCheckboxRadioSwitch
+                        :model-value="settings.showWeekends"
+                        @update:model-value="settings.showWeekends = $event; saveGlobalSettings()">
+                        {{ $t('Show weekends in calendar') }}
                     </NcCheckboxRadioSwitch>
                 </NcSettingsSection>
 
@@ -707,6 +721,7 @@ import Download from 'vue-material-design-icons/Download.vue'
 import Upload from 'vue-material-design-icons/Upload.vue'
 import AlertCircle from 'vue-material-design-icons/AlertCircle.vue'
 import ContentCopy from 'vue-material-design-icons/ContentCopy.vue'
+import Heart from 'vue-material-design-icons/Heart.vue'
 import NcChip from '@nextcloud/vue/components/NcChip'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 
@@ -715,6 +730,7 @@ import RoomEditor from './views/RoomEditor.vue'
 import RoomGroupEditor from './views/RoomGroupEditor.vue'
 import PermissionEditor from './views/PermissionEditor.vue'
 import BookingOverview from './views/BookingOverview.vue'
+import SupportSettings from './components/SupportSettings.vue'
 
 import {
     getRooms, createRoom, updateRoom, deleteRoom,
@@ -871,6 +887,8 @@ const executeImport = async () => {
         const response = await apiImportRooms(formData)
         importResult.value = response.data
         importStep.value = 'result'
+        // Refresh room list so newly imported rooms appear immediately
+        await loadRooms()
     } catch (err) {
         importError.value = err.response?.data?.message || t('Import failed')
         importStep.value = 'upload'

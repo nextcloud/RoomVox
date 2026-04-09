@@ -146,7 +146,7 @@
                                     </td>
                                     <td>{{ room.roomNumber || '—' }}</td>
                                     <td>{{ formatRoomType(room.roomType) }}</td>
-                                    <td>{{ room.address || '—' }}</td>
+                                    <td>{{ formatAddress(room.address) }}</td>
                                     <td>{{ room.capacity || '—' }}</td>
                                     <td>
                                         <NcChip
@@ -270,7 +270,7 @@
                                     </td>
                                     <td>{{ room.roomNumber || '—' }}</td>
                                     <td>{{ formatRoomType(room.roomType) }}</td>
-                                    <td>{{ room.address || '—' }}</td>
+                                    <td>{{ formatAddress(room.address) }}</td>
                                     <td>{{ room.capacity || '—' }}</td>
                                     <td>
                                         <NcChip
@@ -348,6 +348,13 @@ const props = defineProps({
 const formatRoomType = (type) => {
     const found = props.roomTypes.find(t => t.id === type)
     return found ? found.label : type || '—'
+}
+
+const formatAddress = (address) => {
+    if (!address) return '—'
+    // Strip leading/trailing commas and whitespace from address display
+    const cleaned = address.replace(/^[\s,]+|[\s,]+$/g, '')
+    return cleaned || '—'
 }
 
 const emit = defineEmits(['select', 'create', 'create-group', 'edit-group', 'group-permissions', 'refresh', 'move-to-group'])

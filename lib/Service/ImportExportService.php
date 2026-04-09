@@ -11,7 +11,7 @@ use Psr\Log\LoggerInterface;
 class ImportExportService {
     /** RoomVox CSV column order */
     private const EXPORT_COLUMNS = [
-        'name', 'email', 'capacity', 'roomNumber', 'roomType',
+        'name', 'email', 'capacity', 'roomNumber', 'floor', 'roomType',
         'building', 'street', 'postalCode', 'city',
         'facilities', 'description', 'autoAccept', 'active',
     ];
@@ -27,8 +27,8 @@ class ImportExportService {
         'resourcecapacity' => 'capacity',
         // Location
         'building' => 'building',
-        'floor' => 'roomNumber',
-        'floorlabel' => 'roomNumber',
+        'floor' => 'floor',
+        'floorlabel' => 'floor',
         'street' => 'street',
         'postalcode' => 'postalCode',
         'city' => 'city',
@@ -82,6 +82,7 @@ class ImportExportService {
                 $room['email'] ?? '',
                 $room['capacity'] ?? 0,
                 $room['roomNumber'] ?? '',
+                $room['floor'] ?? '',
                 $room['roomType'] ?? '',
                 $address['building'],
                 $address['street'],
@@ -338,6 +339,7 @@ class ImportExportService {
             'email' => '',
             'capacity' => '',
             'roomNumber' => '',
+            'floor' => '',
             'roomType' => '',
             'building' => '',
             'street' => '',
@@ -413,19 +415,19 @@ class ImportExportService {
      * Build room data array suitable for RoomService::createRoom/updateRoom
      */
     private function buildRoomData(array $data): array {
-        // Build address from parts: "Building, Street, PostalCode, City"
-        $addressParts = [];
-        if (!empty($data['building'])) {
-            $addressParts[] = $data['building'];
-        }
-        if (!empty($data['street'])) {
-            $addressParts[] = $data['street'];
-        }
-        if (!empty($data['postalCode'])) {
-            $addressParts[] = $data['postalCode'];
-        }
-        if (!empty($data['city'])) {
-            $addressParts[] = $data['city'];
+        // Build address as fixed 4-part format: "Building, Street, PostalCode, City"
+        // Always use all 4 positions so the UI can reliably split them back.
+        $building = trim($data['building'] ?? '');
+        $street = trim($data['street'] ?? '');
+        $postalCode = trim($data['postalCode'] ?? '');
+        $city = trim($data['city'] ?? '');
+
+        // Always store 4 parts so the UI can reliably split them back.
+        // Use empty strings for missing parts to preserve positions.
+        if ($building !== '' || $street !== '' || $postalCode !== '' || $city !== '') {
+            $addressParts = [$building, $street, $postalCode, $city];
+        } else {
+            $addressParts = [];
         }
 
         // Parse facilities
@@ -441,6 +443,23 @@ class ImportExportService {
             $facilities = array_unique($facilities);
         }
 
+        // Infer roomNumber from name if not provided (e.g. "AMS 2.12 Online..." → "2.12")
+        $roomNumber = trim($data['roomNumber'] ?? '');
+        if ($roomNumber === '' && !empty($data['name'])) {
+            $name = preg_replace('/^_FORBIDDEN TO BOOK\s*-\s*/i', '', $data['name']);
+            if (preg_match('/^[A-Z]{3}\s+(\d+(?:\.\d+)?)\s/i', $name, $m)) {
+                $roomNumber = $m[1];
+            }
+        }
+
+        // Floor: use explicit value, or extract from roomNumber (e.g. "2.17" → "2")
+        $floor = trim($data['floor'] ?? '');
+        if ($floor === '' && $roomNumber !== '') {
+            if (preg_match('/^(\d+)\./', $roomNumber, $fm)) {
+                $floor = $fm[1];
+            }
+        }
+
         $roomData = [
             'name' => $data['name'],
             'address' => implode(', ', $addressParts),
@@ -453,8 +472,11 @@ class ImportExportService {
         if ($data['capacity'] !== '') {
             $roomData['capacity'] = (int)$data['capacity'];
         }
-        if (!empty($data['roomNumber'])) {
-            $roomData['roomNumber'] = $data['roomNumber'];
+        if ($roomNumber !== '') {
+            $roomData['roomNumber'] = $roomNumber;
+        }
+        if ($floor !== '') {
+            $roomData['floor'] = $floor;
         }
         if (!empty($data['roomType'])) {
             $roomData['roomType'] = $data['roomType'];
@@ -526,6 +548,7 @@ class ImportExportService {
             'room1@company.com',
             12,
             '2.17',
+            '2',
             'meeting-room',
             'Building A',
             'Heidelberglaan 8',

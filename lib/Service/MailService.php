@@ -157,6 +157,52 @@ class MailService {
     }
 
     /**
+     * Send booking accepted email from the admin respond flow.
+     * Accepts booking data as an array (no iTIP message needed).
+     */
+    public function sendRespondAccepted(array $room, array $bookingData): void {
+        $eventInfo = $this->bookingDataToEventInfo($bookingData);
+
+        $subject = "Booking confirmed: {$room['name']} — {$eventInfo['summary']}";
+        $body = $this->buildAcceptedBody($room, $eventInfo);
+
+        $this->sendMail($room, $eventInfo['organizerEmail'], $subject, $body);
+    }
+
+    /**
+     * Send booking declined email from the admin respond flow.
+     * Accepts booking data as an array (no iTIP message needed).
+     */
+    public function sendRespondDeclined(array $room, array $bookingData): void {
+        $eventInfo = $this->bookingDataToEventInfo($bookingData);
+
+        $subject = "Booking declined: {$room['name']} — {$eventInfo['summary']}";
+        $body = $this->buildDeclinedBody($room, $eventInfo);
+
+        $this->sendMail($room, $eventInfo['organizerEmail'], $subject, $body);
+    }
+
+    /**
+     * Convert booking metadata (from CalDAVService::updateBookingPartstat)
+     * to the event info format used by body builders.
+     */
+    private function bookingDataToEventInfo(array $data): array {
+        $dtStart = !empty($data['dtstart']) ? new \DateTimeImmutable($data['dtstart']) : null;
+        $dtEnd = !empty($data['dtend']) ? new \DateTimeImmutable($data['dtend']) : null;
+
+        return [
+            'uid' => $data['uid'] ?? '',
+            'summary' => $data['summary'] ?: 'Unnamed event',
+            'organizerEmail' => $data['organizerEmail'] ?? '',
+            'organizerName' => $data['organizerName'] ?: ($data['organizerEmail'] ?? ''),
+            'dtstart' => $dtStart,
+            'dtend' => $dtEnd,
+            'dtstartFormatted' => $dtStart ? $dtStart->format('l, F j, Y H:i') : 'Unknown',
+            'dtendFormatted' => $dtEnd ? $dtEnd->format('H:i') : 'Unknown',
+        ];
+    }
+
+    /**
      * Send a test email from a room
      */
     public function sendTestEmail(array $room, string $recipientEmail): bool {

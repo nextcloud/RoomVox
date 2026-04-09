@@ -56,8 +56,11 @@ class SettingsController extends Controller {
             'defaultAutoAccept' => $this->appConfig->getValueString(Application::APP_ID, 'default_auto_accept', 'false') === 'true',
             'emailEnabled' => $this->appConfig->getValueString(Application::APP_ID, 'email_enabled', 'true') === 'true',
             'telemetryEnabled' => $this->appConfig->getValueString(Application::APP_ID, 'telemetry_enabled', 'true') === 'true',
+            'showWeekends' => $this->appConfig->getValueString(Application::APP_ID, 'show_weekends', 'true') === 'true',
             'roomTypes' => $this->getRoomTypes(),
             'facilities' => $this->getFacilities(),
+            'organizationName' => $this->appConfig->getValueString(Application::APP_ID, 'organization_name', ''),
+            'contactEmail' => $this->appConfig->getValueString(Application::APP_ID, 'contact_email', ''),
             'exchangeEnabled' => $this->appConfig->getValueString(Application::APP_ID, 'exchange_enabled', 'false') === 'true',
             'exchangeTenantId' => $this->appConfig->getValueString(Application::APP_ID, 'exchange_tenant_id', ''),
             'exchangeClientId' => $this->appConfig->getValueString(Application::APP_ID, 'exchange_client_id', ''),
@@ -103,6 +106,25 @@ class SettingsController extends Controller {
                 'telemetry_enabled',
                 $telemetryEnabled ? 'true' : 'false'
             );
+        }
+
+        $showWeekends = $this->request->getParam('showWeekends');
+        if ($showWeekends !== null) {
+            $this->appConfig->setValueString(
+                Application::APP_ID,
+                'show_weekends',
+                $showWeekends ? 'true' : 'false'
+            );
+        }
+
+        // Organization / contact (used by Support tab)
+        $organizationName = $this->request->getParam('organizationName');
+        if ($organizationName !== null) {
+            $this->appConfig->setValueString(Application::APP_ID, 'organization_name', mb_substr((string)$organizationName, 0, 255));
+        }
+        $contactEmail = $this->request->getParam('contactEmail');
+        if ($contactEmail !== null) {
+            $this->appConfig->setValueString(Application::APP_ID, 'contact_email', mb_substr((string)$contactEmail, 0, 255));
         }
 
         // Exchange settings

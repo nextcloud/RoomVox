@@ -7,15 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-04-09
+
 ### Added
 - **Improved MS365 import**: Extended column mapping for Street, PostalCode, device names (AudioDeviceName, VideoDeviceName, DisplayDeviceName → facilities), Nickname (→ description), and BookingType (Standard → auto-accept)
 - **Exchange sync on import**: New checkbox in MS365 import preview to automatically link imported rooms to their MS365 mailbox for bidirectional calendar sync
+- **Show weekends toggle**: New setting in Settings > General to show or hide weekends in the booking calendar (default: visible). Closes [#3](https://github.com/nextcloud/RoomVox/issues/3)
 
 ### Changed
 - **MS365 export documentation**: Replaced broken one-liner (`Get-EXOMailbox | Get-Place | Export-Csv`) with two options — a simple `Get-Place` export and a recommended full script that preserves email addresses by joining `Get-EXOMailbox` with `Get-Place` data
+- **Permissions documentation**: Added prominent clarification that RoomVox uses its own permission system, separate from Nextcloud Calendar's sharing permissions. Getting-started guide now emphasizes that permissions must be configured to restrict room access
 
 ### Fixed
 - **MS365 import missing email**: The previously documented PowerShell command lost the email address because `Get-Place` returns a different object type than `Get-EXOMailbox`. Documentation now explains this and provides a correct export script
+- **Declined bookings not updating organizer calendar**: When a manager declined a booking via the RoomVox admin UI, the organizer's calendar still showed the room as "Reserved" (TENTATIVE). The respond flow now propagates the PARTSTAT change directly to the organizer's calendar event
+- **No notification on booking accept/decline**: Managers accepting or declining bookings via the admin UI did not send any email to the organizer. The respond flow now sends confirmation or decline emails using the existing mail infrastructure
+- **Recurring events showing only first occurrence**: The booking overview and personal approvals now expand recurring events (RRULE) into individual occurrences within the selected date range. Closes [#2](https://github.com/nextcloud/RoomVox/issues/2)
 
 ## [0.4.0] - 2026-02-20
 

@@ -6,6 +6,7 @@ namespace OCA\RoomVox\Service;
 
 use OCA\DAV\CalDAV\CalDavBackend;
 use OCA\RoomVox\Service\Exchange\ExchangeSyncService;
+use OCP\IUserManager;
 use Psr\Log\LoggerInterface;
 use Sabre\VObject\Reader;
 
@@ -14,6 +15,7 @@ class CalDAVService {
 
     public function __construct(
         private CalDavBackend $calDavBackend,
+        private IUserManager $userManager,
         private LoggerInterface $logger,
     ) {
     }
@@ -98,42 +100,40 @@ class CalDAVService {
 
             try {
                 $vObject = Reader::read($calendarData);
-                $vEvent = $vObject->VEVENT ?? null;
-                if ($vEvent === null) {
+                $masterEvent = $vObject->VEVENT ?? null;
+                if ($masterEvent === null) {
                     continue;
                 }
 
-                $dtStart = $vEvent->DTSTART ? $vEvent->DTSTART->getDateTime() : null;
-                $dtEnd = $vEvent->DTEND ? $vEvent->DTEND->getDateTime() : null;
-
-                // Filter by date range if provided
-                if ($from !== null && $dtEnd !== null) {
-                    $fromDate = new \DateTime($from);
-                    if ($dtEnd < $fromDate) {
+                // Expand recurring events into individual occurrences
+                $hasRrule = isset($masterEvent->RRULE);
+                if ($hasRrule) {
+                    $expandStart = $from ? new \DateTimeImmutable($from) : new \DateTimeImmutable('now');
+                    $expandEnd = $to ? new \DateTimeImmutable($to) : $expandStart->modify('+1 year');
+                    $expandedCal = clone $vObject;
+                    $expandedCal->expand($expandStart, $expandEnd);
+                    $vEvents = $expandedCal->select('VEVENT');
+                    if (empty($vEvents)) {
                         continue;
                     }
-                }
-                if ($to !== null && $dtStart !== null) {
-                    $toDate = new \DateTime($to);
-                    if ($dtStart > $toDate) {
-                        continue;
-                    }
+                } else {
+                    $vEvents = [$masterEvent];
                 }
 
-                // Extract organizer
+                // Extract organizer from master event (same for all occurrences)
                 $organizer = '';
                 $organizerName = '';
-                if ($vEvent->ORGANIZER) {
-                    $organizer = RoomService::stripMailto((string)$vEvent->ORGANIZER);
-                    $organizerName = isset($vEvent->ORGANIZER['CN']) ? (string)$vEvent->ORGANIZER['CN'] : $organizer;
+                if ($masterEvent->ORGANIZER) {
+                    $organizer = RoomService::stripMailto((string)$masterEvent->ORGANIZER);
+                    $organizerName = isset($masterEvent->ORGANIZER['CN']) ? (string)$masterEvent->ORGANIZER['CN'] : $organizer;
                 }
 
-                // Extract PARTSTAT of room attendee
+                // Extract PARTSTAT from master event (same for all occurrences)
                 // First try CUTYPE=ROOM, then fall back to non-organizer attendee
                 // (some clients like iOS send CUTYPE=INDIVIDUAL for rooms)
                 $partstat = 'NEEDS-ACTION';
                 $organizerEmail = $organizer ? strtolower(RoomService::stripMailto($organizer)) : '';
-                $attendees = $vEvent->select('ATTENDEE');
+                $attendees = $masterEvent->select('ATTENDEE');
                 $fallbackPartstat = null;
                 foreach ($attendees as $attendee) {
                     $cutype = isset($attendee['CUTYPE']) ? (string)$attendee['CUTYPE'] : '';
@@ -142,7 +142,6 @@ class CalDAVService {
                         $fallbackPartstat = null;
                         break;
                     }
-                    // Track non-organizer attendee as fallback
                     $attendeeEmail = strtolower(RoomService::stripMailto((string)$attendee));
                     if ($attendeeEmail !== $organizerEmail && $fallbackPartstat === null) {
                         $fallbackPartstat = isset($attendee['PARTSTAT']) ? (string)$attendee['PARTSTAT'] : 'NEEDS-ACTION';
@@ -152,19 +151,47 @@ class CalDAVService {
                     $partstat = $fallbackPartstat;
                 }
 
-                $bookings[] = [
-                    'uid' => (string)($vEvent->UID ?? $object['uri']),
-                    'uri' => $object['uri'],
-                    'summary' => (string)($vEvent->SUMMARY ?? ''),
-                    'description' => (string)($vEvent->DESCRIPTION ?? ''),
-                    'dtstart' => $dtStart ? $dtStart->format('c') : null,
-                    'dtend' => $dtEnd ? $dtEnd->format('c') : null,
-                    'organizer' => $organizer,
-                    'organizerName' => $organizerName,
-                    'partstat' => $partstat,
-                    'status' => (string)($vEvent->STATUS ?? ''),
-                    'location' => (string)($vEvent->LOCATION ?? ''),
-                ];
+                $uid = (string)($masterEvent->UID ?? $object['uri']);
+                $summary = (string)($masterEvent->SUMMARY ?? '');
+                $description = (string)($masterEvent->DESCRIPTION ?? '');
+                $status = (string)($masterEvent->STATUS ?? '');
+                $location = (string)($masterEvent->LOCATION ?? '');
+
+                foreach ($vEvents as $evt) {
+                    $dtStart = $evt->DTSTART ? $evt->DTSTART->getDateTime() : null;
+                    $dtEnd = $evt->DTEND ? $evt->DTEND->getDateTime() : null;
+
+                    // Filter non-recurring events by date range
+                    if (!$hasRrule) {
+                        if ($from !== null && $dtEnd !== null) {
+                            if ($dtEnd < new \DateTime($from)) {
+                                continue;
+                            }
+                        }
+                        if ($to !== null && $dtStart !== null) {
+                            if ($dtStart > new \DateTime($to)) {
+                                continue;
+                            }
+                        }
+                    }
+
+                    $recurrenceId = $evt->{'RECURRENCE-ID'} ? $evt->{'RECURRENCE-ID'}->getDateTime()->format('c') : null;
+
+                    $bookings[] = [
+                        'uid' => $uid,
+                        'uri' => $object['uri'],
+                        'summary' => $summary,
+                        'description' => $description,
+                        'dtstart' => $dtStart ? $dtStart->format('c') : null,
+                        'dtend' => $dtEnd ? $dtEnd->format('c') : null,
+                        'organizer' => $organizer,
+                        'organizerName' => $organizerName,
+                        'partstat' => $partstat,
+                        'status' => $status,
+                        'location' => $location,
+                        'recurrenceId' => $recurrenceId,
+                    ];
+                }
             } catch (\Exception $e) {
                 $this->logger->warning("Failed to parse calendar object {$object['uri']}: " . $e->getMessage());
                 continue;
@@ -180,12 +207,14 @@ class CalDAVService {
     }
 
     /**
-     * Update the PARTSTAT of a room attendee in a booking
+     * Update the PARTSTAT of a room attendee in a booking.
+     *
+     * Returns booking metadata on success (for notifications/organizer sync), null on failure.
      */
-    public function updateBookingPartstat(string $roomUserId, string $bookingUid, string $partstat): bool {
+    public function updateBookingPartstat(string $roomUserId, string $bookingUid, string $partstat): ?array {
         $calendarId = $this->getRoomCalendarId($roomUserId);
         if ($calendarId === null) {
-            return false;
+            return null;
         }
 
         $objects = $this->calDavBackend->getCalendarObjects($calendarId);
@@ -213,17 +242,23 @@ class CalDAVService {
                     continue;
                 }
 
-                // Update PARTSTAT for room attendee (CUTYPE=ROOM or non-organizer fallback)
+                // Extract booking metadata before updating
                 $orgEmail = '';
+                $orgName = '';
                 if ($vEvent->ORGANIZER) {
                     $orgEmail = strtolower(RoomService::stripMailto((string)$vEvent->ORGANIZER));
+                    $orgName = isset($vEvent->ORGANIZER['CN']) ? (string)$vEvent->ORGANIZER['CN'] : '';
                 }
+                $roomEmail = '';
+
+                // Update PARTSTAT for room attendee (CUTYPE=ROOM or non-organizer fallback)
                 $attendees = $vEvent->select('ATTENDEE');
                 $updated = false;
                 foreach ($attendees as $attendee) {
                     $cutype = isset($attendee['CUTYPE']) ? (string)$attendee['CUTYPE'] : '';
                     if ($cutype === 'ROOM') {
                         $attendee['PARTSTAT'] = $partstat;
+                        $roomEmail = strtolower(RoomService::stripMailto((string)$attendee));
                         $updated = true;
                         break;
                     }
@@ -234,6 +269,7 @@ class CalDAVService {
                         $attendeeEmail = strtolower(RoomService::stripMailto((string)$attendee));
                         if ($attendeeEmail !== $orgEmail) {
                             $attendee['PARTSTAT'] = $partstat;
+                            $roomEmail = $attendeeEmail;
                             break;
                         }
                     }
@@ -253,14 +289,107 @@ class CalDAVService {
                 );
 
                 $this->logger->info("Updated booking {$bookingUid} PARTSTAT to {$partstat}");
-                return true;
+
+                $dtStart = $vEvent->DTSTART ? $vEvent->DTSTART->getDateTime() : null;
+                $dtEnd = $vEvent->DTEND ? $vEvent->DTEND->getDateTime() : null;
+
+                return [
+                    'uid' => $uid,
+                    'summary' => (string)($vEvent->SUMMARY ?? ''),
+                    'organizerEmail' => $orgEmail,
+                    'organizerName' => $orgName,
+                    'dtstart' => $dtStart ? $dtStart->format('c') : null,
+                    'dtend' => $dtEnd ? $dtEnd->format('c') : null,
+                    'roomEmail' => $roomEmail,
+                ];
             } catch (\Exception $e) {
                 $this->logger->error("Failed to update booking {$bookingUid}: " . $e->getMessage());
-                return false;
+                return null;
             }
         }
 
         $this->logger->warning("Booking not found: {$bookingUid}");
+        return null;
+    }
+
+    /**
+     * Update the room attendee's PARTSTAT in the organizer's calendar event.
+     *
+     * When a manager accepts/declines via the admin UI, the room's own calendar
+     * is updated by updateBookingPartstat(). This method propagates the change
+     * to the organizer's copy so their calendar reflects the response.
+     */
+    public function updateOrganizerEventPartstat(string $organizerEmail, string $bookingUid, string $partstat, string $roomEmail): bool {
+        $users = $this->userManager->getByEmail($organizerEmail);
+        if (count($users) !== 1) {
+            $this->logger->debug("RoomVox: Could not resolve organizer {$organizerEmail} to a unique NC user (found " . count($users) . ")");
+            return false;
+        }
+
+        $organizerUserId = $users[0]->getUID();
+        $principalUri = 'principals/users/' . $organizerUserId;
+        $calendars = $this->calDavBackend->getCalendarsForUser($principalUri);
+
+        foreach ($calendars as $calendar) {
+            $calendarId = (int)$calendar['id'];
+            $objects = $this->calDavBackend->getCalendarObjects($calendarId);
+
+            foreach ($objects as $object) {
+                $fullObject = $this->calDavBackend->getCalendarObject($calendarId, $object['uri']);
+                if ($fullObject === null) {
+                    continue;
+                }
+
+                $calendarData = $fullObject['calendardata'] ?? '';
+                if (empty($calendarData)) {
+                    continue;
+                }
+
+                try {
+                    $vObject = Reader::read($calendarData);
+                    $vEvent = $vObject->VEVENT ?? null;
+                    if ($vEvent === null) {
+                        continue;
+                    }
+
+                    $uid = (string)($vEvent->UID ?? '');
+                    if ($uid !== $bookingUid) {
+                        continue;
+                    }
+
+                    // Found the matching event — update the room attendee's PARTSTAT
+                    $attendees = $vEvent->select('ATTENDEE');
+                    $changed = false;
+                    foreach ($attendees as $attendee) {
+                        $email = strtolower(RoomService::stripMailto((string)$attendee));
+                        if ($email === $roomEmail) {
+                            $attendee['PARTSTAT'] = $partstat;
+                            $changed = true;
+                            break;
+                        }
+                    }
+
+                    if (!$changed) {
+                        $this->logger->debug("RoomVox: Room attendee {$roomEmail} not found in organizer event {$bookingUid}");
+                        return false;
+                    }
+
+                    $this->calDavBackend->updateCalendarObject(
+                        $calendarId,
+                        $object['uri'],
+                        $vObject->serialize()
+                    );
+
+                    $this->logger->info("RoomVox: Updated organizer event {$bookingUid} — room {$roomEmail} PARTSTAT set to {$partstat}");
+                    return true;
+                } catch (\Exception $e) {
+                    $this->logger->error("RoomVox: Failed to update organizer event {$bookingUid}: " . $e->getMessage());
+                    return false;
+                }
+            }
+        }
+
+        $this->logger->debug("RoomVox: Organizer event {$bookingUid} not found in calendars of {$organizerUserId}");
         return false;
     }
 

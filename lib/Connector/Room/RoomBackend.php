@@ -90,6 +90,7 @@ class RoomBackend implements IBackend {
             email: $roomData['email'] ?? '',
             capacity: $roomData['capacity'] ?? null,
             roomNumber: $roomData['roomNumber'] ?? null,
+            floor: $roomData['floor'] ?? null,
             address: $roomData['address'] ?? null,
             roomType: $roomData['roomType'] ?? 'meeting-room',
             description: $roomData['description'] ?? null,

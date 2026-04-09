@@ -41,6 +41,12 @@
                             @update:model-value="clearError('capacity')" />
                     </div>
                     <div class="form-field">
+                        <label>{{ $t('Floor') }}</label>
+                        <NcTextField
+                            v-model="form.floor"
+                            :placeholder="$t('e.g. 2')" />
+                    </div>
+                    <div class="form-field">
                         <label>{{ $t('Room type') }}</label>
                         <NcSelect
                             :model-value="roomTypeOptions.find(o => o.id === form.roomType) || roomTypeOptions[0]"
@@ -482,6 +488,7 @@ const form = reactive({
     description: '',
     capacity: 0,
     roomNumber: '',
+    floor: '',
     roomType: 'meeting-room',
     building: '',
     street: '',
@@ -658,6 +665,7 @@ watch(() => props.room, (room) => {
             description: room.description || '',
             capacity: room.capacity || 0,
             roomNumber: room.roomNumber || '',
+            floor: room.floor || '',
             roomType: room.roomType || 'meeting-room',
             building,
             street,

@@ -6,6 +6,7 @@ namespace OCA\RoomVox\Controller;
 
 use OCA\RoomVox\Service\CalDAVService;
 use OCA\RoomVox\Service\Exchange\ExchangeSyncService;
+use OCA\RoomVox\Service\MailService;
 use OCA\RoomVox\Service\PermissionService;
 use OCA\RoomVox\Service\RoomService;
 use OCP\AppFramework\Controller;
@@ -23,6 +24,7 @@ class BookingApiController extends Controller {
         private RoomService $roomService,
         private PermissionService $permissionService,
         private CalDAVService $calDAVService,
+        private MailService $mailService,
         private ExchangeSyncService $exchangeSyncService,
         private IUserSession $userSession,
         private IGroupManager $groupManager,
@@ -273,19 +275,44 @@ class BookingApiController extends Controller {
         $partstat = $action === 'accept' ? 'ACCEPTED' : 'DECLINED';
 
         try {
-            $success = $this->calDAVService->updateBookingPartstat($room['userId'], $uid, $partstat);
+            $bookingData = $this->calDAVService->updateBookingPartstat($room['userId'], $uid, $partstat);
 
-            if (!$success) {
+            if ($bookingData === null) {
                 return new JSONResponse(['error' => 'Booking not found'], 404);
             }
 
             $this->logger->info("Booking {$uid} in room {$id} {$action}ed by {$userId}");
-
-            return new JSONResponse(['status' => 'ok', 'action' => $action]);
         } catch (\Exception $e) {
             $this->logger->error("Failed to respond to booking {$uid}: " . $e->getMessage());
             return new JSONResponse(['error' => 'Failed to process response'], 500);
         }
+
+        // Propagate PARTSTAT to organizer's calendar so their event reflects the response
+        try {
+            if (!empty($bookingData['organizerEmail']) && !empty($bookingData['roomEmail'])) {
+                $this->calDAVService->updateOrganizerEventPartstat(
+                    $bookingData['organizerEmail'],
+                    $uid,
+                    $partstat,
+                    $bookingData['roomEmail'],
+                );
+            }
+        } catch (\Throwable $e) {
+            $this->logger->error("Failed to update organizer calendar for booking {$uid}: " . $e->getMessage());
+        }
+
+        // Send email notification to organizer
+        try {
+            if ($action === 'accept') {
+                $this->mailService->sendRespondAccepted($room, $bookingData);
+            } else {
+                $this->mailService->sendRespondDeclined($room, $bookingData);
+            }
+        } catch (\Throwable $e) {
+            $this->logger->error("Failed to send response email for booking {$uid}: " . $e->getMessage());
+        }
+
+        return new JSONResponse(['status' => 'ok', 'action' => $action]);
     }
 
     /**

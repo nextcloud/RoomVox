@@ -47,7 +47,7 @@
                             <td class="room-name">{{ room.name }}</td>
                             <td>{{ room.roomType || '—' }}</td>
                             <td>{{ room.capacity || '—' }}</td>
-                            <td>{{ room.address || '—' }}</td>
+                            <td>{{ formatAddress(room.address) }}</td>
                             <td>
                                 <NcChip
                                     :text="getRoleLabel(room.role)"
@@ -164,6 +164,12 @@ const getRoleVariant = (role) => {
         case 'viewer': return 'primary'
         default: return 'secondary'
     }
+}
+
+const formatAddress = (address) => {
+    if (!address) return '—'
+    const cleaned = address.replace(/^[\s,]+|[\s,]+$/g, '')
+    return cleaned || '—'
 }
 
 const formatRelativeDate = (dateStr) => {

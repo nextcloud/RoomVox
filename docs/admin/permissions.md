@@ -1,6 +1,8 @@
 # Permissions
 
-RoomVox uses a role-based permission system to control who can view, book, and manage rooms.
+RoomVox uses its own role-based permission system to control who can view, book, and manage rooms. This system is **separate from Nextcloud Calendar's sharing permissions** — sharing or unsharing a calendar in Nextcloud has no effect on room access in RoomVox.
+
+> **Important:** Without any permissions configured, all authenticated users can book all rooms. If you want to restrict access, you must configure permissions in RoomVox — Nextcloud's calendar sharing settings will not apply. See [Default Permissions](#default-permissions) below.
 
 ## Roles
 

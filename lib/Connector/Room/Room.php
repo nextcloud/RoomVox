@@ -15,6 +15,7 @@ class Room implements IRoom, IMetadataProvider {
         '{http://nextcloud.com/ns}room-seating-capacity',
         '{http://nextcloud.com/ns}room-building-address',
         '{http://nextcloud.com/ns}room-building-room-number',
+        '{http://nextcloud.com/ns}room-building-floor',
         '{http://nextcloud.com/ns}room-features',
     ];
 
@@ -25,6 +26,7 @@ class Room implements IRoom, IMetadataProvider {
         private string $email,
         private ?int $capacity = null,
         private ?string $roomNumber = null,
+        private ?string $floor = null,
         private ?string $address = null,
         private ?string $roomType = 'meeting-room',
         private ?string $description = null,
@@ -95,6 +97,8 @@ class Room implements IRoom, IMetadataProvider {
             '{http://nextcloud.com/ns}room-building-address' => ($this->address !== null && $this->address !== '') ? $this->address : null,
             // Room number in floor.room format: "2.17" (2nd floor, room 17)
             '{http://nextcloud.com/ns}room-building-room-number' => ($this->roomNumber !== null && $this->roomNumber !== '') ? $this->roomNumber : null,
+            // Floor (e.g. "2", "B1") — explicit floor value for filtering
+            '{http://nextcloud.com/ns}room-building-floor' => ($this->floor !== null && $this->floor !== '') ? $this->floor : null,
             '{http://nextcloud.com/ns}room-features' => $this->getFeaturesString(),
             default => null,
         };

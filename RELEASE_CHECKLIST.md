@@ -47,8 +47,17 @@ Follow this checklist for every release to the Nextcloud App Store.
   ```bash
   git ls-files | grep -iE '\.(key|crt|pem|env)$'
   ```
+- [ ] PHP syntax check — verify no syntax errors in backend:
+  ```bash
+  find lib/ -name "*.php" -exec php -l {} \; 2>&1 | grep -v "No syntax errors"
+  ```
+- [ ] Check for `debugger` statements in JavaScript:
+  ```bash
+  grep -rn "debugger" src/ --include="*.js" --include="*.vue"
+  ```
 - [ ] Run `npm audit` — fix critical issues if possible
   - Upstream @nextcloud dependency vulnerabilities are usually not fixable
+- [ ] Run `composer audit` for PHP dependency vulnerabilities
 - [ ] **Check tarball for sensitive data** (see Section 7.2)
 
 ---
