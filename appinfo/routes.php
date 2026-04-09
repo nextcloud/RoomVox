@@ -76,6 +76,7 @@ return [
         ['name' => 'license#saveSettings', 'url' => '/api/settings/license', 'verb' => 'POST'],
         ['name' => 'license#validate', 'url' => '/api/license/validate', 'verb' => 'POST'],
         ['name' => 'license#updateUsage', 'url' => '/api/license/update-usage', 'verb' => 'POST'],
+        ['name' => 'license#sendTelemetry', 'url' => '/api/license/telemetry', 'verb' => 'POST'],
 
         // Public API v1 (Bearer token authenticated)
         ['name' => 'public_api#room_status', 'url' => '/api/v1/rooms/{id}/status', 'verb' => 'GET'],

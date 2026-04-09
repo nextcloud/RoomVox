@@ -59,9 +59,17 @@ class TelemetryService {
      * @return bool Success status
      */
     public function sendReport(): bool {
+        return $this->sendReportWithDetails()['success'];
+    }
+
+    /**
+     * Send telemetry report with detailed result for UI feedback.
+     * @return array{success: bool, reason?: string, message?: string}
+     */
+    public function sendReportWithDetails(): array {
         if (!$this->isEnabled()) {
             $this->logger->debug('TelemetryService: Telemetry is disabled, skipping report');
-            return false;
+            return ['success' => false, 'reason' => 'disabled'];
         }
 
         try {
@@ -91,14 +99,26 @@ class TelemetryService {
                     (string)time()
                 );
 
-                return true;
+                return ['success' => true];
             }
 
-            // Silent fail — server may not be ready yet
-            return false;
+            return ['success' => false, 'reason' => 'server_error', 'message' => 'HTTP ' . $statusCode];
         } catch (\Exception $e) {
-            // Silent fail — server may not be available
-            return false;
+            $message = $e->getMessage();
+
+            // Extract server error message from Guzzle response
+            if (method_exists($e, 'getResponse') && $e->getResponse() !== null) {
+                $body = (string) $e->getResponse()->getBody();
+                $json = json_decode($body, true);
+                if (isset($json['error'])) {
+                    $message = $json['error'];
+                } elseif (!empty($body) && strlen($body) < 200) {
+                    $message = $body;
+                }
+            }
+
+            $this->logger->warning('TelemetryService: Failed to send report: ' . $message);
+            return ['success' => false, 'reason' => 'error', 'message' => $message];
         }
     }
 

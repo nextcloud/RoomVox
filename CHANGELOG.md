@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.1] - 2026-04-09
+
+### Added
+- **Telemetry send button**: Admins can now manually send a usage report from the Support tab, with clear feedback on success or failure
+- **Telemetry toggle**: Enable/disable anonymous usage statistics directly from the Support tab
+
+### Changed
+- **App Store description**: Removed evaluation disclaimer, cleaned up formatting, added VoxCloud as author
+- **App Store metadata**: Added `office` category and GitHub Discussions link
+
+### Fixed
+- **Telemetry error feedback**: The "Send report now" button now shows the actual server error message instead of a generic failure notice
+
 ## [1.0.0] - 2026-04-09
 
 ### Added
