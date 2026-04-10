@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.2] - 2026-04-10
+
+### Fixed
+- **Manager role cannot accept/decline bookings**: Non-admin users with the Manager role received "Failed to process response" because the booking API endpoints were missing the `#[NoAdminRequired]` attribute, causing Nextcloud's security middleware to block the request before the internal permission check could run
+- **Group-level permissions not enforced at booking time**: The scheduling plugin only checked room-level permissions, ignoring inherited group permissions. Rooms with group-only permission rules were bookable by anyone
+- **Room creation loses fields**: Creating a new room discarded Room number, Floor, Room type, and Address because the controller did not extract these fields from the request. Editing the room afterwards worked because the update endpoint did handle them (except Floor, which was also missing there)
+- **Declined booking still shows "Reserved" in Room Finder**: The previous fix (v1.0.0) propagated the decline to the organizer's calendar but kept the room as an attendee with PARTSTAT=DECLINED. The Room Finder only checked attendee presence, not status. Now the room attendee is removed entirely and LOCATION is cleared on decline. The frontend also treats DECLINED attendees as not added
+- **Permission Editor UI inconsistency for grouped rooms**: The group permission editor stated that individual rooms can have additional permissions, but the room editor was read-only for rooms in a group. The backend already supported merging room + group permissions; the UI now allows setting room-specific permissions
+
 ## [1.0.1] - 2026-04-09
 
 ### Added

@@ -86,7 +86,7 @@
                 v-if="currentView === 'permissions' && permissionTarget"
                 :target="permissionTarget"
                 :target-type="permissionTargetType"
-                :read-only="permissionTargetType === 'room' && !!permissionTarget.groupId"
+                :read-only="false"
                 @back="currentView = 'rooms'; permissionTarget = null" />
 
             <!-- Bookings -->

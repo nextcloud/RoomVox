@@ -363,7 +363,14 @@ class CalDAVService {
                     foreach ($attendees as $attendee) {
                         $email = strtolower(RoomService::stripMailto((string)$attendee));
                         if ($email === $roomEmail) {
-                            $attendee['PARTSTAT'] = $partstat;
+                            if ($partstat === 'DECLINED') {
+                                // Remove the room attendee entirely so Room Finder shows it as available
+                                $vEvent->remove($attendee);
+                                // Clear LOCATION since the room was declined
+                                unset($vEvent->LOCATION);
+                            } else {
+                                $attendee['PARTSTAT'] = $partstat;
+                            }
                             $changed = true;
                             break;
                         }

@@ -150,7 +150,7 @@ class SchedulingPlugin extends ServerPlugin {
         $roomId = $room['id'];
 
         // 1. Permission check
-        $perms = $this->permissionService->getPermissions($roomId);
+        $perms = $this->permissionService->getEffectivePermissions($roomId);
         $hasPermissions = !empty($perms['viewers']) || !empty($perms['bookers']) || !empty($perms['managers']);
 
         if ($hasPermissions) {

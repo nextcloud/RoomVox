@@ -14,8 +14,8 @@
             {{ $t('These permissions apply to all rooms in this group. Individual rooms can have additional permissions on top of these.') }}
         </NcNoteCard>
 
-        <NcNoteCard v-if="readOnly" type="info" class="permission-editor__info">
-            {{ $t('This room belongs to a group. Permissions are managed at group level and shown here for reference.') }}
+        <NcNoteCard v-if="targetType === 'room' && target.groupId" type="info" class="permission-editor__info">
+            {{ $t('This room inherits permissions from its group. You can add room-specific permissions below that will be merged with the group permissions.') }}
         </NcNoteCard>
 
         <div v-if="loading" class="permission-editor__loading">

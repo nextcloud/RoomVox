@@ -27,44 +27,40 @@
 				</button>
 			</div>
 
-			<!-- Building + Capacity + Floor on one row -->
-			<div class="room-finder__row room-finder__row--filters">
-				<div v-if="buildingOptions.length > 0" class="room-finder__field">
-					<label class="room-finder__label">{{ $t('calendar', 'Building') }}</label>
-					<NcSelect
-						v-model="selectedBuilding"
-						:options="buildingOptions"
-						:placeholder="$t('calendar', 'Any')"
-						:clearable="true"
-						label="label"
-						:reduce="opt => opt.id"
-						input-id="room-finder-building" />
-				</div>
-				<div class="room-finder__field">
-					<label class="room-finder__label">{{ $t('calendar', 'Capacity') }}</label>
-					<NcSelect
-						v-model="selectedCapacity"
-						:options="capacityOptions"
-						:placeholder="$t('calendar', 'Any')"
-						:clearable="true"
-						label="label"
-						:reduce="opt => opt.value"
-						input-id="room-finder-capacity" />
-				</div>
-				<div v-if="floorOptions.length > 0" class="room-finder__field">
-					<label class="room-finder__label">{{ $t('calendar', 'Floor') }}</label>
-					<NcSelect
-						v-model="selectedFloor"
-						:options="floorOptions"
-						:placeholder="$t('calendar', 'Any')"
-						:clearable="true"
-						label="label"
-						:reduce="opt => opt.id"
-						input-id="room-finder-floor" />
-				</div>
+			<!-- Filters: 2-column grid -->
+			<div v-if="buildingOptions.length > 0" class="room-finder__field">
+				<label class="room-finder__label">{{ $t('calendar', 'Building') }}</label>
+				<NcSelect
+					v-model="selectedBuilding"
+					:options="buildingOptions"
+					:placeholder="$t('calendar', 'Any')"
+					:clearable="true"
+					label="label"
+					:reduce="opt => opt.id"
+					input-id="room-finder-building" />
 			</div>
-
-			<!-- Features (only if available) -->
+			<div class="room-finder__field">
+				<label class="room-finder__label">{{ $t('calendar', 'Capacity') }}</label>
+				<NcSelect
+					v-model="selectedCapacity"
+					:options="capacityOptions"
+					:placeholder="$t('calendar', 'Any')"
+					:clearable="true"
+					label="label"
+					:reduce="opt => opt.value"
+					input-id="room-finder-capacity" />
+			</div>
+			<div v-if="floorOptions.length > 0" class="room-finder__field">
+				<label class="room-finder__label">{{ $t('calendar', 'Floor') }}</label>
+				<NcSelect
+					v-model="selectedFloor"
+					:options="floorOptions"
+					:placeholder="$t('calendar', 'Any')"
+					:clearable="true"
+					label="label"
+					:reduce="opt => opt.id"
+					input-id="room-finder-floor" />
+			</div>
 			<div v-if="featureOptions.length > 0" class="room-finder__field">
 				<label class="room-finder__label">{{ $t('calendar', 'Features') }}</label>
 				<NcSelect
@@ -426,7 +422,12 @@ export default {
 		},
 
 		isRoomAdded(room) {
-			return this.alreadyInvitedEmails.includes(room.emailAddress)
+			const attendee = this.resources.find(
+				(a) => removeMailtoPrefix(a.uri) === room.emailAddress
+			)
+			if (!attendee) return false
+			// A declined room is not considered "added" — show it as available
+			return attendee.participationStatus !== 'DECLINED'
 		},
 
 		clearFilters() {
@@ -476,6 +477,9 @@ export default {
 					this.selectedFeatures = validFeatures
 				}
 			}
+
+			// Emit event to parent (EditFull.vue) to auto-collapse the room finder panel
+			this.$emit('add-room')
 		},
 
 		removeResource(resource) {
@@ -528,12 +532,13 @@ export default {
 	display: flex;
 	flex-direction: column;
 	gap: calc(var(--default-grid-baseline) * 2);
-	padding: calc(var(--default-grid-baseline) * 2) calc(var(--default-grid-baseline) * 4);
+	padding: calc(var(--default-grid-baseline) * 2) calc(var(--default-grid-baseline) * 3);
 
 	&__search-row {
 		display: flex;
 		align-items: center;
 		gap: calc(var(--default-grid-baseline) * 2);
+		grid-column: 1 / -1;
 	}
 
 	&__clear {
@@ -552,8 +557,8 @@ export default {
 	}
 
 	&__filters {
-		display: flex;
-		flex-direction: column;
+		display: grid;
+		grid-template-columns: repeat(2, 1fr);
 		gap: calc(var(--default-grid-baseline) * 2);
 	}
 
@@ -562,19 +567,10 @@ export default {
 		flex-direction: column;
 		gap: 2px;
 		min-width: 0;
-	}
 
-	&__row {
-		display: flex;
-		gap: calc(var(--default-grid-baseline) * 3);
-
-		&--filters {
-			align-items: flex-end;
-			flex-wrap: wrap;
-
-			.room-finder__field {
-				flex: 1 1 180px;
-			}
+		:deep(.v-select) {
+			width: 100%;
+			min-width: 0;
 		}
 	}
 
@@ -609,18 +605,9 @@ export default {
 	}
 
 	&__list {
-		display: grid;
-		grid-template-columns: repeat(2, 1fr);
+		display: flex;
+		flex-direction: column;
 		gap: calc(var(--default-grid-baseline) * 1);
-
-		@media (max-width: 500px) {
-			grid-template-columns: 1fr;
-		}
-	}
-
-	&__show-more,
-	&__empty {
-		grid-column: 1 / -1;
 	}
 
 	&__show-more {

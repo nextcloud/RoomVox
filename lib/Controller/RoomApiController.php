@@ -206,7 +206,10 @@ class RoomApiController extends Controller {
             'email' => $this->request->getParam('email', ''),
             'description' => $this->request->getParam('description', ''),
             'capacity' => $this->request->getParam('capacity', 0),
-            'location' => $this->request->getParam('location', ''),
+            'roomNumber' => $this->request->getParam('roomNumber', ''),
+            'floor' => $this->request->getParam('floor', ''),
+            'roomType' => $this->request->getParam('roomType', 'meeting-room'),
+            'address' => $this->request->getParam('address', ''),
             'facilities' => $this->request->getParam('facilities', []),
             'autoAccept' => $this->request->getParam('autoAccept', false),
             'smtpConfig' => $this->request->getParam('smtpConfig', null),
@@ -267,7 +270,7 @@ class RoomApiController extends Controller {
         }
 
         $data = [];
-        $updatableFields = ['name', 'email', 'description', 'capacity', 'roomNumber', 'roomType', 'address', 'facilities', 'autoAccept', 'active', 'smtpConfig', 'exchangeConfig', 'groupId', 'availabilityRules', 'maxBookingHorizon'];
+        $updatableFields = ['name', 'email', 'description', 'capacity', 'roomNumber', 'floor', 'roomType', 'address', 'facilities', 'autoAccept', 'active', 'smtpConfig', 'exchangeConfig', 'groupId', 'availabilityRules', 'maxBookingHorizon'];
 
         foreach ($updatableFields as $field) {
             $value = $this->request->getParam($field);

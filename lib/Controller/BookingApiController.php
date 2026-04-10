@@ -36,6 +36,7 @@ class BookingApiController extends Controller {
     /**
      * Get all bookings for a room
      */
+    #[NoAdminRequired]
     public function index(string $id): JSONResponse {
         $userId = $this->getCurrentUserId();
         if ($userId === null) {
@@ -252,6 +253,7 @@ class BookingApiController extends Controller {
     /**
      * Respond to a booking (approve/decline)
      */
+    #[NoAdminRequired]
     public function respond(string $id, string $uid): JSONResponse {
         $userId = $this->getCurrentUserId();
         if ($userId === null) {
