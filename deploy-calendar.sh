@@ -9,7 +9,7 @@
 # 3. Builds the Calendar app with webpack
 # 4. Deploys the rebuilt JS to the target server
 #
-# Usage: ./deploy-calendar.sh [1dev|3dev]  (default: 3dev)
+# Usage: ./deploy-calendar.sh [1dev|3dev|tst]  (default: 3dev)
 
 set -e
 
@@ -38,9 +38,13 @@ case "${1:-3dev}" in
         REMOTE_HOST="$SERVERS_3DEV"
         SERVER_NAME="3dev"
         ;;
+    tst)
+        REMOTE_HOST="145.38.189.69"
+        SERVER_NAME="tst"
+        ;;
     *)
         echo "Unknown server: $1"
-        echo "Usage: ./deploy-calendar.sh [1dev|3dev]  (default: 3dev)"
+        echo "Usage: ./deploy-calendar.sh [1dev|3dev|tst]  (default: 3dev)"
         exit 1
         ;;
 esac
@@ -69,12 +73,17 @@ fi
 echo ""
 echo "Step 2: Applying RoomVox patches..."
 cp -r "$PATCH_DIR"/src/* "$BUILD_DIR/src/"
+if [ -d "$PATCH_DIR/css" ]; then
+    cp -r "$PATCH_DIR"/css/* "$BUILD_DIR/css/"
+    echo "  Patched CSS files"
+fi
 echo "  Patched files:"
 echo "    - src/views/EditFull.vue (sidebar layout)"
 echo "    - src/models/principal.js"
 echo "    - src/components/Editor/Resources/ResourceList.vue"
 echo "    - src/components/Editor/Resources/ResourceRoomCard.vue (new)"
 echo "    - src/components/Editor/Resources/ResourceListSearch.vue"
+echo "    - css/global.scss (modal width override)"
 
 # Step 3: Build
 echo ""

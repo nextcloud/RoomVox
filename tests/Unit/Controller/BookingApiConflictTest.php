@@ -7,6 +7,7 @@ namespace OCA\RoomVox\Tests\Unit\Controller;
 use OCA\RoomVox\Controller\BookingApiController;
 use OCA\RoomVox\Service\CalDAVService;
 use OCA\RoomVox\Service\Exchange\ExchangeSyncService;
+use OCA\RoomVox\Service\MailService;
 use OCA\RoomVox\Service\PermissionService;
 use OCA\RoomVox\Service\RoomService;
 use OCP\IGroupManager;
@@ -24,6 +25,7 @@ class BookingApiConflictTest extends TestCase {
     private CalDAVService $calDAVService;
     private RoomService $roomService;
     private PermissionService $permissionService;
+    private MailService $mailService;
     private ExchangeSyncService $exchangeSyncService;
     private IRequest $request;
     private IUserSession $userSession;
@@ -43,6 +45,7 @@ class BookingApiConflictTest extends TestCase {
         $this->roomService = $this->createMock(RoomService::class);
         $this->permissionService = $this->createMock(PermissionService::class);
         $this->calDAVService = $this->createMock(CalDAVService::class);
+        $this->mailService = $this->createMock(MailService::class);
         $this->exchangeSyncService = $this->createMock(ExchangeSyncService::class);
         $this->userSession = $this->createMock(IUserSession::class);
         $this->groupManager = $this->createMock(IGroupManager::class);
@@ -62,6 +65,7 @@ class BookingApiConflictTest extends TestCase {
             $this->roomService,
             $this->permissionService,
             $this->calDAVService,
+            $this->mailService,
             $this->exchangeSyncService,
             $this->userSession,
             $this->groupManager,
@@ -131,6 +135,7 @@ class BookingApiConflictTest extends TestCase {
             $this->roomService,
             $this->permissionService,
             $this->calDAVService,
+            $this->mailService,
             $this->exchangeSyncService,
             $this->userSession,
             $this->groupManager,
@@ -271,8 +276,22 @@ class BookingApiConflictTest extends TestCase {
     // ── Respond (approve/decline) ──────────────────────────────────
 
     public function testRespondAccept(): void {
+        $bookingData = [
+            'uid' => 'booking-1',
+            'summary' => 'Team Meeting',
+            'organizerEmail' => 'alice@example.com',
+            'organizerName' => 'Alice',
+            'dtstart' => '2026-02-20T10:00:00+00:00',
+            'dtend' => '2026-02-20T11:00:00+00:00',
+            'roomEmail' => 'room1@example.com',
+        ];
+
         $this->roomService->method('getRoom')->willReturn($this->testRoom);
-        $this->calDAVService->method('updateBookingPartstat')->willReturn(true);
+        $this->calDAVService->method('updateBookingPartstat')->willReturn($bookingData);
+        $this->calDAVService->expects($this->once())->method('updateOrganizerEventPartstat')
+            ->with('alice@example.com', 'booking-1', 'ACCEPTED', 'room1@example.com');
+        $this->mailService->expects($this->once())->method('sendRespondAccepted')
+            ->with($this->testRoom, $bookingData);
 
         $this->request->method('getParam')->willReturnCallback(function (string $key, $default = '') {
             return match ($key) {
@@ -288,8 +307,22 @@ class BookingApiConflictTest extends TestCase {
     }
 
     public function testRespondDecline(): void {
+        $bookingData = [
+            'uid' => 'booking-1',
+            'summary' => 'Team Meeting',
+            'organizerEmail' => 'alice@example.com',
+            'organizerName' => 'Alice',
+            'dtstart' => '2026-02-20T10:00:00+00:00',
+            'dtend' => '2026-02-20T11:00:00+00:00',
+            'roomEmail' => 'room1@example.com',
+        ];
+
         $this->roomService->method('getRoom')->willReturn($this->testRoom);
-        $this->calDAVService->method('updateBookingPartstat')->willReturn(true);
+        $this->calDAVService->method('updateBookingPartstat')->willReturn($bookingData);
+        $this->calDAVService->expects($this->once())->method('updateOrganizerEventPartstat')
+            ->with('alice@example.com', 'booking-1', 'DECLINED', 'room1@example.com');
+        $this->mailService->expects($this->once())->method('sendRespondDeclined')
+            ->with($this->testRoom, $bookingData);
 
         $this->request->method('getParam')->willReturnCallback(function (string $key, $default = '') {
             return match ($key) {

@@ -193,7 +193,7 @@
         "Group name is required": "Gruppenname ist erforderlich",
         "Permissions": "Berechtigungen",
         "These permissions apply to all rooms in this group. Individual rooms can have additional permissions on top of these.": "Diese Berechtigungen gelten für alle Räume in dieser Gruppe. Einzelne Räume können zusätzliche Berechtigungen haben.",
-        "This room belongs to a group. Permissions are managed at group level and shown here for reference.": "Dieser Raum gehört zu einer Gruppe. Berechtigungen werden auf Gruppenebene verwaltet und hier zur Referenz angezeigt.",
+        "This room inherits permissions from its group. You can add room-specific permissions below that will be merged with the group permissions.": "Dieser Raum erbt Berechtigungen von seiner Gruppe. Sie können unten raumspezifische Berechtigungen hinzufügen, die mit den Gruppenberechtigungen zusammengeführt werden.",
         "No {role} configured": "Keine {role} konfiguriert",
         "Search groups...": "Gruppen suchen...",
         "Saving...": "Speichern...",

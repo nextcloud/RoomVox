@@ -194,7 +194,7 @@ OC.L10N.register(
         "Group name is required" : "Group name is required",
         "Permissions" : "Permissions",
         "These permissions apply to all rooms in this group. Individual rooms can have additional permissions on top of these." : "These permissions apply to all rooms in this group. Individual rooms can have additional permissions on top of these.",
-        "This room belongs to a group. Permissions are managed at group level and shown here for reference." : "This room belongs to a group. Permissions are managed at group level and shown here for reference.",
+        "This room inherits permissions from its group. You can add room-specific permissions below that will be merged with the group permissions." : "This room inherits permissions from its group. You can add room-specific permissions below that will be merged with the group permissions.",
         "No {role} configured" : "No {role} configured",
         "Search groups..." : "Search groups...",
         "Saving..." : "Saving...",

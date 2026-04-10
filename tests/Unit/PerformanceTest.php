@@ -53,8 +53,9 @@ class PerformanceTest extends TestCase {
 
     private function assertConflictCheckPerformance(int $eventCount, float $maxMs): void {
         $calDavBackend = $this->createMock(CalDavBackend::class);
+        $userManager = $this->createMock(IUserManager::class);
         $logger = $this->createMock(LoggerInterface::class);
-        $service = new CalDAVService($calDavBackend, $logger);
+        $service = new CalDAVService($calDavBackend, $userManager, $logger);
 
         $calDavBackend->method('getCalendarsForUser')
             ->willReturn([['id' => 1, 'uri' => 'personal']]);
@@ -396,9 +397,11 @@ class PerformanceTest extends TestCase {
             default => $default,
         });
 
+        $mailService = $this->createMock(MailService::class);
+
         $controller = new BookingApiController(
             'roomvox', $request, $roomService, $permissionService,
-            $calDAVService, $exchangeSyncService, $userSession, $groupManager, $logger,
+            $calDAVService, $mailService, $exchangeSyncService, $userSession, $groupManager, $logger,
         );
 
         $start = hrtime(true);
@@ -511,8 +514,9 @@ class PerformanceTest extends TestCase {
         $existingPerRoom = 10; // 10 existing bookings per room
 
         $calDavBackend = $this->createMock(CalDavBackend::class);
+        $userManager = $this->createMock(IUserManager::class);
         $logger = $this->createMock(LoggerInterface::class);
-        $calDAVService = new CalDAVService($calDavBackend, $logger);
+        $calDAVService = new CalDAVService($calDavBackend, $userManager, $logger);
 
         $calDavBackend->method('getCalendarsForUser')
             ->willReturn([['id' => 1, 'uri' => 'personal']]);
@@ -648,9 +652,11 @@ class PerformanceTest extends TestCase {
             default => $default,
         });
 
+        $mailService = $this->createMock(MailService::class);
+
         return new BookingApiController(
             'roomvox', $request, $roomService, $permissionService,
-            $calDAVService, $exchangeSyncService, $userSession, $groupManager, $logger,
+            $calDAVService, $mailService, $exchangeSyncService, $userSession, $groupManager, $logger,
         );
     }
 

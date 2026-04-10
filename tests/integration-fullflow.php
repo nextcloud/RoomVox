@@ -251,16 +251,16 @@ echo "8. Booking Update — PARTSTAT\n";
 
 if ($uid) {
     $accepted = $calDAVService->updateBookingPartstat($testRoomUserId, $uid, 'ACCEPTED');
-    assert_true($accepted, "updateBookingPartstat(ACCEPTED) succeeds");
+    assert_true($accepted !== null, "updateBookingPartstat(ACCEPTED) succeeds");
 
     $declined = $calDAVService->updateBookingPartstat($testRoomUserId, $uid, 'DECLINED');
-    assert_true($declined, "updateBookingPartstat(DECLINED) succeeds");
+    assert_true($declined !== null, "updateBookingPartstat(DECLINED) succeeds");
 
     $tentative = $calDAVService->updateBookingPartstat($testRoomUserId, $uid, 'TENTATIVE');
-    assert_true($tentative, "updateBookingPartstat(TENTATIVE) succeeds");
+    assert_true($tentative !== null, "updateBookingPartstat(TENTATIVE) succeeds");
 
     $badUid = $calDAVService->updateBookingPartstat($testRoomUserId, 'nonexistent-uid', 'ACCEPTED');
-    assert_false($badUid, "updateBookingPartstat() returns false for unknown UID");
+    assert_true($badUid === null, "updateBookingPartstat() returns null for unknown UID");
 } else {
     fail("Skipping PARTSTAT tests — no booking created");
 }

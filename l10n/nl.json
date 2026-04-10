@@ -193,7 +193,7 @@
         "Group name is required": "Groepsnaam is verplicht",
         "Permissions": "Rechten",
         "These permissions apply to all rooms in this group. Individual rooms can have additional permissions on top of these.": "Deze rechten gelden voor alle ruimtes in deze groep. Individuele ruimtes kunnen aanvullende rechten hebben bovenop deze.",
-        "This room belongs to a group. Permissions are managed at group level and shown here for reference.": "Deze ruimte behoort tot een groep. Rechten worden beheerd op groepsniveau en worden hier ter referentie weergegeven.",
+        "This room inherits permissions from its group. You can add room-specific permissions below that will be merged with the group permissions.": "Deze ruimte erft rechten van de groep. Je kunt hieronder ruimte-specifieke rechten toevoegen die worden samengevoegd met de groepsrechten.",
         "No {role} configured": "Geen {role} geconfigureerd",
         "Search groups...": "Groepen zoeken...",
         "Saving...": "Opslaan...",

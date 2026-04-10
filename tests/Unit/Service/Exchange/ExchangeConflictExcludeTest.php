@@ -9,6 +9,7 @@ use OCA\RoomVox\Service\CalDAVService;
 use OCA\RoomVox\Service\Exchange\ExchangeSyncService;
 use OCA\RoomVox\Service\Exchange\GraphApiClient;
 use OCA\RoomVox\Service\RoomService;
+use OCP\IUserManager;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use Sabre\VObject\Component\VCalendar;
@@ -44,7 +45,8 @@ class ExchangeConflictExcludeTest extends TestCase {
         $logger = $this->createMock(LoggerInterface::class);
 
         // Use a real CalDAVService (not a mock) so getCalDavBackend() reflection works
-        $calDAVService = new CalDAVService($this->calDavBackend, $logger);
+        $userManager = $this->createMock(IUserManager::class);
+        $calDAVService = new CalDAVService($this->calDavBackend, $userManager, $logger);
         $roomService = $this->createMock(RoomService::class);
 
         $this->service = new ExchangeSyncService(

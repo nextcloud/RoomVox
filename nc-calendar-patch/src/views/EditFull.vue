@@ -10,15 +10,50 @@
 		class="calendar-edit-full"
 		size="full"
 		label-id="edit-full-modal"
-		:name="t('calendar', 'Edit event')"
+		:name="modalTitle"
 		:dark="false"
-		:no-close="true"
 		@close="cancel(false)">
-		<NcButton class="calendar-edit-full__default-close" variant="tertiary" @click="cancel(false)">
-			<template #icon>
-				<Close :size="20" />
-			</template>
-		</NcButton>
+		<div class="calendar-edit-full__top-actions">
+			<div v-if="!isLoading && !isError" class="calendar-edit-full__top-actions__menu">
+				<NcActions>
+					<NcActionLink v-if="!hideEventExport && hasDownloadURL && !isNew" :href="downloadURL">
+						<template #icon>
+							<Download :size="20" decorative />
+						</template>
+						{{ $t('calendar', 'Export') }}
+					</NcActionLink>
+					<NcActionButton v-if="!canCreateRecurrenceException && !isReadOnly && !isNew" type="tertiary" @click="duplicateEvent()">
+						<template #icon>
+							<ContentDuplicate :size="20" decorative />
+						</template>
+						{{ $t('calendar', 'Duplicate') }}
+					</NcActionButton>
+					<NcActionButton v-if="canDelete && !canCreateRecurrenceException && !isNew" type="tertiary" @click="deleteAndLeave(false)">
+						<template #icon>
+							<Delete :size="20" decorative />
+						</template>
+						{{ $t('calendar', 'Delete') }}
+					</NcActionButton>
+					<NcActionButton v-if="canDelete && canCreateRecurrenceException && !isNew" type="tertiary" @click="deleteAndLeave(false)">
+						<template #icon>
+							<Delete :size="20" decorative />
+						</template>
+						{{ $t('calendar', 'Delete this occurrence') }}
+					</NcActionButton>
+					<NcActionButton v-if="canDelete && canCreateRecurrenceException && !isNew" type="tertiary" @click="deleteAndLeave(true)">
+						<template #icon>
+							<Delete :size="20" decorative />
+						</template>
+						{{ $t('calendar', 'Delete this and all future') }}
+					</NcActionButton>
+				</NcActions>
+			</div>
+			<NcButton variant="tertiary" @click="cancel(false)">
+				<template #icon>
+					<Close :size="20" />
+				</template>
+			</NcButton>
+		</div>
 		<div class="app-full" :class="[{ 'app-full-readonly': isViewedByOrganizer === false }]">
 			<template v-if="isLoading">
 				<div class="app-full__loading-indicator">
@@ -34,6 +69,9 @@
 			</template>
 
 			<div v-if="!isLoading && !isError">
+				<div class="app-full__modal-title-row">
+					<h2 class="app-full__modal-title">{{ modalTitle }}</h2>
+				</div>
 				<div class="app-full__header__top">
 					<div class="app-full__header__top__first">
 						<div class="app-full__header__top-close-icon">
@@ -45,52 +83,16 @@
 							:is-read-only="isReadOnly || isViewedByOrganizer === false"
 							@update:value="updateTitle" />
 					</div>
+				</div>
 
-					<div v-if="!isLoading && !isError" class="app-full__actions">
-						<SaveButtons
-							v-if="showSaveButtons"
-							class="app-full-tab__buttons"
-							:can-create-recurrence-exception="canCreateRecurrenceException"
-							:is-new="isNew"
-							:is-read-only="isReadOnly"
-							:force-this-and-all-future="forceThisAndAllFuture"
-							@save-this-only="prepareAccessForAttachments(false)"
-							@save-this-and-all-future="prepareAccessForAttachments(true)" />
-						<div class="app-full__actions__inner" :class="[{ 'app-full__actions__inner__readonly': isReadOnly }]">
-							<NcActions>
-								<NcActionLink v-if="!hideEventExport && hasDownloadURL && !isNew" :href="downloadURL">
-									<template #icon>
-										<Download :size="20" decorative />
-									</template>
-									{{ $t('calendar', 'Export') }}
-								</NcActionLink>
-								<NcActionButton v-if="!canCreateRecurrenceException && !isReadOnly && !isNew" type="tertiary" @click="duplicateEvent()">
-									<template #icon>
-										<ContentDuplicate :size="20" decorative />
-									</template>
-									{{ $t('calendar', 'Duplicate') }}
-								</NcActionButton>
-								<NcActionButton v-if="canDelete && !canCreateRecurrenceException && !isNew" type="tertiary" @click="deleteAndLeave(false)">
-									<template #icon>
-										<Delete :size="20" decorative />
-									</template>
-									{{ $t('calendar', 'Delete') }}
-								</NcActionButton>
-								<NcActionButton v-if="canDelete && canCreateRecurrenceException && !isNew" type="tertiary" @click="deleteAndLeave(false)">
-									<template #icon>
-										<Delete :size="20" decorative />
-									</template>
-									{{ $t('calendar', 'Delete this occurrence') }}
-								</NcActionButton>
-								<NcActionButton v-if="canDelete && canCreateRecurrenceException && !isNew" type="tertiary" @click="deleteAndLeave(true)">
-									<template #icon>
-										<Delete :size="20" decorative />
-									</template>
-									{{ $t('calendar', 'Delete this and all future') }}
-								</NcActionButton>
-							</NcActions>
-						</div>
-					</div>
+				<div class="app-full-attendees">
+					<InviteesChipList
+						v-if="!isLoading"
+						:calendar="selectedCalendar"
+						:calendar-object-instance="calendarObjectInstance"
+						:is-read-only="isReadOnly || isViewedByOrganizer === false"
+						:is-shared-with-me="isSharedWithMe"
+						@update-dates="updateDates" />
 				</div>
 
 				<div class="app-full__header">
@@ -165,86 +167,163 @@
 						@close="closeEditorAndSkipAction" />
 				</div>
 
-					<div class="app-full-body">
-					<div class="app-full-body__left">
-						<PropertyText
-							class="property-location"
-							:is-read-only="isReadOnly || isViewedByOrganizer === false"
-							:prop-model="rfcProps.location"
-							:value="location"
-							:linkify-links="true"
-							@update:value="updateLocation" />
-						<PropertyText
-							class="property-description"
-							:is-read-only="isReadOnly"
-							:prop-model="rfcProps.description"
-							:value="description"
-							:is-description="true"
-							:linkify-links="true"
-							@update:value="updateDescription" />
+				<div class="app-full-body">
+				<!-- Left column: Where + Details -->
+				<div class="app-full-body__left">
+					<!-- WHERE section -->
+					<PropertyText
+						class="property-location"
+						:is-read-only="isReadOnly || isViewedByOrganizer === false"
+						:prop-model="rfcProps.location"
+						:value="location"
+						:linkify-links="true"
+						@update:value="updateLocation" />
 
-						<AlarmList
-							:calendar-object-instance="calendarObjectInstance"
-							:is-read-only="isReadOnly" />
+					<!-- RoomVox: Meeting options with disclosure panels -->
+					<div
+						v-if="!isReadOnly && isViewedByOrganizer !== false"
+						class="meeting-options">
 
-						<AttachmentsList
-							v-if="!isLoading"
-							:calendar-object-instance="calendarObjectInstance"
-							:is-read-only="isReadOnly" />
-					</div>
-
-					<div class="app-full-body__right">
-						<div
-							v-if="isCreateTalkRoomButtonVisible"
-							class="property-add-talk">
-							<IconVideo :size="20" class="property-text__icon property-add-talk__icon" />
-							<AddTalkModal
-								v-if="isModalOpen"
-								:conversations="talkConversations"
-								:calendar-object-instance="calendarObjectInstance"
-								@close="isModalOpen = false"
-								@update-location="updateLocation"
-								@update-description="updateDescription" />
-							<NcButton
-								class="property-add-talk__button"
-								:disabled="isCreateTalkRoomButtonDisabled"
-								style="width: 100%"
-								@click="openModal">
-								{{ t('calendar', 'Add Talk conversation') }}
-							</NcButton>
+						<!-- In-person section -->
+						<div class="meeting-option">
+							<div class="meeting-option__header">
+								<MapMarker :size="20" class="meeting-option__icon" />
+								<NcCheckboxRadioSwitch
+									type="switch"
+									:checked="isInPerson"
+									@update:checked="handleInPersonToggle">
+									{{ $t('calendar', 'In-person') }}
+								</NcCheckboxRadioSwitch>
+								<NcButton
+									v-if="isInPerson"
+									variant="tertiary"
+									class="meeting-option__disclosure"
+									@click="isRoomFinderExpanded = !isRoomFinderExpanded">
+									<template #icon>
+										<ChevronDown v-if="isRoomFinderExpanded" :size="20" />
+										<ChevronRight v-else :size="20" />
+									</template>
+								</NcButton>
+							</div>
+							<div
+								v-if="isInPerson && !isRoomFinderExpanded && selectedRoomSummary"
+								class="meeting-option__summary"
+								@click="isRoomFinderExpanded = true">
+								{{ selectedRoomSummary }}
+							</div>
+							<div v-if="isInPerson && isRoomFinderExpanded" class="meeting-option__panel">
+								<ResourceList
+									v-if="!isLoading"
+									:calendar-object-instance="calendarObjectInstance"
+									:is-read-only="isReadOnly || isViewedByOrganizer === false"
+									@add-room="handleRoomAdded" />
+							</div>
 						</div>
-							<PropertySelect
-							:is-read-only="isReadOnly"
-							:prop-model="rfcProps.status"
-							:value="status"
-							@update:value="updateStatus" />
-						<PropertySelect
-							:is-read-only="isReadOnly || isViewedByOrganizer === false"
-							:prop-model="rfcProps.accessClass"
-							:value="accessClass"
-							@update:value="updateAccessClass" />
-						<PropertySelect
-							:is-read-only="isReadOnly"
-							:prop-model="rfcProps.timeTransparency"
-							:value="timeTransparency"
-							@update:value="updateTimeTransparency" />
-						<PropertySelectMultiple
-							class="property-categories"
-							:colored-options="true"
-							:is-read-only="isReadOnly"
-							:prop-model="rfcProps.categories"
-							:value="categories"
-							@add-single-value="addCategory"
-							@remove-single-value="removeCategory" />
-						<PropertyColor
-							:calendar-color="selectedCalendarColor"
-							:show-icon="!(isReadOnly && color === null)"
-							:is-read-only="isReadOnly"
-							:prop-model="rfcProps.color"
-							:value="color"
-							@update:value="updateColor" />
+
+						<!-- Online (Talk) section -->
+						<div v-if="isCreateTalkRoomButtonVisible" class="meeting-option">
+							<div class="meeting-option__header">
+								<IconVideo :size="20" class="meeting-option__icon" />
+								<NcCheckboxRadioSwitch
+									type="switch"
+									:checked="isOnline"
+									@update:checked="handleOnlineToggle">
+									{{ $t('calendar', 'Online (Talk)') }}
+								</NcCheckboxRadioSwitch>
+								<NcButton
+									v-if="isOnline && hasTalkUrl"
+									variant="tertiary"
+									class="meeting-option__disclosure"
+									@click="isTalkPanelExpanded = !isTalkPanelExpanded">
+									<template #icon>
+										<ChevronDown v-if="isTalkPanelExpanded" :size="20" />
+										<ChevronRight v-else :size="20" />
+									</template>
+								</NcButton>
+							</div>
+							<div
+								v-if="isOnline && hasTalkUrl && !isTalkPanelExpanded"
+								class="meeting-option__summary"
+								@click="isTalkPanelExpanded = true">
+								{{ talkRoomDisplayName }}
+							</div>
+							<div
+								v-if="isOnline && hasTalkUrl && isTalkPanelExpanded"
+								class="meeting-option__panel meeting-option__panel--talk">
+								<div class="talk-room-info">
+									<div class="talk-room-info__details">
+										<span class="talk-room-info__name">{{ talkRoomDisplayName }}</span>
+										<span class="talk-room-info__url">{{ talkUrl }}</span>
+									</div>
+									<NcButton variant="tertiary" @click="changeTalkRoom">
+										{{ $t('calendar', 'Change') }}
+									</NcButton>
+								</div>
+							</div>
+						</div>
 					</div>
+
+					<AddTalkModal
+						v-if="isModalOpen"
+						:calendar-object-instance="calendarObjectInstance"
+						@close="handleTalkModalClose"
+						@update-location="updateLocation"
+						@update-description="updateDescription" />
+
+					<!-- DETAILS section -->
+					<PropertyText
+						class="property-description"
+						:is-read-only="isReadOnly"
+						:prop-model="rfcProps.description"
+						:value="description"
+						:is-description="true"
+						:linkify-links="true"
+						@update:value="updateDescription" />
+
+					<AlarmList
+						:calendar-object-instance="calendarObjectInstance"
+						:is-read-only="isReadOnly" />
+
+					<AttachmentsList
+						v-if="!isLoading"
+						:calendar-object-instance="calendarObjectInstance"
+						:is-read-only="isReadOnly" />
 				</div>
+
+				<!-- Right column: Settings -->
+				<div class="app-full-body__right">
+					<PropertySelect
+						:is-read-only="isReadOnly"
+						:prop-model="rfcProps.status"
+						:value="status"
+						@update:value="updateStatus" />
+					<PropertySelect
+						:is-read-only="isReadOnly || isViewedByOrganizer === false"
+						:prop-model="rfcProps.accessClass"
+						:value="accessClass"
+						@update:value="updateAccessClass" />
+					<PropertySelect
+						:is-read-only="isReadOnly"
+						:prop-model="rfcProps.timeTransparency"
+						:value="timeTransparency"
+						@update:value="updateTimeTransparency" />
+					<PropertySelectMultiple
+						class="property-categories"
+						:colored-options="true"
+						:is-read-only="isReadOnly"
+						:prop-model="rfcProps.categories"
+						:value="categories"
+						@add-single-value="addCategory"
+						@remove-single-value="removeCategory" />
+					<PropertyColor
+						:calendar-color="selectedCalendarColor"
+						:show-icon="!(isReadOnly && color === null)"
+						:is-read-only="isReadOnly"
+						:prop-model="rfcProps.color"
+						:value="color"
+						@update:value="updateColor" />
+				</div>
+			</div>
 
 				<NcModal
 					v-if="showModal && !isPrivate()"
@@ -299,36 +378,22 @@
 					</div>
 				</NcModal>
 
-				<!-- ── RoomVox: Inline Room Finder ──── -->
-				<div
-					v-if="!isReadOnly && isViewedByOrganizer !== false"
-					class="room-finder-inline">
-					<div class="room-finder-inline__toggle">
-						<MapMarker :size="20" class="property-text__icon" />
-						<NcButton
-							style="width: 100%"
-							@click="showRoomFinder = !showRoomFinder">
-							{{ $t('calendar', 'Room Finder') }}
-						</NcButton>
-					</div>
-					<div v-if="showRoomFinder" class="room-finder-inline__body">
-						<ResourceList
-							v-if="!isLoading"
-							:calendar-object-instance="calendarObjectInstance"
-							:is-read-only="isReadOnly || isViewedByOrganizer === false" />
-					</div>
-				</div>
-				<!-- ── /RoomVox ──── -->
-
-				<div class="app-full-footer">
-					<InviteesList
-						v-if="!isLoading"
-						:calendar="selectedCalendar"
-						:calendar-object-instance="calendarObjectInstance"
-						:is-read-only="isReadOnly || isViewedByOrganizer === false"
-						:is-shared-with-me="isSharedWithMe"
-						:show-header="true"
-						@update-dates="updateDates" />
+				<!-- Actions footer (Save buttons per Nextcloud convention) -->
+				<NcAppNavigationSpacer />
+				<div class="event-form__actions">
+					<NcButton
+						variant="tertiary"
+						@click="cancel(false)">
+						{{ $t('calendar', 'Cancel') }}
+					</NcButton>
+					<SaveButtons
+						v-if="showSaveButtons"
+						:can-create-recurrence-exception="canCreateRecurrenceException"
+						:is-new="isNew"
+						:is-read-only="isReadOnly"
+						:force-this-and-all-future="forceThisAndAllFuture"
+						@save-this-only="prepareAccessForAttachments(false)"
+						@save-this-and-all-future="prepareAccessForAttachments(true)" />
 				</div>
 
 			</div>
@@ -352,6 +417,7 @@ import {
 	NcActionButton,
 	NcActionLink,
 	NcActions,
+	NcAppNavigationSpacer,
 	NcButton,
 	NcCheckboxRadioSwitch,
 	NcDialog,
@@ -376,7 +442,7 @@ import AlarmList from '../components/Editor/Alarm/AlarmList.vue'
 import AttachmentsList from '../components/Editor/Attachments/AttachmentsList.vue'
 import CalendarPickerHeader from '../components/Editor/CalendarPickerHeader.vue'
 import InvitationResponseButtons from '../components/Editor/InvitationResponseButtons.vue'
-import InviteesList from '../components/Editor/Invitees/InviteesList.vue'
+import InviteesChipList from '../components/Editor/Invitees/InviteesChipList.vue'
 import PropertyColor from '../components/Editor/Properties/PropertyColor.vue'
 import PropertySelect from '../components/Editor/Properties/PropertySelect.vue'
 import PropertySelectMultiple from '../components/Editor/Properties/PropertySelectMultiple.vue'
@@ -393,7 +459,7 @@ import useCalendarObjectInstanceStore from '../store/calendarObjectInstance.js'
 import usePrincipalsStore from '../store/principals.js'
 import useSettingsStore from '../store/settings.js'
 import logger from '../utils/logger.js'
-import { containsRoomUrl } from '@/services/talkService'
+import { containsRoomUrl, generateRoomUrl, extractRoomUrlToken, listRooms } from '@/services/talkService'
 
 export default {
 	name: 'EditFull',
@@ -406,6 +472,7 @@ export default {
 		AlarmList,
 		NcActionButton,
 		NcActionLink,
+		NcAppNavigationSpacer,
 		NcEmptyContent,
 		NcModal,
 		NcListItemIcon,
@@ -413,7 +480,7 @@ export default {
 		NcCheckboxRadioSwitch,
 		NcPopover,
 		NcDialog,
-		InviteesList,
+		InviteesChipList,
 		PropertySelect,
 		PropertyText,
 		PropertyTitleTimePicker,
@@ -449,8 +516,6 @@ export default {
 			sharedProgress: 0,
 			showPreloader: false,
 			isModalOpen: false,
-			talkConversations: [],
-			selectedConversation: null,
 			cancelButtons: [
 				{
 					label: t('calendar', 'Discard changes'),
@@ -467,7 +532,12 @@ export default {
 
 			showCancelDialog: false,
 			showFullModal: true,
-			showRoomFinder: false,
+			isInPerson: false,
+			isOnline: false,
+			isRoomFinderExpanded: true,
+			isTalkPanelExpanded: true,
+			talkRoomDisplayName: '',
+			conferenceUrl: '',
 		}
 	},
 
@@ -540,6 +610,95 @@ export default {
 				return ['ROOM', 'RESOURCE'].includes(attendee.attendeeProperty.userType)
 			})
 		},
+
+		hasTalkUrl() {
+			// Reactieve check: conferenceUrl wordt bijgehouden als data property
+			if (this.conferenceUrl) {
+				return true
+			}
+			// Legacy fallback: check location and description
+			return containsRoomUrl(this.calendarObjectInstance.location)
+				|| containsRoomUrl(this.calendarObjectInstance.description)
+		},
+
+		talkUrl() {
+			// Primary: reactieve conferenceUrl
+			if (this.conferenceUrl) {
+				return this.conferenceUrl
+			}
+			// Legacy fallback
+			const loc = this.calendarObjectInstance.location || ''
+			const desc = this.calendarObjectInstance.description || ''
+			const baseUrl = generateRoomUrl('')
+			const regex = new RegExp(baseUrl.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '[^\\s]*')
+			return (loc.match(regex) || desc.match(regex) || [''])[0]
+		},
+
+		selectedRoomSummary() {
+			const rooms = this.calendarObjectInstance.attendees.filter(a =>
+				['ROOM', 'RESOURCE'].includes(a.attendeeProperty.userType))
+			if (!rooms.length) return ''
+			return rooms.map(a => a.commonName || a.uri).join(', ')
+		},
+
+		modalTitle() {
+			// New event
+			if (this.isNew) {
+				return this.$t('calendar', 'New event')
+			}
+
+			// Existing event: use event title (via EditorMixin computed property)
+			const eventTitle = this.title?.trim()
+			if (eventTitle) {
+				return eventTitle
+			}
+
+			// Fallback for empty title
+			return this.$t('calendar', 'Event')
+		},
+	},
+
+	watch: {
+		// RoomVox: Initialize toggles when calendarObjectInstance becomes available
+		calendarObjectInstance: {
+			handler(newValue) {
+				// Only initialize once when data first becomes available
+				if (!newValue || this._togglesInitialized) {
+					return
+				}
+
+				// Read CONFERENCE property from eventComponent and cache it
+				const conferences = newValue.eventComponent.getConferenceList()
+				if (conferences.length > 0 && containsRoomUrl(conferences[0].uri)) {
+					this.conferenceUrl = conferences[0].uri
+				}
+
+				// Initialize In-person toggle: check for room attendees
+				const roomAttendees = newValue.attendees.filter(a => {
+					const userType = a.attendeeProperty?.userType
+					return ['ROOM', 'RESOURCE'].includes(userType)
+				})
+				this.isInPerson = roomAttendees.length > 0
+
+				// Initialize Online toggle: check for Talk URL in CONFERENCE or LOCATION
+				const hasTalk = !!(this.conferenceUrl
+					|| containsRoomUrl(newValue.location)
+					|| containsRoomUrl(newValue.description))
+				this.isOnline = hasTalk
+
+				if (hasTalk) {
+					this.resolveTalkRoomName()
+				}
+
+				// Existing event: Room Finder starts collapsed, Talk panel expanded
+				this.isRoomFinderExpanded = false
+				this.isTalkPanelExpanded = true
+
+				// Mark as initialized to prevent re-running
+				this._togglesInitialized = true
+			},
+			immediate: true, // Run on mount if data already exists
+		},
 	},
 
 	mounted() {
@@ -557,8 +716,121 @@ export default {
 	},
 
 	methods: {
-		openModal() {
+		handleInPersonToggle(checked) {
+			this.isInPerson = checked
+			if (checked) {
+				this.isRoomFinderExpanded = true
+			} else {
+				// Release all booked rooms
+				this.removeAllRooms()
+				// Clear the room address from location
+				this.calendarObjectInstanceStore.changeLocation({
+					calendarObjectInstance: this.calendarObjectInstance,
+					location: '',
+				})
+				// Collapse room finder
+				this.isRoomFinderExpanded = false
+				// If there's an active Talk meeting, put its URL in the now-empty location
+				if (this.hasTalkUrl) {
+					this.calendarObjectInstanceStore.changeLocation({
+						calendarObjectInstance: this.calendarObjectInstance,
+						location: this.talkUrl,
+					})
+				}
+			}
+		},
+
+		handleRoomAdded() {
+			// Auto-collapse the room finder panel after a room is selected
+			this.isRoomFinderExpanded = false
+		},
+
+		handleOnlineToggle(checked) {
+			this.isOnline = checked
+			if (checked) {
+				if (!this.hasTalkUrl) {
+					this.isModalOpen = true
+				} else {
+					this.isTalkPanelExpanded = true
+				}
+			} else {
+				this.removeTalkUrl()
+				this.talkRoomDisplayName = ''
+			}
+		},
+
+		handleTalkModalClose() {
+			this.isModalOpen = false
+			// Sync conferenceUrl from eventComponent (addConference is not reactive)
+			const conferences = this.calendarObjectInstance.eventComponent.getConferenceList()
+			if (conferences.length > 0 && containsRoomUrl(conferences[0].uri)) {
+				this.conferenceUrl = conferences[0].uri
+			}
+			if (!this.hasTalkUrl) {
+				this.isOnline = false
+			} else {
+				this.isTalkPanelExpanded = true
+				this.resolveTalkRoomName()
+			}
+		},
+
+		changeTalkRoom() {
+			this.removeTalkUrl()
+			this.talkRoomDisplayName = ''
 			this.isModalOpen = true
+		},
+
+		async resolveTalkRoomName() {
+			const token = extractRoomUrlToken(this.talkUrl)
+			if (!token) {
+				this.talkRoomDisplayName = this.$t('calendar', 'Talk room')
+				return
+			}
+			try {
+				const rooms = await listRooms()
+				const room = rooms.find(r => r.token === token)
+				this.talkRoomDisplayName = room?.displayName || this.$t('calendar', 'Talk room')
+			} catch {
+				this.talkRoomDisplayName = this.$t('calendar', 'Talk room')
+			}
+		},
+
+		removeTalkUrl() {
+			// Remove CONFERENCE property (RFC 7986)
+			this.calendarObjectInstance.eventComponent.deleteAllProperties('CONFERENCE')
+			this.conferenceUrl = ''
+
+			// Remove Talk URL from location (if present)
+			if (containsRoomUrl(this.calendarObjectInstance.location)) {
+				this.calendarObjectInstanceStore.changeLocation({
+					calendarObjectInstance: this.calendarObjectInstance,
+					location: '',
+				})
+			}
+
+			// Remove Talk URL from description (legacy cleanup)
+			if (containsRoomUrl(this.calendarObjectInstance.description)) {
+				const baseUrl = generateRoomUrl('')
+				const escapedBase = baseUrl.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+				const desc = this.calendarObjectInstance.description || ''
+				const cleaned = desc.replace(new RegExp('\\s*' + escapedBase + '[^\\s]*', 'g'), '').trim()
+				this.calendarObjectInstanceStore.changeDescription({
+					calendarObjectInstance: this.calendarObjectInstance,
+					description: cleaned,
+				})
+			}
+		},
+
+		removeAllRooms() {
+			const rooms = this.calendarObjectInstance.attendees.filter(
+				(a) => ['ROOM', 'RESOURCE'].includes(a.attendeeProperty.userType),
+			)
+			for (const room of rooms) {
+				this.calendarObjectInstanceStore.removeAttendee({
+					calendarObjectInstance: this.calendarObjectInstance,
+					attendee: room,
+				})
+			}
 		},
 
 		updateLocation(location) {
@@ -802,11 +1074,14 @@ export default {
 
 <style lang="scss" scoped>
 .calendar-edit-full {
-	&__default-close {
+	&__top-actions {
 		z-index: 1;
 		position: absolute !important;
 		top: var(--default-grid-baseline);
 		inset-inline-end: var(--default-grid-baseline);
+		display: flex;
+		align-items: center;
+		gap: 0;
 	}
 
 	@media screen and (max-width: 785px) {
@@ -814,12 +1089,8 @@ export default {
 			gap: calc(var(--default-grid-baseline) * 2) !important;
 
 			&-close-icon {
-				visibility: visible;
+				display: none;  // Hide spacer on mobile — top-actions stays top-right
 			}
-		}
-
-		.calendar-edit-full__default-close {
-			visibility: hidden;
 		}
 
 		:deep(.modal-container__close) {
@@ -828,23 +1099,82 @@ export default {
 	}
 
 	:deep() {
+		// Modal container: fit content height, cap at viewport
 		.modal-wrapper--full > .modal-container {
-			height: 100% !important;
-			top: 0 !important;
+			--header-height: 50px !important;
+			width: 1000px !important;
+			max-width: 95vw !important;
+			height: auto !important;
+			max-height: calc(100vh - 100px) !important;  // Leave space for NC header + breathing room
+			top: 50% !important;
+			transform: translateY(-50%) !important;  // Vertically center
+			overflow: hidden !important;
+			display: flex !important;
+			flex-direction: column !important;
 		}
 
+		// Header sits on modal-mask level (outside container) — hide it
 		.modal-header {
-			height: 0 !important;
+			display: none !important;
+		}
+
+		// Content area: scrollable when content exceeds max-height
+		.modal-container__content {
+			flex: 1 1 auto !important;
+			overflow-y: auto !important;
+			overflow-x: hidden !important;
+			min-height: 0 !important;
 		}
 	}
 }
 
 .app-full {
 	--total-width: 900px;
-	--column-gap: calc(var(--default-grid-baseline) * 4);
-	max-width: var(--total-width);
-	padding: calc(var(--default-grid-baseline) * 2);
-	margin: calc(var(--default-grid-baseline) * 16) auto auto;
+	--column-gap: calc(var(--default-grid-baseline) * 3);
+	width: 100%;
+	max-width: 960px;
+	padding: 12px 24px;
+	margin: 0 auto;
+	box-sizing: border-box;
+
+	&__modal-title-row {
+		display: flex;
+		align-items: center;
+		margin: 0 0 8px 0;
+		padding-inline-end: 80px;  // Reserve space for top-right actions + close button
+	}
+
+	&__modal-title {
+		font-size: 18px;
+		font-weight: 600;
+		margin: 0;
+		padding: 0;
+		color: var(--color-main-text);
+	}
+
+	@media (max-width: 1200px) {
+		padding: 12px;  // Reduced padding on small screens
+	}
+
+	// Time closer to date: shrink pickers and remove stretch
+	:deep(.property-title-time-picker__time-pickers-from-inner),
+	:deep(.property-title-time-picker__time-pickers-to-inner) {
+		justify-content: flex-start !important;
+		gap: 16px !important;
+	}
+
+	:deep([class*="time-pickers-from-inner__selector"]),
+	:deep([class*="time-pickers-to-inner__selector"]) {
+		justify-content: flex-start !important;
+		gap: 12px !important;
+		flex: 0 1 auto !important;
+		width: auto !important;
+
+		.native-datetime-picker {
+			flex: 0 0 auto !important;
+			width: auto !important;
+		}
+	}
 
 	:deep(.avatar-participation-status__text) {
 		bottom: -2px !important;
@@ -853,72 +1183,67 @@ export default {
 		min-width: unset !important;
 	}
 
+	&__header__top {
+		position: sticky;
+		top: 0;
+		display: flex;
+		flex-wrap: wrap-reverse;
+		gap: 32px;
+		padding: 16px 0;
+		background-color: var(--color-main-background);
+		align-items: center;
+		z-index: 10000;
+
+		&__first {
+			display: flex;
+			flex-grow: 1;
+			min-width: 0;  // Allow flex shrinking
+
+			.property-title {
+				width: 100%;
+				flex-grow: 1;
+
+				:deep(input) {
+					width: 100%;
+				}
+			}
+		}
+
+		&-close-icon {
+			width: 53px;  // Explicit width
+			display: flex;
+			justify-content: flex-start;
+			visibility: hidden;
+		}
+	}
+
 	&__header {
 		display: flex;
 		flex-direction: column;
-		gap: calc(var(--default-grid-baseline) * 2);
-		padding-bottom: calc(var(--default-grid-baseline) * 2);
+		gap: 16px;
+		padding-bottom: 16px;
 		z-index: 10;
-		margin-top: calc(var(--default-grid-baseline) * 2);
-
-		&__top {
-			top: 0;
-			position: sticky;
-			display: flex;
-			flex-wrap: wrap-reverse;
-			gap: calc(var(--column-gap) + var(--default-grid-baseline) * 5);
-			padding: calc(var(--default-grid-baseline) * 2) 0;
-			background-color: var(--color-main-background);
-			align-items: center;
-			z-index: 10000;
-
-			.app-full__header__top__first {
-				display: flex;
-				flex-grow: 1;
-				max-width: calc(var(--total-width) * 2 / 3 - var(--column-gap) / 2 - (var(--default-grid-baseline) * 4 + 22px) + var(--default-grid-baseline) * 4 + 22px);
-
-				.property-title {
-					max-width: calc(var(--total-width) * 2 / 3 - var(--column-gap) / 2 - (var(--default-grid-baseline) * 4 + 22px));
-					flex-grow: 1;
-				}
-			}
-
-			& .app-full__actions {
-				display: flex;
-				gap: calc(var(--default-grid-baseline) * 2);
-				align-items: center;
-
-				&__inner__readonly {
-					margin-inline-start: -10px;
-				}
-			}
-
-			&-close-icon {
-				width: calc(var(--default-grid-baseline) * 4 + 21px);
-				display: flex;
-				justify-content: flex-start;
-				visibility: hidden;
-			}
-		}
+		margin-top: 16px;
 
 		&__details {
 			display: flex;
 			flex-wrap: wrap;
-			gap: var(--column-gap);
+			gap: 32px;
 			justify-content: space-between;
-			padding-inline-start: calc(var(--default-grid-baseline) * 8);
+			padding-inline-start: 72px;  // Icon + label space
 
 			&-time {
 				display: flex;
-				justify-content: space-between;
-				flex-basis: calc(var(--total-width) * 2 / 3 - var(--column-gap) / 2 - var(--default-grid-baseline) * 8);
-				flex-shrink: 1;
+				gap: 16px;  // Fixed gap between date and time
+				flex: 1 1 auto;
+				min-width: 0;
 			}
 
 			&-calendar {
 				display: flex;
 				flex-direction: row;
-				width: calc(var(--total-width) * 1 / 3 - var(--column-gap) / 2);
+				width: min(480px, 40%);
+				flex-shrink: 0;
 			}
 		}
 	}
@@ -948,20 +1273,22 @@ export default {
 .app-full-body {
 	display: flex;
 	flex-direction: row;
-	gap: var(--column-gap);
-	justify-content: space-between;
-	flex-wrap: wrap;
+	gap: 24px;  // RoomVox: Reduced gap for tighter layout
+	justify-content: flex-start;  // RoomVox: Don't push columns apart
+	flex-wrap: nowrap;
 
 	&__right {
-		width: calc(var(--total-width) * 1 / 3 - var(--column-gap) / 2);
+		flex: 0 0 auto;
+		width: 320px;  // RoomVox: Fixed width for right column
 		display: flex;
 		flex-direction: column;
 		gap: calc(var(--default-grid-baseline) * 4);
 
-		:deep(.property-select__input) {
-			max-width: calc(var(--total-width) * 1 / 3 - var(--column-gap) / 2 - 36px);
-			display: flex;
-			align-items: center;
+		// Constrain all selects to reasonable width
+		:deep(.property-select__input),
+		:deep(.v-select),
+		:deep(.property-select-multiple__input) {
+			max-width: 100%;
 		}
 
 		.multiselect__tag {
@@ -981,10 +1308,32 @@ export default {
 	}
 
 	&__left {
-		width: calc(var(--total-width) * 2 / 3 - var(--column-gap) / 2);
+		flex: 1 1 auto;
+		min-width: 0;  // Allow flex shrinking
+		max-width: none;  // Remove max-width constraint
 		display: flex;
 		flex-direction: column;
 		gap: calc(var(--default-grid-baseline) * 4);
+
+		// Constrain text inputs
+		:deep(.property-text input[type="text"]) {
+			max-width: 100%;
+		}
+
+		:deep(.property-text textarea) {
+			max-width: 100%;
+		}
+	}
+
+	// Mobile: stack columns only on very small screens
+	@media (max-width: 600px) {
+		flex-direction: column;
+
+		&__right,
+		&__left {
+			width: 100% !important;
+			max-width: 100% !important;
+		}
 	}
 
 	.v-select.select {
@@ -996,42 +1345,130 @@ export default {
 	}
 }
 
-// One column layout for smaller screens
-@media screen and (max-width: 915px) {
-	.app-full-body__right {
-		width: calc(var(--total-width) * 2 / 3 - var(--column-gap) / 2) !important;
+// RoomVox: Meeting options with disclosure panels
+.meeting-options {
+	display: flex;
+	flex-direction: column;
+	gap: calc(var(--default-grid-baseline) * 2);
+}
 
+.meeting-option {
+	&__header {
+		display: flex;
+		align-items: center;
+		gap: calc(var(--default-grid-baseline) * 1);
+		padding-inline-start: calc(var(--default-grid-baseline) * 9);
+	}
+
+	&__icon {
+		color: var(--color-text-maxcontrast);
+		flex-shrink: 0;
+	}
+
+	&__disclosure {
+		margin-inline-start: auto;
+	}
+
+	&__summary {
+		padding-inline-start: calc(var(--default-grid-baseline) * 9);
+		padding-block: calc(var(--default-grid-baseline) * 1);
+		color: var(--color-text-maxcontrast);
+		font-size: calc(var(--default-font-size) * 0.9);
+		cursor: pointer;
+
+		&:hover {
+			color: var(--color-main-text);
+		}
+	}
+
+	&__panel {
+		margin-inline-start: calc(var(--default-grid-baseline) * 9);
+		border: 1px solid var(--color-border);
+		border-radius: var(--border-radius-large);
+		overflow: hidden;
+
+		&--talk {
+			padding: calc(var(--default-grid-baseline) * 2) calc(var(--default-grid-baseline) * 3);
+		}
+	}
+}
+
+.talk-room-info {
+	display: flex;
+	align-items: center;
+	gap: calc(var(--default-grid-baseline) * 2);
+
+	&__details {
+		flex: 1;
+		min-width: 0;
+	}
+
+	&__name {
+		display: block;
+		font-weight: 500;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	&__url {
+		display: block;
+		font-size: calc(var(--default-font-size) * 0.85);
+		color: var(--color-text-maxcontrast);
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+}
+
+.app-full-attendees {
+	width: calc(100% - 53px);  // Account for margin to prevent overflow
+	margin-inline-start: 53px;
+	padding-bottom: 16px;
+	box-sizing: border-box;
+
+	:deep(.invitees-search__vselect) {
+		margin-inline-start: 0;
+		max-width: 100%;
+	}
+
+	:deep(.invitees-list__subtitle) {
+		margin-inline-start: 0;
+	}
+}
+
+// One column layout for mobile/tablet screens
+@media screen and (max-width: 900px) {
+	.app-full-body {
+		flex-direction: column;
+	}
+
+	.app-full-body__left,
+	.app-full-body__right {
+		width: 100% !important;
+	}
+
+	.app-full-body__right {
 		.property-select__input {
 			max-width: 100% !important;
 		}
 	}
 }
 
-
-// Footer: full-width (no left/right split — ResourceList moved to sidebar)
-.app-full-footer {
-	margin-top: calc(var(--default-grid-baseline) * 12);
-	padding-bottom: calc(var(--default-grid-baseline) * 8);
-}
-
-// RoomVox: Inline Room Finder
-.room-finder-inline {
-	&__toggle {
-		display: flex;
-		align-items: center;
-		gap: 0;
-	}
-
-	&__body {
-		margin-top: calc(var(--default-grid-baseline) * 2);
-		border: 1px solid var(--color-border);
-		border-radius: var(--border-radius-large);
+// Mobile: full-width attendees when close-icon spacer is hidden
+@media screen and (max-width: 785px) {
+	.app-full-attendees {
+		width: 100%;
+		margin-inline-start: 0;
 	}
 }
 
 .modal-mask {
 	height: calc(100vh - var(--header-height));
 	top: var(--header-height);
+	// OWA-style semi-transparent backdrop to show calendar behind modal
+	background-color: rgba(0, 0, 0, 0.3) !important;
+	backdrop-filter: blur(2px);
 }
 
 .modal-content {
@@ -1095,4 +1532,17 @@ export default {
 	height: auto;
 	border-radius: var(--border-radius);
 }
+
+// Actions footer (Save buttons per Nextcloud convention)
+.event-form__actions {
+	display: flex;
+	justify-content: flex-end;
+	align-items: center;
+	gap: var(--default-grid-baseline);
+	padding-top: calc(var(--default-grid-baseline) * 2);
+	margin-top: calc(var(--default-grid-baseline) * 3);
+	border-top: 1px solid var(--color-border);
+}
 </style>
+
+<!-- Modal width override moved to css/global.scss for proper compilation -->

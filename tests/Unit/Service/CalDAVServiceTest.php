@@ -6,6 +6,7 @@ namespace OCA\RoomVox\Tests\Unit\Service;
 
 use OCA\DAV\CalDAV\CalDavBackend;
 use OCA\RoomVox\Service\CalDAVService;
+use OCP\IUserManager;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
@@ -15,9 +16,10 @@ class CalDAVServiceTest extends TestCase {
 
     protected function setUp(): void {
         $this->calDavBackend = $this->createMock(CalDavBackend::class);
+        $userManager = $this->createMock(IUserManager::class);
         $logger = $this->createMock(LoggerInterface::class);
 
-        $this->service = new CalDAVService($this->calDavBackend, $logger);
+        $this->service = new CalDAVService($this->calDavBackend, $userManager, $logger);
     }
 
     public function testEscapeIcsText(): void {
