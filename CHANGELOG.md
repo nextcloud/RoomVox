@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.4] - 2026-04-14
+
+### Fixed
+- **Cannot remove room from group**: Moving a room to "No group" had no effect because the controller filtered out `null` values, so the `groupId` was never cleared. Moving to a different group worked fine since that sent a non-null value
+
 ## [1.0.3] - 2026-04-14
 
 ### Fixed
