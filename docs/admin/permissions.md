@@ -77,7 +77,7 @@ Permissions set on a room group are inherited by all rooms in that group.
 2. Add viewers, bookers, and managers using the search fields
 3. Click **Save Permissions**
 
-![Group-level permission editor — assign viewers, bookers, and managers to a room group](../screenshots/rooms-permissions.png)
+![Group-level permission editor — assign viewers, bookers, and managers to a room group](../../screenshots/rooms-permissions.png)
 
 ### How Inheritance Works
 
@@ -109,7 +109,7 @@ When editing permissions for a room that belongs to a group, the permission edit
 
 This makes it easy to see the full picture of who has access to a room without switching between the room and group editors.
 
-![Permission editor showing inherited group permissions alongside room-specific permissions](../screenshots/room-inheritedpermissions.png)
+![Permission editor showing inherited group permissions alongside room-specific permissions](../../screenshots/room-inheritedpermissions.png)
 
 ## Default Permissions
 
