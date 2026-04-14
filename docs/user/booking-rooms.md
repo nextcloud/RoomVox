@@ -117,8 +117,8 @@ After you add a room to your event, the room will respond with one of these stat
 
 ### Why a Booking May Be Declined
 
-- **Scheduling conflict** — another event is already booked at that time
-- **No permission** — you don't have Booker or Manager role for the room
+- **Scheduling conflict** — another event is already booked at that time. You receive an email about the conflict.
+- **No permission** — you don't have Booker or Manager role for the room. You receive a "Booking not permitted" email. The room is automatically removed from your event and the location is cleared.
 - **Outside availability** — the requested time is outside the room's available hours
 - **Beyond booking horizon** — the event is too far in the future
 - **Delivery error** — a server-side issue prevented the booking

@@ -36,6 +36,19 @@ Triggered when a booking is declined by a manager.
 - Event date and time
 - Reason for decline (if provided)
 
+### Permission Denied
+
+**Sent to:** Organizer
+
+Triggered when a booking is automatically declined because the user does not have permission to book the room.
+
+**Contains:**
+- Room name
+- Event summary
+- Event date and time
+
+When a booking is denied for permission reasons, the room attendee is also removed from the organizer's event and the LOCATION field is cleared, so the calendar no longer shows the room as part of the event.
+
 ### Scheduling Conflict
 
 **Sent to:** Organizer
@@ -100,6 +113,7 @@ The "From" address on notification emails depends on the room's email configurat
 | Booking pending approval | — | Approval request |
 | Manager approves booking | Confirmation email | — |
 | Manager declines booking | Decline email | — |
+| Permission denied (auto-decline) | Permission denied email | — |
 | Scheduling conflict (auto-decline) | Conflict email | — |
 | Booking cancelled | Cancellation email | Cancellation email |
 

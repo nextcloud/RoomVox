@@ -9,6 +9,7 @@ use OCA\RoomVox\Service\RoomGroupService;
 use OCA\RoomVox\Service\RoomService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\JSONResponse;
+use OCP\Calendar\Room\IManager as IRoomManager;
 use OCP\IGroupManager;
 use OCP\IRequest;
 use OCP\IUserSession;
@@ -21,6 +22,7 @@ class RoomGroupApiController extends Controller {
         private RoomGroupService $roomGroupService,
         private RoomService $roomService,
         private PermissionService $permissionService,
+        private IRoomManager $roomManager,
         private IUserSession $userSession,
         private IGroupManager $groupManager,
         private LoggerInterface $logger,
@@ -185,8 +187,20 @@ class RoomGroupApiController extends Controller {
         ];
 
         $this->permissionService->setGroupPermissions($id, $permissions);
+        $this->syncRoomCache();
 
         return new JSONResponse(['status' => 'ok']);
+    }
+
+    /**
+     * Trigger room cache sync so permission changes are reflected in calendar apps
+     */
+    private function syncRoomCache(): void {
+        try {
+            $this->roomManager->update();
+        } catch (\Exception $e) {
+            $this->logger->warning('Failed to sync room cache: ' . $e->getMessage());
+        }
     }
 
     private function getCurrentUserId(): ?string {

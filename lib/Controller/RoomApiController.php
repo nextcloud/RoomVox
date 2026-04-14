@@ -389,6 +389,7 @@ class RoomApiController extends Controller {
         ];
 
         $this->permissionService->setPermissions($id, $permissions);
+        $this->syncRoomCache();
 
         return new JSONResponse(['status' => 'ok']);
     }

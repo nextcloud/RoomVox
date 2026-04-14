@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.3] - 2026-04-14
+
+### Fixed
+- **Room visibility not updating after permission changes**: Changing permissions on a room or room group did not trigger a sync of Nextcloud's room cache, so rooms remained visible (or hidden) in the Room Finder until a different room update triggered the sync
+- **No email notification on permission-denied bookings**: When a user without permission tried to book a room, the booking was silently declined with no feedback other than a small warning icon in the calendar. Now a "Booking not permitted" email is sent to the organizer explaining they lack permission
+- **Declined booking not cleaned up in organizer's calendar**: When a booking was automatically declined (e.g. due to permissions), the room attendee and LOCATION remained in the organizer's event. Now the room attendee is removed and LOCATION is cleared for all automatic declines, matching the existing behavior for manager declines
+
+### Improved
+- **Permission Editor shows inherited group permissions**: When editing permissions for a room in a group, the editor now displays inherited group permissions as read-only entries with an "inherited" badge alongside the editable room-specific permissions
+
 ## [1.0.2] - 2026-04-10
 
 ### Fixed

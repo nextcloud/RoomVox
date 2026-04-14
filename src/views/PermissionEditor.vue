@@ -15,7 +15,7 @@
         </NcNoteCard>
 
         <NcNoteCard v-if="targetType === 'room' && target.groupId" type="info" class="permission-editor__info">
-            {{ $t('This room inherits permissions from its group. You can add room-specific permissions below that will be merged with the group permissions.') }}
+            {{ $t('This room inherits permissions from its group (shown as "inherited" below). You can add room-specific permissions that will be merged with the inherited ones.') }}
         </NcNoteCard>
 
         <div v-if="loading" class="permission-editor__loading">
@@ -26,6 +26,18 @@
             <div v-for="role in roles" :key="role.key" class="permission-section">
                 <h3>{{ role.label }}</h3>
                 <p class="section-description">{{ role.description }}</p>
+
+                <div v-if="hasGroupPermissions && groupPermissions[role.key].length > 0"
+                     class="inherited-entries">
+                    <div class="inherited-label">{{ $t('Inherited from group') }}</div>
+                    <div v-for="(entry, index) in groupPermissions[role.key]"
+                         :key="'inherited-' + index"
+                         class="permission-entry permission-entry--inherited">
+                        <AccountGroup :size="16" />
+                        <span class="entry-name">{{ entry.id }}</span>
+                        <span class="inherited-badge">{{ $t('inherited') }}</span>
+                    </div>
+                </div>
 
                 <div class="permission-entries">
                     <div v-for="(entry, index) in permissions[role.key]"
@@ -40,7 +52,7 @@
                         </NcButton>
                     </div>
 
-                    <div v-if="permissions[role.key].length === 0" class="no-entries">
+                    <div v-if="permissions[role.key].length === 0 && !(hasGroupPermissions && groupPermissions[role.key].length > 0)" class="no-entries">
                         {{ $t('No {role} configured', { role: role.label.toLowerCase() }) }}
                     </div>
                 </div>
@@ -113,6 +125,8 @@ const loading = ref(true)
 const saving = ref(false)
 const saved = ref(false)
 const permissions = reactive({ viewers: [], bookers: [], managers: [] })
+const groupPermissions = reactive({ viewers: [], bookers: [], managers: [] })
+const hasGroupPermissions = ref(false)
 const searchQueries = reactive({ viewers: '', bookers: '', managers: '' })
 const searchResults = reactive({ viewers: [], bookers: [], managers: [] })
 
@@ -129,6 +143,15 @@ const loadPermissions = async () => {
             const fetcher = props.targetType === 'group' ? getGroupPermissions : getPermissions
             const response = await fetcher(props.target.id)
             Object.assign(permissions, response.data)
+        }
+
+        // Also load inherited group permissions when editing a room in a group
+        if (props.targetType === 'room' && props.target.groupId && !props.readOnly) {
+            const groupResponse = await getGroupPermissions(props.target.groupId)
+            Object.assign(groupPermissions, groupResponse.data)
+            hasGroupPermissions.value = groupResponse.data.viewers.length > 0
+                || groupResponse.data.bookers.length > 0
+                || groupResponse.data.managers.length > 0
         }
     } catch (e) {
         showError(t('Failed to load permissions'))
@@ -254,6 +277,31 @@ onMounted(loadPermissions)
 .entry-name {
     flex: 1;
     font-weight: 500;
+}
+
+.inherited-entries {
+    margin-bottom: 8px;
+    padding-bottom: 8px;
+    border-bottom: 1px dashed var(--color-border);
+}
+
+.inherited-label {
+    font-size: 12px;
+    color: var(--color-text-maxcontrast);
+    margin-bottom: 4px;
+    font-style: italic;
+}
+
+.permission-entry--inherited {
+    opacity: 0.65;
+}
+
+.inherited-badge {
+    font-size: 11px;
+    color: var(--color-text-maxcontrast);
+    background: var(--color-background-dark);
+    padding: 1px 6px;
+    border-radius: 10px;
 }
 
 .no-entries {

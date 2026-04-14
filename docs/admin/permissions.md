@@ -100,6 +100,17 @@ Effective permissions for "Meeting Room 1":
   - bookers: [user: "alice", group: "staff"]  ← merged
 ```
 
+### Viewing Inherited Permissions
+
+When editing permissions for a room that belongs to a group, the permission editor shows both:
+
+- **Inherited permissions** — from the room group, displayed as greyed-out entries with an "inherited" badge. These cannot be removed from the room editor; edit the group permissions to change them.
+- **Room-specific permissions** — additional entries that apply only to this room. These can be added and removed freely.
+
+This makes it easy to see the full picture of who has access to a room without switching between the room and group editors.
+
+![Permission editor showing inherited group permissions alongside room-specific permissions](../screenshots/room-inheritedpermissions.png)
+
 ## Default Permissions
 
 If no permissions are configured for a room (and no group permissions apply):
@@ -129,6 +140,8 @@ This means:
 - A user added as an individual Booker may need to search for the room by name rather than browsing
 - A group added as Booker will see the room appear automatically in the resource list
 
+> **Note:** Permission changes are synced to Nextcloud's room cache immediately. After saving permissions, updated room visibility takes effect the next time a user opens the Room Finder or refreshes their calendar.
+
 ## Permission Checks in Practice
 
 ### Viewing Rooms in Admin Panel
@@ -141,7 +154,11 @@ When a user adds a room to a calendar event:
 
 1. The scheduling plugin resolves the sender's email/principal to a Nextcloud user ID
 2. It checks the user's `canBook()` permission for the room
-3. If the user lacks permission, the booking is declined with status `3.7`
+3. If the user lacks permission:
+   - The booking is declined with status `3.7`
+   - The room attendee is **removed** from the organizer's event
+   - The event's **LOCATION** is cleared
+   - The organizer receives a **"Booking not permitted"** email explaining they do not have permission to book the room
 
 ### Managing Bookings
 

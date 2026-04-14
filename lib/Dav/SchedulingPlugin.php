@@ -159,12 +159,22 @@ class SchedulingPlugin extends ServerPlugin {
                 $this->logger->info("RoomVox: Booking denied for unknown sender {$message->sender} on room {$roomId} — could not resolve user");
                 $message->scheduleStatus = '3.7'; // Delivery refused
                 $this->setPartstat($message, 'DECLINED');
+                try {
+                    $this->mailService->sendPermissionDenied($room, $message);
+                } catch (\Throwable $e) {
+                    $this->logger->error("RoomVox: Failed to send permission denied email: " . $e->getMessage());
+                }
                 return;
             }
             if (!$this->permissionService->canBook($senderId, $roomId)) {
                 $this->logger->info("RoomVox: Booking denied for {$senderId} on room {$roomId} — no permission");
                 $message->scheduleStatus = '3.7'; // Delivery refused
                 $this->setPartstat($message, 'DECLINED');
+                try {
+                    $this->mailService->sendPermissionDenied($room, $message);
+                } catch (\Throwable $e) {
+                    $this->logger->error("RoomVox: Failed to send permission denied email: " . $e->getMessage());
+                }
                 return;
             }
         }
@@ -399,6 +409,19 @@ class SchedulingPlugin extends ServerPlugin {
                     $uid = (string)($vEvent->UID ?? '');
                     $partstatKey = $email . '|' . $uid;
                     if (isset($this->scheduledPartstats[$partstatKey])) {
+                        if ($this->scheduledPartstats[$partstatKey] === 'DECLINED') {
+                            // Remove the room attendee entirely so Room Finder shows it as available
+                            $vEvent->remove($attendee);
+                            unset($vEvent->LOCATION);
+                            $this->cancelledRoomEmails[] = $email;
+                            // Remove from tracking arrays since this room is no longer an attendee
+                            $roomEmails = array_filter($roomEmails, fn($e) => $e !== $email);
+                            unset($currentRoomInfo[$email]);
+                            $changed = true;
+                            $this->logger->info("RoomVox: Removed declined room {$email} from organizer event {$path}");
+                            break; // Iterator invalidated after remove
+                        }
+
                         $currentPartstat = isset($attendee['PARTSTAT']) ? (string)$attendee['PARTSTAT'] : '';
                         if ($currentPartstat !== $this->scheduledPartstats[$partstatKey]) {
                             $attendee['PARTSTAT'] = $this->scheduledPartstats[$partstatKey];

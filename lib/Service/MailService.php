@@ -67,6 +67,26 @@ class MailService {
     }
 
     /**
+     * Send permission denied email to the organizer
+     */
+    public function sendPermissionDenied(array $room, ITip\Message $message): void {
+        $eventInfo = $this->extractEventInfo($message);
+        if ($eventInfo === null) {
+            return;
+        }
+
+        $subject = "Booking not permitted: {$room['name']} — {$eventInfo['summary']}";
+        $body = $this->buildPermissionDeniedBody($room, $eventInfo);
+
+        $this->sendMail(
+            $room,
+            $eventInfo['organizerEmail'],
+            $subject,
+            $body,
+        );
+    }
+
+    /**
      * Send conflict notification to the organizer
      */
     public function sendConflict(array $room, ITip\Message $message): void {
@@ -384,6 +404,14 @@ class MailService {
             . "Event: {$event['summary']}\n"
             . "Date: {$event['dtstartFormatted']} – {$event['dtendFormatted']}\n\n"
             . "Please contact the room manager for more information.";
+    }
+
+    private function buildPermissionDeniedBody(array $room, array $event): string {
+        return "Your booking request was automatically declined because you do not have permission to book this room.\n\n"
+            . "Room: {$room['name']}\n"
+            . "Event: {$event['summary']}\n"
+            . "Date: {$event['dtstartFormatted']} – {$event['dtendFormatted']}\n\n"
+            . "Please contact your administrator if you believe this is an error.";
     }
 
     private function buildConflictBody(array $room, array $event): string {
