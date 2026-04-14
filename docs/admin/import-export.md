@@ -10,7 +10,7 @@ RoomVox supports bulk room management via CSV files. You can export all rooms fo
 2. Click the **Import / Export** tab
 3. Click **Export CSV**
 
-![Import / Export tab — export and import rooms](../screenshots/export-rooms2.png)
+![Import / Export tab — export and import rooms](../../screenshots/export-rooms2.png)
 
 A CSV file is downloaded with all rooms and 13 columns:
 
@@ -120,7 +120,7 @@ MS365 columns are automatically mapped to RoomVox fields:
    - Per-row action: **New** (will create) or **Update** (matches existing room)
    - Any validation errors
 
-![Import preview — detected format, per-row action, and validation](../screenshots/import-rooms.png)
+![Import preview — detected format, per-row action, and validation](../../screenshots/import-rooms.png)
 
 4. Choose an import mode:
    - **Only create new rooms** — Skip rows that match existing rooms
@@ -129,7 +129,7 @@ MS365 columns are automatically mapped to RoomVox fields:
 6. Click **Import**
 7. Review the results: created, updated, skipped, and errors
 
-![Import results — created, updated, and skipped counts](../screenshots/export-rooms2.png)
+![Import results — created, updated, and skipped counts](../../screenshots/export-rooms2.png)
 
 ### Duplicate Detection
 
@@ -181,4 +181,4 @@ Uploaded CSV files are limited to **5 MB**. For larger imports, split the file i
 
 The exported CSV can be opened directly in Excel or LibreOffice Calc for editing.
 
-![Exported CSV opened in a spreadsheet application](../screenshots/export-rooms.png)
+![Exported CSV opened in a spreadsheet application](../../screenshots/export-rooms.png)

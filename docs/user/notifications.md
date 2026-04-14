@@ -16,7 +16,7 @@ RoomVox sends email notifications to keep organizers and managers informed about
 
 Triggered when a booking is accepted (either auto-accepted or approved by a manager).
 
-![Booking confirmation email with event details and location](../screenshots/confirmation-email.png)
+![Booking confirmation email with event details and location](../../screenshots/confirmation-email.png)
 
 **Contains:**
 - Room name

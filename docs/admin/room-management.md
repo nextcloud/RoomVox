@@ -6,7 +6,7 @@ This guide covers creating, configuring, and organizing rooms in RoomVox.
 
 The admin panel has five tabs: **Rooms**, **Bookings**, **Import / Export**, **Settings**, and **Statistics**. The Rooms tab shows all rooms organized by group, with columns for name, room number, type, address, capacity, auto-accept status, and active status.
 
-![Room overview — all rooms organized by group](../screenshots/rooms-overview.png)
+![Room overview — all rooms organized by group](../../screenshots/rooms-overview.png)
 
 ## Creating Rooms
 
@@ -29,7 +29,7 @@ The admin panel has five tabs: **Rooms**, **Bookings**, **Import / Export**, **S
 | Email | No | Custom email address for the room (see below) |
 | Room Group | No | Assign room to a group for shared permissions |
 
-![Room editor — general settings and location](../screenshots/rooms-edit.png)
+![Room editor — general settings and location](../../screenshots/rooms-edit.png)
 
 ### Room Email Address
 
@@ -52,7 +52,7 @@ Available facility checkboxes:
 
 These are published as CalDAV room features and can be used for filtering in the calendar patch room browser.
 
-![Room editor — facilities, auto-accept, availability, and booking horizon](../screenshots/rooms-settings.png)
+![Room editor — facilities, auto-accept, availability, and booking horizon](../../screenshots/rooms-settings.png)
 
 ## Booking Behavior
 
@@ -129,7 +129,7 @@ Room types help categorize your rooms. They're shown in the room list and publis
 3. Add, edit, or remove types
 4. Drag to reorder
 
-![Settings — room types configuration](../screenshots/settings.png)
+![Settings — room types configuration](../../screenshots/settings.png)
 
 ### Default Types
 
@@ -165,7 +165,7 @@ Set permissions at the group level to apply them to all rooms in the group:
 3. Click **Save Permissions**
 4. These permissions are merged (union) with each room's individual permissions
 
-![Group-level permission editor — viewers, bookers, and managers](../screenshots/rooms-permissions.png)
+![Group-level permission editor — viewers, bookers, and managers](../../screenshots/rooms-permissions.png)
 
 ### Deleting Groups
 
