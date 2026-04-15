@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.5] - 2026-04-15
+
+### Fixed
+- **Room visibility ignores group permissions**: Rooms in a group with configured permissions were still visible to all users in "Suggested conference rooms". The `group_restrictions` in Nextcloud's room cache remained empty because the `PermissionService` did not always have access to the `RoomService` during background sync (DI timing issue). The `RoomBackend` now resolves group permissions directly when the normal merge path fails
+
 ## [1.0.4] - 2026-04-14
 
 ### Fixed

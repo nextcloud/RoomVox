@@ -81,6 +81,21 @@ class RoomBackend implements IBackend {
      */
     private function createRoomObject(array $roomData): Room {
         $permissions = $this->permissionService->getEffectivePermissions($roomData['id']);
+
+        // Fallback: if effective permissions are empty but room has a groupId,
+        // the PermissionService may not have RoomService injected yet (DI timing
+        // issue when called from Nextcloud's background job or server container).
+        // Merge group permissions directly using the groupId from the room data.
+        if ($this->isEmptyPermissions($permissions) && !empty($roomData['groupId'])) {
+            $groupPerms = $this->permissionService->getGroupPermissions($roomData['groupId']);
+            $roomPerms = $this->permissionService->getPermissions($roomData['id']);
+            $permissions = [
+                'viewers' => array_merge($groupPerms['viewers'], $roomPerms['viewers']),
+                'bookers' => array_merge($groupPerms['bookers'], $roomPerms['bookers']),
+                'managers' => array_merge($groupPerms['managers'], $roomPerms['managers']),
+            ];
+        }
+
         $groupRestrictions = $this->extractGroupIds($permissions);
 
         return new Room(
@@ -97,6 +112,10 @@ class RoomBackend implements IBackend {
             facilities: $roomData['facilities'] ?? [],
             groupRestrictions: $groupRestrictions,
         );
+    }
+
+    private function isEmptyPermissions(array $permissions): bool {
+        return empty($permissions['viewers']) && empty($permissions['bookers']) && empty($permissions['managers']);
     }
 
     /**
