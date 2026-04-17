@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.6] - 2026-04-17
+
+### Fixed
+- **Rooms visible to users without permission**: new Sabre `RoomVisibilityPlugin` filters room principals out of PROPFIND responses for users who lack view access
+- **Calendar patch toggles unresponsive on NC 6.3**: migrated `NcCheckboxRadioSwitch` bindings from Vue 2 to Vue 3 / `@nextcloud/vue` v9 syntax
+
 ## [1.0.5] - 2026-04-15
 
 ### Fixed

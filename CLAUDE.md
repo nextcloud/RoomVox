@@ -20,7 +20,20 @@ composer install --no-dev   # Production dependencies only
 composer install            # Include dev dependencies (phpunit)
 ```
 
-No test suite exists yet. `composer.json` has phpunit configured but no tests directory.
+### Tests
+
+Standalone PHPUnit 10 suite — no running Nextcloud instance required. All Nextcloud interfaces are mocked; Sabre classes are stubbed via [tests/stubs/sabre.php](tests/stubs/sabre.php); `OCP\` / `NCU\` namespaces are autoloaded from the `nextcloud/ocp` dev dependency via [tests/bootstrap.php](tests/bootstrap.php).
+
+```bash
+vendor/bin/phpunit --testsuite unit                          # All unit tests
+vendor/bin/phpunit tests/Unit/Service/RoomServiceTest.php    # Single file
+vendor/bin/phpunit --filter testStripMailto                  # Single test
+vendor/bin/phpunit --coverage-html build/report              # With coverage (needs Xdebug/PCOV)
+```
+
+Some tests exercise private methods via `ReflectionMethod` on purpose — core business logic (availability rules, iCal generation, CSV parsing) is validated directly, independent of the public API.
+
+CI runs via `.gitea/workflows/tests.yml` (phpunit on PHP 8.2+8.3 matrix, plus `npm run build`).
 
 ## Architecture
 
@@ -59,6 +72,7 @@ Key services:
 - **MailService** — Per-room SMTP or Nextcloud IMailer fallback, passwords encrypted with ICrypto
 - **ImportExportService** — CSV import/export (RoomVox + MS365/Exchange formats)
 - **ApiTokenService** — Bearer token management for Public API v1
+- **Exchange/** — Optional Microsoft Graph sync ([ExchangeSyncService](lib/Service/Exchange/), [WebhookService](lib/Service/Exchange/)). Pulls bookings from Exchange room mailboxes; webhook subscriptions must be renewed within a 36h safety margin and require HTTPS notification URLs (Graph rejects HTTP).
 
 ### Frontend
 

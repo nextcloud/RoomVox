@@ -107,6 +107,55 @@ class PermissionService {
         ];
     }
 
+    /**
+     * Bulk-load effective permissions for all rooms in a single pass.
+     *
+     * Avoids N+1 IAppConfig reads when filtering large room collections
+     * (CalDAV PROPFIND on principals/calendar-rooms/). Uses appConfig's
+     * getAllValues to fetch every permissions/* and group_permissions/*
+     * key in two reads, then merges per room using the same union logic
+     * as getEffectivePermissions().
+     *
+     * @return array<string, array{viewers: array, bookers: array, managers: array}> roomId → effective perms
+     */
+    public function getAllEffectivePermissions(): array {
+        $roomPermsByKey = $this->appConfig->getAllValues(Application::APP_ID, self::PERM_PREFIX);
+        $groupPermsByKey = $this->appConfig->getAllValues(Application::APP_ID, self::GROUP_PERM_PREFIX);
+
+        $roomPerms = [];
+        foreach ($roomPermsByKey as $key => $value) {
+            $roomId = substr($key, \strlen(self::PERM_PREFIX));
+            $roomPerms[$roomId] = $this->decodePermissions((string)$value);
+        }
+
+        $groupPerms = [];
+        foreach ($groupPermsByKey as $key => $value) {
+            $groupId = substr($key, \strlen(self::GROUP_PERM_PREFIX));
+            $groupPerms[$groupId] = $this->decodePermissions((string)$value);
+        }
+
+        $result = [];
+        $allRooms = $this->roomService?->getAllRooms() ?? [];
+        foreach ($allRooms as $room) {
+            $roomId = $room['id'];
+            $rPerms = $roomPerms[$roomId] ?? ['viewers' => [], 'bookers' => [], 'managers' => []];
+            $groupId = $room['groupId'] ?? '';
+
+            if ($groupId !== '' && isset($groupPerms[$groupId])) {
+                $gPerms = $groupPerms[$groupId];
+                $result[$roomId] = [
+                    'viewers' => $this->mergeEntries($gPerms['viewers'], $rPerms['viewers']),
+                    'bookers' => $this->mergeEntries($gPerms['bookers'], $rPerms['bookers']),
+                    'managers' => $this->mergeEntries($gPerms['managers'], $rPerms['managers']),
+                ];
+            } else {
+                $result[$roomId] = $rPerms;
+            }
+        }
+
+        return $result;
+    }
+
     // ── Permission checks ────────────────────────────────────────
 
     /**
@@ -194,7 +243,10 @@ class PermissionService {
 
     private function loadPermissions(string $key): array {
         $json = $this->appConfig->getValueString(Application::APP_ID, $key, '');
+        return $this->decodePermissions($json);
+    }
 
+    private function decodePermissions(string $json): array {
         if ($json === '') {
             return ['viewers' => [], 'bookers' => [], 'managers' => []];
         }

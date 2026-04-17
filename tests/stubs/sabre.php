@@ -23,6 +23,19 @@ if (!class_exists(\Sabre\DAV\Server::class)) {
     }
 }
 
+if (!interface_exists(\Sabre\DAV\INode::class)) {
+    interface INode {
+        public function getName();
+    }
+}
+
+if (!class_exists(\Sabre\DAV\PropFind::class)) {
+    class PropFind {
+        public function __construct(private string $path = '') {}
+        public function getPath(): string { return $this->path; }
+    }
+}
+
 namespace Sabre\VObject;
 
 if (!class_exists(\Sabre\VObject\Document::class)) {

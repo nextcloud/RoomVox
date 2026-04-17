@@ -117,9 +117,9 @@
 						<div class="app-full__header__details-time">
 							<NcCheckboxRadioSwitch
 								v-if="!isReadOnly && !isViewedByAttendee"
-								:checked="isAllDay"
+								:model-value="isAllDay"
 								:disabled="!canModifyAllDay"
-								@update:checked="toggleAllDayPreliminary">
+								@update:model-value="toggleAllDayPreliminary">
 								{{ $t('calendar', 'All day') }}
 							</NcCheckboxRadioSwitch>
 
@@ -190,8 +190,8 @@
 								<MapMarker :size="20" class="meeting-option__icon" />
 								<NcCheckboxRadioSwitch
 									type="switch"
-									:checked="isInPerson"
-									@update:checked="handleInPersonToggle">
+									:model-value="isInPerson"
+									@update:model-value="handleInPersonToggle">
 									{{ $t('calendar', 'In-person') }}
 								</NcCheckboxRadioSwitch>
 								<NcButton
@@ -226,8 +226,8 @@
 								<IconVideo :size="20" class="meeting-option__icon" />
 								<NcCheckboxRadioSwitch
 									type="switch"
-									:checked="isOnline"
-									@update:checked="handleOnlineToggle">
+									:model-value="isOnline"
+									@update:model-value="handleOnlineToggle">
 									{{ $t('calendar', 'Online (Talk)') }}
 								</NcCheckboxRadioSwitch>
 								<NcButton
@@ -359,7 +359,7 @@
 						</div>
 						<div class="modal-footer">
 							<div class="modal-footer-checkbox">
-								<NcCheckboxRadioSwitch v-if="!isPrivate()" :checked.sync="doNotShare">
+								<NcCheckboxRadioSwitch v-if="!isPrivate()" v-model="doNotShare">
 									{{ t('calendar', 'Deny access') }}
 								</NcCheckboxRadioSwitch>
 							</div>

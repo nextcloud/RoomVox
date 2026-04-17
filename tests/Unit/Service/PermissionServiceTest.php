@@ -167,4 +167,56 @@ class PermissionServiceTest extends TestCase {
         $this->assertSame('alice', $effective['viewers'][0]['id']);
         $this->assertSame('bob', $effective['bookers'][0]['id']);
     }
+
+    public function testGetAllEffectivePermissionsBulkLoad(): void {
+        $this->appConfig->method('getAllValues')
+            ->willReturnCallback(function (string $app, string $prefix) {
+                if ($prefix === 'permissions/') {
+                    return [
+                        'permissions/room1' => json_encode([
+                            'viewers' => [],
+                            'bookers' => [['type' => 'group', 'id' => 'staff']],
+                            'managers' => [],
+                        ]),
+                        'permissions/room2' => json_encode([
+                            'viewers' => [['type' => 'user', 'id' => 'alice']],
+                            'bookers' => [],
+                            'managers' => [],
+                        ]),
+                    ];
+                }
+                if ($prefix === 'group_permissions/') {
+                    return [
+                        'group_permissions/north-wing' => json_encode([
+                            'viewers' => [['type' => 'group', 'id' => 'managers']],
+                            'bookers' => [],
+                            'managers' => [],
+                        ]),
+                    ];
+                }
+                return [];
+            });
+
+        $roomService = $this->createMock(RoomService::class);
+        $roomService->method('getAllRooms')->willReturn([
+            ['id' => 'room1', 'groupId' => 'north-wing'],
+            ['id' => 'room2', 'groupId' => ''],
+            ['id' => 'room3', 'groupId' => ''], // No permission entries
+        ]);
+        $this->service->setRoomService($roomService);
+
+        $all = $this->service->getAllEffectivePermissions();
+
+        // room1 merges its own bookers with north-wing's viewers
+        $this->assertSame('managers', $all['room1']['viewers'][0]['id']);
+        $this->assertSame('staff', $all['room1']['bookers'][0]['id']);
+
+        // room2 has only its own perms (no group)
+        $this->assertSame('alice', $all['room2']['viewers'][0]['id']);
+
+        // room3 has no entries — gets empty buckets, not omitted
+        $this->assertSame([], $all['room3']['viewers']);
+        $this->assertSame([], $all['room3']['bookers']);
+        $this->assertSame([], $all['room3']['managers']);
+    }
 }

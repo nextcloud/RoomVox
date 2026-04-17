@@ -90,8 +90,8 @@
 				</span>
 				<NcCheckboxRadioSwitch
 					type="switch"
-					:checked="showUnavailable"
-					@update:checked="showUnavailable = $event">
+					:model-value="showUnavailable"
+					@update:model-value="showUnavailable = $event">
 					{{ $t('calendar', 'Show unavailable') }}
 				</NcCheckboxRadioSwitch>
 			</div>
