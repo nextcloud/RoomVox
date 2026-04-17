@@ -1,6 +1,6 @@
 {
     "name": "roomvox",
-    "version": "1.0.5",
+    "version": "1.0.6",
     "description": "Nextcloud Room Booking App",
     "scripts": {
         "build": "webpack --mode production",
