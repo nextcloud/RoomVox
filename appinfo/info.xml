@@ -31,14 +31,14 @@ No separate booking portal needed. Rooms appear directly in the calendar app you
     ]]></description>
     <version>1.0.6</version>
     <licence>agpl</licence>
-    <author mail="info@voxcloud.nl" homepage="https://voxcloud.nl">VoxCloud</author>
+    <author mail="info@voxcommons.com" homepage="https://voxcommons.com">VoxCommons</author>
     <namespace>RoomVox</namespace>
     <category>organization</category>
     <category>office</category>
     <bugs>https://github.com/nextcloud/roomvox/issues</bugs>
     <repository type="git">https://github.com/nextcloud/roomvox.git</repository>
     <discussion>https://github.com/nextcloud/roomvox/discussions</discussion>
-    <website>https://voxcloud.nl</website>
+    <website>https://voxcommons.com</website>
     <documentation>
         <admin>https://github.com/nextcloud/roomvox/blob/main/docs/admin/installation.md</admin>
         <user>https://github.com/nextcloud/roomvox/blob/main/docs/user/booking-rooms.md</user>
