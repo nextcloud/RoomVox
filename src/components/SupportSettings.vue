@@ -209,11 +209,11 @@
 			<div class="contact-info-block">
 				<p>
 					{{ $t('Learn more about RoomVox') }}:
-					<a href="https://voxcommons.com" target="_blank" rel="noopener noreferrer">voxcommons.com</a>
+					<a href="https://voxcloud.nl" target="_blank" rel="noopener noreferrer">voxcloud.nl</a>
 				</p>
 				<p>
 					{{ $t('Questions or feedback?') }}
-					<a href="mailto:info@voxcommons.com">info@voxcommons.com</a>
+					<a href="mailto:info@voxcloud.nl">info@voxcloud.nl</a>
 				</p>
 			</div>
 		</div>
@@ -260,7 +260,7 @@ export default {
 	computed: {
 		pricingUrl() {
 			const lang = (window.document?.documentElement?.lang || '').split('-')[0]
-			return lang === 'nl' ? 'https://voxcommons.com/pricing/#roomvox' : 'https://voxcommons.com/en/pricing/#roomvox'
+			return lang === 'nl' ? 'https://voxcloud.nl/pricing/#roomvox' : 'https://voxcloud.nl/en/pricing/#roomvox'
 		},
 	},
 
