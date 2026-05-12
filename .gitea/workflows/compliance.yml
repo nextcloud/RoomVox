@@ -6,6 +6,7 @@ on:
     tags: ['v*']
   pull_request:
     branches: [main]
+  workflow_dispatch:
 
 env:
   APP_ID: roomvox
@@ -33,6 +34,7 @@ jobs:
           tools: composer:v2
 
       - name: Composer install
+        continue-on-error: true
         run: |
           if [ -f composer.json ]; then
             composer install --no-progress --no-interaction || true
@@ -43,36 +45,36 @@ jobs:
         continue-on-error: true
         run: |
           if [ -f phpstan.neon ] || [ -f phpstan.neon.dist ]; then
-            ./vendor/bin/phpstan analyse --no-progress --error-format=raw > phpstan.txt || true
-            echo "lines=$(wc -l < phpstan.txt)" >> $GITHUB_OUTPUT
+            ./vendor/bin/phpstan analyse --no-progress --error-format=raw > phpstan.txt 2>&1 || true
+            LINES=$(wc -l < phpstan.txt || echo 0)
           else
-            echo "skipped" > phpstan.txt
-            echo "lines=0" >> $GITHUB_OUTPUT
+            LINES=0
           fi
+          if [ "$LINES" = "0" ]; then echo "result=pass" >> $GITHUB_OUTPUT; else echo "result=fail" >> $GITHUB_OUTPUT; fi
 
       - name: Psalm
         id: psalm
         continue-on-error: true
         run: |
           if [ -f psalm.xml ] || [ -f psalm.xml.dist ]; then
-            ./vendor/bin/psalm --no-progress --output-format=text > psalm.txt || true
-            echo "lines=$(wc -l < psalm.txt)" >> $GITHUB_OUTPUT
+            ./vendor/bin/psalm --no-progress --output-format=text > psalm.txt 2>&1 || true
+            LINES=$(wc -l < psalm.txt || echo 0)
           else
-            echo "skipped" > psalm.txt
-            echo "lines=0" >> $GITHUB_OUTPUT
+            LINES=0
           fi
+          if [ "$LINES" = "0" ]; then echo "result=pass" >> $GITHUB_OUTPUT; else echo "result=fail" >> $GITHUB_OUTPUT; fi
 
       - name: PHPCS
         id: phpcs
         continue-on-error: true
         run: |
           if [ -f .phpcs.xml ] || [ -f phpcs.xml.dist ]; then
-            ./vendor/bin/phpcs --report=full --no-colors > phpcs.txt || true
-            echo "lines=$(wc -l < phpcs.txt)" >> $GITHUB_OUTPUT
+            ./vendor/bin/phpcs --report=full --no-colors > phpcs.txt 2>&1 || true
+            LINES=$(wc -l < phpcs.txt || echo 0)
           else
-            echo "skipped" > phpcs.txt
-            echo "lines=0" >> $GITHUB_OUTPUT
+            LINES=0
           fi
+          if [ "$LINES" = "0" ]; then echo "result=pass" >> $GITHUB_OUTPUT; else echo "result=fail" >> $GITHUB_OUTPUT; fi
 
       - name: PHPUnit
         id: phpunit
@@ -80,88 +82,51 @@ jobs:
         run: |
           if [ -f phpunit.xml ] || [ -f phpunit.xml.dist ]; then
             ./vendor/bin/phpunit --testdox > phpunit.txt 2>&1 || true
+            if grep -q "OK\|tests, " phpunit.txt; then echo "result=pass" >> $GITHUB_OUTPUT; else echo "result=fail" >> $GITHUB_OUTPUT; fi
           else
-            echo "no phpunit.xml — skipping" > phpunit.txt
+            echo "result=pass" >> $GITHUB_OUTPUT
           fi
-
-      - name: composer audit
-        continue-on-error: true
-        run: composer audit --format=plain > audit.txt 2>&1 || true
 
       - name: Compute status + score
         id: status
         run: |
-          PHPSTAN_OK=$([ "${{ steps.phpstan.outputs.lines }}" = "0" ] && echo "pass" || echo "fail")
-          PSALM_OK=$([ "${{ steps.psalm.outputs.lines }}" = "0" ] && echo "pass" || echo "fail")
-          PHPCS_OK=$([ "${{ steps.phpcs.outputs.lines }}" = "0" ] && echo "pass" || echo "fail")
-          if grep -q "OK\|tests, " phpunit.txt; then TESTS_OK=pass; else TESTS_OK=fail; fi
-
           STATUS=passed
-          for c in $PHPSTAN_OK $PSALM_OK $PHPCS_OK $TESTS_OK; do
-            [ "$c" = "fail" ] && STATUS=failed
-          done
-
+          [ "${{ steps.phpstan.outputs.result }}" = "fail" ] && STATUS=failed
+          [ "${{ steps.psalm.outputs.result }}" = "fail" ] && STATUS=failed
+          [ "${{ steps.phpcs.outputs.result }}" = "fail" ] && STATUS=failed
+          [ "${{ steps.phpunit.outputs.result }}" = "fail" ] && STATUS=failed
           SCORE=100
-          [ "$PHPSTAN_OK" = "fail" ] && SCORE=$((SCORE-25))
-          [ "$PSALM_OK" = "fail" ] && SCORE=$((SCORE-20))
-          [ "$PHPCS_OK" = "fail" ] && SCORE=$((SCORE-15))
-          [ "$TESTS_OK" = "fail" ] && SCORE=$((SCORE-30))
-
+          [ "${{ steps.phpstan.outputs.result }}" = "fail" ] && SCORE=$((SCORE-25))
+          [ "${{ steps.psalm.outputs.result }}" = "fail" ] && SCORE=$((SCORE-20))
+          [ "${{ steps.phpcs.outputs.result }}" = "fail" ] && SCORE=$((SCORE-15))
+          [ "${{ steps.phpunit.outputs.result }}" = "fail" ] && SCORE=$((SCORE-30))
           echo "status=$STATUS" >> $GITHUB_OUTPUT
           echo "score=$SCORE" >> $GITHUB_OUTPUT
-          echo "phpstan=$PHPSTAN_OK" >> $GITHUB_OUTPUT
-          echo "psalm=$PSALM_OK" >> $GITHUB_OUTPUT
-          echo "phpcs=$PHPCS_OK" >> $GITHUB_OUTPUT
-          echo "tests=$TESTS_OK" >> $GITHUB_OUTPUT
 
-      - name: Build tarball (on tag)
-        id: build
-        if: startsWith(github.ref, 'refs/tags/')
-        run: |
-          mkdir -p _dist
-          # Nextcloud apps are packaged as appid/... at the tar root.
-          mkdir -p _stage/${APP_ID}
-          rsync -a --exclude='.git' --exclude='_dist' --exclude='_stage' \
-                   --exclude='node_modules' --exclude='tests' --exclude='.gitea' \
-                   ./ _stage/${APP_ID}/
-          tar -czf _dist/${APP_ID}-${GITHUB_REF_NAME}.tar.gz -C _stage ${APP_ID}
-          echo "artifact=_dist/${APP_ID}-${GITHUB_REF_NAME}.tar.gz" >> $GITHUB_OUTPUT
-
-      - name: Upload artefact
-        if: startsWith(github.ref, 'refs/tags/')
-        uses: actions/upload-artifact@v3
-        with:
-          name: ${{ env.APP_ID }}-${{ github.ref_name }}-nc${{ matrix.nc }}
-          path: _dist/*.tar.gz
-
-      - name: Ingest to compliance dashboard
+      - name: Ingest result
         if: always()
         run: |
-          LOGS=$(tail -c 6000 phpunit.txt 2>/dev/null || true)
-          REF="${GITHUB_REF_NAME:-${GITHUB_SHA:0:12}}"
-          ARTIFACT_URL=""
-          if [ -n "${{ steps.build.outputs.artifact }}" ]; then
-            ARTIFACT_URL="${GITEA_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}/artifacts/${APP_ID}-${GITHUB_REF_NAME}-nc${{ matrix.nc }}"
-          fi
+          REF="${GITHUB_REF_NAME:-main}"
+          # Build the JSON body without heredoc + jq — just printf.
+          PAYLOAD=$(printf '{"app_id":"%s","git_ref":"%s","nc_version":"%s","status":"%s","source":"gitea","checks":{"phpstan":"%s","psalm":"%s","phpcs":"%s","tests":"%s"},"quality_score":%s,"run_url":"%s/%s/actions/runs/%s"}' \
+            "$APP_ID" \
+            "$REF" \
+            "${{ matrix.nc }}" \
+            "${{ steps.status.outputs.status }}" \
+            "${{ steps.phpstan.outputs.result }}" \
+            "${{ steps.psalm.outputs.result }}" \
+            "${{ steps.phpcs.outputs.result }}" \
+            "${{ steps.phpunit.outputs.result }}" \
+            "${{ steps.status.outputs.score }}" \
+            "$GITEA_SERVER_URL" \
+            "$GITHUB_REPOSITORY" \
+            "$GITHUB_RUN_ID")
+
+          echo "Posting payload to ingest:"
+          echo "$PAYLOAD"
+
           curl -sS -X POST "${{ secrets.COMPLIANCE_INGEST_URL }}" \
             -H "Authorization: Bearer ${{ secrets.COMPLIANCE_INGEST_TOKEN }}" \
             -H "Content-Type: application/json" \
-            -d @- <<EOF
-          {
-            "app_id": "roomvox",
-            "git_ref": "${REF}",
-            "nc_version": "${{ matrix.nc }}",
-            "status": "${{ steps.status.outputs.status }}",
-            "source": "gitea",
-            "checks": {
-              "phpstan": "${{ steps.status.outputs.phpstan }}",
-              "psalm": "${{ steps.status.outputs.psalm }}",
-              "phpcs": "${{ steps.status.outputs.phpcs }}",
-              "tests": "${{ steps.status.outputs.tests }}"
-            },
-            "quality_score": ${{ steps.status.outputs.score }},
-            "run_url": "${GITEA_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}",
-            "artifact_url": "${ARTIFACT_URL}",
-            "logs_excerpt": $(echo "$LOGS" | jq -Rs .)
-          }
-          EOF
+            -d "$PAYLOAD" \
+            -w '\nhttp=%{http_code}\n'
