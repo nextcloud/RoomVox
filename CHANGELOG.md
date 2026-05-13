@@ -182,3 +182,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - SMTP password encryption via Nextcloud ICrypto
 <!-- compliance smoke trigger -->
 <!-- runner online retry -->
+<!-- e2e webhook smoke -->
