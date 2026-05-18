@@ -131,7 +131,7 @@ export default {
 			if (this.participationStatus === 'DECLINED') {
 				parts.push(this.$t('calendar', 'Declined'))
 			} else if (this.availability === 'busy') {
-				parts.push(this.$t('calendar', 'Busy at this time'))
+				parts.push(this.$t('roomvox', 'Busy at this time'))
 			} else if (this.participationStatus === 'TENTATIVE') {
 				parts.push(this.$t('calendar', 'Tentative'))
 			} else if (this.participationStatus === 'ACCEPTED') {

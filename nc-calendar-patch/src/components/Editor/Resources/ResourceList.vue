@@ -14,7 +14,7 @@
 			<div class="room-finder__search-row">
 				<NcTextField
 					:value="filterText"
-					:placeholder="$t('calendar', 'Search rooms...')"
+					:placeholder="$t('roomvox', 'Search rooms...')"
 					:show-trailing-button="filterText.length > 0"
 					trailing-button-icon="close"
 					@update:value="filterText = $event"
@@ -23,13 +23,13 @@
 					v-if="hasActiveFilters"
 					class="room-finder__clear"
 					@click="clearFilters">
-					{{ $t('calendar', 'Reset') }}
+					{{ $t('roomvox', 'Reset') }}
 				</button>
 			</div>
 
 			<!-- Filters: 2-column grid -->
 			<div v-if="buildingOptions.length > 0" class="room-finder__field">
-				<label class="room-finder__label">{{ $t('calendar', 'Building') }}</label>
+				<label class="room-finder__label">{{ $t('roomvox', 'Building') }}</label>
 				<NcSelect
 					v-model="selectedBuilding"
 					:options="buildingOptions"
@@ -40,7 +40,7 @@
 					input-id="room-finder-building" />
 			</div>
 			<div class="room-finder__field">
-				<label class="room-finder__label">{{ $t('calendar', 'Capacity') }}</label>
+				<label class="room-finder__label">{{ $t('roomvox', 'Capacity') }}</label>
 				<NcSelect
 					v-model="selectedCapacity"
 					:options="capacityOptions"
@@ -51,7 +51,7 @@
 					input-id="room-finder-capacity" />
 			</div>
 			<div v-if="floorOptions.length > 0" class="room-finder__field">
-				<label class="room-finder__label">{{ $t('calendar', 'Floor') }}</label>
+				<label class="room-finder__label">{{ $t('roomvox', 'Floor') }}</label>
 				<NcSelect
 					v-model="selectedFloor"
 					:options="floorOptions"
@@ -62,7 +62,7 @@
 					input-id="room-finder-floor" />
 			</div>
 			<div v-if="featureOptions.length > 0" class="room-finder__field">
-				<label class="room-finder__label">{{ $t('calendar', 'Features') }}</label>
+				<label class="room-finder__label">{{ $t('roomvox', 'Features') }}</label>
 				<NcSelect
 					v-model="selectedFeatures"
 					:options="featureOptions"
@@ -86,13 +86,13 @@
 
 			<div class="room-finder__results-header">
 				<span class="room-finder__results-label">
-					{{ $t('calendar', 'Suggested conference rooms') }}
+					{{ $t('roomvox', 'Suggested conference rooms') }}
 				</span>
 				<NcCheckboxRadioSwitch
 					type="switch"
 					:model-value="showUnavailable"
 					@update:model-value="showUnavailable = $event">
-					{{ $t('calendar', 'Show unavailable') }}
+					{{ $t('roomvox', 'Show unavailable') }}
 				</NcCheckboxRadioSwitch>
 			</div>
 
@@ -112,18 +112,18 @@
 					v-if="hasMoreRooms"
 					class="room-finder__show-more"
 					@click="visibleCount += 8">
-					{{ $t('calendar', 'Show {count} more', { count: Math.min(remainingCount, 8) }) }}
+					{{ $t('roomvox', 'Show {count} more', { count: Math.min(remainingCount, 8) }) }}
 				</button>
 
 				<p
 					v-if="sortedRooms.length === 0 && allRooms.length > 0"
 					class="room-finder__empty">
-					{{ $t('calendar', 'No rooms found') }}
+					{{ $t('roomvox', 'No rooms found') }}
 				</p>
 				<p
 					v-else-if="allRooms.length === 0 && !isLoadingAvailability"
 					class="room-finder__empty">
-					{{ $t('calendar', 'No rooms available') }}
+					{{ $t('roomvox', 'No rooms available') }}
 				</p>
 			</div>
 		</template>
@@ -510,7 +510,7 @@ export default {
 			const parts = []
 			if (commonName) parts.push(commonName)
 			if (roomBuildingAddress) parts.push(roomBuildingAddress)
-			if (roomNumber) parts.push('Room ' + roomNumber)
+			if (roomNumber) parts.push(this.$t('roomvox', 'Room') + ' ' + roomNumber)
 			return parts.join(', ') || commonName || ''
 		},
 

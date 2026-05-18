@@ -508,18 +508,10 @@ class PublicApiController extends Controller {
             return new DataDownloadResponse('', 'error.ics', 'text/calendar');
         }
 
-        $from = $this->request->getParam('from');
-        $to = $this->request->getParam('to');
-
-        if (!$from) {
-            $from = (new \DateTimeImmutable('-7 days'))->format('c');
-        }
-        if (!$to) {
-            $to = (new \DateTimeImmutable('+30 days'))->format('c');
-        }
-
-        $bookings = $this->calDAVService->getBookings($room['userId'], $from, $to);
-        $accepted = array_filter($bookings, fn($b) => ($b['partstat'] ?? '') === 'ACCEPTED');
+        // Pass through master VEVENTs with RRULE intact (issue #4): clients
+        // expand recurrence themselves. Server-side expansion + duplicated UIDs
+        // violates RFC 5545 §3.8.4.7 and causes clients to dedupe to one event.
+        $rawObjects = $this->calDAVService->getRawCalendarObjects($room['userId'], 'ACCEPTED');
 
         $location = $this->roomService->buildRoomLocation($room);
 
@@ -528,33 +520,97 @@ class PublicApiController extends Controller {
         $ics .= "PRODID:-//RoomVox//Nextcloud//EN\r\n";
         $ics .= "X-WR-CALNAME:" . $this->escapeIcal($room['name']) . "\r\n";
 
-        foreach ($accepted as $booking) {
-            $dtStart = new \DateTimeImmutable($booking['dtstart']);
-            $dtEnd = new \DateTimeImmutable($booking['dtend']);
-
-            $ics .= "BEGIN:VEVENT\r\n";
-            $ics .= "UID:" . $this->escapeIcal($booking['uid']) . "\r\n";
-            $ics .= "DTSTART:" . $dtStart->setTimezone(new \DateTimeZone('UTC'))->format('Ymd\THis\Z') . "\r\n";
-            $ics .= "DTEND:" . $dtEnd->setTimezone(new \DateTimeZone('UTC'))->format('Ymd\THis\Z') . "\r\n";
-            $ics .= "SUMMARY:" . $this->escapeIcal($booking['summary'] ?: 'Booking') . "\r\n";
-
-            if (!empty($booking['organizer'])) {
-                $cn = $booking['organizerName'] ?: $booking['organizer'];
-                $ics .= "ORGANIZER;CN=" . $this->escapeIcal($cn) . ":mailto:" . $booking['organizer'] . "\r\n";
+        foreach ($rawObjects as $object) {
+            $vevents = $this->extractVEvents($object['calendardata'] ?? '');
+            foreach ($vevents as $vevent) {
+                $vevent = $this->rewriteVEventLocation($vevent, $location);
+                $vevent = $this->forceVEventStatus($vevent, 'CONFIRMED');
+                $ics .= $vevent;
             }
-
-            if (!empty($location)) {
-                $ics .= "LOCATION:" . $this->escapeIcal($location) . "\r\n";
-            }
-
-            $ics .= "STATUS:CONFIRMED\r\n";
-            $ics .= "END:VEVENT\r\n";
         }
 
         $ics .= "END:VCALENDAR\r\n";
 
         $filename = 'roomvox-' . $room['id'] . '.ics';
         return new DataDownloadResponse($ics, $filename, 'text/calendar; charset=utf-8');
+    }
+
+    /**
+     * Extract VEVENT blocks (with CRLF endings) from a raw iCalendar string.
+     * Returns each "BEGIN:VEVENT ... END:VEVENT\r\n" verbatim — RRULE, EXDATE,
+     * RECURRENCE-ID, TZID parameters, line-folding all preserved.
+     *
+     * @return string[]
+     */
+    private function extractVEvents(string $calendarData): array {
+        if ($calendarData === '') {
+            return [];
+        }
+        // Normalize line endings to CRLF so output is RFC-compliant regardless
+        // of the source's line endings.
+        $normalized = str_replace(["\r\n", "\r"], "\n", $calendarData);
+        $normalized = str_replace("\n", "\r\n", $normalized);
+
+        $events = [];
+        $offset = 0;
+        while (($beginPos = strpos($normalized, "BEGIN:VEVENT\r\n", $offset)) !== false) {
+            $endPos = strpos($normalized, "END:VEVENT\r\n", $beginPos);
+            if ($endPos === false) {
+                break;
+            }
+            $endPos += strlen("END:VEVENT\r\n");
+            $events[] = substr($normalized, $beginPos, $endPos - $beginPos);
+            $offset = $endPos;
+        }
+        return $events;
+    }
+
+    /**
+     * Replace any existing LOCATION line in a VEVENT block with the given
+     * value (no-op when location is empty). Handles line-folded LOCATION
+     * by also dropping continuation lines (those starting with space/tab).
+     */
+    private function rewriteVEventLocation(string $vevent, string $location): string {
+        $lines = explode("\r\n", $vevent);
+        $out = [];
+        $skipFolds = false;
+        foreach ($lines as $line) {
+            if ($skipFolds) {
+                if ($line !== '' && ($line[0] === ' ' || $line[0] === "\t")) {
+                    continue;
+                }
+                $skipFolds = false;
+            }
+            if (preg_match('/^LOCATION[:;]/', $line) === 1) {
+                $skipFolds = true;
+                continue;
+            }
+            $out[] = $line;
+        }
+        $result = implode("\r\n", $out);
+        if ($location !== '') {
+            // Insert LOCATION right before END:VEVENT so it is part of the component.
+            $insertion = "LOCATION:" . $this->escapeIcal($location) . "\r\n";
+            $result = str_replace("END:VEVENT\r\n", $insertion . "END:VEVENT\r\n", $result);
+        }
+        return $result;
+    }
+
+    /**
+     * Force STATUS:<status> in a VEVENT block, replacing any existing STATUS.
+     */
+    private function forceVEventStatus(string $vevent, string $status): string {
+        $lines = explode("\r\n", $vevent);
+        $out = [];
+        foreach ($lines as $line) {
+            if (preg_match('/^STATUS:/', $line) === 1) {
+                continue;
+            }
+            $out[] = $line;
+        }
+        $result = implode("\r\n", $out);
+        $insertion = "STATUS:" . $status . "\r\n";
+        return str_replace("END:VEVENT\r\n", $insertion . "END:VEVENT\r\n", $result);
     }
 
     // ── Statistics ────────────────────────────────────────────────────
@@ -761,6 +817,7 @@ class PublicApiController extends Controller {
             'roomType' => $room['roomType'] ?? '',
             'facilities' => $room['facilities'] ?? [],
             'description' => $room['description'] ?? '',
+            'responsibleContact' => $room['responsibleContact'] ?? '',
             'location' => $this->roomService->buildRoomLocation($room),
             'autoAccept' => $room['autoAccept'] ?? false,
             'active' => $room['active'] ?? true,

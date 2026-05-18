@@ -90,13 +90,20 @@ class RoomApiController extends Controller {
         $status = $this->request->getParam('status', 'all');
         $from = $this->request->getParam('from');
         $to = $this->request->getParam('to');
+        // scope=view (default): all rooms the user can view. scope=manage:
+        // only rooms the user can manage — used by the manager Bookings
+        // tab in PersonalSettings so managers don't see view-only rooms.
+        $scope = $this->request->getParam('scope', 'view');
 
         // Get all rooms the user can view (for availability/booking display)
         $rooms = $this->roomService->getAllRooms();
         $isAdmin = $this->groupManager->isAdmin($userId);
 
         if (!$isAdmin) {
-            $rooms = array_filter($rooms, function ($room) use ($userId) {
+            $rooms = array_filter($rooms, function ($room) use ($userId, $scope) {
+                if ($scope === 'manage') {
+                    return $this->permissionService->canManage($userId, $room['id']);
+                }
                 return $this->permissionService->canView($userId, $room['id']);
             });
         }

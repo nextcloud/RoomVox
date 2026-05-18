@@ -177,7 +177,7 @@
                                 </NcButton>
                                 <NcButton
                                     type="tertiary"
-                                    :title="$t('Delete booking')"
+                                    :title="$t('Cancel booking')"
                                     @click="confirmDelete(booking)">
                                     <template #icon>
                                         <Delete :size="20" />
@@ -197,22 +197,22 @@
             :bookings="bookings"
             :show-weekends="showWeekends"
             @reload="loadBookings" />
-        <!-- Delete Confirmation Dialog -->
+        <!-- Cancel Booking Confirmation Dialog -->
         <NcDialog
             v-if="deleteTarget"
-            :name="$t('Delete booking')"
+            :name="$t('Cancel booking')"
             :open="!!deleteTarget"
             @close="deleteTarget = null">
-            <p>{{ $t('Are you sure you want to delete this booking?') }}</p>
+            <p>{{ $t('Are you sure you want to cancel this booking? The booker will be notified by email.') }}</p>
             <p><strong>{{ deleteTarget?.summary }}</strong></p>
             <p>{{ formatRelativeDate(deleteTarget?.dtstart) }} {{ formatTime(deleteTarget?.dtstart) }} – {{ formatTime(deleteTarget?.dtend) }}</p>
             <template #actions>
-                <NcButton type="tertiary" @click="deleteTarget = null">{{ $t('Cancel') }}</NcButton>
+                <NcButton type="tertiary" @click="deleteTarget = null">{{ $t('Keep booking') }}</NcButton>
                 <NcButton type="error" :disabled="deleting" @click="executeDelete">
                     <template #icon>
                         <Delete :size="20" />
                     </template>
-                    {{ $t('Delete') }}
+                    {{ $t('Cancel booking') }}
                 </NcButton>
             </template>
         </NcDialog>
@@ -247,6 +247,9 @@ const t = (text, vars = {}) => translate('roomvox', text, vars)
 const props = defineProps({
     rooms: { type: Array, default: () => [] },
     showWeekends: { type: Boolean, default: true },
+    // 'view' (admin default) shows everything the user can view;
+    // 'manage' restricts to rooms the user can manage (issue #12).
+    scope: { type: String, default: 'view' },
 })
 
 const selectedRoom = ref(null)
@@ -374,6 +377,9 @@ const loadBookings = async () => {
         if (statusFilter.value !== 'all') {
             params.status = statusFilter.value
         }
+        if (props.scope === 'manage') {
+            params.scope = 'manage'
+        }
 
         const response = await getAllBookings(params)
         bookings.value = response.data.bookings || []
@@ -455,11 +461,11 @@ const executeDelete = async () => {
     deleting.value = true
     try {
         await deleteBooking(deleteTarget.value.roomId, deleteTarget.value.uid)
-        showSuccess(t('Booking deleted'))
+        showSuccess(t('Booking cancelled'))
         deleteTarget.value = null
         await loadBookings()
     } catch (e) {
-        showError(t('Failed to delete booking'))
+        showError(t('Failed to cancel booking'))
     } finally {
         deleting.value = false
     }

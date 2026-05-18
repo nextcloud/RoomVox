@@ -329,4 +329,114 @@ class CalDAVServiceConflictTest extends TestCase {
 
         $this->assertFalse($result);
     }
+
+    // ── Recurring events (issue #8) ────────────────────────────────
+
+    /**
+     * Helper: configure a single recurring event with pre-computed occurrences.
+     *
+     * @param array{uid: string, occurrences: array<int, array{start: \DateTimeInterface, end: \DateTimeInterface}>} $event
+     */
+    private function setupCalendarWithRecurringEvent(array $event): void {
+        $this->calDavBackend->method('getCalendarsForUser')
+            ->willReturn([['id' => 1, 'uri' => 'personal']]);
+
+        $uri = $event['uid'] . '.ics';
+        $this->calDavBackend->method('calendarQuery')->willReturn([$uri]);
+
+        $this->calDavBackend->method('getCalendarObject')
+            ->willReturnCallback(fn($_, $u) => $u === $uri ? ['calendardata' => 'rrule-data'] : null);
+
+        $occurrences = $event['occurrences'];
+        Reader::setTestParser(function (string $data) use ($event, $occurrences) {
+            $vEvent = new VEvent();
+            $vEvent->UID = new Property($event['uid']);
+            // Master DTSTART/DTEND = first occurrence (matches how the bug manifests).
+            $vEvent->DTSTART = new Property($occurrences[0]['start']);
+            $vEvent->DTEND = new Property($occurrences[0]['end']);
+            $vEvent->RRULE = new Property('FREQ=WEEKLY;COUNT=' . count($occurrences));
+
+            $vCalendar = new VCalendar();
+            $vCalendar->VEVENT = $vEvent;
+            // Stub EventIterator reads occurrences from this property.
+            $vCalendar->__testOccurrences = $occurrences;
+            return $vCalendar;
+        });
+    }
+
+    public function testConflictDetectedOnFirstWeeklyOccurrence(): void {
+        // Regression: master-instance must still be detected as a conflict.
+        $this->setupCalendarWithRecurringEvent([
+            'uid' => 'weekly',
+            'occurrences' => [
+                ['start' => new \DateTime('2026-08-03 10:00'), 'end' => new \DateTime('2026-08-03 11:00')],
+                ['start' => new \DateTime('2026-08-10 10:00'), 'end' => new \DateTime('2026-08-10 11:00')],
+            ],
+        ]);
+
+        $result = $this->service->hasConflict(
+            'rb_room1',
+            new \DateTime('2026-08-03 10:00'),
+            new \DateTime('2026-08-03 11:00'),
+        );
+
+        $this->assertTrue($result);
+    }
+
+    public function testConflictDetectedOnSecondWeeklyOccurrence(): void {
+        // Issue #8: master-only comparison misses the second occurrence.
+        $this->setupCalendarWithRecurringEvent([
+            'uid' => 'weekly',
+            'occurrences' => [
+                ['start' => new \DateTime('2026-08-03 10:00'), 'end' => new \DateTime('2026-08-03 11:00')],
+                ['start' => new \DateTime('2026-08-10 10:00'), 'end' => new \DateTime('2026-08-10 11:00')],
+            ],
+        ]);
+
+        $result = $this->service->hasConflict(
+            'rb_room1',
+            new \DateTime('2026-08-10 10:00'),
+            new \DateTime('2026-08-10 11:00'),
+        );
+
+        $this->assertTrue($result);
+    }
+
+    public function testNoConflictOutsideRecurrenceWindow(): void {
+        // Third week is outside COUNT=2 — should not conflict.
+        $this->setupCalendarWithRecurringEvent([
+            'uid' => 'weekly',
+            'occurrences' => [
+                ['start' => new \DateTime('2026-08-03 10:00'), 'end' => new \DateTime('2026-08-03 11:00')],
+                ['start' => new \DateTime('2026-08-10 10:00'), 'end' => new \DateTime('2026-08-10 11:00')],
+            ],
+        ]);
+
+        $result = $this->service->hasConflict(
+            'rb_room1',
+            new \DateTime('2026-08-17 10:00'),
+            new \DateTime('2026-08-17 11:00'),
+        );
+
+        $this->assertFalse($result);
+    }
+
+    public function testNoConflictDifferentTimeSameRecurrenceDay(): void {
+        // Same day as second occurrence but different hours — should not conflict.
+        $this->setupCalendarWithRecurringEvent([
+            'uid' => 'weekly',
+            'occurrences' => [
+                ['start' => new \DateTime('2026-08-03 10:00'), 'end' => new \DateTime('2026-08-03 11:00')],
+                ['start' => new \DateTime('2026-08-10 10:00'), 'end' => new \DateTime('2026-08-10 11:00')],
+            ],
+        ]);
+
+        $result = $this->service->hasConflict(
+            'rb_room1',
+            new \DateTime('2026-08-10 12:00'),
+            new \DateTime('2026-08-10 13:00'),
+        );
+
+        $this->assertFalse($result);
+    }
 }

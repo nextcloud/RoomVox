@@ -24,6 +24,7 @@ class TelemetryService {
         private IUserManager $userManager,
         private RoomService $roomService,
         private RoomGroupService $roomGroupService,
+        private LicenseService $licenseService,
     ) {
     }
 
@@ -153,7 +154,34 @@ class TelemetryService {
             'osFamily' => PHP_OS_FAMILY,
             'webServer' => $this->getWebServer(),
             'isDocker' => $this->isDocker(),
+            'hasExtendedSupport' => $this->hasExtendedSupport(),
+            // Sent so the license server can verify hasExtendedSupport claims —
+            // the boolean alone is unauthenticated and could be spoofed by anyone
+            // posting to /api/telemetry/report. The server only honors the claim
+            // when this key + the instance hash match an active license_usage row.
+            // Empty string for community instances (no license) — server treats
+            // those as 'never Enterprise' which is correct.
+            'licenseKey' => $this->licenseService->getLicenseKey() ?: '',
         ];
+    }
+
+    /**
+     * Detect whether the host Nextcloud has an Extended Support / Enterprise
+     * subscription. Uses Nextcloud's public API (OCP\Util::hasExtendedSupport,
+     * available since NC 17). Returns false on any failure so a Community
+     * instance is never reported as Enterprise.
+     */
+    private function hasExtendedSupport(): bool {
+        try {
+            if (class_exists(\OCP\Util::class) && method_exists(\OCP\Util::class, 'hasExtendedSupport')) {
+                return \OCP\Util::hasExtendedSupport();
+            }
+        } catch (\Throwable $e) {
+            $this->logger->debug('TelemetryService: hasExtendedSupport() check failed', [
+                'error' => $e->getMessage()
+            ]);
+        }
+        return false;
     }
 
     /**
@@ -242,12 +270,12 @@ class TelemetryService {
     private function getUserCount(): int {
         try {
             $count = 0;
-            $this->userManager->callForSeenUsers(function ($user) use (&$count) {
+            $this->userManager->callForAllUsers(function ($user) use (&$count) {
                 $count++;
             });
-            return $count;
+            return max(1, $count);
         } catch (\Exception $e) {
-            return 0;
+            return 1;
         }
     }
 

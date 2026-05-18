@@ -185,6 +185,11 @@ class SchedulingPlugin extends ServerPlugin {
             $this->logger->info("RoomVox: Booking denied for room {$roomId} — initial Exchange sync in progress (status: {$syncStatus})");
             $message->scheduleStatus = '5.3'; // Temporary failure
             $this->setPartstat($message, 'DECLINED');
+            try {
+                $this->mailService->sendSyncInProgress($room, $message);
+            } catch (\Throwable $e) {
+                $this->logger->error("RoomVox: Failed to send sync-in-progress email: " . $e->getMessage());
+            }
             return;
         }
 
@@ -204,6 +209,11 @@ class SchedulingPlugin extends ServerPlugin {
             $this->logger->info("RoomVox: Booking outside availability hours for room {$roomId}");
             $message->scheduleStatus = '3.7';
             $this->setPartstat($message, 'DECLINED');
+            try {
+                $this->mailService->sendAvailabilityViolation($room, $message);
+            } catch (\Throwable $e) {
+                $this->logger->error("RoomVox: Failed to send availability decline email: " . $e->getMessage());
+            }
             return;
         }
 
@@ -212,6 +222,11 @@ class SchedulingPlugin extends ServerPlugin {
             $this->logger->info("RoomVox: Booking exceeds max horizon for room {$roomId}");
             $message->scheduleStatus = '3.7';
             $this->setPartstat($message, 'DECLINED');
+            try {
+                $this->mailService->sendHorizonExceeded($room, $message);
+            } catch (\Throwable $e) {
+                $this->logger->error("RoomVox: Failed to send horizon decline email: " . $e->getMessage());
+            }
             return;
         }
 
@@ -491,15 +506,27 @@ class SchedulingPlugin extends ServerPlugin {
                     if ($matchedRoom !== null) {
                         $roomEmail = $matchedRoom['email'];
 
-                        // Add ORGANIZER if missing (needed for scheduling)
+                        // Add ORGANIZER if missing. eM Client omits ORGANIZER
+                        // on single-organizer events; resolve it from the
+                        // calendar owner's user account so we get a real
+                        // mailto:<email> with CN, not a bare mailto:<uid>.
                         if (!isset($vEvent->ORGANIZER)) {
-                            // Try to get organizer from the calendar path
                             $pathParts = explode('/', $path);
                             // path = calendars/<user>/<calendar>/<uid>.ics
                             $calendarOwner = $pathParts[1] ?? null;
-                            if ($calendarOwner !== null) {
-                                $vEvent->add('ORGANIZER', 'mailto:' . $calendarOwner);
+                            $organizerData = $calendarOwner !== null
+                                ? $this->buildOrganizerFromCalendarOwner($calendarOwner)
+                                : null;
+                            if ($organizerData !== null) {
+                                $params = $organizerData['cn'] !== null
+                                    ? ['CN' => $organizerData['cn']]
+                                    : [];
+                                $vEvent->add('ORGANIZER', 'mailto:' . $organizerData['email'], $params);
                             }
+                            // If no email is available we deliberately leave
+                            // ORGANIZER unset — the LOCATION-fallback path
+                            // delivers the booking via deliverToRoomCalendar()
+                            // and does not need iTIP REPLY mails.
                         }
 
                         // Add room as ATTENDEE
@@ -548,6 +575,29 @@ class SchedulingPlugin extends ServerPlugin {
         } finally {
             $this->isFixing = false;
         }
+    }
+
+    /**
+     * Look up an organizer email + display name for a Nextcloud user id.
+     * Returns null if the user does not exist or has no email — callers
+     * should then leave ORGANIZER unset rather than fabricate a value.
+     *
+     * @return array{email: string, cn: ?string}|null
+     */
+    private function buildOrganizerFromCalendarOwner(string $calendarOwner): ?array {
+        $user = $this->userManager->get($calendarOwner);
+        if ($user === null) {
+            return null;
+        }
+        $email = $user->getEMailAddress();
+        if (empty($email)) {
+            return null;
+        }
+        $displayName = $user->getDisplayName();
+        return [
+            'email' => $email,
+            'cn' => $displayName !== '' ? $displayName : null,
+        ];
     }
 
     /**

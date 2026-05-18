@@ -128,6 +128,46 @@ class RoomServiceTest extends TestCase {
         $this->assertSame('Tower B (Room 3.01)', $result);
     }
 
+    public function testBuildRoomLocationFourPartsWithEmptyBuilding(): void {
+        // Issue #6: 4-part address with empty building (leading comma) must
+        // not produce a stray "(, Room X)" detail block.
+        $room = [
+            'name' => 'Quiet Room',
+            'address' => ', Hoofdstraat 1, 1234 AB, Amsterdam',
+            'roomNumber' => '',
+        ];
+
+        $result = $this->service->buildRoomLocation($room);
+        $this->assertSame('Hoofdstraat 1, 1234 AB Amsterdam', $result);
+    }
+
+    public function testBuildRoomLocationFourPartsWithEmptyCity(): void {
+        // Issue #6: 4-part address with empty city should not emit a trailing
+        // space or comma in the geocodable section.
+        $room = [
+            'name' => 'Side Room',
+            'address' => 'Tower A, Hoofdstraat 1, 1234 AB, ',
+            'roomNumber' => '4.10',
+        ];
+
+        $result = $this->service->buildRoomLocation($room);
+        $this->assertSame('Hoofdstraat 1, 1234 AB (Tower A, Room 4.10)', $result);
+    }
+
+    public function testBuildRoomLocationFourPartsWithOnlyPostalAndCity(): void {
+        // Issue #6: edge case where only postal code + city were entered.
+        // 4-part storage keeps them in their correct slots.
+        $room = [
+            'name' => 'Project Room',
+            'address' => ', , 1234 AB, Amsterdam',
+            'roomNumber' => '',
+        ];
+
+        $result = $this->service->buildRoomLocation($room);
+        // No street → geocodable falls back to "PostalCode City"
+        $this->assertSame('1234 AB Amsterdam', $result);
+    }
+
     public function testGetRoomByUserId(): void {
         $this->appConfig->method('getValueString')
             ->willReturnCallback(function (string $app, string $key, string $default) {
@@ -144,5 +184,99 @@ class RoomServiceTest extends TestCase {
 
     public function testGetRoomByUserIdInvalidPrefix(): void {
         $this->assertNull($this->service->getRoomByUserId('normaluser'));
+    }
+
+    // ── responsibleContact field (issue #11) ────────────────────────
+
+    public function testCreateRoomPersistsResponsibleContact(): void {
+        $this->appConfig->method('getValueString')
+            ->willReturnCallback(function (string $app, string $key, string $default) {
+                if ($key === 'rooms_index') {
+                    return '[]';
+                }
+                return $default;
+            });
+
+        $captured = null;
+        $this->appConfig->method('setValueString')
+            ->willReturnCallback(function (string $app, string $key, string $value) use (&$captured) {
+                if (str_starts_with($key, 'room/')) {
+                    $captured = json_decode($value, true);
+                }
+                return true;
+            });
+
+        $this->service->createRoom([
+            'name' => 'Test Room',
+            'responsibleContact' => 'anne@voxcloud.nl',
+        ]);
+
+        $this->assertNotNull($captured);
+        $this->assertSame('anne@voxcloud.nl', $captured['responsibleContact']);
+    }
+
+    public function testCreateRoomClampsResponsibleContactTo255Chars(): void {
+        $this->appConfig->method('getValueString')->willReturn('[]');
+
+        $captured = null;
+        $this->appConfig->method('setValueString')
+            ->willReturnCallback(function (string $app, string $key, string $value) use (&$captured) {
+                if (str_starts_with($key, 'room/')) {
+                    $captured = json_decode($value, true);
+                }
+                return true;
+            });
+
+        $longValue = str_repeat('a', 300);
+        $this->service->createRoom([
+            'name' => 'Test Room',
+            'responsibleContact' => $longValue,
+        ]);
+
+        $this->assertSame(255, mb_strlen($captured['responsibleContact']));
+    }
+
+    public function testCreateRoomDefaultsResponsibleContactToEmptyString(): void {
+        $this->appConfig->method('getValueString')->willReturn('[]');
+
+        $captured = null;
+        $this->appConfig->method('setValueString')
+            ->willReturnCallback(function (string $app, string $key, string $value) use (&$captured) {
+                if (str_starts_with($key, 'room/')) {
+                    $captured = json_decode($value, true);
+                }
+                return true;
+            });
+
+        $this->service->createRoom(['name' => 'Test Room']);
+
+        $this->assertSame('', $captured['responsibleContact']);
+    }
+
+    public function testUpdateRoomPersistsResponsibleContact(): void {
+        $existing = ['id' => 'room1', 'name' => 'Room 1', 'capacity' => 0, 'autoAccept' => false, 'active' => true];
+
+        $this->appConfig->method('getValueString')
+            ->willReturnCallback(function (string $app, string $key, string $default) use ($existing) {
+                if ($key === 'room/room1') {
+                    return json_encode($existing);
+                }
+                return $default;
+            });
+
+        $captured = null;
+        $this->appConfig->method('setValueString')
+            ->willReturnCallback(function (string $app, string $key, string $value) use (&$captured) {
+                if ($key === 'room/room1') {
+                    $captured = json_decode($value, true);
+                }
+                return true;
+            });
+
+        $this->service->updateRoom('room1', [
+            'responsibleContact' => 'Frontdesk: 020-1234567',
+        ]);
+
+        $this->assertSame('Frontdesk: 020-1234567', $captured['responsibleContact']);
     }
 }

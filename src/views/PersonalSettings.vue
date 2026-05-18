@@ -15,6 +15,13 @@
                 {{ $t('Approvals') }}
                 <NcCounterBubble v-if="approvals.length > 0" type="highlighted" :count="approvals.length" />
             </button>
+            <button
+                v-if="managedRooms.length > 0"
+                :class="['tab-button', { active: currentTab === 'bookings' }]"
+                @click="currentTab = 'bookings'">
+                <CalendarCheck :size="16" />
+                {{ $t('Bookings') }}
+            </button>
         </nav>
 
         <div class="tab-content">
@@ -39,6 +46,7 @@
                             <th>{{ $t('Type') }}</th>
                             <th>{{ $t('Capacity') }}</th>
                             <th>{{ $t('Location') }}</th>
+                            <th>{{ $t('Responsible contact') }}</th>
                             <th>{{ $t('Role') }}</th>
                         </tr>
                     </thead>
@@ -48,6 +56,7 @@
                             <td>{{ room.roomType || '—' }}</td>
                             <td>{{ room.capacity || '—' }}</td>
                             <td>{{ formatAddress(room.address) }}</td>
+                            <td>{{ room.responsibleContact || '—' }}</td>
                             <td>
                                 <NcChip
                                     :text="getRoleLabel(room.role)"
@@ -116,12 +125,17 @@
                     </tbody>
                 </table>
             </div>
+
+            <!-- Bookings Tab (manager view) -->
+            <div v-if="currentTab === 'bookings'">
+                <BookingOverview :rooms="managedRooms" scope="manage" />
+            </div>
         </div>
     </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { translate } from '@nextcloud/l10n'
 import { showError, showSuccess } from '@nextcloud/dialogs'
 
@@ -132,9 +146,11 @@ import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import NcChip from '@nextcloud/vue/components/NcChip'
 import DoorOpen from 'vue-material-design-icons/DoorOpen.vue'
 import CheckDecagram from 'vue-material-design-icons/CheckDecagram.vue'
+import CalendarCheck from 'vue-material-design-icons/CalendarCheck.vue'
 import Check from 'vue-material-design-icons/Check.vue'
 import Close from 'vue-material-design-icons/Close.vue'
 
+import BookingOverview from './BookingOverview.vue'
 import { getMyRooms, getMyApprovals, respondToBooking } from '../services/api.js'
 
 const t = (text, vars = {}) => translate('roomvox', text, vars)
@@ -145,6 +161,11 @@ const approvals = ref([])
 const loadingRooms = ref(true)
 const loadingApprovals = ref(true)
 const responding = ref(null)
+
+// Rooms this user can manage — drives the Bookings tab visibility and scope.
+const managedRooms = computed(() =>
+    rooms.value.filter(r => r.role === 'manager' || r.role === 'admin'),
+)
 
 const getRoleLabel = (role) => {
     switch (role) {

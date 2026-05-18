@@ -72,7 +72,7 @@
 					variant="tertiary"
 					class="invitees-chip-list__more-btn"
 					@click="isRequiredExpanded = false">
-					{{ $t('calendar', 'Show less') }}
+					{{ $t('roomvox', 'Show less') }}
 				</NcButton>
 			</div>
 		</div>
@@ -125,10 +125,10 @@
 					variant="tertiary"
 					class="invitees-chip-list__more-btn"
 					@click="isOptionalExpanded = false">
-					{{ $t('calendar', 'Show less') }}
+					{{ $t('roomvox', 'Show less') }}
 				</NcButton>
 				<span v-if="optionalInvitees.length === 0 && dragOverSection === 'optional'" class="invitees-chip-list__drop-hint">
-					{{ $t('calendar', 'Drop here to make optional') }}
+					{{ $t('roomvox', 'Drop here to make optional') }}
 				</span>
 			</div>
 		</div>

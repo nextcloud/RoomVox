@@ -351,4 +351,70 @@ class BookingApiConflictTest extends TestCase {
 
         $this->assertSame(200, $response->getStatus());
     }
+
+    public function testDestroyNotifiesBookerAndCleansOrganizerEvent(): void {
+        // Issue #10: admin delete must clean up organizer-side event and mail.
+        $this->roomService->method('getRoom')->willReturn($this->testRoom);
+        $this->calDAVService->method('getBookingByUid')->willReturn([
+            'uid' => 'booking-1',
+            'summary' => 'Team Meeting',
+            'organizer' => 'alice@example.com',
+            'organizerEmail' => 'alice@example.com',
+            'organizerName' => 'Alice',
+            'roomEmail' => 'room1@example.com',
+            'dtstart' => '2026-02-20T10:00:00+00:00',
+            'dtend' => '2026-02-20T11:00:00+00:00',
+        ]);
+        $this->calDAVService->method('deleteBooking')->willReturn(true);
+
+        $this->calDAVService->expects($this->once())
+            ->method('updateOrganizerEventPartstat')
+            ->with('alice@example.com', 'booking-1', 'DECLINED', 'room1@example.com');
+        $this->mailService->expects($this->once())
+            ->method('sendRespondCancelled')
+            ->with($this->testRoom, $this->anything());
+
+        $response = $this->controller->destroy('room1', 'booking-1');
+        $this->assertSame(200, $response->getStatus());
+    }
+
+    public function testDestroySkipsCleanupWhenOrganizerEmailMissing(): void {
+        // Booking with no organizerEmail (e.g. legacy data) — fall back gracefully.
+        $this->roomService->method('getRoom')->willReturn($this->testRoom);
+        $this->calDAVService->method('getBookingByUid')->willReturn([
+            'uid' => 'booking-1',
+            'organizer' => 'testuser',
+            // organizerEmail + roomEmail intentionally absent
+        ]);
+        $this->calDAVService->method('deleteBooking')->willReturn(true);
+
+        $this->calDAVService->expects($this->never())->method('updateOrganizerEventPartstat');
+        $this->mailService->expects($this->never())->method('sendRespondCancelled');
+
+        $response = $this->controller->destroy('room1', 'booking-1');
+        $this->assertSame(200, $response->getStatus());
+    }
+
+    public function testDestroyContinuesWhenCleanupFails(): void {
+        // Organizer cleanup throws → destroy must still return 200 OK.
+        $this->roomService->method('getRoom')->willReturn($this->testRoom);
+        $this->calDAVService->method('getBookingByUid')->willReturn([
+            'uid' => 'booking-1',
+            'summary' => 'Team Meeting',
+            'organizerEmail' => 'alice@example.com',
+            'organizerName' => 'Alice',
+            'roomEmail' => 'room1@example.com',
+            'dtstart' => '2026-02-20T10:00:00+00:00',
+            'dtend' => '2026-02-20T11:00:00+00:00',
+        ]);
+        $this->calDAVService->method('deleteBooking')->willReturn(true);
+        $this->calDAVService->method('updateOrganizerEventPartstat')
+            ->willThrowException(new \RuntimeException('CalDAV outage'));
+
+        // Mail still attempted even when organizer cleanup fails.
+        $this->mailService->expects($this->once())->method('sendRespondCancelled');
+
+        $response = $this->controller->destroy('room1', 'booking-1');
+        $this->assertSame(200, $response->getStatus());
+    }
 }

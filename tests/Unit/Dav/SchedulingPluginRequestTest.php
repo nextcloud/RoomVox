@@ -263,6 +263,10 @@ class SchedulingPluginRequestTest extends TestCase {
         $this->roomService->method('getRoomIdByPrincipal')->willReturn('room1');
         $this->roomService->method('getRoom')->willReturn($room);
 
+        $this->mailService = $this->createMock(MailService::class);
+        $this->mailService->expects($this->once())
+            ->method('sendAvailabilityViolation');
+
         $logger = $this->createMock(LoggerInterface::class);
         $plugin = new SchedulingPlugin(
             $this->roomService,
@@ -293,6 +297,9 @@ class SchedulingPluginRequestTest extends TestCase {
     public function testRequestBeyondHorizon(): void {
         $room = array_merge($this->testRoom, ['maxBookingHorizon' => 7]);
         $this->roomService = $this->createMock(RoomService::class);
+        $this->mailService = $this->createMock(MailService::class);
+        $this->mailService->expects($this->once())
+            ->method('sendHorizonExceeded');
         $this->roomService->method('isRoomPrincipal')->willReturn(true);
         $this->roomService->method('getRoomIdByPrincipal')->willReturn('room1');
         $this->roomService->method('getRoom')->willReturn($room);

@@ -23,8 +23,9 @@ The admin panel has five tabs: **Rooms**, **Bookings**, **Import / Export**, **S
 | Room Number | No | Building/floor identifier (e.g., "2.17" for floor 2, room 17) |
 | Capacity | No | Maximum number of people |
 | Room Type | No | Category from configured types (meeting room, studio, etc.) |
-| Address | No | Building name, street, and city — displayed as location |
-| Description | No | Additional information about the room |
+| Address | No | Building name, street, and city — displayed as location. Stored as a 4-part comma-separated string (`Building, Street, Postal code, City`), with empty parts preserved so partial addresses round-trip correctly |
+| Description | No | Additional information about the room (admin/manager-only) |
+| Responsible contact | No | Free-text contact info (e.g. `Anne Janssen (anne@voxcloud.nl)` or `Ask building manager`). Visible to every user with view-permission in Settings → Personal → RoomVox → My Rooms, so viewers know who to approach when they cannot book a room themselves. Max 255 characters |
 | Facilities | No | Available equipment (projector, whiteboard, video conferencing, etc.) |
 | Email | No | Custom email address for the room (see below) |
 | Room Group | No | Assign room to a group for shared permissions |

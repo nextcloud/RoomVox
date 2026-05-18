@@ -29,6 +29,8 @@ RoomVox sends the following anonymous data once every 24 hours:
 | OS family | Linux, Windows, or macOS |
 | Web server | Apache or nginx |
 | Docker | Whether the server runs in a Docker container |
+| Extended Support / Enterprise | Boolean indicating whether the host Nextcloud has an Extended Support / Enterprise subscription. Sourced from Nextcloud's public API (`OCP\Util::hasExtendedSupport`). Falls back to `false` if the host is Community |
+| Subscription key | Your RoomVox subscription key (when one is configured). Sent so the license server can authenticate the Enterprise claim above — the boolean alone could be spoofed by anyone posting to the telemetry endpoint. Empty string for community instances |
 
 ## What Is NOT Collected
 

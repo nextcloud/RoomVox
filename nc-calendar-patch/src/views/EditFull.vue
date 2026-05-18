@@ -192,7 +192,7 @@
 									type="switch"
 									:model-value="isInPerson"
 									@update:model-value="handleInPersonToggle">
-									{{ $t('calendar', 'In-person') }}
+									{{ $t('roomvox', 'In-person') }}
 								</NcCheckboxRadioSwitch>
 								<NcButton
 									v-if="isInPerson"
@@ -228,7 +228,7 @@
 									type="switch"
 									:model-value="isOnline"
 									@update:model-value="handleOnlineToggle">
-									{{ $t('calendar', 'Online (Talk)') }}
+									{{ $t('roomvox', 'Online (Talk)') }}
 								</NcCheckboxRadioSwitch>
 								<NcButton
 									v-if="isOnline && hasTalkUrl"
@@ -783,15 +783,15 @@ export default {
 		async resolveTalkRoomName() {
 			const token = extractRoomUrlToken(this.talkUrl)
 			if (!token) {
-				this.talkRoomDisplayName = this.$t('calendar', 'Talk room')
+				this.talkRoomDisplayName = this.$t('roomvox', 'Talk room')
 				return
 			}
 			try {
 				const rooms = await listRooms()
 				const room = rooms.find(r => r.token === token)
-				this.talkRoomDisplayName = room?.displayName || this.$t('calendar', 'Talk room')
+				this.talkRoomDisplayName = room?.displayName || this.$t('roomvox', 'Talk room')
 			} catch {
-				this.talkRoomDisplayName = this.$t('calendar', 'Talk room')
+				this.talkRoomDisplayName = this.$t('roomvox', 'Talk room')
 			}
 		},
 

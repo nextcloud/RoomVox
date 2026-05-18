@@ -363,6 +363,31 @@ class BookingApiController extends Controller {
 
             $this->logger->info("Booking {$uid} in room {$id} deleted by {$userId}");
 
+            // Propagate cancellation to organizer's calendar so the slot is
+            // freed in their Room Finder (issue #10). DECLINED removes the
+            // room attendee and clears LOCATION.
+            $organizerEmail = $existingBooking['organizerEmail'] ?? '';
+            $roomEmail = $existingBooking['roomEmail'] ?? '';
+            if ($organizerEmail !== '' && $roomEmail !== '') {
+                try {
+                    $this->calDAVService->updateOrganizerEventPartstat(
+                        $organizerEmail,
+                        $uid,
+                        'DECLINED',
+                        $roomEmail,
+                    );
+                } catch (\Throwable $e) {
+                    $this->logger->error("Failed to clean up organizer event for cancelled booking {$uid}: " . $e->getMessage());
+                }
+
+                // Notify the booker that their booking was cancelled.
+                try {
+                    $this->mailService->sendRespondCancelled($room, $existingBooking);
+                } catch (\Throwable $e) {
+                    $this->logger->error("Failed to send cancellation email for booking {$uid}: " . $e->getMessage());
+                }
+            }
+
             return new JSONResponse(['status' => 'ok']);
         } catch (\Exception $e) {
             $this->logger->error("Failed to delete booking {$uid}: " . $e->getMessage());

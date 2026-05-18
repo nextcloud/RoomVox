@@ -53,6 +53,7 @@ class PersonalApiController extends Controller {
                 'roomType' => $room['roomType'] ?? '',
                 'capacity' => $room['capacity'] ?? 0,
                 'address' => $room['address'] ?? '',
+                'responsibleContact' => $room['responsibleContact'] ?? '',
                 'role' => $role,
             ];
         }

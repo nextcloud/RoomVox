@@ -4,11 +4,18 @@ This guide covers how to view, approve, decline, reschedule, and cancel bookings
 
 ## Booking Overview
 
-The **Bookings** tab in the admin panel (Settings > Administration > RoomVox) shows all bookings across rooms.
+The **Bookings** tab shows all bookings across rooms. It is available in two places:
+
+- **Admins**: Settings → Administration → RoomVox → Bookings
+- **Managers**: Settings → Personal → RoomVox → Bookings (third tab, only appears if you manage at least one room). Scoped to the rooms you manage, so you don't see bookings for rooms outside your responsibility.
+
+Both views share the same component — stats cards, filters, list/calendar toggle, drag-and-drop move-between-rooms, and the Cancel-booking flow.
 
 ### Recurring Events
 
 Recurring bookings (e.g., weekly meetings) are displayed as individual occurrences in the overview. Each occurrence can be managed independently — you can approve, decline, or cancel specific dates within a series.
+
+Conflict checking respects RRULE: booking the same room on the second (or any later) occurrence of an existing weekly series is now correctly flagged as a conflict, not only the first occurrence.
 
 ### Filtering Bookings
 
@@ -83,12 +90,22 @@ Conflict checking is performed against the new time (excluding the current booki
 
 ### Moving to a Different Room
 
+There are two ways to move a booking to another room:
+
+**Via the edit dialog (list view):**
+
 1. Find the booking in the Bookings tab
 2. Click **Edit**
 3. Select a different room
 4. Click **Save**
 
-The booking is deleted from the original room and created in the new room with a new UID.
+**Via drag-and-drop (calendar view):**
+
+1. Toggle to the Calendar view (icon in the top-right of the Bookings tab)
+2. Drag a booking to a different room column or a different time slot
+3. The conflict check runs automatically and the move is rejected if the target slot is taken
+
+In both cases, the booking is deleted from the original room and created in the new room with a new UID. The booker is not re-notified — they keep the same event in their own calendar; only the room attendee changes.
 
 ## Cancelling Bookings
 
@@ -101,10 +118,11 @@ The booking is deleted from the original room and created in the new room with a
 ### How to Cancel
 
 1. Find the booking in the Bookings tab
-2. Click the **Delete** button (trash icon)
-3. Confirm the cancellation
+2. Click the **Cancel booking** button (trash icon)
+3. Confirm in the dialog (Keep booking / Cancel booking)
 4. The booking is removed from the room calendar
-5. Cancellation emails are sent to the organizer and room managers
+5. The booker is notified by email that the booking was cancelled by a room manager
+6. The room is also removed from the booker's own calendar event (LOCATION is cleared and the room attendee is dropped), so the slot frees up in the Room Finder
 
 ### Cancelling from Calendar Apps
 

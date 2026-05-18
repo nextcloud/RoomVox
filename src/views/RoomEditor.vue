@@ -94,6 +94,14 @@
                 </div>
 
                 <div class="form-field">
+                    <label>{{ $t('Responsible contact (visible to viewers)') }}</label>
+                    <NcTextField
+                        v-model="form.responsibleContact"
+                        :placeholder="$t('e.g. anne@voxcloud.nl or \'Ask building manager\'')"
+                        maxlength="255" />
+                </div>
+
+                <div class="form-field">
                     <label>{{ $t('Facilities') }}</label>
                     <div class="facilities-grid">
                         <NcCheckboxRadioSwitch
@@ -486,6 +494,7 @@ const form = reactive({
     name: '',
     email: '',
     description: '',
+    responsibleContact: '',
     capacity: 0,
     roomNumber: '',
     floor: '',
@@ -663,6 +672,7 @@ watch(() => props.room, (room) => {
             name: room.name || '',
             email: room.email || '',
             description: room.description || '',
+            responsibleContact: room.responsibleContact || '',
             capacity: room.capacity || 0,
             roomNumber: room.roomNumber || '',
             floor: room.floor || '',
@@ -752,9 +762,11 @@ const save = () => {
 
     const data = { ...form }
 
-    // Compose address from separate fields: "Building, Street, PostalCode, City"
-    const parts = [form.building, form.street, form.postalCode, form.city].map(s => s.trim()).filter(Boolean)
-    data.address = parts.join(', ')
+    // Compose address as 4-part format "Building, Street, PostalCode, City".
+    // Always emit all 4 positions (empty parts kept) so reload can map them
+    // back positionally — filtering empties would shift fields (issue #6).
+    const parts = [form.building, form.street, form.postalCode, form.city].map(s => s.trim())
+    data.address = parts.some(p => p) ? parts.join(', ') : ''
     delete data.building
     delete data.street
     delete data.postalCode

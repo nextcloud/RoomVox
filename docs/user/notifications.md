@@ -53,13 +53,40 @@ When a booking is denied for permission reasons, the room attendee is also remov
 
 **Sent to:** Organizer
 
-Triggered when a booking is automatically declined due to a time conflict with an existing booking.
+Triggered when a booking is automatically declined due to a time conflict with an existing booking. Recurring events are checked at the occurrence level — booking the second (or later) instance of a weekly series now correctly triggers a conflict mail, not just the first instance.
 
 **Contains:**
 - Room name
 - Event summary
 - Requested date and time
 - Conflict information
+
+### Booking Horizon Exceeded
+
+**Sent to:** Organizer
+
+Triggered when a booking is automatically declined because it falls beyond the room's configured `Maximum booking horizon`. Recurring events with a far-future last occurrence (or no `UNTIL`/`COUNT`) are included in this check.
+
+**Contains:**
+- Room name, event summary, requested date and time
+- The exact horizon in days (e.g. `60 days`)
+- The earliest date that is no longer bookable (`today + N days`), so the organizer can reschedule without guessing
+
+### Outside Availability Hours
+
+**Sent to:** Organizer
+
+Triggered when a booking falls outside the room's configured availability rules (e.g. weekday 09:00–17:00 only).
+
+**Contains:**
+- Room name, event summary, requested date and time
+- A summary of the room's availability rules (`Mon, Tue, Wed, Thu, Fri 09:00–17:00`)
+
+### Room Sync In Progress
+
+**Sent to:** Organizer
+
+Temporary failure: triggered when a booking arrives while a room's initial Exchange sync is still running. The organizer is asked to retry in a few minutes.
 
 ### Approval Request
 
@@ -77,13 +104,23 @@ Triggered when a new booking arrives for a room with auto-accept disabled. The b
 
 **Sent to:** Organizer and all room managers
 
-Triggered when a booking is cancelled (either by the organizer or via the admin panel).
+Triggered when a booking is cancelled by the organizer (via their calendar app sending an iTIP CANCEL).
 
 **Contains:**
 - Room name
 - Event summary
 - Event date and time
 - Cancellation information
+
+### Booking Cancelled by Manager
+
+**Sent to:** Organizer (booker)
+
+Triggered when an admin or manager cancels an already-accepted booking via the **Cancel booking** action in RoomVox (admin Bookings tab or per-booking modal). Distinct from "Booking Cancelled" above: the booker initiated nothing — a room manager pulled the room. The room is also removed from the booker's own calendar event (LOCATION cleared, ROOM attendee removed) so the slot frees up in the Room Finder.
+
+**Contains:**
+- Room name, event summary, date and time
+- Explanation that the booking was cancelled by a room manager and the room has been released
 
 ## iCalendar Attachments
 
@@ -115,7 +152,11 @@ The "From" address on notification emails depends on the room's email configurat
 | Manager declines booking | Decline email | — |
 | Permission denied (auto-decline) | Permission denied email | — |
 | Scheduling conflict (auto-decline) | Conflict email | — |
-| Booking cancelled | Cancellation email | Cancellation email |
+| Booking horizon exceeded (auto-decline) | Horizon-exceeded email (with N days + cutoff date) | — |
+| Outside availability hours (auto-decline) | Availability email (with rules summary) | — |
+| Room sync in progress (temporary failure) | Sync-in-progress email | — |
+| Organizer cancels their own booking | Cancellation email | Cancellation email |
+| Manager cancels an accepted booking | Cancellation-by-manager email | — |
 
 ## Troubleshooting Notifications
 

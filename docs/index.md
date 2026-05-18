@@ -30,6 +30,7 @@ Technical documentation and API reference.
 - [Architecture Overview](architecture/overview.md) — CalDAV backend, scheduling, data storage
 - [API Reference](architecture/api-reference.md) — Internal and Public REST API with examples
 - [Exchange Sync Changelog](exchange-sync-changelog.md) — Exchange integration, optimizations, and test suite
+- [Nextcloud 34 Compatibility Audit](architecture/nc34-compatibility.md) — NC34 removals, RoomVox impact analysis, 1.2.0 release plan
 
 ### Comparison
 

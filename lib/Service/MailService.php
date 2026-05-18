@@ -87,6 +87,74 @@ class MailService {
     }
 
     /**
+     * Send a decline email when the booking exceeds the room's maximum
+     * booking horizon (issue #7). The body names the horizon in days and
+     * the earliest date that is no longer bookable so the organizer can
+     * reschedule without guessing.
+     */
+    public function sendHorizonExceeded(array $room, ITip\Message $message): void {
+        $eventInfo = $this->extractEventInfo($message);
+        if ($eventInfo === null) {
+            return;
+        }
+
+        $maxDays = (int)($room['maxBookingHorizon'] ?? 0);
+        $subject = $maxDays > 0
+            ? "Booking declined: {$room['name']} — {$eventInfo['summary']} (exceeds {$maxDays}-day horizon)"
+            : "Booking declined: {$room['name']} — {$eventInfo['summary']}";
+        $body = $this->buildHorizonExceededBody($room, $eventInfo, $maxDays);
+
+        $this->sendMail(
+            $room,
+            $eventInfo['organizerEmail'],
+            $subject,
+            $body,
+        );
+    }
+
+    /**
+     * Send a decline email when the booking falls outside the room's
+     * configured availability hours (issue #7).
+     */
+    public function sendAvailabilityViolation(array $room, ITip\Message $message): void {
+        $eventInfo = $this->extractEventInfo($message);
+        if ($eventInfo === null) {
+            return;
+        }
+
+        $subject = "Booking declined: {$room['name']} — outside availability hours";
+        $body = $this->buildAvailabilityViolationBody($room, $eventInfo);
+
+        $this->sendMail(
+            $room,
+            $eventInfo['organizerEmail'],
+            $subject,
+            $body,
+        );
+    }
+
+    /**
+     * Send a temporary-failure notice when an Exchange initial sync is
+     * still running for the room (issue #7).
+     */
+    public function sendSyncInProgress(array $room, ITip\Message $message): void {
+        $eventInfo = $this->extractEventInfo($message);
+        if ($eventInfo === null) {
+            return;
+        }
+
+        $subject = "Booking temporarily unavailable: {$room['name']}";
+        $body = $this->buildSyncInProgressBody($room, $eventInfo);
+
+        $this->sendMail(
+            $room,
+            $eventInfo['organizerEmail'],
+            $subject,
+            $body,
+        );
+    }
+
+    /**
      * Send conflict notification to the organizer
      */
     public function sendConflict(array $room, ITip\Message $message): void {
@@ -198,6 +266,21 @@ class MailService {
 
         $subject = "Booking declined: {$room['name']} — {$eventInfo['summary']}";
         $body = $this->buildDeclinedBody($room, $eventInfo);
+
+        $this->sendMail($room, $eventInfo['organizerEmail'], $subject, $body);
+    }
+
+    /**
+     * Send booking cancelled email when an admin/manager deletes an
+     * already-accepted booking via the UI (issue #10). Distinct from
+     * sendRespondDeclined: that path declines a pending request, this
+     * path cancels a booking the user was actively relying on.
+     */
+    public function sendRespondCancelled(array $room, array $bookingData): void {
+        $eventInfo = $this->bookingDataToEventInfo($bookingData);
+
+        $subject = "Booking cancelled: {$room['name']} — {$eventInfo['summary']}";
+        $body = $this->buildRespondCancelledBody($room, $eventInfo);
 
         $this->sendMail($room, $eventInfo['organizerEmail'], $subject, $body);
     }
@@ -414,6 +497,67 @@ class MailService {
             . "Please contact your administrator if you believe this is an error.";
     }
 
+    private function buildHorizonExceededBody(array $room, array $event, int $maxDays): string {
+        $explanation = "This room has restrictions on how far in advance it can be booked.";
+        if ($maxDays > 0) {
+            $cutoff = (new \DateTimeImmutable('+' . $maxDays . ' days'))->format('Y-m-d');
+            $explanation = "This room has a maximum booking horizon of {$maxDays} days.\n"
+                . "Bookings on or after {$cutoff} are not allowed.";
+        }
+
+        return "Your booking request could not be processed because it exceeds the room's booking horizon.\n\n"
+            . "Room: {$room['name']}\n"
+            . "Event: {$event['summary']}\n"
+            . "Date: {$event['dtstartFormatted']} – {$event['dtendFormatted']}\n\n"
+            . $explanation . "\n\n"
+            . "Please choose a different date or contact the room manager.";
+    }
+
+    private function buildAvailabilityViolationBody(array $room, array $event): string {
+        $rulesSummary = $this->formatAvailabilityRules($room);
+        $rulesBlock = $rulesSummary !== ''
+            ? "This room is available during:\n{$rulesSummary}\n\n"
+            : '';
+
+        return "Your booking request could not be processed because it falls outside the room's availability hours.\n\n"
+            . "Room: {$room['name']}\n"
+            . "Event: {$event['summary']}\n"
+            . "Date: {$event['dtstartFormatted']} – {$event['dtendFormatted']}\n\n"
+            . $rulesBlock
+            . "Please choose a time within the room's availability or contact the room manager.";
+    }
+
+    private function buildSyncInProgressBody(array $room, array $event): string {
+        return "Your booking request could not be processed right now because the room is still being synchronized.\n\n"
+            . "Room: {$room['name']}\n"
+            . "Event: {$event['summary']}\n"
+            . "Date: {$event['dtstartFormatted']} – {$event['dtendFormatted']}\n\n"
+            . "This is a temporary state — please try again in a few minutes. If the problem persists, contact your administrator.";
+    }
+
+    /**
+     * Format the room's availability rules as a human-readable summary,
+     * e.g. "Mon–Fri 09:00–17:00\nSat 10:00–14:00".
+     */
+    private function formatAvailabilityRules(array $room): string {
+        $rules = $room['availabilityRules']['rules'] ?? [];
+        if (empty($rules)) {
+            return '';
+        }
+        $dayLabels = ['mon' => 'Mon', 'tue' => 'Tue', 'wed' => 'Wed', 'thu' => 'Thu', 'fri' => 'Fri', 'sat' => 'Sat', 'sun' => 'Sun'];
+        $lines = [];
+        foreach ($rules as $rule) {
+            $days = array_map(fn($d) => $dayLabels[strtolower((string)$d)] ?? (string)$d, $rule['days'] ?? []);
+            $daysStr = empty($days) ? '' : implode(', ', $days);
+            $start = $rule['startTime'] ?? '';
+            $end = $rule['endTime'] ?? '';
+            if ($daysStr !== '' && $start !== '' && $end !== '') {
+                $lines[] = "  {$daysStr} {$start}–{$end}";
+            }
+        }
+        return implode("\n", $lines);
+    }
+
     private function buildConflictBody(array $room, array $event): string {
         return "Your booking could not be processed due to a scheduling conflict.\n\n"
             . "Room: {$room['name']}\n"
@@ -441,6 +585,15 @@ class MailService {
             . "Date: {$event['dtstartFormatted']} – {$event['dtendFormatted']}\n"
             . "Cancelled by: {$event['organizerName']}\n\n"
             . "The room is now available for this time slot.";
+    }
+
+    private function buildRespondCancelledBody(array $room, array $event): string {
+        return "Your booking has been cancelled by a room manager.\n\n"
+            . "Room: {$room['name']}\n"
+            . "Event: {$event['summary']}\n"
+            . "Date: {$event['dtstartFormatted']} – {$event['dtendFormatted']}\n\n"
+            . "The room has been released and is no longer reserved for your event.\n"
+            . "If you still need this room, please make a new booking or contact the room manager.";
     }
 
 }

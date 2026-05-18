@@ -3,6 +3,8 @@
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
+import { translate as t } from '@nextcloud/l10n'
+
 /**
  * Format a room type string for display
  *
@@ -11,40 +13,45 @@
  */
 export function formatRoomType(type) {
 	const types = {
-		'meeting-room': 'Meeting room',
-		'board-room': 'Board room',
-		'conference-room': 'Conference room',
-		'lecture-hall': 'Lecture hall',
-		'rehearsal-room': 'Rehearsal room',
-		'studio': 'Studio',
-		'outdoor-area': 'Outdoor area',
-		'other': 'Other',
+		'meeting-room': t('roomvox', 'Meeting room'),
+		'board-room': t('roomvox', 'Board room'),
+		'conference-room': t('roomvox', 'Conference room'),
+		'lecture-hall': t('roomvox', 'Lecture hall'),
+		'rehearsal-room': t('roomvox', 'Rehearsal room'),
+		'studio': t('roomvox', 'Studio'),
+		'outdoor-area': t('roomvox', 'Outdoor area'),
+		'other': t('roomvox', 'Other'),
 	}
 	return types[type] || type || ''
 }
 
 /**
- * Short labels for known facility types
- */
-const FACILITY_LABELS = {
-	projector: 'Projector',
-	beamer: 'Projector',
-	whiteboard: 'Whiteboard',
-	video_conference: 'Video',
-	videoconference: 'Video',
-	wheelchair_accessible: 'Wheelchair',
-	'wheelchair-accessible': 'Wheelchair',
-	audio: 'Audio',
-	display: 'Display',
-}
-
-/**
- * Get a human-readable label for a facility
+ * Get a human-readable label for a facility.
+ * Calls to t() are inline (not behind a lookup table) so that translation
+ * string extractors can pick them up.
  *
  * @param {string} facility The facility identifier
  * @return {string}
  */
 export function formatFacility(facility) {
 	const lower = facility.toLowerCase().trim()
-	return FACILITY_LABELS[lower] || facility.charAt(0).toUpperCase() + facility.slice(1)
+	switch (lower) {
+	case 'projector':
+	case 'beamer':
+		return t('roomvox', 'Projector')
+	case 'whiteboard':
+		return t('roomvox', 'Whiteboard')
+	case 'video_conference':
+	case 'videoconference':
+		return t('roomvox', 'Video')
+	case 'wheelchair_accessible':
+	case 'wheelchair-accessible':
+		return t('roomvox', 'Wheelchair')
+	case 'audio':
+		return t('roomvox', 'Audio')
+	case 'display':
+		return t('roomvox', 'Display')
+	default:
+		return facility.charAt(0).toUpperCase() + facility.slice(1)
+	}
 }

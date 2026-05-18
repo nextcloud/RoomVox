@@ -75,7 +75,7 @@
                     <template #icon>
                         <DeleteIcon :size="20" />
                     </template>
-                    {{ $t('Delete') }}
+                    {{ $t('Cancel booking') }}
                 </NcButton>
 
                 <div class="spacer" />
@@ -183,17 +183,17 @@ async function handleRespond(action) {
 }
 
 async function confirmDelete() {
-    if (!confirm(t('Are you sure you want to delete this booking?'))) {
+    if (!confirm(t('Are you sure you want to cancel this booking? The booker will be notified by email.'))) {
         return
     }
 
     loading.value = true
     try {
         await deleteBooking(props.booking.roomId, props.booking.uid)
-        showSuccess(t('Booking deleted'))
+        showSuccess(t('Booking cancelled'))
         emit('deleted')
     } catch (e) {
-        showError(t('Failed to delete booking'))
+        showError(t('Failed to cancel booking'))
     } finally {
         loading.value = false
     }

@@ -118,7 +118,7 @@ class LicenseService {
 				'json' => [
 					'licenseKey' => $licenseKey,
 					'instanceUrlHash' => $this->getInstanceUrlHash(),
-					'instanceName' => $this->config->getAppValue(Application::APP_ID, 'organization_name', ''),
+					'instanceName' => '',
 					'appType' => 'roomvox',
 					'currentRooms' => $stats['totalRooms'],
 					'currentRoomGroups' => $stats['totalRoomGroups'],
@@ -226,7 +226,25 @@ class LicenseService {
 			'limits' => $limits,
 			'freeRoomLimit' => self::FREE_ROOM_LIMIT,
 			'freeRoomGroupLimit' => self::FREE_ROOM_GROUP_LIMIT,
+			'hasExtendedSupport' => $this->hasExtendedSupport(),
 		];
+	}
+
+	/**
+	 * Detect whether the host Nextcloud has an Extended Support / Enterprise
+	 * subscription. Uses Nextcloud's public API (OCP\Util::hasExtendedSupport).
+	 * Returns false on any failure so a Community instance is never reported
+	 * as Enterprise.
+	 */
+	private function hasExtendedSupport(): bool {
+		try {
+			if (class_exists(\OCP\Util::class) && method_exists(\OCP\Util::class, 'hasExtendedSupport')) {
+				return \OCP\Util::hasExtendedSupport();
+			}
+		} catch (\Throwable $e) {
+			// Silently fall back to false — never claim Enterprise on error.
+		}
+		return false;
 	}
 
 	// --- Internal counting ---

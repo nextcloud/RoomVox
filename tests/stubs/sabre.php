@@ -101,7 +101,7 @@ if (!class_exists(\Sabre\VObject\Component::class)) {
 }
 
 if (!class_exists(\Sabre\VObject\Property::class)) {
-    class Property {
+    class Property implements \ArrayAccess {
         private mixed $value;
         private array $parameters = [];
 
@@ -146,6 +146,10 @@ if (!class_exists(\Sabre\VObject\Property::class)) {
         public function offsetExists(mixed $offset): bool {
             return isset($this->parameters[$offset]);
         }
+
+        public function offsetUnset(mixed $offset): void {
+            unset($this->parameters[$offset]);
+        }
     }
 }
 
@@ -175,6 +179,51 @@ if (!class_exists(\Sabre\VObject\Component\VEvent::class)) {
 
 if (!class_exists(\Sabre\VObject\Component\VCalendar::class)) {
     class VCalendar extends \Sabre\VObject\Document {}
+}
+
+namespace Sabre\VObject\Recur;
+
+if (!class_exists(\Sabre\VObject\Recur\EventIterator::class)) {
+    /**
+     * Minimal stub: reads pre-computed occurrences from a `__testOccurrences`
+     * property on the VCalendar (an array of ['start' => DateTime, 'end' => DateTime]).
+     * Tests set this via `$vCalendar->__set('__testOccurrences', [...])`.
+     */
+    class EventIterator {
+        private array $occurrences;
+        private int $index = 0;
+
+        public function __construct($input, ?string $uid = null) {
+            $occ = $input->__testOccurrences ?? null;
+            $this->occurrences = is_array($occ) ? array_values($occ) : [];
+        }
+
+        public function valid(): bool {
+            return isset($this->occurrences[$this->index]);
+        }
+
+        public function getDtStart(): ?\DateTimeInterface {
+            return $this->occurrences[$this->index]['start'] ?? null;
+        }
+
+        public function getDtEnd(): ?\DateTimeInterface {
+            return $this->occurrences[$this->index]['end'] ?? null;
+        }
+
+        public function getEventObject(): \Sabre\VObject\Component\VEvent {
+            $evt = new \Sabre\VObject\Component\VEvent();
+            $cur = $this->occurrences[$this->index] ?? null;
+            if ($cur !== null) {
+                $evt->DTSTART = new \Sabre\VObject\Property($cur['start']);
+                $evt->DTEND = new \Sabre\VObject\Property($cur['end']);
+            }
+            return $evt;
+        }
+
+        public function next(): void {
+            $this->index++;
+        }
+    }
 }
 
 namespace Sabre\CalDAV\Xml\Property;

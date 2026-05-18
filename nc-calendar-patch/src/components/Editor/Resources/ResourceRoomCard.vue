@@ -84,11 +84,11 @@ export default {
 	computed: {
 		statusLabel() {
 			if (this.isAdded) {
-				return this.$t('calendar', 'Reserved')
+				return this.$t('roomvox', 'Reserved')
 			}
 			return this.room.isAvailable
 				? this.$t('calendar', 'Available')
-				: this.$t('calendar', 'Unavailable')
+				: this.$t('roomvox', 'Unavailable')
 		},
 		statusClass() {
 			if (this.isAdded) {

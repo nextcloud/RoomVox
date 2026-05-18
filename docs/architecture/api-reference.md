@@ -170,12 +170,15 @@ Returns all rooms accessible to the token. If the token has room restrictions, o
     "roomType": "meeting-room",
     "facilities": ["projector", "whiteboard"],
     "description": "Large meeting room on 2nd floor",
+    "responsibleContact": "Anne Janssen (anne@voxcloud.nl)",
     "location": "Building A, Heidelberglaan 8, 3584 CS Utrecht",
     "autoAccept": true,
     "active": true
   }
 ]
 ```
+
+The `responsibleContact` field (since 1.1.0) is a free-text string admins use to tell viewers who to approach when they can't book the room themselves. Empty string when not configured.
 
 #### Get Room Details
 
@@ -293,12 +296,14 @@ GET /api/v1/rooms/{id}/calendar.ics
 
 Returns an iCalendar (.ics) feed with all accepted bookings for the room. Compatible with any calendar application, room display, or digital signage system.
 
+**Recurring events:** master VEVENTs are passed through with `RRULE`, `EXDATE`, and any `RECURRENCE-ID` overrides intact. Clients expand the recurrences themselves — RoomVox does not pre-expand the series, which would produce duplicate UIDs and cause RFC 5545–compliant clients to deduplicate down to a single event.
+
 **Query parameters:**
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
-| `from` | string | 7 days ago | Start of date range (ISO 8601) |
-| `to` | string | 30 days ahead | End of date range (ISO 8601) |
+| `from` | string | unbounded | Optional start of date range (ISO 8601). Filters non-recurring events only — events with an RRULE always pass through |
+| `to` | string | unbounded | Optional end of date range (ISO 8601). Filters non-recurring events only |
 
 **Response:**
 ```
@@ -310,9 +315,10 @@ PRODID:-//RoomVox//Nextcloud//EN
 X-WR-CALNAME:Meeting Room 1
 BEGIN:VEVENT
 UID:abc-123-def
-DTSTART:20260215T130000Z
-DTEND:20260215T140000Z
+DTSTART;TZID=Europe/Amsterdam:20260215T130000
+DTEND;TZID=Europe/Amsterdam:20260215T140000
 SUMMARY:Team standup
+RRULE:FREQ=WEEKLY;BYDAY=MO
 ORGANIZER;CN=Jan de Vries:mailto:j.devries@company.com
 LOCATION:Building A, Heidelberglaan 8, 3584 CS Utrecht
 STATUS:CONFIRMED
@@ -698,6 +704,7 @@ POST /api/rooms
   "roomType": "meeting-room",
   "address": "Main Building, Kerkstraat 10, Amsterdam",
   "description": "Corner room with projector",
+  "responsibleContact": "Anne Janssen (anne@voxcloud.nl)",
   "facilities": ["projector", "whiteboard", "videoconf"],
   "autoAccept": true,
   "groupId": "building-a",
@@ -719,7 +726,7 @@ POST /api/rooms
 }
 ```
 
-Only `name` is required. All other fields are optional.
+Only `name` is required. All other fields are optional. The `address` field uses the 4-part comma-separated format (`Building, Street, Postal code, City`) — empty parts are preserved so partial addresses round-trip correctly. The `responsibleContact` field (since 1.1.0, max 255 chars) is visible to every user with view-permission in Personal Settings → My Rooms.
 
 **Response:** The created room object.
 
@@ -778,6 +785,7 @@ Returns bookings across all rooms visible to the current user.
 | `status` | string | `all`, `pending`, `accepted`, `declined` |
 | `from` | string | Start date (ISO 8601) |
 | `to` | string | End date (ISO 8601) |
+| `scope` | string | `view` (default) or `manage`. With `scope=manage` only rooms the user can manage are included — used by the Manager Bookings tab in Personal Settings (since 1.1.0). Admins always see every room regardless of scope |
 
 **Response:**
 ```json
@@ -932,6 +940,16 @@ DELETE /api/rooms/{id}/bookings/{uid}
 ```
 
 **Required:** Organizer, Manager, or Admin
+
+**Side effects (since 1.1.0):**
+
+When called by a manager or admin on an already-accepted booking, the booking is fully cancelled, not just removed from the room calendar:
+
+1. The booking is deleted from the room calendar (and Exchange, if configured)
+2. The room attendee is removed from the booker's own calendar event and `LOCATION` is cleared, so the slot frees up in the Room Finder
+3. A `Booking cancelled` email is sent to the booker explaining the booking was cancelled by a room manager
+
+Steps 2 and 3 are non-blocking — if the organizer's calendar cleanup or the mail fails, the API still returns `200 OK` and the failure is logged.
 
 **Response:**
 ```json

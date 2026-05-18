@@ -127,6 +127,7 @@ class RoomService {
             'name' => $data['name'],
             'email' => !empty($data['email']) ? $data['email'] : $roomId . '@roomvox.local',
             'description' => $data['description'] ?? '',
+            'responsibleContact' => mb_substr((string)($data['responsibleContact'] ?? ''), 0, 255),
             'capacity' => (int)($data['capacity'] ?? 0),
             'roomNumber' => $data['roomNumber'] ?? '',
             'floor' => $data['floor'] ?? '',
@@ -166,7 +167,7 @@ class RoomService {
             return null;
         }
 
-        $updatableFields = ['name', 'email', 'description', 'capacity', 'roomNumber', 'floor', 'roomType', 'address', 'facilities', 'autoAccept', 'active', 'groupId', 'availabilityRules', 'maxBookingHorizon'];
+        $updatableFields = ['name', 'email', 'description', 'responsibleContact', 'capacity', 'roomNumber', 'floor', 'roomType', 'address', 'facilities', 'autoAccept', 'active', 'groupId', 'availabilityRules', 'maxBookingHorizon'];
 
         foreach ($updatableFields as $field) {
             if (array_key_exists($field, $data)) {
@@ -174,10 +175,11 @@ class RoomService {
             }
         }
 
-        // Ensure correct types
+        // Ensure correct types + clamp string lengths
         $room['capacity'] = (int)$room['capacity'];
         $room['autoAccept'] = (bool)$room['autoAccept'];
         $room['active'] = (bool)$room['active'];
+        $room['responsibleContact'] = mb_substr((string)($room['responsibleContact'] ?? ''), 0, 255);
 
         // Handle SMTP config update
         if (array_key_exists('smtpConfig', $data)) {

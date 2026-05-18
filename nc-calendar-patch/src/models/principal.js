@@ -3,6 +3,8 @@
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
+import { translate as t } from '@nextcloud/l10n'
+
 import {
 	PRINCIPAL_PREFIX_CALENDAR_RESOURCE,
 	PRINCIPAL_PREFIX_CALENDAR_ROOM,
@@ -123,11 +125,11 @@ function mapDavToPrincipal(dav) {
 		if (commaIdx > 0) {
 			const building = roomBuildingAddress.substring(0, commaIdx).trim()
 			const street = roomBuildingAddress.substring(commaIdx + 1).trim()
-			const detail = roomNumber ? building + ', Room ' + roomNumber : building
+			const detail = roomNumber ? building + ', ' + t('roomvox', 'Room') + ' ' + roomNumber : building
 			roomAddress = street + ' (' + detail + ')'
 		} else {
 			roomAddress = roomNumber
-				? roomBuildingAddress + ' (Room ' + roomNumber + ')'
+				? roomBuildingAddress + ' (' + t('roomvox', 'Room') + ' ' + roomNumber + ')'
 				: roomBuildingAddress
 		}
 	}

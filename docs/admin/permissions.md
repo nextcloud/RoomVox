@@ -17,6 +17,7 @@ There are three roles, each inheriting the capabilities of the previous:
 ### Viewer
 
 - Can see the room in calendar apps (via CalDAV resource listing)
+- Sees the room in **Settings → Personal → RoomVox → My Rooms** with its Responsible contact value, so they know who to ask when they cannot book it themselves
 - Cannot create bookings
 
 ### Booker
@@ -24,15 +25,17 @@ There are three roles, each inheriting the capabilities of the previous:
 - Can see the room in calendar apps
 - Can create bookings (add room to events)
 - Can cancel their own bookings
+- Sees the room (with Responsible contact) under Settings → Personal → RoomVox → My Rooms
 
 ### Manager
 
 - Can see the room in calendar apps
 - Can create bookings
 - Can approve or decline pending bookings
-- Can cancel any booking for the room
+- Can cancel any booking for the room (the booker is notified by email and the room is removed from their calendar event)
 - Can edit room settings and permissions
 - Receives email notifications for new pending bookings
+- Gets a **Bookings** tab under Settings → Personal → RoomVox showing the same overview admins see, scoped to the rooms they manage (stats, filters, list/calendar toggle, drag-and-drop move between rooms)
 
 ## Permission Entries
 

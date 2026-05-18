@@ -47,39 +47,20 @@
 			</div>
 		</div>
 
-		<!-- Section 3: Pricing -->
+		<!-- Section 3: Pricing CTA -->
 		<div class="settings-section">
-			<h2>{{ $t('Pricing') }}</h2>
-
-			<div class="pricing-table">
-				<div class="pricing-row">
-					<span class="pricing-tier">{{ $t('1–50 users') }}</span>
-					<span class="pricing-price">{{ $t('€29/year') }}</span>
-				</div>
-				<div class="pricing-row">
-					<span class="pricing-tier">{{ $t('51–250 users') }}</span>
-					<span class="pricing-price">{{ $t('€79/year') }}</span>
-				</div>
-				<div class="pricing-row">
-					<span class="pricing-tier">{{ $t('251–1000 users') }}</span>
-					<span class="pricing-price">{{ $t('€179/year') }}</span>
-				</div>
-				<div class="pricing-row">
-					<span class="pricing-tier">{{ $t('1000+ users') }}</span>
-					<span class="pricing-price">{{ $t('Contact us') }}</span>
-				</div>
+			<div class="cta-block">
+				<NcButton type="primary"
+					:href="pricingUrl"
+					target="_blank"
+					rel="noopener noreferrer">
+					{{ $t('View pricing & plans') }}
+				</NcButton>
+				<p class="cta-contact">
+					{{ $t('Questions?') }}
+					<a href="mailto:info@voxcloud.nl">info@voxcloud.nl</a>
+				</p>
 			</div>
-
-			<p class="pricing-note">
-				{{ $t('That\'s less than €1 per week for the smallest tier.') }}
-			</p>
-
-			<NcButton type="primary"
-				:href="pricingUrl"
-				target="_blank"
-				rel="noopener noreferrer">
-				{{ $t('View pricing & subscribe') }}
-			</NcButton>
 		</div>
 
 		<!-- Section 4: Your installation -->
@@ -118,6 +99,10 @@
 				{{ $t('Subscription key is invalid or expired.') }}
 			</NcNoteCard>
 
+			<NcNoteCard v-if="licenseStats && licenseStats.hasExtendedSupport && !licenseStats.hasLicense" type="info">
+				{{ $t('Nextcloud Enterprise subscription detected on this instance. Contact us at info@voxcloud.nl for enterprise pricing tailored to your organization.') }}
+			</NcNoteCard>
+
 			<div class="telemetry-section">
 				<NcCheckboxRadioSwitch
 					:model-value="telemetryEnabled"
@@ -142,38 +127,6 @@
 				<NcNoteCard v-if="telemetryMessage" :type="telemetryMessageType" class="telemetry-feedback">
 					{{ telemetryMessage }}
 				</NcNoteCard>
-			</div>
-		</div>
-
-		<!-- Section 5: Your organization -->
-		<div class="settings-section">
-			<div class="contact-fields">
-				<h2>{{ $t('Your organization (optional)') }}</h2>
-				<p class="field-desc">{{ $t('These details help us reach you if needed. They are never shared.') }}</p>
-
-				<div class="field-row">
-					<label for="organization-name">{{ $t('Organization name') }}</label>
-					<input id="organization-name"
-						v-model="organizationName"
-						type="text"
-						:placeholder="$t('e.g. Acme Corporation')"
-						class="contact-input">
-				</div>
-
-				<div class="field-row">
-					<label for="contact-email">{{ $t('Contact email') }}</label>
-					<input id="contact-email"
-						v-model="contactEmail"
-						type="email"
-						:placeholder="$t('e.g. admin@example.com')"
-						class="contact-input">
-				</div>
-
-				<NcButton type="primary"
-					:disabled="savingContact"
-					@click="saveContactInfo">
-					{{ savingContact ? $t('Saving...') : $t('Save') }}
-				</NcButton>
 			</div>
 		</div>
 
@@ -244,9 +197,6 @@ export default {
 			licenseKey: '',
 			savingLicense: false,
 			_userEditedLicenseKey: false,
-			organizationName: '',
-			contactEmail: '',
-			savingContact: false,
 			telemetryEnabled: true,
 			telemetryLastReport: null,
 			sendingTelemetry: false,
@@ -265,23 +215,10 @@ export default {
 	},
 
 	mounted() {
-		this.loadStatus()
 		this.loadLicenseStats()
 	},
 
 	methods: {
-		async loadStatus() {
-			try {
-				const settingsRes = await axios.get(generateUrl('/apps/roomvox/api/settings'))
-				if (settingsRes.data) {
-					this.organizationName = settingsRes.data.organizationName || ''
-					this.contactEmail = settingsRes.data.contactEmail || ''
-				}
-			} catch (error) {
-				console.error('Failed to load settings:', error)
-			}
-		},
-
 		async loadLicenseStats() {
 			try {
 				const response = await axios.get(generateUrl('/apps/roomvox/api/license/stats'))
@@ -349,22 +286,6 @@ export default {
 				this.showMessage(this.$t('Failed to remove subscription key'), 'error')
 			} finally {
 				this.savingLicense = false
-			}
-		},
-
-		async saveContactInfo() {
-			this.savingContact = true
-			try {
-				await axios.put(generateUrl('/apps/roomvox/api/settings'), {
-					organizationName: this.organizationName,
-					contactEmail: this.contactEmail,
-				})
-				this.showMessage(this.$t('Contact information saved.'), 'success')
-			} catch (error) {
-				console.error('Failed to save contact info:', error)
-				this.showMessage(this.$t('Failed to save contact information'), 'error')
-			} finally {
-				this.savingContact = false
 			}
 		},
 
@@ -479,38 +400,27 @@ export default {
 	color: var(--color-text-maxcontrast);
 }
 
-/* Pricing table */
-.pricing-table {
-	display: flex;
-	flex-direction: column;
-	gap: 8px;
-	margin-bottom: 16px;
-}
-
-.pricing-row {
+/* CTA block (View pricing button + contact email) */
+.cta-block {
 	display: flex;
 	align-items: center;
-	justify-content: space-between;
-	padding: 12px 20px;
-	background: var(--color-background-hover);
-	border-radius: var(--border-radius-large);
+	gap: 16px;
+	flex-wrap: wrap;
 }
 
-.pricing-tier {
-	font-weight: 500;
-	color: var(--color-main-text);
-}
-
-.pricing-price {
-	font-size: 16px;
-	font-weight: 700;
-	color: var(--color-primary);
-}
-
-.pricing-note {
+.cta-contact {
 	color: var(--color-text-maxcontrast);
-	margin-bottom: 16px;
 	font-size: 14px;
+	margin: 0;
+}
+
+.cta-contact a {
+	color: var(--color-primary);
+	text-decoration: none;
+}
+
+.cta-contact a:hover {
+	text-decoration: underline;
 }
 
 /* Telemetry section */
@@ -596,20 +506,6 @@ export default {
 		&:hover {
 			text-decoration: underline;
 		}
-	}
-}
-
-.contact-fields {
-	h2 {
-		margin: 0 0 8px 0;
-		font-size: 20px;
-		font-weight: bold;
-	}
-
-	.field-desc {
-		font-size: 13px;
-		color: var(--color-text-maxcontrast);
-		margin-bottom: 16px;
 	}
 }
 

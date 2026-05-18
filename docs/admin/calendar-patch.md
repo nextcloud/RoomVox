@@ -83,9 +83,25 @@ nc-calendar-patch/src/components/Editor/Resources/
   ResourceRoomCard.vue      # New component
   ResourceListSearch.vue    # Unchanged (no longer used)
 
+nc-calendar-patch/src/components/Editor/Invitees/
+  AttendeeChip.vue          # Adds 'Busy at this time' indicator
+  InviteesChipList.vue      # 'Show less' / 'Drop here to make optional'
+
 nc-calendar-patch/src/models/
   principal.js              # Extended with room metadata fields
+  resourceProps.js          # Room types + facility labels (translatable)
+
+nc-calendar-patch/src/views/
+  EditFull.vue              # Hybrid meeting toggles (In-person / Online (Talk))
 ```
+
+## Translations
+
+Strings that are specific to the RoomVox patch — `In-person`, `Online (Talk)`, `Reserved`, `Suggested conference rooms`, room types like `Meeting room`, facility labels like `Projector`, etc. — are not in the upstream Nextcloud Calendar translation bundles. The patch resolves them through the `roomvox` translation namespace via `$t('roomvox', '…')` (or `t('roomvox', '…')` from `@nextcloud/l10n` in JS files), so they pick up translations from RoomVox's own `l10n/{lang}.{json,js}` bundles.
+
+Languages currently shipped: English (source), German, Dutch, French. Adding a new language means adding a `l10n/<lang>.{json,js}` to the RoomVox app — no calendar-app changes needed.
+
+Strings that already exist upstream (`Accepted`, `Declined`, `Cancel`, `Optional`, `Required`, `Available`, etc.) keep using the `calendar` namespace so they stay in sync with Nextcloud's regular translations.
 
 ## Data Flow
 

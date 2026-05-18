@@ -105,14 +105,37 @@ class CalDAVService {
                     continue;
                 }
 
-                // Expand recurring events into individual occurrences
+                // Expand recurring events into individual occurrences.
+                // We previously used VCalendar::expand(), but it silently returns
+                // only the master event when the VTIMEZONE contains DST DAYLIGHT/
+                // STANDARD components with 1970 DTSTARTs (the standard NC Calendar
+                // output). Sabre's EventIterator handles that case correctly.
                 $hasRrule = isset($masterEvent->RRULE);
                 if ($hasRrule) {
                     $expandStart = $from ? new \DateTimeImmutable($from) : new \DateTimeImmutable('now');
                     $expandEnd = $to ? new \DateTimeImmutable($to) : $expandStart->modify('+1 year');
-                    $expandedCal = clone $vObject;
-                    $expandedCal->expand($expandStart, $expandEnd);
-                    $vEvents = $expandedCal->select('VEVENT');
+                    $vEvents = [];
+                    try {
+                        $iter = new \Sabre\VObject\Recur\EventIterator($vObject, (string)$masterEvent->UID);
+                        // EventIterator iterates from the master DTSTART; advance
+                        // to the requested window start, then collect until end.
+                        $safety = 0;
+                        while ($iter->valid() && $safety < 10000) {
+                            $occStart = $iter->getDtStart();
+                            if ($occStart >= $expandEnd) {
+                                break;
+                            }
+                            $occEnd = $iter->getDtEnd();
+                            if ($occEnd === null || $occEnd > $expandStart) {
+                                $vEvents[] = $iter->getEventObject();
+                            }
+                            $iter->next();
+                            $safety++;
+                        }
+                    } catch (\Exception $e) {
+                        $this->logger->warning("EventIterator failed for {$object['uri']}: " . $e->getMessage());
+                        $vEvents = [$masterEvent];
+                    }
                     if (empty($vEvents)) {
                         continue;
                     }
@@ -204,6 +227,91 @@ class CalDAVService {
         });
 
         return $bookings;
+    }
+
+    /**
+     * Get raw VObject calendar objects for a room without expanding RRULE.
+     *
+     * Used by the iCal feed: clients (Apple Calendar, Thunderbird, Outlook)
+     * expand RRULE themselves. Server-side expansion + emitting N VEVENTs with
+     * the same UID violates RFC 5545 §3.8.4.7 and causes clients to dedupe
+     * to a single occurrence (issue #4).
+     *
+     * @param string|null $acceptedOnly If 'ACCEPTED', filter out series whose
+     *        room attendee PARTSTAT is not ACCEPTED.
+     * @return array<int, array{uri: string, vobject: \Sabre\VObject\Document, partstat: string}>
+     */
+    public function getRawCalendarObjects(string $roomUserId, ?string $acceptedOnly = null): array {
+        $calendarId = $this->getRoomCalendarId($roomUserId);
+        if ($calendarId === null) {
+            return [];
+        }
+
+        $objects = $this->calDavBackend->getCalendarObjects($calendarId);
+        $result = [];
+
+        foreach ($objects as $object) {
+            $fullObject = $this->calDavBackend->getCalendarObject($calendarId, $object['uri']);
+            if ($fullObject === null) {
+                continue;
+            }
+
+            $calendarData = $fullObject['calendardata'] ?? '';
+            if (empty($calendarData)) {
+                continue;
+            }
+
+            try {
+                $vObject = Reader::read($calendarData);
+                $masterEvent = $vObject->VEVENT ?? null;
+                if ($masterEvent === null) {
+                    continue;
+                }
+
+                // PARTSTAT extraction (same logic as getBookings():134-152):
+                // CUTYPE=ROOM first, then non-organizer attendee fallback for
+                // clients like iOS that send CUTYPE=INDIVIDUAL for rooms.
+                $organizerEmail = '';
+                if ($masterEvent->ORGANIZER) {
+                    $organizerEmail = strtolower(RoomService::stripMailto((string)$masterEvent->ORGANIZER));
+                }
+
+                $partstat = 'NEEDS-ACTION';
+                $fallbackPartstat = null;
+                $attendees = $masterEvent->select('ATTENDEE');
+                foreach ($attendees as $attendee) {
+                    $cutype = isset($attendee['CUTYPE']) ? (string)$attendee['CUTYPE'] : '';
+                    if ($cutype === 'ROOM') {
+                        $partstat = isset($attendee['PARTSTAT']) ? (string)$attendee['PARTSTAT'] : 'NEEDS-ACTION';
+                        $fallbackPartstat = null;
+                        break;
+                    }
+                    $attendeeEmail = strtolower(RoomService::stripMailto((string)$attendee));
+                    if ($attendeeEmail !== $organizerEmail && $fallbackPartstat === null) {
+                        $fallbackPartstat = isset($attendee['PARTSTAT']) ? (string)$attendee['PARTSTAT'] : 'NEEDS-ACTION';
+                    }
+                }
+                if ($fallbackPartstat !== null) {
+                    $partstat = $fallbackPartstat;
+                }
+
+                if ($acceptedOnly !== null && $partstat !== $acceptedOnly) {
+                    continue;
+                }
+
+                $result[] = [
+                    'uri' => $object['uri'],
+                    'vobject' => $vObject,
+                    'calendardata' => $calendarData,
+                    'partstat' => $partstat,
+                ];
+            } catch (\Exception $e) {
+                $this->logger->warning("Failed to parse calendar object {$object['uri']}: " . $e->getMessage());
+                continue;
+            }
+        }
+
+        return $result;
     }
 
     /**
@@ -603,6 +711,34 @@ class CalDAVService {
                     continue;
                 }
 
+                // For recurring events, expand RRULE and check each occurrence
+                // that falls within the query window (issue #8). Comparing
+                // only the master DTSTART/DTEND misses conflicts on later
+                // occurrences. EventIterator natively respects RRULE, EXDATE
+                // and RECURRENCE-ID overrides.
+                if (isset($vEvent->RRULE)) {
+                    try {
+                        $iter = new \Sabre\VObject\Recur\EventIterator($vObject, (string)($vEvent->UID ?? ''));
+                        $safety = 0;
+                        while ($iter->valid() && $safety < 10000) {
+                            $occStart = $iter->getDtStart();
+                            $occEnd = $iter->getDtEnd();
+                            if ($occStart >= $end) {
+                                break; // past the query window
+                            }
+                            if ($occEnd !== null && $occEnd > $start && $occStart < $end) {
+                                return true;
+                            }
+                            $iter->next();
+                            $safety++;
+                        }
+                        continue;
+                    } catch (\Exception $e) {
+                        $this->logger->warning("EventIterator failed in hasConflict for {$uri}: " . $e->getMessage());
+                        // Fall through to master-event comparison as a safe fallback.
+                    }
+                }
+
                 $eventStart = $vEvent->DTSTART ? $vEvent->DTSTART->getDateTime() : null;
                 $eventEnd = $vEvent->DTEND ? $vEvent->DTEND->getDateTime() : null;
 
@@ -926,8 +1062,22 @@ class CalDAVService {
 
             // Extract organizer
             $organizer = '';
+            $organizerEmail = '';
+            $organizerName = '';
             if ($vEvent->ORGANIZER) {
                 $organizer = RoomService::stripMailto((string)$vEvent->ORGANIZER);
+                $organizerEmail = strtolower($organizer);
+                $organizerName = isset($vEvent->ORGANIZER['CN']) ? (string)$vEvent->ORGANIZER['CN'] : $organizer;
+            }
+
+            // Extract room attendee email (first ATTENDEE with CUTYPE=ROOM)
+            $roomEmail = '';
+            foreach ($vEvent->select('ATTENDEE') as $attendee) {
+                $cutype = isset($attendee['CUTYPE']) ? (string)$attendee['CUTYPE'] : '';
+                if ($cutype === 'ROOM') {
+                    $roomEmail = strtolower(RoomService::stripMailto((string)$attendee));
+                    break;
+                }
             }
 
             return [
@@ -938,6 +1088,9 @@ class CalDAVService {
                 'dtstart' => $vEvent->DTSTART ? $vEvent->DTSTART->getDateTime()->format('c') : null,
                 'dtend' => $vEvent->DTEND ? $vEvent->DTEND->getDateTime()->format('c') : null,
                 'organizer' => $organizer,
+                'organizerEmail' => $organizerEmail,
+                'organizerName' => $organizerName,
+                'roomEmail' => $roomEmail,
                 'status' => (string)($vEvent->STATUS ?? ''),
             ];
         } catch (\Throwable $e) {
