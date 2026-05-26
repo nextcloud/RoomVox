@@ -203,15 +203,28 @@
             :name="$t('Cancel booking')"
             :open="!!deleteTarget"
             @close="deleteTarget = null">
-            <p>{{ $t('Are you sure you want to cancel this booking? The booker will be notified by email.') }}</p>
-            <p><strong>{{ deleteTarget?.summary }}</strong></p>
-            <p>{{ formatRelativeDate(deleteTarget?.dtstart) }} {{ formatTime(deleteTarget?.dtstart) }} – {{ formatTime(deleteTarget?.dtend) }}</p>
+            <template v-if="deleteTarget?.recurrenceId">
+                <p>{{ $t('This booking is part of a recurring series. What would you like to cancel?') }}</p>
+                <p><strong>{{ deleteTarget?.summary }}</strong></p>
+                <p>{{ formatRelativeDate(deleteTarget?.dtstart) }} {{ formatTime(deleteTarget?.dtstart) }} – {{ formatTime(deleteTarget?.dtend) }}</p>
+                <p>{{ $t('The booker will be notified by email.') }}</p>
+            </template>
+            <template v-else>
+                <p>{{ $t('Are you sure you want to cancel this booking? The booker will be notified by email.') }}</p>
+                <p><strong>{{ deleteTarget?.summary }}</strong></p>
+                <p>{{ formatRelativeDate(deleteTarget?.dtstart) }} {{ formatTime(deleteTarget?.dtstart) }} – {{ formatTime(deleteTarget?.dtend) }}</p>
+            </template>
             <template #actions>
-                <NcButton type="tertiary" @click="deleteTarget = null">{{ $t('Keep booking') }}</NcButton>
-                <NcButton type="error" :disabled="deleting" @click="executeDelete">
-                    <template #icon>
-                        <Delete :size="20" />
-                    </template>
+                <NcButton type="tertiary" @click="deleteTarget = null">{{ $t('Keep') }}</NcButton>
+                <template v-if="deleteTarget?.recurrenceId">
+                    <NcButton type="warning" :disabled="deleting" @click="executeDelete('occurrence')">
+                        {{ $t('This occurrence') }}
+                    </NcButton>
+                    <NcButton type="error" :disabled="deleting" @click="executeDelete('series')">
+                        {{ $t('Entire series') }}
+                    </NcButton>
+                </template>
+                <NcButton v-else type="error" :disabled="deleting" @click="executeDelete('series')">
                     {{ $t('Cancel booking') }}
                 </NcButton>
             </template>
@@ -456,12 +469,13 @@ const confirmDelete = (booking) => {
     deleteTarget.value = booking
 }
 
-const executeDelete = async () => {
+const executeDelete = async (mode = 'series') => {
     if (!deleteTarget.value) return
     deleting.value = true
+    const recurrenceId = mode === 'occurrence' ? deleteTarget.value.recurrenceId : null
     try {
-        await deleteBooking(deleteTarget.value.roomId, deleteTarget.value.uid)
-        showSuccess(t('Booking cancelled'))
+        await deleteBooking(deleteTarget.value.roomId, deleteTarget.value.uid, recurrenceId)
+        showSuccess(mode === 'occurrence' ? t('Occurrence cancelled') : t('Booking cancelled'))
         deleteTarget.value = null
         await loadBookings()
     } catch (e) {
@@ -722,5 +736,17 @@ onMounted(() => {
     .room-filter {
         min-width: auto;
     }
+}
+
+/* Cancel-booking dialog: allow action buttons to wrap on narrow widths or
+   long translations (e.g. NL/DE/FR labels) instead of being truncated. */
+:deep(.dialog__actions),
+:deep(.dialog-buttons) {
+    flex-wrap: wrap;
+    gap: 8px;
+}
+:deep(.dialog__actions) .button-vue,
+:deep(.dialog-buttons) .button-vue {
+    flex-shrink: 0;
 }
 </style>

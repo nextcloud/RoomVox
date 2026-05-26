@@ -427,7 +427,7 @@ class CalDAVService {
      * is updated by updateBookingPartstat(). This method propagates the change
      * to the organizer's copy so their calendar reflects the response.
      */
-    public function updateOrganizerEventPartstat(string $organizerEmail, string $bookingUid, string $partstat, string $roomEmail): bool {
+    public function updateOrganizerEventPartstat(string $organizerEmail, string $bookingUid, string $partstat, string $roomEmail, ?string $recurrenceId = null): bool {
         $users = $this->userManager->getByEmail($organizerEmail);
         if (count($users) !== 1) {
             $this->logger->debug("RoomVox: Could not resolve organizer {$organizerEmail} to a unique NC user (found " . count($users) . ")");
@@ -455,27 +455,34 @@ class CalDAVService {
 
                 try {
                     $vObject = Reader::read($calendarData);
-                    $vEvent = $vObject->VEVENT ?? null;
-                    if ($vEvent === null) {
+                    $master = $this->findMasterVEvent($vObject);
+                    if ($master === null) {
                         continue;
                     }
 
-                    $uid = (string)($vEvent->UID ?? '');
+                    $uid = (string)($master->UID ?? '');
                     if ($uid !== $bookingUid) {
                         continue;
                     }
 
-                    // Found the matching event — update the room attendee's PARTSTAT
-                    $attendees = $vEvent->select('ATTENDEE');
+                    $target = $master;
+
+                    if ($recurrenceId !== null) {
+                        $target = $this->resolveOrCreateOverride($vObject, $master, $recurrenceId);
+                        if ($target === null) {
+                            $this->logger->debug("RoomVox: Could not resolve override for {$bookingUid} @ {$recurrenceId}");
+                            return false;
+                        }
+                    }
+
+                    $attendees = $target->select('ATTENDEE');
                     $changed = false;
                     foreach ($attendees as $attendee) {
                         $email = strtolower(RoomService::stripMailto((string)$attendee));
                         if ($email === $roomEmail) {
                             if ($partstat === 'DECLINED') {
-                                // Remove the room attendee entirely so Room Finder shows it as available
-                                $vEvent->remove($attendee);
-                                // Clear LOCATION since the room was declined
-                                unset($vEvent->LOCATION);
+                                $target->remove($attendee);
+                                unset($target->LOCATION);
                             } else {
                                 $attendee['PARTSTAT'] = $partstat;
                             }
@@ -495,7 +502,8 @@ class CalDAVService {
                         $vObject->serialize()
                     );
 
-                    $this->logger->info("RoomVox: Updated organizer event {$bookingUid} — room {$roomEmail} PARTSTAT set to {$partstat}");
+                    $context = $recurrenceId !== null ? " (occurrence {$recurrenceId})" : '';
+                    $this->logger->info("RoomVox: Updated organizer event {$bookingUid}{$context} — room {$roomEmail} PARTSTAT set to {$partstat}");
                     return true;
                 } catch (\Exception $e) {
                     $this->logger->error("RoomVox: Failed to update organizer event {$bookingUid}: " . $e->getMessage());
@@ -628,6 +636,175 @@ class CalDAVService {
      */
     public function deleteBooking(string $roomUserId, string $uid): bool {
         return $this->deleteFromRoomCalendar($roomUserId, $uid);
+    }
+
+    /**
+     * Cancel a single occurrence of a recurring booking by adding EXDATE
+     * to the master VEVENT and removing any RECURRENCE-ID override that
+     * matches the same occurrence. The series itself stays intact.
+     *
+     * @param string $recurrenceId ISO 8601 datetime identifying the occurrence
+     * @return bool true on success, false if not found / not recurring
+     */
+    public function deleteBookingOccurrence(string $roomUserId, string $uid, string $recurrenceId): bool {
+        $calendarId = $this->getRoomCalendarId($roomUserId);
+        if ($calendarId === null) {
+            return false;
+        }
+
+        $objectUri = $uid . '.ics';
+
+        try {
+            $object = $this->calDavBackend->getCalendarObject($calendarId, $objectUri);
+            if ($object === null) {
+                return false;
+            }
+
+            $vObject = Reader::read($object['calendardata'] ?? '');
+            $master = $this->findMasterVEvent($vObject);
+            if ($master === null) {
+                return false;
+            }
+
+            if (!isset($master->RRULE)) {
+                $this->logger->warning("RoomVox: deleteBookingOccurrence called on non-recurring booking {$uid}");
+                return false;
+            }
+
+            $masterTz = $this->extractTimezone($master->DTSTART);
+            $occurrenceDt = new \DateTimeImmutable($recurrenceId, $masterTz);
+
+            // Remove any RECURRENCE-ID override that targets this occurrence.
+            foreach ($vObject->VEVENT as $sub) {
+                if (!isset($sub->{'RECURRENCE-ID'})) {
+                    continue;
+                }
+                $subDt = $sub->{'RECURRENCE-ID'}->getDateTime();
+                if ($subDt->getTimestamp() === $occurrenceDt->getTimestamp()) {
+                    $vObject->remove($sub);
+                }
+            }
+
+            // Append to existing EXDATE property (single property, multiple values).
+            $tzName = $masterTz->getName();
+            if (isset($master->EXDATE)) {
+                $dates = $master->EXDATE->getDateTimes();
+                $dates[] = $occurrenceDt;
+                $master->remove('EXDATE');
+                $master->add('EXDATE', $dates, ['TZID' => $tzName]);
+            } else {
+                $master->add('EXDATE', $occurrenceDt, ['TZID' => $tzName]);
+            }
+
+            $this->calDavBackend->updateCalendarObject(
+                $calendarId,
+                $objectUri,
+                $vObject->serialize()
+            );
+
+            $this->logger->info("RoomVox: Cancelled occurrence {$recurrenceId} of booking {$uid}");
+            return true;
+        } catch (\Throwable $e) {
+            $this->logger->error("RoomVox: Failed to cancel occurrence of {$uid}: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Find the master VEVENT (the one without RECURRENCE-ID) inside a VCalendar.
+     */
+    private function findMasterVEvent(\Sabre\VObject\Document $vObject): ?\Sabre\VObject\Component\VEvent {
+        if (!isset($vObject->VEVENT)) {
+            return null;
+        }
+        foreach ($vObject->VEVENT as $vEvent) {
+            if (!isset($vEvent->{'RECURRENCE-ID'})) {
+                return $vEvent;
+            }
+        }
+        return $vObject->VEVENT[0] ?? null;
+    }
+
+    /**
+     * Find or create a RECURRENCE-ID override VEVENT for the given occurrence.
+     * The new override copies SUMMARY, DTSTART/DTEND (shifted to the occurrence
+     * time using the master's duration), DESCRIPTION, LOCATION and ATTENDEE
+     * list from the master, so attendee-level changes target only that instance.
+     */
+    private function resolveOrCreateOverride(
+        \Sabre\VObject\Document $vObject,
+        \Sabre\VObject\Component\VEvent $master,
+        string $recurrenceId
+    ): ?\Sabre\VObject\Component\VEvent {
+        $masterTz = $this->extractTimezone($master->DTSTART);
+        $occurrenceDt = new \DateTimeImmutable($recurrenceId, $masterTz);
+
+        foreach ($vObject->VEVENT as $sub) {
+            if (!isset($sub->{'RECURRENCE-ID'})) {
+                continue;
+            }
+            if ($sub->{'RECURRENCE-ID'}->getDateTime()->getTimestamp() === $occurrenceDt->getTimestamp()) {
+                return $sub;
+            }
+        }
+
+        $masterStart = $master->DTSTART ? $master->DTSTART->getDateTime() : null;
+        $masterEnd = $master->DTEND ? $master->DTEND->getDateTime() : null;
+        if ($masterStart === null) {
+            return null;
+        }
+
+        $duration = $masterEnd !== null
+            ? $masterEnd->getTimestamp() - $masterStart->getTimestamp()
+            : 3600;
+        $occurrenceEnd = $occurrenceDt->setTimestamp($occurrenceDt->getTimestamp() + $duration);
+
+        $tzName = $masterTz->getName();
+        $override = $vObject->add('VEVENT', [
+            'UID' => (string)($master->UID ?? ''),
+            'DTSTART' => $occurrenceDt,
+            'DTEND' => $occurrenceEnd,
+            'SUMMARY' => (string)($master->SUMMARY ?? ''),
+        ]);
+        $override->DTSTART['TZID'] = $tzName;
+        $override->DTEND['TZID'] = $tzName;
+        $override->add('RECURRENCE-ID', $occurrenceDt, ['TZID' => $tzName]);
+
+        if (isset($master->DESCRIPTION)) {
+            $override->DESCRIPTION = (string)$master->DESCRIPTION;
+        }
+        if (isset($master->LOCATION)) {
+            $override->LOCATION = (string)$master->LOCATION;
+        }
+        if (isset($master->ORGANIZER)) {
+            $orgValue = (string)$master->ORGANIZER;
+            $override->add('ORGANIZER', $orgValue);
+            foreach ($master->ORGANIZER->parameters() as $key => $param) {
+                $override->ORGANIZER[$key] = (string)$param;
+            }
+        }
+        foreach ($master->select('ATTENDEE') as $attendee) {
+            $newAttendee = $override->add('ATTENDEE', (string)$attendee);
+            foreach ($attendee->parameters() as $key => $param) {
+                $newAttendee[$key] = (string)$param;
+            }
+        }
+
+        return $override;
+    }
+
+    /**
+     * Extract the timezone of a DateTime property, falling back to UTC.
+     */
+    private function extractTimezone(?\Sabre\VObject\Property $prop): \DateTimeZone {
+        if ($prop === null) {
+            return new \DateTimeZone('UTC');
+        }
+        try {
+            return $prop->getDateTime()->getTimezone();
+        } catch (\Throwable $e) {
+            return new \DateTimeZone('UTC');
+        }
     }
 
     /**
@@ -914,6 +1091,47 @@ class CalDAVService {
     }
 
     /**
+     * Resolve a free-form organizer input (NC user ID or email) to an
+     * `['email' => string, 'cn' => string|null]` identity, or null when no
+     * usable email can be determined.
+     *
+     * Mirrors the NC-user-resolution logic from SchedulingPlugin::buildOrganizerFromCalendarOwner
+     * so both the iTIP and the API booking paths emit the same ORGANIZER.
+     */
+    public function resolveOrganizerIdentity(string $input): ?array {
+        $input = trim($input);
+        if ($input === '') {
+            return null;
+        }
+
+        if (filter_var($input, FILTER_VALIDATE_EMAIL)) {
+            $cn = null;
+            $matches = $this->userManager->getByEmail($input);
+            if (count($matches) === 1) {
+                $displayName = $matches[0]->getDisplayName();
+                if ($displayName !== '' && strtolower($displayName) !== strtolower($input)) {
+                    $cn = $displayName;
+                }
+            }
+            return ['email' => $input, 'cn' => $cn];
+        }
+
+        $user = $this->userManager->get($input);
+        if ($user === null) {
+            return null;
+        }
+        $email = $user->getEMailAddress();
+        if ($email === null || $email === '') {
+            return null;
+        }
+        $displayName = $user->getDisplayName();
+        return [
+            'email' => $email,
+            'cn' => $displayName !== '' && strtolower($displayName) !== strtolower($email) ? $displayName : null,
+        ];
+    }
+
+    /**
      * Create a new booking in the room's calendar
      *
      * @param string $roomUserId The room's service account user ID
@@ -958,7 +1176,15 @@ class CalDAVService {
         }
 
         if ($organizer !== '') {
-            $icsLines[] = 'ORGANIZER;CN=' . $this->escapeIcsText($organizer) . ':mailto:' . $organizer . '@localhost';
+            $identity = $this->resolveOrganizerIdentity($organizer);
+            if ($identity !== null) {
+                $cnPart = $identity['cn'] !== null
+                    ? ';CN=' . $this->escapeIcsText($identity['cn'])
+                    : '';
+                $icsLines[] = 'ORGANIZER' . $cnPart . ':mailto:' . $identity['email'];
+            } else {
+                $this->logger->debug("RoomVox: No resolvable organizer for booking ({$organizer}) — ORGANIZER property omitted");
+            }
         }
 
         // Add room as attendee
@@ -1083,6 +1309,8 @@ class CalDAVService {
             return [
                 'uid' => (string)($vEvent->UID ?? ''),
                 'uri' => $objectUri,
+                'calendarId' => $calendarId,
+                'isRecurring' => isset($vEvent->RRULE),
                 'summary' => (string)($vEvent->SUMMARY ?? ''),
                 'description' => (string)($vEvent->DESCRIPTION ?? ''),
                 'dtstart' => $vEvent->DTSTART ? $vEvent->DTSTART->getDateTime()->format('c') : null,

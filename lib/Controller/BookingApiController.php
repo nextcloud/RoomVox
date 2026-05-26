@@ -127,6 +127,8 @@ class BookingApiController extends Controller {
                 $this->logger->error("Exchange push failed (non-blocking): " . $e->getMessage());
             }
 
+            $this->notifyManagersIfPending($room, $uid, $summary, $userId, $startDt, $endDt);
+
             return new JSONResponse(['status' => 'ok', 'uid' => $uid], 201);
         } catch (\Exception $e) {
             $this->logger->error("Failed to create booking in room {$id}: " . $e->getMessage());
@@ -214,6 +216,15 @@ class BookingApiController extends Controller {
                 ]);
 
                 $this->logger->info("Booking {$uid} moved from room {$id} to {$newRoomId} (new uid: {$newUid}) by {$userId}");
+
+                $this->notifyManagersIfPending(
+                    $newRoom,
+                    $newUid,
+                    $existingBooking['summary'] ?? 'Booking',
+                    $existingBooking['organizer'] ?? $userId,
+                    $startDt,
+                    $endDt,
+                );
 
                 return new JSONResponse(['status' => 'ok', 'uid' => $newUid, 'moved' => true]);
             }
@@ -318,10 +329,12 @@ class BookingApiController extends Controller {
     }
 
     /**
-     * Delete a booking (admin/manager or owner)
+     * Delete a booking (admin/manager or owner).
+     * When $recurrenceId is provided and the booking is recurring, only that
+     * occurrence is cancelled (EXDATE); otherwise the entire series is removed.
      */
     #[NoAdminRequired]
-    public function destroy(string $id, string $uid): JSONResponse {
+    public function destroy(string $id, string $uid, ?string $recurrenceId = null): JSONResponse {
         $userId = $this->getCurrentUserId();
         if ($userId === null) {
             return new JSONResponse(['error' => 'Not authenticated'], 401);
@@ -332,7 +345,6 @@ class BookingApiController extends Controller {
             return new JSONResponse(['error' => 'Room not found'], 404);
         }
 
-        // Check if user is admin, manager, or owns this booking
         $isAdmin = $this->groupManager->isAdmin($userId);
         $canManage = $this->permissionService->canManage($userId, $id);
         $existingBooking = $this->calDAVService->getBookingByUid($room['userId'], $uid);
@@ -347,25 +359,39 @@ class BookingApiController extends Controller {
             return new JSONResponse(['error' => 'Forbidden'], 403);
         }
 
+        // Non-recurring booking + stray recurrenceId → fall back to series delete.
+        $isOccurrence = $recurrenceId !== null && !empty($existingBooking['isRecurring']);
+        if ($recurrenceId !== null && !$isOccurrence) {
+            $this->logger->warning("Booking {$uid} is not recurring but recurrenceId was supplied — falling back to series delete");
+        }
+
         try {
-            // Push delete to Exchange before removing locally (need iCal data for lookup)
             try {
-                $this->exchangeSyncService->deleteBookingFromExchange($room, $uid);
+                $this->exchangeSyncService->deleteBookingFromExchange(
+                    $room,
+                    $uid,
+                    $isOccurrence ? $recurrenceId : null,
+                );
             } catch (\Throwable $e) {
                 $this->logger->error("Exchange delete failed (non-blocking): " . $e->getMessage());
             }
 
-            $success = $this->calDAVService->deleteBooking($room['userId'], $uid);
+            if ($isOccurrence) {
+                $success = $this->calDAVService->deleteBookingOccurrence($room['userId'], $uid, $recurrenceId);
+            } else {
+                $success = $this->calDAVService->deleteBooking($room['userId'], $uid);
+            }
 
             if (!$success) {
                 return new JSONResponse(['error' => 'Booking not found'], 404);
             }
 
-            $this->logger->info("Booking {$uid} in room {$id} deleted by {$userId}");
+            $context = $isOccurrence ? " occurrence {$recurrenceId}" : '';
+            $this->logger->info("Booking {$uid}{$context} in room {$id} deleted by {$userId}");
 
             // Propagate cancellation to organizer's calendar so the slot is
-            // freed in their Room Finder (issue #10). DECLINED removes the
-            // room attendee and clears LOCATION.
+            // freed in their Room Finder (issue #10 / #13). For an occurrence,
+            // an override VEVENT is added to the organizer's master event.
             $organizerEmail = $existingBooking['organizerEmail'] ?? '';
             $roomEmail = $existingBooking['roomEmail'] ?? '';
             if ($organizerEmail !== '' && $roomEmail !== '') {
@@ -375,14 +401,18 @@ class BookingApiController extends Controller {
                         $uid,
                         'DECLINED',
                         $roomEmail,
+                        $isOccurrence ? $recurrenceId : null,
                     );
                 } catch (\Throwable $e) {
                     $this->logger->error("Failed to clean up organizer event for cancelled booking {$uid}: " . $e->getMessage());
                 }
 
-                // Notify the booker that their booking was cancelled.
                 try {
-                    $this->mailService->sendRespondCancelled($room, $existingBooking);
+                    $this->mailService->sendRespondCancelled(
+                        $room,
+                        $existingBooking,
+                        $isOccurrence ? $recurrenceId : null,
+                    );
                 } catch (\Throwable $e) {
                     $this->logger->error("Failed to send cancellation email for booking {$uid}: " . $e->getMessage());
                 }
@@ -398,5 +428,36 @@ class BookingApiController extends Controller {
     private function getCurrentUserId(): ?string {
         $user = $this->userSession->getUser();
         return $user?->getUID();
+    }
+
+    /**
+     * Trigger the manager approval mail for rooms that don't auto-accept.
+     * The Sabre iTIP path covers this from SchedulingPlugin; this controller
+     * bypasses Sabre, so we call it directly. Failures are non-blocking.
+     */
+    private function notifyManagersIfPending(
+        array $room,
+        string $uid,
+        string $summary,
+        string $organizerInput,
+        \DateTimeInterface $start,
+        \DateTimeInterface $end,
+    ): void {
+        if ($room['autoAccept'] ?? false) {
+            return;
+        }
+        try {
+            $identity = $this->calDAVService->resolveOrganizerIdentity($organizerInput);
+            $this->mailService->notifyManagersForBooking($room, [
+                'uid' => $uid,
+                'summary' => $summary,
+                'organizerEmail' => $identity['email'] ?? '',
+                'organizerName' => $identity['cn'] ?? '',
+                'dtstart' => $start->format(\DateTimeInterface::ATOM),
+                'dtend' => $end->format(\DateTimeInterface::ATOM),
+            ]);
+        } catch (\Throwable $e) {
+            $this->logger->error("Manager approval mail failed (non-blocking): " . $e->getMessage());
+        }
     }
 }

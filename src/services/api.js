@@ -34,8 +34,11 @@ export const updateBooking = (roomId, bookingUid, data) =>
     axios.put(baseUrl(`/api/rooms/${roomId}/bookings/${bookingUid}`), data)
 export const respondToBooking = (roomId, bookingUid, action) =>
     axios.post(baseUrl(`/api/rooms/${roomId}/bookings/${bookingUid}/respond`), { action })
-export const deleteBooking = (roomId, bookingUid) =>
-    axios.delete(baseUrl(`/api/rooms/${roomId}/bookings/${bookingUid}`))
+export const deleteBooking = (roomId, bookingUid, recurrenceId = null) =>
+    axios.delete(
+        baseUrl(`/api/rooms/${roomId}/bookings/${bookingUid}`)
+        + (recurrenceId ? `?recurrenceId=${encodeURIComponent(recurrenceId)}` : ''),
+    )
 
 // Import/Export
 export const exportRoomsUrl = () => baseUrl('/api/rooms/export')

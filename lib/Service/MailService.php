@@ -7,6 +7,7 @@ namespace OCA\RoomVox\Service;
 use OCA\RoomVox\AppInfo\Application;
 use OCP\IAppConfig;
 use OCP\IURLGenerator;
+use OCP\IUserManager;
 use OCP\Mail\IMailer;
 use OCP\Security\ICrypto;
 use Psr\Log\LoggerInterface;
@@ -21,6 +22,7 @@ class MailService {
         private IAppConfig $appConfig,
         private ICrypto $crypto,
         private PermissionService $permissionService,
+        private IUserManager $userManager,
         private IURLGenerator $urlGenerator,
         private LoggerInterface $logger,
     ) {
@@ -175,14 +177,28 @@ class MailService {
     }
 
     /**
-     * Notify managers about a pending booking request
+     * Notify managers about a pending booking request triggered via the
+     * iTIP/CalDAV path.
      */
     public function notifyManagers(array $room, ITip\Message $message): void {
         $eventInfo = $this->extractEventInfo($message);
         if ($eventInfo === null) {
             return;
         }
+        $this->notifyManagersFromEventInfo($room, $eventInfo);
+    }
 
+    /**
+     * Notify managers about a pending booking request created via the REST API
+     * (PublicApiController / BookingApiController), which bypasses the Sabre
+     * scheduling plugin.
+     */
+    public function notifyManagersForBooking(array $room, array $bookingData): void {
+        $eventInfo = $this->bookingDataToEventInfo($bookingData);
+        $this->notifyManagersFromEventInfo($room, $eventInfo);
+    }
+
+    private function notifyManagersFromEventInfo(array $room, array $eventInfo): void {
         $managerUserIds = $this->permissionService->getManagerUserIds($room['id']);
         if (empty($managerUserIds)) {
             $this->logger->warning("RoomVox: No managers found for room {$room['id']}, cannot send approval notification");
@@ -192,10 +208,8 @@ class MailService {
         $subject = "Booking request: {$room['name']} — {$eventInfo['summary']}";
         $body = $this->buildApprovalRequestBody($room, $eventInfo);
 
-        // Get manager emails via user manager
-        $userManager = \OC::$server->get(\OCP\IUserManager::class);
         foreach ($managerUserIds as $managerId) {
-            $user = $userManager->get($managerId);
+            $user = $this->userManager->get($managerId);
             if ($user === null) {
                 continue;
             }
@@ -231,9 +245,8 @@ class MailService {
 
         // Also notify managers
         $managerUserIds = $this->permissionService->getManagerUserIds($room['id']);
-        $userManager = \OC::$server->get(\OCP\IUserManager::class);
         foreach ($managerUserIds as $managerId) {
-            $user = $userManager->get($managerId);
+            $user = $this->userManager->get($managerId);
             if ($user === null) {
                 continue;
             }
@@ -276,11 +289,21 @@ class MailService {
      * sendRespondDeclined: that path declines a pending request, this
      * path cancels a booking the user was actively relying on.
      */
-    public function sendRespondCancelled(array $room, array $bookingData): void {
+    public function sendRespondCancelled(array $room, array $bookingData, ?string $recurrenceId = null): void {
         $eventInfo = $this->bookingDataToEventInfo($bookingData);
 
-        $subject = "Booking cancelled: {$room['name']} — {$eventInfo['summary']}";
-        $body = $this->buildRespondCancelledBody($room, $eventInfo);
+        $occurrenceFormatted = null;
+        if ($recurrenceId !== null) {
+            try {
+                $occurrenceFormatted = (new \DateTimeImmutable($recurrenceId))->format('l, F j, Y H:i');
+            } catch (\Throwable $e) {
+                $occurrenceFormatted = $recurrenceId;
+            }
+        }
+
+        $suffix = $occurrenceFormatted !== null ? ' (single occurrence)' : '';
+        $subject = "Booking cancelled: {$room['name']} — {$eventInfo['summary']}{$suffix}";
+        $body = $this->buildRespondCancelledBody($room, $eventInfo, $occurrenceFormatted);
 
         $this->sendMail($room, $eventInfo['organizerEmail'], $subject, $body);
     }
@@ -587,7 +610,16 @@ class MailService {
             . "The room is now available for this time slot.";
     }
 
-    private function buildRespondCancelledBody(array $room, array $event): string {
+    private function buildRespondCancelledBody(array $room, array $event, ?string $occurrenceFormatted = null): string {
+        if ($occurrenceFormatted !== null) {
+            return "A single occurrence of your recurring booking has been cancelled by a room manager.\n\n"
+                . "Room: {$room['name']}\n"
+                . "Event: {$event['summary']}\n"
+                . "Cancelled occurrence: {$occurrenceFormatted}\n\n"
+                . "The recurring series continues as scheduled; only this one occurrence has been removed.\n"
+                . "If you still need this room for the cancelled time, please make a new booking or contact the room manager.";
+        }
+
         return "Your booking has been cancelled by a room manager.\n\n"
             . "Room: {$room['name']}\n"
             . "Event: {$event['summary']}\n"

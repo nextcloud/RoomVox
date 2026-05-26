@@ -212,6 +212,7 @@ class RoomApiController extends Controller {
             'name' => $this->request->getParam('name', ''),
             'email' => $this->request->getParam('email', ''),
             'description' => $this->request->getParam('description', ''),
+            'responsibleContact' => $this->request->getParam('responsibleContact', ''),
             'capacity' => $this->request->getParam('capacity', 0),
             'roomNumber' => $this->request->getParam('roomNumber', ''),
             'floor' => $this->request->getParam('floor', ''),
@@ -277,7 +278,7 @@ class RoomApiController extends Controller {
         }
 
         $data = [];
-        $updatableFields = ['name', 'email', 'description', 'capacity', 'roomNumber', 'floor', 'roomType', 'address', 'facilities', 'autoAccept', 'active', 'smtpConfig', 'exchangeConfig', 'groupId', 'availabilityRules', 'maxBookingHorizon'];
+        $updatableFields = ['name', 'email', 'description', 'responsibleContact', 'capacity', 'roomNumber', 'floor', 'roomType', 'address', 'facilities', 'autoAccept', 'active', 'smtpConfig', 'exchangeConfig', 'groupId', 'availabilityRules', 'maxBookingHorizon'];
         // Fields that can be explicitly set to null (e.g. removing a room from a group)
         $nullableFields = ['groupId'];
         $params = $this->request->getParams();

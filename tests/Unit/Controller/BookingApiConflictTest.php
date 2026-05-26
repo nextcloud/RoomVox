@@ -189,6 +189,68 @@ class BookingApiConflictTest extends TestCase {
         $this->assertSame(400, $response->getStatus());
     }
 
+    // ── Manager notification on pending bookings (issue #14) ───────
+
+    public function testCreateBookingAutoAcceptDoesNotNotifyManagers(): void {
+        $this->roomService->method('getRoom')->willReturn($this->testRoom); // autoAccept = true
+        $this->calDAVService->method('hasConflict')->willReturn(false);
+        $this->calDAVService->method('createBooking')->willReturn('new-uid-auto');
+
+        $this->request->method('getParam')->willReturnCallback(function (string $key, $default = '') {
+            return match ($key) {
+                'summary' => 'Auto Meeting',
+                'start' => '2026-02-20T10:00:00',
+                'end' => '2026-02-20T11:00:00',
+                'description' => '',
+                default => $default,
+            };
+        });
+
+        $this->mailService->expects($this->never())->method('notifyManagersForBooking');
+
+        $response = $this->controller->create('room1');
+
+        $this->assertSame(201, $response->getStatus());
+    }
+
+    public function testCreateBookingNonAutoAcceptNotifiesManagers(): void {
+        $pendingRoom = $this->testRoom;
+        $pendingRoom['autoAccept'] = false;
+        $this->roomService->method('getRoom')->willReturn($pendingRoom);
+        $this->calDAVService->method('hasConflict')->willReturn(false);
+        $this->calDAVService->method('createBooking')->willReturn('new-uid-pending');
+        $this->calDAVService->method('resolveOrganizerIdentity')->willReturn([
+            'email' => 'testuser@nc.example',
+            'cn' => 'Test User',
+        ]);
+
+        $this->request->method('getParam')->willReturnCallback(function (string $key, $default = '') {
+            return match ($key) {
+                'summary' => 'Pending Meeting',
+                'start' => '2026-02-20T10:00:00',
+                'end' => '2026-02-20T11:00:00',
+                'description' => '',
+                default => $default,
+            };
+        });
+
+        $this->mailService->expects($this->once())
+            ->method('notifyManagersForBooking')
+            ->with(
+                $pendingRoom,
+                $this->callback(function (array $bookingData): bool {
+                    return ($bookingData['uid'] ?? null) === 'new-uid-pending'
+                        && ($bookingData['summary'] ?? null) === 'Pending Meeting'
+                        && ($bookingData['organizerEmail'] ?? null) === 'testuser@nc.example'
+                        && ($bookingData['organizerName'] ?? null) === 'Test User';
+                }),
+            );
+
+        $response = $this->controller->create('room1');
+
+        $this->assertSame(201, $response->getStatus());
+    }
+
     // ── Update (reschedule) ────────────────────────────────────────
 
     public function testUpdateBookingSameRoomSuccess(): void {

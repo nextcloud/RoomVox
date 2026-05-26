@@ -9,6 +9,7 @@ use OCA\RoomVox\Middleware\ApiTokenMiddleware;
 use OCA\RoomVox\Service\ApiTokenService;
 use OCA\RoomVox\Service\CalDAVService;
 use OCA\RoomVox\Service\Exchange\ExchangeSyncService;
+use OCA\RoomVox\Service\MailService;
 use OCA\RoomVox\Service\RoomService;
 use OCP\IRequest;
 use PHPUnit\Framework\TestCase;
@@ -27,6 +28,7 @@ class PublicApiCalendarFeedTest extends TestCase {
         $roomService = $this->createMock(RoomService::class);
         $calDAVService = $this->createMock(CalDAVService::class);
         $exchangeSyncService = $this->createMock(ExchangeSyncService::class);
+        $mailService = $this->createMock(MailService::class);
         $tokenMiddleware = $this->createMock(ApiTokenMiddleware::class);
         $tokenService = $this->createMock(ApiTokenService::class);
         $logger = $this->createMock(LoggerInterface::class);
@@ -37,6 +39,7 @@ class PublicApiCalendarFeedTest extends TestCase {
             $roomService,
             $calDAVService,
             $exchangeSyncService,
+            $mailService,
             $tokenMiddleware,
             $tokenService,
             $logger,

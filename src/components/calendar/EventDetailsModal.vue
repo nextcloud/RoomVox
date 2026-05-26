@@ -85,6 +85,34 @@
                 </NcButton>
             </div>
         </div>
+
+        <NcDialog
+            v-if="showDeleteDialog"
+            :name="$t('Cancel booking')"
+            :open="showDeleteDialog"
+            @close="showDeleteDialog = false">
+            <template v-if="booking.recurrenceId">
+                <p>{{ $t('This booking is part of a recurring series. What would you like to cancel?') }}</p>
+                <p>{{ $t('The booker will be notified by email.') }}</p>
+            </template>
+            <template v-else>
+                <p>{{ $t('Are you sure you want to cancel this booking? The booker will be notified by email.') }}</p>
+            </template>
+            <template #actions>
+                <NcButton type="tertiary" @click="showDeleteDialog = false">{{ $t('Keep') }}</NcButton>
+                <template v-if="booking.recurrenceId">
+                    <NcButton type="warning" :disabled="loading" @click="executeDelete('occurrence')">
+                        {{ $t('This occurrence') }}
+                    </NcButton>
+                    <NcButton type="error" :disabled="loading" @click="executeDelete('series')">
+                        {{ $t('Entire series') }}
+                    </NcButton>
+                </template>
+                <NcButton v-else type="error" :disabled="loading" @click="executeDelete('series')">
+                    {{ $t('Cancel booking') }}
+                </NcButton>
+            </template>
+        </NcDialog>
     </NcModal>
 </template>
 
@@ -96,6 +124,7 @@ import { showSuccess, showError } from '@nextcloud/dialogs'
 
 import NcModal from '@nextcloud/vue/components/NcModal'
 import NcButton from '@nextcloud/vue/components/NcButton'
+import NcDialog from '@nextcloud/vue/components/NcDialog'
 
 import CalendarIcon from 'vue-material-design-icons/Calendar.vue'
 import HomeIcon from 'vue-material-design-icons/Home.vue'
@@ -117,6 +146,7 @@ const props = defineProps({
 const emit = defineEmits(['close', 'updated', 'deleted'])
 
 const loading = ref(false)
+const showDeleteDialog = ref(false)
 
 // Status helpers
 const isPending = computed(() => props.booking.partstat === 'TENTATIVE')
@@ -182,15 +212,17 @@ async function handleRespond(action) {
     }
 }
 
-async function confirmDelete() {
-    if (!confirm(t('Are you sure you want to cancel this booking? The booker will be notified by email.'))) {
-        return
-    }
+function confirmDelete() {
+    showDeleteDialog.value = true
+}
 
+async function executeDelete(mode) {
+    const recurrenceId = mode === 'occurrence' ? props.booking.recurrenceId : null
     loading.value = true
     try {
-        await deleteBooking(props.booking.roomId, props.booking.uid)
-        showSuccess(t('Booking cancelled'))
+        await deleteBooking(props.booking.roomId, props.booking.uid, recurrenceId)
+        showSuccess(mode === 'occurrence' ? t('Occurrence cancelled') : t('Booking cancelled'))
+        showDeleteDialog.value = false
         emit('deleted')
     } catch (e) {
         showError(t('Failed to cancel booking'))
@@ -299,5 +331,17 @@ async function confirmDelete() {
 [data-themes*="dark"] .status-pending,
 .theme--dark .status-pending {
     color: #ffd54f;
+}
+
+/* Cancel-booking dialog: allow action buttons to wrap on narrow widths or
+   long translations (e.g. NL/DE/FR labels) instead of being truncated. */
+:deep(.dialog__actions),
+:deep(.dialog-buttons) {
+    flex-wrap: wrap;
+    gap: 8px;
+}
+:deep(.dialog__actions) .button-vue,
+:deep(.dialog-buttons) .button-vue {
+    flex-shrink: 0;
 }
 </style>

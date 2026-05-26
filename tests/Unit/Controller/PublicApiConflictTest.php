@@ -9,6 +9,7 @@ use OCA\RoomVox\Middleware\ApiTokenMiddleware;
 use OCA\RoomVox\Service\ApiTokenService;
 use OCA\RoomVox\Service\CalDAVService;
 use OCA\RoomVox\Service\Exchange\ExchangeSyncService;
+use OCA\RoomVox\Service\MailService;
 use OCA\RoomVox\Service\RoomService;
 use OCP\IRequest;
 use PHPUnit\Framework\TestCase;
@@ -59,6 +60,7 @@ class PublicApiConflictTest extends TestCase {
             $this->roomService,
             $this->calDAVService,
             $this->exchangeSyncService,
+            $this->createMock(MailService::class),
             $tokenMiddleware,
             $tokenService,
             $logger,

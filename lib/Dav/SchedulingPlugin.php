@@ -931,8 +931,19 @@ class SchedulingPlugin extends ServerPlugin {
             if (count($users) === 1) {
                 return $users[0]->getUID();
             }
-            // Multiple matches or none: return null (handled by caller)
-            $this->logger->debug("RoomVox: Could not resolve mailto:{$email} to a unique user (found " . count($users) . ")");
+            // Multiple matches or none: return null (handled by caller).
+            // Promoted to warning + uid sample so permission denies caused by
+            // duplicate email accounts (e.g. LDAP/AD imports) are visible in
+            // the standard log without enabling debug-level (issue #15B).
+            $matchCount = count($users);
+            if ($matchCount === 0) {
+                $this->logger->warning("RoomVox: No NC user matches sender mailto:{$email} — booking will be denied if permissions are configured");
+            } else {
+                $sampleUids = array_map(fn($u) => $u->getUID(), array_slice($users, 0, 3));
+                $sample = implode(', ', $sampleUids);
+                $more = $matchCount > 3 ? " + " . ($matchCount - 3) . " more" : '';
+                $this->logger->warning("RoomVox: Sender mailto:{$email} resolves to {$matchCount} NC users ({$sample}{$more}) — ambiguous, booking will be denied if permissions are configured");
+            }
             return null;
         }
 

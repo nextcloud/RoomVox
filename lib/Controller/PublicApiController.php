@@ -9,6 +9,7 @@ use OCA\RoomVox\Middleware\ApiTokenException;
 use OCA\RoomVox\Service\ApiTokenService;
 use OCA\RoomVox\Service\CalDAVService;
 use OCA\RoomVox\Service\Exchange\ExchangeSyncService;
+use OCA\RoomVox\Service\MailService;
 use OCA\RoomVox\Service\RoomService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\DataDownloadResponse;
@@ -26,6 +27,7 @@ class PublicApiController extends Controller {
         private RoomService $roomService,
         private CalDAVService $calDAVService,
         private ExchangeSyncService $exchangeSyncService,
+        private MailService $mailService,
         private ApiTokenMiddleware $tokenMiddleware,
         private ApiTokenService $tokenService,
         private LoggerInterface $logger,
@@ -444,6 +446,25 @@ class PublicApiController extends Controller {
                 $this->logger->error("Exchange push failed (non-blocking): " . $e->getMessage());
             }
 
+            // Notify managers when the room requires approval. The Sabre iTIP
+            // path runs notifyManagers from SchedulingPlugin, but the direct
+            // API create path bypasses that — so trigger it here.
+            if (!($room['autoAccept'] ?? false)) {
+                try {
+                    $identity = $this->calDAVService->resolveOrganizerIdentity($organizer);
+                    $this->mailService->notifyManagersForBooking($room, [
+                        'uid' => $uid,
+                        'summary' => $title,
+                        'organizerEmail' => $identity['email'] ?? '',
+                        'organizerName' => $identity['cn'] ?? '',
+                        'dtstart' => $startDt->format(\DateTimeInterface::ATOM),
+                        'dtend' => $endDt->format(\DateTimeInterface::ATOM),
+                    ]);
+                } catch (\Throwable $e) {
+                    $this->logger->error("Manager approval mail failed (non-blocking): " . $e->getMessage());
+                }
+            }
+
             $status = ($room['autoAccept'] ?? false) ? 'accepted' : 'pending';
 
             return new JSONResponse([
@@ -466,22 +487,38 @@ class PublicApiController extends Controller {
     #[NoAdminRequired]
     #[NoCSRFRequired]
     #[PublicPage]
-    public function deleteBooking(string $id, string $uid): JSONResponse {
+    public function deleteBooking(string $id, string $uid, ?string $recurrenceId = null): JSONResponse {
         $token = $this->requireScope('book');
         $room = $this->getAuthorizedRoom($token, $id);
         if ($room instanceof JSONResponse) {
             return $room;
         }
 
+        $isOccurrence = false;
+        if ($recurrenceId !== null) {
+            $existing = $this->calDAVService->getBookingByUid($room['userId'], $uid);
+            $isOccurrence = $existing !== null && !empty($existing['isRecurring']);
+            if (!$isOccurrence) {
+                $this->logger->warning("Public API: booking {$uid} is not recurring but recurrenceId was supplied — falling back to series delete");
+            }
+        }
+
         try {
-            // Push delete to Exchange before removing locally
             try {
-                $this->exchangeSyncService->deleteBookingFromExchange($room, $uid);
+                $this->exchangeSyncService->deleteBookingFromExchange(
+                    $room,
+                    $uid,
+                    $isOccurrence ? $recurrenceId : null,
+                );
             } catch (\Throwable $e) {
                 $this->logger->error("Exchange delete failed (non-blocking): " . $e->getMessage());
             }
 
-            $this->calDAVService->deleteBooking($room['userId'], $uid);
+            if ($isOccurrence) {
+                $this->calDAVService->deleteBookingOccurrence($room['userId'], $uid, $recurrenceId);
+            } else {
+                $this->calDAVService->deleteBooking($room['userId'], $uid);
+            }
             return new JSONResponse(['status' => 'ok']);
         } catch (\Exception $e) {
             return new JSONResponse(['error' => 'Booking not found'], 404);

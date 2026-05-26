@@ -8,6 +8,7 @@ use OCA\RoomVox\Service\MailService;
 use OCA\RoomVox\Service\PermissionService;
 use OCP\IAppConfig;
 use OCP\IURLGenerator;
+use OCP\IUserManager;
 use OCP\Mail\IMailer;
 use OCP\Security\ICrypto;
 use PHPUnit\Framework\TestCase;
@@ -28,6 +29,7 @@ class MailServiceBodiesTest extends TestCase {
             $this->createMock(IAppConfig::class),
             $this->createMock(ICrypto::class),
             $this->createMock(PermissionService::class),
+            $this->createMock(IUserManager::class),
             $this->createMock(IURLGenerator::class),
             $this->createMock(LoggerInterface::class),
         );
@@ -108,5 +110,31 @@ class MailServiceBodiesTest extends TestCase {
         $this->assertStringContainsString('temporary', $body);
         $this->assertStringContainsString('Room Z', $body);
         $this->assertStringContainsString('try again', $body);
+    }
+
+    public function testRespondCancelledBodySeriesVariant(): void {
+        $room = ['name' => 'Room A'];
+        $body = $this->callBody('buildRespondCancelledBody', $room, $this->sampleEvent(), null);
+
+        $this->assertStringContainsString('Your booking has been cancelled', $body);
+        $this->assertStringContainsString('Room A', $body);
+        $this->assertStringContainsString('Weekly standup', $body);
+        $this->assertStringNotContainsString('single occurrence', $body);
+        $this->assertStringNotContainsString('recurring series continues', $body);
+    }
+
+    public function testRespondCancelledBodyOccurrenceVariant(): void {
+        $room = ['name' => 'Room A'];
+        $body = $this->callBody(
+            'buildRespondCancelledBody',
+            $room,
+            $this->sampleEvent(),
+            'Monday, June 10, 2026 09:00',
+        );
+
+        $this->assertStringContainsString('single occurrence', $body);
+        $this->assertStringContainsString('Monday, June 10, 2026 09:00', $body);
+        $this->assertStringContainsString('series continues', $body);
+        $this->assertStringContainsString('Room A', $body);
     }
 }

@@ -220,7 +220,7 @@ class ExchangeSyncService {
     /**
      * Delete a booking from Exchange.
      */
-    public function deleteBookingFromExchange(array $room, string $uid): bool {
+    public function deleteBookingFromExchange(array $room, string $uid, ?string $recurrenceId = null): bool {
         if (!$this->isExchangeRoom($room)) {
             return false;
         }
@@ -237,15 +237,25 @@ class ExchangeSyncService {
 
         $resourceEmail = $room['exchangeConfig']['resourceEmail'];
 
+        $deleteId = $exchangeEventId;
+        if ($recurrenceId !== null) {
+            $instanceId = $this->findExchangeInstanceId($resourceEmail, $exchangeEventId, $recurrenceId);
+            if ($instanceId === null) {
+                $this->logger->warning("ExchangeSync: No matching instance found for booking {$uid} @ {$recurrenceId}; skipping Exchange cancel");
+                return false;
+            }
+            $deleteId = $instanceId;
+        }
+
         try {
             $this->graphClient->delete(
-                '/users/' . urlencode($resourceEmail) . '/calendar/events/' . urlencode($exchangeEventId)
+                '/users/' . urlencode($resourceEmail) . '/calendar/events/' . urlencode($deleteId)
             );
 
-            $this->logger->info("ExchangeSync: Deleted booking {$uid} from Exchange for room {$room['id']}");
+            $context = $recurrenceId !== null ? " occurrence {$recurrenceId}" : '';
+            $this->logger->info("ExchangeSync: Deleted booking {$uid}{$context} from Exchange for room {$room['id']}");
             return true;
         } catch (ExchangeApiException $e) {
-            // 404 = already deleted on Exchange, not an error
             if ($e->getHttpStatus() === 404) {
                 $this->logger->debug("ExchangeSync: Booking {$uid} already deleted on Exchange");
                 return true;
@@ -253,6 +263,54 @@ class ExchangeSyncService {
             $this->logger->error("ExchangeSync: Failed to delete booking {$uid} from Exchange: " . $e->getMessage());
             return false;
         }
+    }
+
+    /**
+     * Look up the Graph event ID of a single instance of a recurring series.
+     * Queries the master event's instances over a 1-minute window around
+     * the requested recurrenceId.
+     */
+    private function findExchangeInstanceId(string $resourceEmail, string $seriesMasterId, string $recurrenceId): ?string {
+        try {
+            $target = new \DateTimeImmutable($recurrenceId);
+        } catch (\Throwable $e) {
+            $this->logger->warning("ExchangeSync: Invalid recurrenceId {$recurrenceId}: " . $e->getMessage());
+            return null;
+        }
+
+        $startWindow = $target->modify('-1 minute')->setTimezone(new \DateTimeZone('UTC'))->format('Y-m-d\TH:i:s');
+        $endWindow = $target->modify('+1 minute')->setTimezone(new \DateTimeZone('UTC'))->format('Y-m-d\TH:i:s');
+
+        try {
+            $response = $this->graphClient->get(
+                '/users/' . urlencode($resourceEmail) . '/calendar/events/' . urlencode($seriesMasterId) . '/instances',
+                [
+                    'startDateTime' => $startWindow,
+                    'endDateTime' => $endWindow,
+                ],
+            );
+        } catch (ExchangeApiException $e) {
+            $this->logger->warning("ExchangeSync: Failed to list instances for {$seriesMasterId}: " . $e->getMessage());
+            return null;
+        }
+
+        $targetTimestamp = $target->getTimestamp();
+        foreach ($response['value'] ?? [] as $instance) {
+            $instanceStart = $instance['start']['dateTime'] ?? null;
+            if ($instanceStart === null) {
+                continue;
+            }
+            try {
+                $instanceDt = new \DateTimeImmutable($instanceStart, new \DateTimeZone('UTC'));
+            } catch (\Throwable $e) {
+                continue;
+            }
+            if ($instanceDt->getTimestamp() === $targetTimestamp) {
+                return $instance['id'] ?? null;
+            }
+        }
+
+        return null;
     }
 
     // ─── Pull: Exchange → RoomVox ────────────────────────────────────────
