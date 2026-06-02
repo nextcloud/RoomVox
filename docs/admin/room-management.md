@@ -53,6 +53,8 @@ Available facility checkboxes:
 
 These are published as CalDAV room features and can be used for filtering in the calendar patch room browser.
 
+![Settings — facilities configuration](../../screenshots/settings-facilities.png)
+
 ![Room editor — facilities, auto-accept, availability, and booking horizon](../../screenshots/rooms-settings.png)
 
 ## Booking Behavior

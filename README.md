@@ -121,9 +121,14 @@ npm run build     # Production build
 
 Full documentation is available in the [docs/](docs/index.md) directory:
 
+- [Documentation Hub](docs/index.md) — full documentation index
 - [Getting Started](docs/getting-started.md) — Create your first room in 5 minutes
-- [User Guide](docs/user/booking-rooms.md) — How to book rooms
-- [Admin Guide](docs/admin/installation.md) — Installation and configuration
+- [User Overview](docs/user/overview.md) — What RoomVox is, how rooms work
+- [Booking Rooms](docs/user/booking-rooms.md) — Per-client booking guides
+- [Admin Guide](docs/admin/guide.md) — Day-to-day administration
+- [Installation](docs/deployment/installation.md) — Requirements + setup
+- [Approval Workflow](docs/features/approval-workflow.md) — Tentative bookings and manager approval
+- [Comparison vs. Calendar Resource Management](docs/features/comparison.md) — Feature comparison
 - [Architecture](docs/architecture/overview.md) — Technical overview
 - [API Reference](docs/architecture/api-reference.md) — REST API endpoints
 

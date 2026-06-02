@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **Documentation restructured to match IntroVox/IntraVox/MetaVox layout** — Replaced the previous flat `docs/` tree (with one `troubleshooting.md`, `comparison.md`, and `future-*.md` at root) with a nested structure: `docs/index.md` hub, `docs/getting-started.md`, plus `admin/`, `user/`, `features/`, `architecture/`, and `deployment/` subdirectories. Added 14 new docs covering admin guide / settings / best-practices / FAQ, user overview / personal-settings / FAQ / tips / troubleshooting (split from the combined troubleshooting file), `features/{approval-workflow, availability-rules, email-notifications, public-api}`, and `architecture/{backend-architecture, caldav-scheduling, exchange-integration}`. Removed three internal-only docs (`future-ideas.md`, `future-personal-settings.md`, `exchange-sync-changelog.md`) from the public tree. README and `appinfo/info.xml` `<documentation>` block updated to point at the new hub pages.
+
 ## [1.1.1] - 2026-05-26 - Bug fixes — recurring cancel, public API gaps & form save
 
 ### Fixed

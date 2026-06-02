@@ -109,7 +109,7 @@ None of these are blockers; all are upstream improvements that may benefit RoomV
 4. **Live verification on a `nc-34-dev` container** before release: provision a
    fresh Hetzner container with NC34 GA, deploy RoomVox 1.2.0 via `docker cp`,
    then smoke-test the full booking flow and tail `nextcloud.log` for any
-   `Call to undefined method` errors. See [Admin: Installation](../admin/installation.md)
+   `Call to undefined method` errors. See [Admin: Installation](../deployment/installation.md)
    for deploy steps.
 
 ### Optional cleanup (may slip to a later release)
@@ -118,7 +118,7 @@ None of these are blockers; all are upstream improvements that may benefit RoomV
 
 ### Out of scope for the 1.2.0 release
 
-6. **Calendar patch (`nc-calendar-patch/`)** — pinned to NC Calendar `v6.2.0` in [deploy-calendar.sh](../../deploy-calendar.sh). NC34 likely ships a newer Calendar (`v6.3.x` or `v7.x.x`). Re-bake the patch on the new upstream, separately from the RoomVox app release. See [Admin: Calendar Patch](../admin/calendar-patch.md).
+6. **Calendar patch (`nc-calendar-patch/`)** — pinned to NC Calendar `v6.2.0` in [deploy-calendar.sh](../../deploy-calendar.sh). NC34 likely ships a newer Calendar (`v6.3.x` or `v7.x.x`). Re-bake the patch on the new upstream, separately from the RoomVox app release. See [Admin: Calendar Patch](../features/calendar-patch.md).
 
 7. **NC35 forward-compatibility** — `stable35` branch does not exist as of 2026-05-18, no documentation. Re-audit when NC35 beta appears (typically Q4 2026).
 

@@ -7,7 +7,7 @@ This guide will help you set up RoomVox and create your first bookable room in j
 - Nextcloud 32 or 33
 - PHP 8.2+
 - SMTP configured in Nextcloud (for email notifications)
-- RoomVox app installed (see [Installation Guide](admin/installation.md))
+- RoomVox app installed (see [Installation Guide](deployment/installation.md))
 
 ## Step 1: Open the Admin Panel
 
@@ -117,4 +117,4 @@ See the [API Reference](architecture/api-reference.md) for endpoint documentatio
 - [Permissions](admin/permissions.md) — Detailed permission setup
 - [Email Configuration](admin/email-configuration.md) — Configure per-room SMTP
 - [API Reference](architecture/api-reference.md) — Public API for external integrations
-- [Calendar Patch](admin/calendar-patch.md) — Install the visual room browser for Nextcloud Calendar
+- [Calendar Patch](features/calendar-patch.md) — Install the visual room browser for Nextcloud Calendar

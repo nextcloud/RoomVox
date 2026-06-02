@@ -26,7 +26,7 @@ When an administrator creates a room in RoomVox, it becomes available as a CalDA
 
 ### Visual Room Browser (Calendar Patch)
 
-If your administrator has installed the [calendar patch](../admin/calendar-patch.md), you'll see an enhanced room browser instead of the standard picker:
+If your administrator has installed the [calendar patch](../features/calendar-patch.md), you'll see an enhanced room browser instead of the standard picker:
 
 - **Browse all rooms** grouped by building
 - **Filter** by availability, capacity, building, and facilities

@@ -105,8 +105,8 @@ After installation:
    - Enable email notifications
    - Set default auto-accept behavior
    - Configure room types
-2. **Create rooms** — See [Room Management](room-management.md)
-3. **Set permissions** — See [Permissions](permissions.md)
+2. **Create rooms** — See [Room Management](../admin/room-management.md)
+3. **Set permissions** — See [Permissions](../admin/permissions.md)
 4. **Test email** — Create a test room and use the "Send test email" button
 
 ## Upgrading

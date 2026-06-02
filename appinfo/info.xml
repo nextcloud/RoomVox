@@ -40,9 +40,9 @@ No separate booking portal needed. Rooms appear directly in the calendar app you
     <discussion>https://github.com/nextcloud/roomvox/discussions</discussion>
     <website>https://voxcloud.nl</website>
     <documentation>
-        <admin>https://github.com/nextcloud/roomvox/blob/main/docs/admin/installation.md</admin>
-        <user>https://github.com/nextcloud/roomvox/blob/main/docs/user/booking-rooms.md</user>
-        <developer>https://github.com/nextcloud/roomvox/blob/main/docs/architecture/api-reference.md</developer>
+        <admin>https://github.com/nextcloud/roomvox/blob/main/docs/admin/guide.md</admin>
+        <user>https://github.com/nextcloud/roomvox/blob/main/docs/user/overview.md</user>
+        <developer>https://github.com/nextcloud/roomvox/blob/main/docs/architecture/overview.md</developer>
     </documentation>
     <screenshot>https://raw.githubusercontent.com/nextcloud/roomvox/main/screenshots/rooms-overview.png</screenshot>
     <screenshot>https://raw.githubusercontent.com/nextcloud/roomvox/main/screenshots/bookroom-filter.png</screenshot>
