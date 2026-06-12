@@ -6,6 +6,7 @@ namespace OCA\RoomVox\Tests\Unit\Service;
 
 use OCA\RoomVox\Service\ImportExportService;
 use OCA\RoomVox\Service\RoomService;
+use OCP\IAppConfig;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
@@ -14,9 +15,11 @@ class ImportExportServiceTest extends TestCase {
 
     protected function setUp(): void {
         $roomService = $this->createMock(RoomService::class);
+        $appConfig = $this->createMock(IAppConfig::class);
+        $appConfig->method('getValueString')->willReturn('');
         $logger = $this->createMock(LoggerInterface::class);
 
-        $this->service = new ImportExportService($roomService, $logger);
+        $this->service = new ImportExportService($roomService, $appConfig, $logger);
     }
 
     // ── normalizeFacility (via reflection since it's private) ──
@@ -24,15 +27,15 @@ class ImportExportServiceTest extends TestCase {
     public function testNormalizeFacilityDirectMatch(): void {
         $this->assertSame('projector', $this->callNormalize('projector'));
         $this->assertSame('whiteboard', $this->callNormalize('Whiteboard'));
-        $this->assertSame('video-conference', $this->callNormalize('video-conference'));
+        $this->assertSame('videoconf', $this->callNormalize('video-conference'));
     }
 
     public function testNormalizeFacilityAlias(): void {
         $this->assertSame('projector', $this->callNormalize('beamer'));
-        $this->assertSame('display-screen', $this->callNormalize('tv'));
-        $this->assertSame('display-screen', $this->callNormalize('monitor'));
-        $this->assertSame('audio-system', $this->callNormalize('speakers'));
-        $this->assertSame('wheelchair-accessible', $this->callNormalize('wheelchair'));
+        $this->assertSame('display', $this->callNormalize('tv'));
+        $this->assertSame('display', $this->callNormalize('monitor'));
+        $this->assertSame('audio', $this->callNormalize('speakers'));
+        $this->assertSame('wheelchair', $this->callNormalize('wheelchair'));
     }
 
     public function testNormalizeFacilityUnknown(): void {

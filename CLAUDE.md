@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-RoomVox is a CalDAV-native room booking app for Nextcloud (v32–33, PHP 8.2+). Rooms appear as bookable resources in any CalDAV calendar client (Nextcloud Calendar, Apple Calendar, Outlook, Thunderbird, eM Client) without a separate booking UI.
+RoomVox is a CalDAV-native room booking app for Nextcloud (v32–34, PHP 8.2+). Rooms appear as bookable resources in any CalDAV calendar client (Nextcloud Calendar, Apple Calendar, Outlook, Thunderbird, eM Client) without a separate booking UI.
 
 ## Build Commands
 

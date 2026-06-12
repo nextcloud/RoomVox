@@ -7,7 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.2] - 2026-06-12 - Nextcloud 34 compatibility + documentation restructure
+
 ### Changed
+- **Nextcloud 34 support** — Bumped `max-version` in `appinfo/info.xml` from 33 to 34. No code changes required: `Application.php` is Bootstrap-based (`IBootstrap`), all `\OC::$server->get*()` service-locator calls were eliminated in prior releases (notably `MailService::notifyManagers` / `sendCancelled` in v1.1.1), logging is PSR-3 throughout (`LoggerInterface`), `getAppValue()` calls all have defaults, and DAV registration uses `registerCalendarRoomBackend()` (the NC 30+ API). Sabre plugin registration via `SabrePluginAuthInitEvent` continues to work on NC 34. Verified by smoke-test on a Nextcloud 34.0.0 development instance.
 - **Documentation restructured to match IntroVox/IntraVox/MetaVox layout** — Replaced the previous flat `docs/` tree (with one `troubleshooting.md`, `comparison.md`, and `future-*.md` at root) with a nested structure: `docs/index.md` hub, `docs/getting-started.md`, plus `admin/`, `user/`, `features/`, `architecture/`, and `deployment/` subdirectories. Added 14 new docs covering admin guide / settings / best-practices / FAQ, user overview / personal-settings / FAQ / tips / troubleshooting (split from the combined troubleshooting file), `features/{approval-workflow, availability-rules, email-notifications, public-api}`, and `architecture/{backend-architecture, caldav-scheduling, exchange-integration}`. Removed three internal-only docs (`future-ideas.md`, `future-personal-settings.md`, `exchange-sync-changelog.md`) from the public tree. README and `appinfo/info.xml` `<documentation>` block updated to point at the new hub pages.
 
 ## [1.1.1] - 2026-05-26 - Bug fixes — recurring cancel, public API gaps & form save

@@ -43,7 +43,7 @@ CalDAV-native room booking for Nextcloud. Rooms appear as bookable resources in 
 
 ## Requirements
 
-- Nextcloud 32–33
+- Nextcloud 32–34
 - PHP 8.2+
 
 ## Installation

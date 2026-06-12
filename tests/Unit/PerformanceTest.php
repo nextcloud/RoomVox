@@ -14,6 +14,7 @@ use OCA\RoomVox\Service\ImportExportService;
 use OCA\RoomVox\Service\MailService;
 use OCA\RoomVox\Service\PermissionService;
 use OCA\RoomVox\Service\RoomService;
+use OCP\IAppConfig;
 use OCP\IGroupManager;
 use OCP\IRequest;
 use OCP\IUserManager;
@@ -205,10 +206,12 @@ class PerformanceTest extends TestCase {
 
     private function assertCsvParsePerformance(int $rowCount, float $maxMs): void {
         $roomService = $this->createMock(RoomService::class);
+        $appConfig = $this->createMock(IAppConfig::class);
+        $appConfig->method('getValueString')->willReturn('');
         $logger = $this->createMock(LoggerInterface::class);
         $roomService->method('getAllRooms')->willReturn([]);
 
-        $service = new ImportExportService($roomService, $logger);
+        $service = new ImportExportService($roomService, $appConfig, $logger);
 
         $lines = ['name,email,capacity,roomType,facilities'];
         for ($i = 0; $i < $rowCount; $i++) {

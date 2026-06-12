@@ -59,7 +59,7 @@ class SchedulingPluginRequestTest extends TestCase {
         $this->roomService->method('getRoom')->willReturn($this->testRoom);
 
         // Default: no permissions configured (anyone can book)
-        $this->permissionService->method('getPermissions')->willReturn([
+        $this->permissionService->method('getEffectivePermissions')->willReturn([
             'viewers' => [], 'bookers' => [], 'managers' => [],
         ]);
 
@@ -128,7 +128,7 @@ class SchedulingPluginRequestTest extends TestCase {
         $this->roomService->method('getRoom')->willReturn($room);
 
         $this->permissionService = $this->createMock(PermissionService::class);
-        $this->permissionService->method('getPermissions')->willReturn([
+        $this->permissionService->method('getEffectivePermissions')->willReturn([
             'viewers' => [], 'bookers' => [], 'managers' => [],
         ]);
 
@@ -179,7 +179,7 @@ class SchedulingPluginRequestTest extends TestCase {
     public function testRequestNoPermission(): void {
         // Permissions configured: bookers list exists
         $this->permissionService = $this->createMock(PermissionService::class);
-        $this->permissionService->method('getPermissions')->willReturn([
+        $this->permissionService->method('getEffectivePermissions')->willReturn([
             'viewers' => [],
             'bookers' => [['type' => 'user', 'id' => 'otheruser']],
             'managers' => [],
@@ -207,7 +207,7 @@ class SchedulingPluginRequestTest extends TestCase {
     public function testRequestUnknownSender(): void {
         // Permissions are configured
         $this->permissionService = $this->createMock(PermissionService::class);
-        $this->permissionService->method('getPermissions')->willReturn([
+        $this->permissionService->method('getEffectivePermissions')->willReturn([
             'viewers' => [],
             'bookers' => [['type' => 'user', 'id' => 'someuser']],
             'managers' => [],
@@ -236,7 +236,7 @@ class SchedulingPluginRequestTest extends TestCase {
 
     public function testRequestNoPermissionsConfigured(): void {
         // No permissions = anyone can book
-        $this->permissionService->method('getPermissions')->willReturn([
+        $this->permissionService->method('getEffectivePermissions')->willReturn([
             'viewers' => [], 'bookers' => [], 'managers' => [],
         ]);
 

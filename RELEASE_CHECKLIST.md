@@ -135,7 +135,7 @@ Supported languages: **EN, NL, DE, FR**
 
 - [ ] Check `appinfo/info.xml`:
   ```
-  <nextcloud min-version="32" max-version="33"/>
+  <nextcloud min-version="32" max-version="34"/>
   <php min-version="8.2"/>
   ```
 - [ ] Test on target Nextcloud version(s)
@@ -305,7 +305,7 @@ openssl dgst -sha512 -sign roomvox.key roomvox-X.Y.Z.tar.gz | openssl base64 -A
 
 - **App ID:** `roomvox`
 - **Minimum Nextcloud version:** 32
-- **Maximum Nextcloud version:** 33
+- **Maximum Nextcloud version:** 34
 - **PHP version:** >= 8.2
 - **Supported languages:** EN, NL, DE, FR
 - **App Store:** https://apps.nextcloud.com
