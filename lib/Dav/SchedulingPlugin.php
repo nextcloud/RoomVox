@@ -248,10 +248,15 @@ class SchedulingPlugin extends ServerPlugin {
             }
         }
 
-        // 5. Determine PARTSTAT based on auto-accept setting
+        // 5. Determine PARTSTAT based on auto-accept setting. A manager of the
+        // room booking it themselves is accepted directly — requiring a manager
+        // to approve their own booking is a pointless extra step (issue #23).
         if ($room['autoAccept'] ?? false) {
             $partstat = 'ACCEPTED';
             $this->logger->info("RoomVox: Auto-accepting booking for room {$roomId}");
+        } elseif ($senderId !== null && $this->permissionService->canManage($senderId, $roomId)) {
+            $partstat = 'ACCEPTED';
+            $this->logger->info("RoomVox: Auto-accepting booking for room {$roomId} — organizer {$senderId} is a manager");
         } else {
             $partstat = 'TENTATIVE';
             $this->logger->info("RoomVox: Booking for room {$roomId} requires approval");

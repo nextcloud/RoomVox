@@ -80,7 +80,9 @@ If you're a Booker or Viewer, you only see the **My Rooms** tab.
 
 ### Can I subscribe to a room's calendar in my external calendar app?
 
-Not directly. The iCal feed at `/api/v1/rooms/{id}/calendar.ics` requires a Bearer token, which external calendar apps don't support. Your administrator can create a Public API token and provide you a tokenized URL, or you can rely on your own calendar showing the events you've added the room to.
+Yes. An administrator or room manager can enable an **external calendar feed** for the room (in the room editor) and share the resulting URL with you. Because the URL carries its own per-room secret, you can subscribe to it in Nextcloud Calendar, Outlook, Apple Calendar, or Thunderbird without a Bearer token. The feed is read-only. Treat the URL as a secret — anyone who has it can see the room's bookings; if it leaks, a manager can regenerate it.
+
+There is also a Bearer-token feed at `/api/v1/rooms/{id}/calendar.ics` for programmatic integrations, but external calendar apps can't send the required Authorization header — use the per-room feed URL for those.
 
 ## Client-Specific
 

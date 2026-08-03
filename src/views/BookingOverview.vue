@@ -234,7 +234,7 @@
 
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue'
-import { translate } from '@nextcloud/l10n'
+import { translate, getLanguage } from '@nextcloud/l10n'
 import { showError, showSuccess } from '@nextcloud/dialogs'
 
 import NcButton from '@nextcloud/vue/components/NcButton'
@@ -256,6 +256,7 @@ import { getAllBookings, respondToBooking, deleteBooking } from '../services/api
 import { generateUrl } from '@nextcloud/router'
 
 const t = (text, vars = {}) => translate('roomvox', text, vars)
+const ncLocale = getLanguage().replace('_', '-')
 
 const props = defineProps({
     rooms: { type: Array, default: () => [] },
@@ -431,13 +432,13 @@ const formatRelativeDate = (dateStr) => {
     if (d.toDateString() === tomorrow.toDateString()) {
         return t('Tomorrow')
     }
-    return d.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' })
+    return d.toLocaleDateString(ncLocale, { weekday: 'short', day: 'numeric', month: 'short' })
 }
 
 const formatTime = (dateStr) => {
     if (!dateStr) return '—'
     const d = new Date(dateStr)
-    return d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })
+    return d.toLocaleTimeString(ncLocale, { hour: '2-digit', minute: '2-digit' })
 }
 
 const getStatusType = (partstat) => {

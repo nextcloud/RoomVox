@@ -11,6 +11,7 @@ use OCA\RoomVox\Service\MailService;
 use OCA\RoomVox\Service\PermissionService;
 use OCA\RoomVox\Service\RoomService;
 use OCP\BackgroundJob\IJobList;
+use OCP\IURLGenerator;
 use OCP\Calendar\Room\IManager as IRoomManager;
 use OCP\IGroupManager;
 use OCP\IRequest;
@@ -45,6 +46,7 @@ class RoomApiAllBookingsTest extends TestCase {
         $userManager = $this->createMock(IUserManager::class);
         $this->groupManager = $this->createMock(IGroupManager::class);
         $jobList = $this->createMock(IJobList::class);
+        $urlGenerator = $this->createMock(IURLGenerator::class);
         $logger = $this->createMock(LoggerInterface::class);
 
         $user = $this->createMock(IUser::class);
@@ -66,6 +68,7 @@ class RoomApiAllBookingsTest extends TestCase {
             $userManager,
             $this->groupManager,
             $jobList,
+            $urlGenerator,
             $logger,
         );
     }

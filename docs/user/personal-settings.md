@@ -52,7 +52,7 @@ This tab only appears if you manage at least one room.
 ## What This Page Is Not For
 
 - **Seeing your own bookings** — those live in your **Nextcloud Calendar**. Rooms are CalDAV resources, so your bookings appear in your calendar like any other event with the room as an attendee.
-- **Subscribing to a room's calendar in an external app** — the public iCal feed is only accessible via the [Public API](../features/public-api.md) with a Bearer token. External calendar apps cannot use it directly because they don't support arbitrary Authorization headers. For external subscriptions, ask your administrator to set up a feed (the API exposes `/api/v1/rooms/{id}/calendar.ics`).
+- **Subscribing to a room's calendar in an external app** — this is done with a per-room feed URL, not from this page. An administrator or room manager enables the **external calendar feed** in the room editor and shares the URL; you then add it as a read-only subscription in your calendar app. See [Can I subscribe to a room's calendar?](faq.md#can-i-subscribe-to-a-rooms-calendar-in-my-external-calendar-app) and the [Public API](../features/public-api.md) reference.
 
 ## See Also
 

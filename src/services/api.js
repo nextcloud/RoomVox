@@ -14,6 +14,9 @@ export const deleteRoom = (id) => axios.delete(baseUrl(`/api/rooms/${id}`))
 export const getPermissions = (id) => axios.get(baseUrl(`/api/rooms/${id}/permissions`))
 export const setPermissions = (id, data) => axios.put(baseUrl(`/api/rooms/${id}/permissions`), data)
 
+// External iCal feed (action: 'enable' | 'rotate' | 'disable')
+export const manageRoomFeed = (id, action) => axios.post(baseUrl(`/api/rooms/${id}/feed`), { action })
+
 // Room Groups
 export const getRoomGroups = () => axios.get(baseUrl('/api/room-groups'))
 export const getRoomGroup = (id) => axios.get(baseUrl(`/api/room-groups/${id}`))

@@ -405,6 +405,47 @@ class SchedulingPluginRequestTest extends TestCase {
         $plugin->handleScheduleRequest($message);
     }
 
+    public function testManagerBookingIsAcceptedWithoutApproval(): void {
+        // Room requires approval, but the organizer is a manager of the room —
+        // their own booking should be accepted directly, not queued (issue #23).
+        $room = array_merge($this->testRoom, ['autoAccept' => false]);
+        $this->roomService = $this->createMock(RoomService::class);
+        $this->roomService->method('isRoomPrincipal')->willReturn(true);
+        $this->roomService->method('getRoomIdByPrincipal')->willReturn('room1');
+        $this->roomService->method('getRoom')->willReturn($room);
+
+        $this->permissionService = $this->createMock(PermissionService::class);
+        $this->permissionService->method('getEffectivePermissions')->willReturn([
+            'viewers' => [], 'bookers' => [], 'managers' => [['type' => 'user', 'id' => 'testuser']],
+        ]);
+        $this->permissionService->method('canBook')->willReturn(true);
+        $this->permissionService->method('canManage')
+            ->with('testuser', 'room1')
+            ->willReturn(true);
+
+        $this->mailService = $this->createMock(MailService::class);
+        $this->mailService->expects($this->once())->method('sendAccepted');
+        $this->mailService->expects($this->never())->method('notifyManagers');
+
+        $logger = $this->createMock(LoggerInterface::class);
+        $plugin = new SchedulingPlugin(
+            $this->roomService,
+            $this->permissionService,
+            $this->calDAVService,
+            $this->mailService,
+            $this->exchangeSyncService,
+            $this->userManager,
+            $logger,
+        );
+
+        // sender resolves to 'testuser' (see buildRequestMessage default)
+        $message = $this->buildRequestMessage();
+        $result = $plugin->handleScheduleRequest($message);
+
+        $this->assertFalse($result);
+        $this->assertSame('1.2', $message->scheduleStatus);
+    }
+
     public function testRequestSendsConflictEmail(): void {
         $this->calDAVService = $this->createMock(CalDAVService::class);
         $this->calDAVService->method('hasConflict')->willReturn(true);

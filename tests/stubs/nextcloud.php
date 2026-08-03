@@ -41,7 +41,36 @@ if (!class_exists(\OCP\AppFramework\Http\JSONResponse::class)) {
 
 if (!class_exists(\OCP\AppFramework\Http\DataDownloadResponse::class)) {
     class DataDownloadResponse {
-        public function __construct(string $data, string $filename, string $contentType) {}
+        private string $data;
+        private string $filename;
+        private string $contentType;
+        private ?array $throttleMetadata = null;
+
+        public function __construct(string $data, string $filename, string $contentType) {
+            $this->data = $data;
+            $this->filename = $filename;
+            $this->contentType = $contentType;
+        }
+
+        public function getData(): string {
+            return $this->data;
+        }
+
+        public function getFilename(): string {
+            return $this->filename;
+        }
+
+        public function getContentType(): string {
+            return $this->contentType;
+        }
+
+        public function throttle(array $metadata = []): void {
+            $this->throttleMetadata = $metadata;
+        }
+
+        public function getThrottleMetadata(): ?array {
+            return $this->throttleMetadata;
+        }
     }
 }
 

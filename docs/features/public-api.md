@@ -67,7 +67,8 @@ The header is case-insensitive (`bearer` works too). Tokens always start with `r
 | `GET` | `/api/v1/rooms/{id}/bookings` | `read` | List bookings for a room |
 | `POST` | `/api/v1/rooms/{id}/bookings` | `book` | Create a booking |
 | `DELETE` | `/api/v1/rooms/{id}/bookings/{uid}` | `book` | Cancel a booking (optional `?recurrenceId=` for single occurrence) |
-| `GET` | `/api/v1/rooms/{id}/calendar.ics` | `read` | iCalendar feed |
+| `GET` | `/api/v1/rooms/{id}/calendar.ics` | `read` | iCalendar feed (Bearer token) |
+| `GET` | `/api/v1/rooms/{id}/feed/{secret}/calendar.ics` | — (per-room secret) | Public iCalendar feed for external calendar apps and signage — no Bearer header |
 | `GET` | `/api/v1/statistics` | `admin` | Usage statistics |
 
 Full request/response schemas, examples, and error formats: [API Reference → Public API v1](../architecture/api-reference.md#public-api-v1).

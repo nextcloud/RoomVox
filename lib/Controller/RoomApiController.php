@@ -19,6 +19,7 @@ use OCP\BackgroundJob\IJobList;
 use OCP\Calendar\Room\IManager as IRoomManager;
 use OCP\IGroupManager;
 use OCP\IRequest;
+use OCP\IURLGenerator;
 use OCP\IUserManager;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
@@ -37,6 +38,7 @@ class RoomApiController extends Controller {
         private IUserManager $userManager,
         private IGroupManager $groupManager,
         private IJobList $jobList,
+        private IURLGenerator $urlGenerator,
         private LoggerInterface $logger,
     ) {
         parent::__construct($appName, $request);
@@ -61,6 +63,11 @@ class RoomApiController extends Controller {
             if (!empty($room['smtpConfig']['password'])) {
                 $room['smtpConfig']['password'] = '***';
             }
+
+            // Never expose the raw feed secret in list responses (viewers can
+            // reach this). The subscribe URL is only handed out via show()/feed().
+            $room['feedEnabled'] = !empty($room['feedEnabled']);
+            unset($room['feedSecret']);
 
             // Add permission flags for this user
             $room['canView'] = $isAdmin || $this->permissionService->canView($userId, $room['id']);
@@ -196,6 +203,13 @@ class RoomApiController extends Controller {
             $room['smtpConfig']['password'] = '***';
         }
 
+        // Expose a ready-made feed URL (secret embedded) instead of the raw
+        // secret, and only while the feed is enabled.
+        $room['feedUrl'] = (!empty($room['feedEnabled']) && !empty($room['feedSecret']))
+            ? $this->buildFeedUrl($room['id'], $room['feedSecret'])
+            : null;
+        unset($room['feedSecret']);
+
         return new JSONResponse($room);
     }
 
@@ -330,6 +344,63 @@ class RoomApiController extends Controller {
             $this->logger->error("Failed to update room {$id}: " . $e->getMessage());
             return new JSONResponse(['error' => 'Failed to update room'], 500);
         }
+    }
+
+    /**
+     * Manage a room's external iCal feed (admin or room manager).
+     *
+     * Body param `action`:
+     *   - "enable"/"rotate": (re)generate the secret and enable the feed.
+     *     Rotating invalidates any previously shared URL.
+     *   - "disable": turn the feed off and clear the secret.
+     *
+     * Returns the current feed state, including the absolute subscribe URL
+     * (only present while the feed is enabled).
+     */
+    public function feed(string $id): JSONResponse {
+        $userId = $this->getCurrentUserId();
+        if ($userId === null) {
+            return new JSONResponse(['error' => 'Not authenticated'], 401);
+        }
+
+        if (!$this->groupManager->isAdmin($userId) && !$this->permissionService->canManage($userId, $id)) {
+            return new JSONResponse(['error' => 'Forbidden'], 403);
+        }
+
+        if ($this->roomService->getRoom($id) === null) {
+            return new JSONResponse(['error' => 'Room not found'], 404);
+        }
+
+        $action = (string)$this->request->getParam('action', 'rotate');
+
+        if ($action === 'disable') {
+            $this->roomService->disableFeed($id);
+            return new JSONResponse(['feedEnabled' => false, 'feedUrl' => null]);
+        }
+
+        if ($action !== 'enable' && $action !== 'rotate') {
+            return new JSONResponse(['error' => 'Invalid action. Use: enable, rotate, or disable'], 400);
+        }
+
+        $secret = $this->roomService->rotateFeedSecret($id);
+        if ($secret === null) {
+            return new JSONResponse(['error' => 'Room not found'], 404);
+        }
+
+        return new JSONResponse([
+            'feedEnabled' => true,
+            'feedUrl' => $this->buildFeedUrl($id, $secret),
+        ]);
+    }
+
+    /**
+     * Absolute subscribe URL for a room's feed secret.
+     */
+    private function buildFeedUrl(string $roomId, string $secret): string {
+        return $this->urlGenerator->linkToRouteAbsolute('roomvox.public_api.room_feed', [
+            'id' => $roomId,
+            'secret' => $secret,
+        ]);
     }
 
     /**

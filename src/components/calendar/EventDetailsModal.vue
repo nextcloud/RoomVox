@@ -118,7 +118,7 @@
 
 <script setup>
 import { computed, ref } from 'vue'
-import { translate } from '@nextcloud/l10n'
+import { translate, getLanguage } from '@nextcloud/l10n'
 import { generateUrl } from '@nextcloud/router'
 import { showSuccess, showError } from '@nextcloud/dialogs'
 
@@ -138,6 +138,7 @@ import OpenInNewIcon from 'vue-material-design-icons/OpenInNew.vue'
 import { respondToBooking, deleteBooking } from '../../services/api.js'
 
 const t = (text, vars = {}) => translate('roomvox', text, vars)
+const ncLocale = getLanguage().replace('_', '-')
 
 const props = defineProps({
     booking: { type: Object, required: true },
@@ -173,7 +174,7 @@ const statusLabel = computed(() => {
 const formattedDate = computed(() => {
     if (!props.booking.dtstart) return ''
     const date = new Date(props.booking.dtstart)
-    return date.toLocaleDateString(undefined, {
+    return date.toLocaleDateString(ncLocale, {
         weekday: 'long',
         day: 'numeric',
         month: 'long',
@@ -185,8 +186,8 @@ const formattedTime = computed(() => {
     if (!props.booking.dtstart || !props.booking.dtend) return ''
     const start = new Date(props.booking.dtstart)
     const end = new Date(props.booking.dtend)
-    const startTime = start.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })
-    const endTime = end.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })
+    const startTime = start.toLocaleTimeString(ncLocale, { hour: '2-digit', minute: '2-digit' })
+    const endTime = end.toLocaleTimeString(ncLocale, { hour: '2-digit', minute: '2-digit' })
     return `${startTime} - ${endTime}`
 })
 

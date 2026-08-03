@@ -7,6 +7,7 @@ namespace OCA\RoomVox\Tests\Unit\Service;
 use OCA\RoomVox\Service\RoomService;
 use OCP\IAppConfig;
 use OCP\Security\ICrypto;
+use OCP\Security\ISecureRandom;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
@@ -14,16 +15,19 @@ class RoomServiceTest extends TestCase {
     private RoomService $service;
     private IAppConfig $appConfig;
     private ICrypto $crypto;
+    private ISecureRandom $secureRandom;
     private LoggerInterface $logger;
 
     protected function setUp(): void {
         $this->appConfig = $this->createMock(IAppConfig::class);
         $this->crypto = $this->createMock(ICrypto::class);
+        $this->secureRandom = $this->createMock(ISecureRandom::class);
         $this->logger = $this->createMock(LoggerInterface::class);
 
         $this->service = new RoomService(
             $this->appConfig,
             $this->crypto,
+            $this->secureRandom,
             $this->logger,
         );
     }
@@ -103,6 +107,31 @@ class RoomServiceTest extends TestCase {
 
         $result = $this->service->buildRoomLocation($room);
         $this->assertSame('Heidelberglaan 8, 3584 CS Utrecht (Building A, Room 2.17)', $result);
+    }
+
+    public function testBuildRoomLocationGermanPostalCodeNoComma(): void {
+        // Issue #17: postal code and city must be space-joined, not "01324, Dresden".
+        $room = [
+            'name' => 'Besprechungsraum',
+            'address' => 'Hauptgebäude, Luboldtstr. 11, 01324, Dresden',
+            'roomNumber' => '',
+        ];
+
+        $result = $this->service->buildRoomLocation($room);
+        $this->assertSame('Luboldtstr. 11, 01324 Dresden (Hauptgebäude)', $result);
+    }
+
+    public function testBuildRoomLocationGermanPostalCodeThreeParts(): void {
+        // 3-part address with a 5-digit German postal code (no city) — must be
+        // detected as a postal code, not a city.
+        $room = [
+            'name' => 'Raum',
+            'address' => 'Gebäude, Luboldtstr. 11, 01324',
+            'roomNumber' => '',
+        ];
+
+        $result = $this->service->buildRoomLocation($room);
+        $this->assertSame('Luboldtstr. 11, 01324 (Gebäude)', $result);
     }
 
     public function testBuildRoomLocationNoAddress(): void {
@@ -278,5 +307,103 @@ class RoomServiceTest extends TestCase {
         ]);
 
         $this->assertSame('Frontdesk: 020-1234567', $captured['responsibleContact']);
+    }
+
+    // ── Slug generation (issue #18) ──────────────────────────────────────
+
+    public function testGenerateSlugTransliteratesGermanCharacters(): void {
+        $this->assertSame('kueche', RoomService::generateSlug('Küche'));
+        $this->assertSame('aussenbereich', RoomService::generateSlug('Außenbereich'));
+        $this->assertSame('buero', RoomService::generateSlug('Büro'));
+        $this->assertSame('ae-oe-ue', RoomService::generateSlug('Ä Ö Ü'));
+    }
+
+    public function testGenerateSlugBasics(): void {
+        $this->assertSame('test-room', RoomService::generateSlug('Test Room'));
+        $this->assertSame('meeting-room-1', RoomService::generateSlug('Meeting Room 1'));
+        // Non-transliterable input falls back
+        $this->assertSame('room', RoomService::generateSlug('日本語'));
+        $this->assertSame('group', RoomService::generateSlug('', 'group'));
+    }
+
+    // ── External feed secret (issue #16) ─────────────────────────────────
+
+    /** Mock a single room stored under room/{id} plus the rooms_index. */
+    private function mockSingleRoom(array $room): void {
+        $this->appConfig->method('getValueString')
+            ->willReturnCallback(function (string $app, string $key, string $default) use ($room) {
+                if ($key === 'rooms_index') {
+                    return json_encode([$room['id']]);
+                }
+                if ($key === 'room/' . $room['id']) {
+                    return json_encode($room);
+                }
+                return $default;
+            });
+    }
+
+    public function testRotateFeedSecretGeneratesPrefixedSecretAndEnables(): void {
+        $this->mockSingleRoom(['id' => 'room1', 'name' => 'Room 1', 'feedEnabled' => false, 'feedSecret' => null]);
+        $this->secureRandom->method('generate')->willReturn('AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA');
+
+        $captured = null;
+        $this->appConfig->method('setValueString')
+            ->willReturnCallback(function (string $app, string $key, string $value) use (&$captured) {
+                if ($key === 'room/room1') {
+                    $captured = json_decode($value, true);
+                }
+                return true;
+            });
+
+        $secret = $this->service->rotateFeedSecret('room1');
+
+        $this->assertStringStartsWith('rvxf_', $secret);
+        $this->assertSame($secret, $captured['feedSecret']);
+        $this->assertTrue($captured['feedEnabled']);
+    }
+
+    public function testRotateFeedSecretReturnsNullForMissingRoom(): void {
+        $this->appConfig->method('getValueString')->willReturn('');
+        $this->assertNull($this->service->rotateFeedSecret('nope'));
+    }
+
+    public function testDisableFeedClearsSecret(): void {
+        $this->mockSingleRoom(['id' => 'room1', 'name' => 'Room 1', 'feedEnabled' => true, 'feedSecret' => 'rvxf_x']);
+
+        $captured = null;
+        $this->appConfig->method('setValueString')
+            ->willReturnCallback(function (string $app, string $key, string $value) use (&$captured) {
+                if ($key === 'room/room1') {
+                    $captured = json_decode($value, true);
+                }
+                return true;
+            });
+
+        $this->assertTrue($this->service->disableFeed('room1'));
+        $this->assertFalse($captured['feedEnabled']);
+        $this->assertNull($captured['feedSecret']);
+    }
+
+    public function testFindRoomByFeedSecretMatchesEnabledRoom(): void {
+        $this->mockSingleRoom(['id' => 'room1', 'name' => 'Room 1', 'feedEnabled' => true, 'feedSecret' => 'rvxf_match']);
+
+        $room = $this->service->findRoomByFeedSecret('rvxf_match');
+        $this->assertNotNull($room);
+        $this->assertSame('room1', $room['id']);
+    }
+
+    public function testFindRoomByFeedSecretRejectsWrongSecret(): void {
+        $this->mockSingleRoom(['id' => 'room1', 'name' => 'Room 1', 'feedEnabled' => true, 'feedSecret' => 'rvxf_match']);
+        $this->assertNull($this->service->findRoomByFeedSecret('rvxf_nope'));
+    }
+
+    public function testFindRoomByFeedSecretIgnoresDisabledRoom(): void {
+        $this->mockSingleRoom(['id' => 'room1', 'name' => 'Room 1', 'feedEnabled' => false, 'feedSecret' => 'rvxf_match']);
+        $this->assertNull($this->service->findRoomByFeedSecret('rvxf_match'));
+    }
+
+    public function testFindRoomByFeedSecretRejectsWrongPrefix(): void {
+        // Wrong prefix short-circuits before any room lookup.
+        $this->assertNull($this->service->findRoomByFeedSecret('rvx_notafeed'));
     }
 }

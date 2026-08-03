@@ -702,7 +702,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { showError, showSuccess } from '@nextcloud/dialogs'
-import { translate } from '@nextcloud/l10n'
+import { translate, getLanguage } from '@nextcloud/l10n'
 import { generateUrl } from '@nextcloud/router'
 import NcCounterBubble from '@nextcloud/vue/components/NcCounterBubble'
 import NcSettingsSection from '@nextcloud/vue/components/NcSettingsSection'
@@ -963,10 +963,12 @@ const scopeVariant = (scope) => {
     return { read: 'primary', book: 'success', admin: 'error' }[scope] || 'primary'
 }
 
+const ncLocale = getLanguage().replace('_', '-')
+
 const formatDate = (isoString) => {
     if (!isoString) return '—'
     const d = new Date(isoString)
-    return d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    return d.toLocaleDateString(ncLocale) + ' ' + d.toLocaleTimeString(ncLocale, { hour: '2-digit', minute: '2-digit' })
 }
 
 const isTabActive = (tabId) => {

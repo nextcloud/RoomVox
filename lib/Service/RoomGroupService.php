@@ -170,11 +170,6 @@ class RoomGroupService {
     }
 
     private function generateSlug(string $name): string {
-        $slug = strtolower(trim($name));
-        $slug = preg_replace('/[^a-z0-9\s-]/', '', $slug);
-        $slug = preg_replace('/[\s-]+/', '-', $slug);
-        $slug = trim($slug, '-');
-
-        return $slug ?: 'group';
+        return RoomService::generateSlug($name, 'group');
     }
 }

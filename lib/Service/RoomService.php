@@ -7,12 +7,15 @@ namespace OCA\RoomVox\Service;
 use OCA\RoomVox\AppInfo\Application;
 use OCP\IAppConfig;
 use OCP\Security\ICrypto;
+use OCP\Security\ISecureRandom;
 use Psr\Log\LoggerInterface;
 
 class RoomService {
     private const ROOM_PREFIX = 'room/';
     private const ROOMS_INDEX_KEY = 'rooms_index';
     private const USER_PREFIX = 'rb_';
+    private const FEED_SECRET_PREFIX = 'rvxf_';
+    private const FEED_SECRET_LENGTH = 40;
 
     /** @var array<string, string>|null Cached email → userId map (built once per request) */
     private ?array $emailToUserId = null;
@@ -20,6 +23,7 @@ class RoomService {
     public function __construct(
         private IAppConfig $appConfig,
         private ICrypto $crypto,
+        private ISecureRandom $secureRandom,
         private LoggerInterface $logger,
     ) {
     }
@@ -108,7 +112,7 @@ class RoomService {
      * Create a new room
      */
     public function createRoom(array $data): array {
-        $roomId = $this->generateSlug($data['name']);
+        $roomId = self::generateSlug($data['name']);
         $userId = self::USER_PREFIX . $roomId;
 
         // Ensure unique ID
@@ -142,6 +146,9 @@ class RoomService {
             'calendarUri' => '',
             'smtpConfig' => null,
             'exchangeConfig' => null,
+            // External iCal feed: opt-in per room, no secret until enabled.
+            'feedEnabled' => false,
+            'feedSecret' => null,
             'createdAt' => date('c'),
         ];
 
@@ -207,6 +214,74 @@ class RoomService {
         $this->logger->info("Room updated: {$roomId}");
 
         return $room;
+    }
+
+    /**
+     * Generate a fresh external-feed secret for a room and enable the feed.
+     * Rotating invalidates any previously shared feed URL. Returns the new
+     * secret, or null if the room does not exist.
+     */
+    public function rotateFeedSecret(string $roomId): ?string {
+        $room = $this->getRoom($roomId);
+        if ($room === null) {
+            return null;
+        }
+
+        $secret = self::FEED_SECRET_PREFIX . $this->secureRandom->generate(
+            self::FEED_SECRET_LENGTH,
+            ISecureRandom::CHAR_ALPHANUMERIC
+        );
+
+        $room['feedSecret'] = $secret;
+        $room['feedEnabled'] = true;
+        $this->saveRoom($room);
+
+        // Never log the secret itself.
+        $this->logger->info("Feed secret rotated for room: {$roomId}");
+
+        return $secret;
+    }
+
+    /**
+     * Disable the external feed for a room. The secret is cleared so a
+     * re-enable generates a fresh URL (a leaked URL stays dead).
+     */
+    public function disableFeed(string $roomId): bool {
+        $room = $this->getRoom($roomId);
+        if ($room === null) {
+            return false;
+        }
+
+        $room['feedEnabled'] = false;
+        $room['feedSecret'] = null;
+        $this->saveRoom($room);
+
+        $this->logger->info("Feed disabled for room: {$roomId}");
+
+        return true;
+    }
+
+    /**
+     * Resolve a room by its feed secret. Only feed-enabled rooms match.
+     * Comparison is timing-safe. Returns the room array or null.
+     */
+    public function findRoomByFeedSecret(string $secret): ?array {
+        if (!str_starts_with($secret, self::FEED_SECRET_PREFIX)) {
+            return null;
+        }
+
+        foreach ($this->getRoomIds() as $roomId) {
+            $room = $this->getRoom($roomId);
+            if ($room === null || empty($room['feedEnabled'])) {
+                continue;
+            }
+            $stored = $room['feedSecret'] ?? '';
+            if (is_string($stored) && $stored !== '' && hash_equals($stored, $secret)) {
+                return $room;
+            }
+        }
+
+        return null;
     }
 
     /**
@@ -521,8 +596,8 @@ class RoomService {
         } elseif (count($parts) === 3) {
             $building = $parts[0];
             $street = $parts[1];
-            // Detect if 3rd part is postal code (e.g. "3584 CS") or city
-            if (preg_match('/^\d{4}\s*[A-Z]{2}$/i', $parts[2])) {
+            // Detect if 3rd part is a postal code (NL "3584 CS" or DE "01324") or a city
+            if (preg_match('/^\d{4,5}(\s*[A-Z]{2})?$/i', $parts[2])) {
                 $postalCode = $parts[2];
             } else {
                 $city = $parts[2];
@@ -578,14 +653,25 @@ class RoomService {
     }
 
     /**
-     * Generate a URL-safe slug from a name
+     * Generate a URL-safe slug from a name.
+     *
+     * Shared canonical implementation (also used by RoomGroupService and
+     * ImportExportService, so import-matching stays consistent). German
+     * umlauts and ß are transliterated (ä→ae, ö→oe, ü→ue, ß→ss) rather than
+     * stripped, so "Küche" becomes "kueche" not "kche" (issue #18).
      */
-    private function generateSlug(string $name): string {
-        $slug = strtolower(trim($name));
+    public static function generateSlug(string $name, string $fallback = 'room'): string {
+        $slug = mb_strtolower(trim($name), 'UTF-8');
+
+        // Transliterate German special characters before ASCII stripping.
+        $slug = strtr($slug, [
+            'ä' => 'ae', 'ö' => 'oe', 'ü' => 'ue', 'ß' => 'ss',
+        ]);
+
         $slug = preg_replace('/[^a-z0-9\s-]/', '', $slug);
         $slug = preg_replace('/[\s-]+/', '-', $slug);
         $slug = trim($slug, '-');
 
-        return $slug ?: 'room';
+        return $slug ?: $fallback;
     }
 }

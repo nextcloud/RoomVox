@@ -25,6 +25,9 @@ return [
         ['name' => 'room_api#get_permissions', 'url' => '/api/rooms/{id}/permissions', 'verb' => 'GET'],
         ['name' => 'room_api#set_permissions', 'url' => '/api/rooms/{id}/permissions', 'verb' => 'PUT'],
 
+        // External iCal feed management (enable/rotate/disable)
+        ['name' => 'room_api#feed', 'url' => '/api/rooms/{id}/feed', 'verb' => 'POST'],
+
         // Room-specific bookings
         ['name' => 'booking_api#index', 'url' => '/api/rooms/{id}/bookings', 'verb' => 'GET'],
         ['name' => 'booking_api#create', 'url' => '/api/rooms/{id}/bookings', 'verb' => 'POST'],
@@ -47,6 +50,7 @@ return [
 
         // Personal API
         ['name' => 'personal_api#rooms', 'url' => '/api/personal/rooms', 'verb' => 'GET'],
+        ['name' => 'personal_api#viewable_rooms', 'url' => '/api/personal/rooms/viewable', 'verb' => 'GET'],
         ['name' => 'personal_api#approvals', 'url' => '/api/personal/approvals', 'verb' => 'GET'],
 
         // User/Group search (for permission editor)
@@ -82,6 +86,8 @@ return [
         ['name' => 'public_api#room_status', 'url' => '/api/v1/rooms/{id}/status', 'verb' => 'GET'],
         ['name' => 'public_api#room_availability', 'url' => '/api/v1/rooms/{id}/availability', 'verb' => 'GET'],
         ['name' => 'public_api#calendar_feed', 'url' => '/api/v1/rooms/{id}/calendar.ics', 'verb' => 'GET'],
+        // Subscribe-able feed authenticated by a per-room secret in the path (no Bearer header)
+        ['name' => 'public_api#room_feed', 'url' => '/api/v1/rooms/{id}/feed/{secret}/calendar.ics', 'verb' => 'GET'],
         ['name' => 'public_api#list_rooms', 'url' => '/api/v1/rooms', 'verb' => 'GET'],
         ['name' => 'public_api#get_room', 'url' => '/api/v1/rooms/{id}', 'verb' => 'GET'],
         ['name' => 'public_api#list_bookings', 'url' => '/api/v1/rooms/{id}/bookings', 'verb' => 'GET'],

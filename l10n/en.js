@@ -445,6 +445,17 @@ OC.L10N.register(
         "Responsible contact" : "Responsible contact",
         "Responsible contact (visible to viewers)" : "Responsible contact (visible to viewers)",
         "e.g. anne@voxcloud.nl or 'Ask building manager'" : "e.g. anne@voxcloud.nl or 'Ask building manager'",
+        "External calendar feed" : "External calendar feed",
+        "Publish this room's bookings as an iCal feed that external calendar apps (Nextcloud Calendar, Outlook, Apple Calendar) and signage displays can subscribe to — no login required." : "Publish this room's bookings as an iCal feed that external calendar apps (Nextcloud Calendar, Outlook, Apple Calendar) and signage displays can subscribe to — no login required.",
+        "Enable external feed" : "Enable external feed",
+        "Anyone with this URL can see the titles and organizers of all bookings for this room. Only share it with people or systems you trust. If a URL leaks, regenerate it below." : "Anyone with this URL can see the titles and organizers of all bookings for this room. Only share it with people or systems you trust. If a URL leaks, regenerate it below.",
+        "Feed URL" : "Feed URL",
+        "Copied" : "Copied",
+        "Regenerate URL" : "Regenerate URL",
+        "Regenerating creates a new URL and immediately breaks any existing subscriptions." : "Regenerating creates a new URL and immediately breaks any existing subscriptions.",
+        "Failed to update feed" : "Failed to update feed",
+        "Failed to regenerate feed" : "Failed to regenerate feed",
+        "Could not copy to clipboard" : "Could not copy to clipboard"
     },
     "nplurals=2; plural=(n != 1);"
 );

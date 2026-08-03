@@ -16,6 +16,12 @@ use OCP\IRequest;
 class ApiTokenMiddleware extends Middleware {
     private ?array $validatedToken = null;
 
+    /**
+     * PublicApiController methods that authenticate themselves (not via Bearer
+     * token) and must therefore skip this middleware.
+     */
+    private const SELF_AUTHENTICATED_METHODS = ['roomFeed'];
+
     public function __construct(
         private IRequest $request,
         private ApiTokenService $tokenService,
@@ -25,6 +31,12 @@ class ApiTokenMiddleware extends Middleware {
     public function beforeController(mixed $controller, string $methodName): void {
         // Only apply to PublicApiController
         if (!($controller instanceof \OCA\RoomVox\Controller\PublicApiController)) {
+            return;
+        }
+
+        // The public feed authenticates via a per-room secret in the URL path,
+        // not a Bearer token — do not require an Authorization header for it.
+        if (in_array($methodName, self::SELF_AUTHENTICATED_METHODS, true)) {
             return;
         }
 

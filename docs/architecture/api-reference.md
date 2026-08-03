@@ -331,6 +331,28 @@ END:VCALENDAR
 - Calendar apps (Google Calendar, Apple Calendar, Thunderbird) can add as a read-only subscription
 - Digital signage can poll this URL periodically
 
+> **Note:** external calendar apps cannot send an `Authorization` header when subscribing to a URL. For those, use the secret-authenticated public feed below instead of this Bearer route.
+
+#### Get Room Calendar Feed (public, secret-authenticated)
+
+```
+GET /api/v1/rooms/{id}/feed/{secret}/calendar.ics
+```
+
+**Auth:** per-room feed secret in the URL path — **no Bearer token**. This is the URL external calendar clients and signage displays subscribe to.
+
+Returns the same iCalendar output as the Bearer feed above (identical byte-for-byte). The feed is opt-in per room: an admin or room manager enables it and obtains the URL from the room editor (or via `POST /api/rooms/{id}/feed`). The secret is read-only and scoped to a single room.
+
+**Security:**
+- The secret grants **read-only** access to one room's bookings and nothing else — it cannot book or administer.
+- If a URL leaks, regenerate it (rotating the secret immediately invalidates the old URL); other rooms and API tokens are unaffected.
+- The endpoint is brute-force protected against secret enumeration and compares secrets in constant time.
+- The feed exposes booking titles and organizers — share the URL only with trusted parties.
+
+**Responses:**
+- `200` with `Content-Type: text/calendar` and a `VCALENDAR` body on a valid secret.
+- On an unknown, disabled, or mismatched secret: an empty `.ics` (no booking data, existence of the room is not revealed) and the request is throttled.
+
 ### Statistics
 
 #### Get Usage Statistics

@@ -181,6 +181,7 @@
 import { NcButton, NcCheckboxRadioSwitch, NcNoteCard } from '@nextcloud/vue'
 import axios from '@nextcloud/axios'
 import { generateUrl } from '@nextcloud/router'
+import { getLanguage } from '@nextcloud/l10n'
 
 export default {
 	name: 'SupportSettings',
@@ -327,7 +328,7 @@ export default {
 
 		formatDate(timestamp) {
 			if (!timestamp) return ''
-			return new Date(timestamp * 1000).toLocaleString()
+			return new Date(timestamp * 1000).toLocaleString(getLanguage().replace('_', '-'))
 		},
 
 		showMessage(text, type) {

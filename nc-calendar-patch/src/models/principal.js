@@ -117,21 +117,51 @@ function mapDavToPrincipal(dav) {
 	const rawFloor = (dav.roomBuildingFloor ?? '').toString().trim() || null
 	const roomFloor = rawFloor || (roomNumber ? (roomNumber.match(/^([A-Za-z]?\d+)/) || [])[1] || null : null)
 
-	// Construct roomAddress for event LOCATION field from available properties
-	// Format: "Street (Building, Room X.XX)" — street-first for map/navigation apps
+	// Construct roomAddress for event LOCATION field from available properties.
+	// Format: "Street, PostalCode City (Building, Room X.XX)" — street-first for
+	// map/navigation apps. The stored address is "Building, Street, PostalCode,
+	// City"; postal code and city are joined with a space, not a comma (issue #17).
 	let roomAddress = null
 	if (roomBuildingAddress) {
-		const commaIdx = roomBuildingAddress.indexOf(',')
-		if (commaIdx > 0) {
-			const building = roomBuildingAddress.substring(0, commaIdx).trim()
-			const street = roomBuildingAddress.substring(commaIdx + 1).trim()
-			const detail = roomNumber ? building + ', ' + t('roomvox', 'Room') + ' ' + roomNumber : building
-			roomAddress = street + ' (' + detail + ')'
+		const parts = roomBuildingAddress.split(',').map(s => s.trim())
+		let building = ''
+		let street = ''
+		let postalCode = ''
+		let city = ''
+		if (parts.length >= 4) {
+			building = parts[0]
+			street = parts[1]
+			postalCode = parts[2]
+			city = parts.slice(3).join(', ')
+		} else if (parts.length === 3) {
+			building = parts[0]
+			street = parts[1]
+			// 3rd part is a postal code ("01324" / "1098 XG") or a city
+			if (/^\d{4,5}(\s*[A-Z]{2})?$/i.test(parts[2])) {
+				postalCode = parts[2]
+			} else {
+				city = parts[2]
+			}
+		} else if (parts.length === 2) {
+			building = parts[0]
+			street = parts[1]
 		} else {
-			roomAddress = roomNumber
-				? roomBuildingAddress + ' (' + t('roomvox', 'Room') + ' ' + roomNumber + ')'
-				: roomBuildingAddress
+			street = parts[0]
 		}
+
+		// "Street, PostalCode City" — postal and city space-joined
+		const cityPart = [postalCode, city].filter(Boolean).join(' ')
+		let geocodable = [street, cityPart].filter(Boolean).join(', ')
+		if (!geocodable) {
+			geocodable = roomBuildingAddress
+		}
+
+		const detailParts = []
+		if (building) detailParts.push(building)
+		if (roomNumber) detailParts.push(t('roomvox', 'Room') + ' ' + roomNumber)
+		const detail = detailParts.join(', ')
+
+		roomAddress = detail ? geocodable + ' (' + detail + ')' : geocodable
 	}
 
 	return getDefaultPrincipalObject({

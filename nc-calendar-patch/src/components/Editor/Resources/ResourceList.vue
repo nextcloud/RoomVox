@@ -131,6 +131,8 @@
 </template>
 
 <script>
+import axios from '@nextcloud/axios'
+import { generateUrl } from '@nextcloud/router'
 import { loadState } from '@nextcloud/initial-state'
 import { NcCheckboxRadioSwitch, NcLoadingIcon, NcSelect } from '@nextcloud/vue'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
@@ -380,10 +382,31 @@ export default {
 			this.isLoadingAvailability = true
 
 			const roomPrincipals = this.principalsStore.getRoomPrincipals || []
-			this.allRooms = roomPrincipals.map((p) => ({
-				...p,
-				isAvailable: true,
-			}))
+
+			// The DAV principal list is not a reliable permission boundary for
+			// this dialog, so intersect it against the server's authoritative
+			// "rooms this user may view" allow-list (issue #20). Fail closed:
+			// if the allow-list can't be fetched, show no rooms rather than
+			// risk exposing ones the user shouldn't see.
+			let allowedEmails = null
+			try {
+				const { data } = await axios.get(generateUrl('/apps/roomvox/api/personal/rooms/viewable'))
+				allowedEmails = new Set(
+					(data || [])
+						.map((r) => (r.email || '').toLowerCase())
+						.filter(Boolean),
+				)
+			} catch (error) {
+				logger.error('Could not load viewable rooms; hiding all rooms', { error })
+				allowedEmails = new Set()
+			}
+
+			this.allRooms = roomPrincipals
+				.filter((p) => allowedEmails.has(removeMailtoPrefix(p.emailAddress || '').toLowerCase()))
+				.map((p) => ({
+					...p,
+					isAvailable: true,
+				}))
 
 			await this.loadAvailability()
 			this.isLoadingAvailability = false
@@ -506,11 +529,18 @@ export default {
 		},
 
 		buildLocationString({ commonName, roomAddress, roomBuildingAddress, roomBuildingName, roomNumber }) {
-			// Build: "Room Name, Building Address, Room X.XX"
+			// Build: "Room Name, Street, PostalCode City (Building, Room X.XX)".
+			// Prefer the pre-formatted roomAddress (postal code and city are
+			// space-joined and the building/room number are already folded in,
+			// issue #17); fall back to the raw building address only if absent.
 			const parts = []
 			if (commonName) parts.push(commonName)
-			if (roomBuildingAddress) parts.push(roomBuildingAddress)
-			if (roomNumber) parts.push(this.$t('roomvox', 'Room') + ' ' + roomNumber)
+			if (roomAddress) {
+				parts.push(roomAddress)
+			} else {
+				if (roomBuildingAddress) parts.push(roomBuildingAddress)
+				if (roomNumber) parts.push(this.$t('roomvox', 'Room') + ' ' + roomNumber)
+			}
 			return parts.join(', ') || commonName || ''
 		},
 

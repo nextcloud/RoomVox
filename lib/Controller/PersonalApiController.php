@@ -66,6 +66,35 @@ class PersonalApiController extends Controller {
     }
 
     /**
+     * Minimal allow-list of rooms the current user may view, keyed for the
+     * calendar "Show all rooms" dialog. Returns only id + email so the dialog
+     * can intersect the (unfiltered) DAV principal list against server-side
+     * view permissions (issue #20). Deliberately leaks no room detail beyond
+     * what an authorized viewer already sees.
+     */
+    #[NoAdminRequired]
+    public function viewableRooms(): JSONResponse {
+        $userId = $this->getCurrentUserId();
+        if ($userId === null) {
+            return new JSONResponse(['error' => 'Not authenticated'], 401);
+        }
+
+        $isAdmin = $this->groupManager->isAdmin($userId);
+        $result = [];
+        foreach ($this->roomService->getAllRooms() as $room) {
+            if (!$isAdmin && !$this->permissionService->canView($userId, $room['id'])) {
+                continue;
+            }
+            $result[] = [
+                'id' => $room['id'],
+                'email' => $room['email'] ?? '',
+            ];
+        }
+
+        return new JSONResponse($result);
+    }
+
+    /**
      * List pending (TENTATIVE) bookings for rooms the user manages
      */
     #[NoAdminRequired]

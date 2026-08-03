@@ -306,6 +306,53 @@
                 </div>
             </div>
 
+            <div v-if="!creating" class="form-section">
+                <h3>{{ $t('External calendar feed') }}</h3>
+                <p class="section-description">
+                    {{ $t('Publish this room\'s bookings as an iCal feed that external calendar apps (Nextcloud Calendar, Outlook, Apple Calendar) and signage displays can subscribe to — no login required.') }}
+                </p>
+
+                <div class="form-field">
+                    <NcCheckboxRadioSwitch
+                        :model-value="feed.enabled"
+                        :disabled="feed.busy"
+                        @update:model-value="toggleFeed($event)">
+                        {{ $t('Enable external feed') }}
+                    </NcCheckboxRadioSwitch>
+                </div>
+
+                <NcNoteCard v-if="feed.enabled" type="warning">
+                    {{ $t('Anyone with this URL can see the titles and organizers of all bookings for this room. Only share it with people or systems you trust. If a URL leaks, regenerate it below.') }}
+                </NcNoteCard>
+
+                <div v-if="feed.enabled && feed.url" class="form-field">
+                    <label>{{ $t('Feed URL') }}</label>
+                    <div class="feed-url-row">
+                        <NcTextField
+                            :model-value="feed.url"
+                            :readonly="true"
+                            :label="$t('Feed URL')"
+                            :label-visible="false" />
+                        <NcButton type="secondary" :disabled="feed.busy" @click="copyFeedUrl">
+                            {{ feed.copied ? $t('Copied') : $t('Copy') }}
+                        </NcButton>
+                    </div>
+                    <NcButton type="tertiary" :disabled="feed.busy" @click="regenerateFeed">
+                        <template #icon>
+                            <NcLoadingIcon v-if="feed.busy" :size="20" />
+                        </template>
+                        {{ $t('Regenerate URL') }}
+                    </NcButton>
+                    <p class="section-description">
+                        {{ $t('Regenerating creates a new URL and immediately breaks any existing subscriptions.') }}
+                    </p>
+                </div>
+
+                <NcNoteCard v-if="feed.error" type="error">
+                    {{ feed.error }}
+                </NcNoteCard>
+            </div>
+
             <div v-if="exchangeGlobalEnabled" class="form-section">
                 <h3>{{ $t('Exchange Calendar Sync') }}</h3>
                 <p class="section-description">
@@ -368,7 +415,7 @@
 
                     <div v-if="exchange.lastSyncAt" class="exchange-status-row">
                         <span class="exchange-status-label">{{ $t('Last synced:') }}</span>
-                        <span>{{ new Date(exchange.lastSyncAt).toLocaleString() }}</span>
+                        <span>{{ new Date(exchange.lastSyncAt).toLocaleString(ncLocale) }}</span>
                     </div>
                     <div v-if="exchange.lastError" class="exchange-status-row exchange-status-error">
                         <span class="exchange-status-label">{{ $t('Last error:') }}</span>
@@ -429,10 +476,11 @@ import ArrowLeft from 'vue-material-design-icons/ArrowLeft.vue'
 import Close from 'vue-material-design-icons/Close.vue'
 import NcNoteCard from '@nextcloud/vue/components/NcNoteCard'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
-import { translate } from '@nextcloud/l10n'
-import { validateExchangeResource, retryInitialExchangeSync, getSettings, getRoom } from '../services/api.js'
+import { translate, getLanguage } from '@nextcloud/l10n'
+import { validateExchangeResource, retryInitialExchangeSync, getSettings, getRoom, manageRoomFeed } from '../services/api.js'
 
 const t = (text, vars = {}) => translate('roomvox', text, vars)
+const ncLocale = getLanguage().replace('_', '-')
 
 const props = defineProps({
     room: { type: Object, default: null },
@@ -518,6 +566,14 @@ const smtp = reactive({
     encryption: 'tls',
 })
 
+const feed = reactive({
+    enabled: false,
+    url: null,
+    busy: false,
+    copied: false,
+    error: '',
+})
+
 const availability = reactive({
     enabled: false,
     rules: [],
@@ -576,6 +632,50 @@ const retryInitialSync = async () => {
         startSyncPolling()
     } catch (e) {
         exchange.initialSyncError = e.response?.data?.error || t('Failed to queue sync')
+    }
+}
+
+const applyFeedResult = (data) => {
+    feed.enabled = data.feedEnabled
+    feed.url = data.feedUrl || null
+}
+
+const toggleFeed = async (enabled) => {
+    if (!props.room?.id || feed.busy) return
+    feed.busy = true
+    feed.error = ''
+    try {
+        const res = await manageRoomFeed(props.room.id, enabled ? 'enable' : 'disable')
+        applyFeedResult(res.data)
+    } catch (e) {
+        feed.error = e.response?.data?.error || t('Failed to update feed')
+    } finally {
+        feed.busy = false
+    }
+}
+
+const regenerateFeed = async () => {
+    if (!props.room?.id || feed.busy) return
+    feed.busy = true
+    feed.error = ''
+    try {
+        const res = await manageRoomFeed(props.room.id, 'rotate')
+        applyFeedResult(res.data)
+    } catch (e) {
+        feed.error = e.response?.data?.error || t('Failed to regenerate feed')
+    } finally {
+        feed.busy = false
+    }
+}
+
+const copyFeedUrl = async () => {
+    if (!feed.url) return
+    try {
+        await navigator.clipboard.writeText(feed.url)
+        feed.copied = true
+        setTimeout(() => { feed.copied = false }, 2000)
+    } catch {
+        feed.error = t('Could not copy to clipboard')
     }
 }
 
@@ -689,6 +789,17 @@ watch(() => props.room, (room) => {
         })
         // Show email field if room has a custom (non-auto-generated) email
         showEmailField.value = room.email && !room.email.endsWith('@roomvox.local')
+        // External feed state (feedUrl is only present when enabled; the raw
+        // secret is never sent to the client). The room list omits feedUrl, so
+        // fetch the full room to obtain it when the feed is already enabled.
+        feed.enabled = !!room.feedEnabled
+        feed.url = room.feedUrl || null
+        feed.error = ''
+        if (feed.enabled && !feed.url && room.id) {
+            getRoom(room.id)
+                .then(res => { feed.url = res.data.feedUrl || null })
+                .catch(() => {})
+        }
         if (room.smtpConfig) {
             Object.assign(smtp, {
                 host: room.smtpConfig.host || '',
@@ -888,6 +999,17 @@ const save = () => {
 .encryption-options {
     display: flex;
     gap: 16px;
+}
+
+.feed-url-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.feed-url-row :deep(.input-field) {
+    flex: 1 1 auto;
 }
 
 .availability-rule {

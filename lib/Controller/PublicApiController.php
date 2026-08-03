@@ -14,6 +14,7 @@ use OCA\RoomVox\Service\RoomService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\DataDownloadResponse;
 use OCP\AppFramework\Http\JSONResponse;
+use OCP\AppFramework\Http\Attribute\BruteForceProtection;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
 use OCP\AppFramework\Http\Attribute\PublicPage;
@@ -545,6 +546,52 @@ class PublicApiController extends Controller {
             return new DataDownloadResponse('', 'error.ics', 'text/calendar');
         }
 
+        return $this->icsResponse($room);
+    }
+
+    /**
+     * Public, subscribe-able iCal feed for a room, authenticated by a per-room
+     * feed secret in the URL path (not a Bearer token). This is the URL that
+     * external calendar apps (Nextcloud Calendar, Outlook, Apple Calendar) and
+     * signage displays subscribe to — they cannot send Authorization headers.
+     *
+     * The secret is read-only and room-scoped by construction: a leaked URL
+     * only exposes this one room's bookings and can be rotated per room.
+     */
+    #[NoAdminRequired]
+    #[NoCSRFRequired]
+    #[PublicPage]
+    #[BruteForceProtection(action: 'roomvox_feed')]
+    public function roomFeed(string $id, string $secret): DataDownloadResponse {
+        $room = $this->roomService->findRoomByFeedSecret($secret);
+
+        // Reject on any mismatch (unknown/disabled secret, or secret belongs to
+        // a different room). Return an empty calendar without revealing whether
+        // the room exists, and throttle to slow secret enumeration.
+        if ($room === null || $room['id'] !== $id) {
+            $response = new DataDownloadResponse('', 'error.ics', 'text/calendar');
+            $response->throttle(['action' => 'roomvox_feed']);
+            return $response;
+        }
+
+        return $this->icsResponse($room);
+    }
+
+    /**
+     * Build the DataDownloadResponse carrying the room's VCALENDAR. Shared by
+     * the Bearer-authenticated feed and the secret-authenticated public feed so
+     * both emit byte-identical iCalendar output.
+     */
+    private function icsResponse(array $room): DataDownloadResponse {
+        $ics = $this->buildIcs($room);
+        $filename = 'roomvox-' . $room['id'] . '.ics';
+        return new DataDownloadResponse($ics, $filename, 'text/calendar; charset=utf-8');
+    }
+
+    /**
+     * Render a room's ACCEPTED bookings as an RFC 5545 VCALENDAR string.
+     */
+    private function buildIcs(array $room): string {
         // Pass through master VEVENTs with RRULE intact (issue #4): clients
         // expand recurrence themselves. Server-side expansion + duplicated UIDs
         // violates RFC 5545 §3.8.4.7 and causes clients to dedupe to one event.
@@ -568,8 +615,7 @@ class PublicApiController extends Controller {
 
         $ics .= "END:VCALENDAR\r\n";
 
-        $filename = 'roomvox-' . $room['id'] . '.ics';
-        return new DataDownloadResponse($ics, $filename, 'text/calendar; charset=utf-8');
+        return $ics;
     }
 
     /**

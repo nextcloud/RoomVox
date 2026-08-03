@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Known issues
+- **Booking two rooms on one event without auto-accept only requests approval for the first** ([#22](https://github.com/nextcloud/RoomVox/issues/22)): investigated but not yet fixed. RoomVox's per-recipient handling (permission check, PARTSTAT, delivery to each room's calendar, manager notification) is correct and independent per room; the remaining suspect is Sabre/Nextcloud's iTIP dispatch (whether two room attendees produce one `schedule` event or two), which can't be confirmed by static analysis. Fix deferred pending a live trace.
+
+## [1.2.0] - 2026-08-03 - Subscribe-able iCal feeds, manager auto-accept & i18n fixes
+
+### Security
+- **"Show all rooms" dialog ignored room visibility permissions** ([#20](https://github.com/nextcloud/RoomVox/issues/20)): In the Nextcloud Calendar room picker, the type-ahead field correctly hid rooms a user may not view, but the "Show all rooms" dialog listed every room — exposing room names, locations, and organisational structure to unauthorised users. The dialog now intersects the calendar's room list against a server-authoritative allow-list (`GET /api/personal/rooms/viewable`, filtered by `PermissionService::canView`), so it shows exactly the rooms the type-ahead does. The allow-list endpoint returns only room id + email (no other detail), and the dialog fails closed — if the allow-list can't be loaded it shows no rooms rather than risk leaking. Booking was already enforced server-side by the scheduling plugin; this closes the information-disclosure gap in the browse UI.
+
+### Added
+- **Public, subscribe-able iCal feed per room** ([#16](https://github.com/nextcloud/RoomVox/issues/16)): The iCal feed at `/api/v1/rooms/{id}/calendar.ics` already existed, but required a `Bearer` token — which external calendar apps (Nextcloud Calendar, Outlook, Apple Calendar, Thunderbird) and signage displays cannot send, so nobody could actually subscribe to it. Rooms can now expose an opt-in feed at `/api/v1/rooms/{id}/feed/{secret}/calendar.ics`, authenticated by a per-room secret in the URL path instead of a header. Admins/room-managers enable, copy, and regenerate the feed URL from the room editor. The secret is read-only and room-scoped by construction: a leaked URL only exposes that one room's bookings and can be rotated per room without affecting API tokens or other rooms. Endpoint is brute-force protected against secret enumeration, comparison is timing-safe (`hash_equals`), the raw secret is never logged nor returned in room-list responses, and feeds are off by default (explicit opt-in per room). The existing Bearer-authenticated `calendar.ics` route is unchanged; both share one iCalendar builder so their output is byte-identical.
+
+### Changed
+- **A manager booking their own room no longer needs a second manager to approve it** ([#23](https://github.com/nextcloud/RoomVox/issues/23)): On a room with manual approval (`autoAccept=false`), a booking whose organizer is a manager of that room is now accepted directly instead of being parked as `TENTATIVE` in the approval queue. Requiring a manager to approve their own booking was a pointless extra step. Non-managers are unaffected — their bookings still go through the normal approval flow — and rooms without any configured managers are unchanged. The decision lives at the single PARTSTAT branch in `SchedulingPlugin::handleRequest()`.
+
+### Fixed
+- **German umlauts stripped instead of transliterated in generated identifiers** ([#18](https://github.com/nextcloud/RoomVox/issues/18)): Room/room-group slugs derived from names removed `ä/ö/ü/ß` outright, so "Küche" became `kche` and "Außenbereich" became `auenbereich`. They are now transliterated the standard German way (`ä→ae`, `ö→oe`, `ü→ue`, `ß→ss`), yielding `kueche` / `aussenbereich`. The slug logic — previously duplicated in `RoomService`, `RoomGroupService`, and `ImportExportService` — was consolidated into a single `RoomService::generateSlug()` so CSV import-matching stays byte-identical to room creation.
+- **Unnecessary comma between postal code and city in event locations** ([#17](https://github.com/nextcloud/RoomVox/issues/17)): A room address of "…, 01324, Dresden" produced the event `LOCATION` "…, 01324, Dresden" instead of "…, 01324 Dresden". The calendar patch now formats the room address (postal code and city space-joined, building/room number folded into a trailing detail) instead of pasting the raw comma-separated address string, and the 3-part postal-code detection in `buildRoomLocation()` now also recognises 5-digit German postal codes (previously only the Dutch "1234 AB" form).
+- **User's locale ignored in dates and times** ([#21](https://github.com/nextcloud/RoomVox/issues/21)): Dialogs and list views formatted dates/times with the browser default locale (often US `MM/DD`), confusingly disagreeing with the user's Nextcloud language. All `toLocale*String()` calls now pass the Nextcloud user locale (`getLanguage()`), matching the calendar view which already did so.
+
 ## [1.1.3] - 2026-06-22
 
 ### Fixed
