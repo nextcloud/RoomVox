@@ -260,6 +260,9 @@ const ncLocale = getLanguage().replace('_', '-')
 
 const props = defineProps({
     rooms: { type: Array, default: () => [] },
+    // Room groups, used to disambiguate rooms with the same name across
+    // groups in the filter (issue #19). Optional — falls back to plain names.
+    roomGroups: { type: Array, default: () => [] },
     showWeekends: { type: Boolean, default: true },
     // 'view' (admin default) shows everything the user can view;
     // 'manage' restricts to rooms the user can manage (issue #12).
@@ -299,9 +302,23 @@ const dateRangeTabs = computed(() => [
     { value: 'past', label: t('Past') },
 ])
 
+const groupNameById = computed(() => {
+    const map = {}
+    for (const g of props.roomGroups) {
+        map[g.id] = g.name
+    }
+    return map
+})
+
+// Label rooms as "Room (Group)" so names reused across groups can be told
+// apart in the filter (issue #19). Rooms without a (resolvable) group keep
+// their plain name.
 const roomOptions = computed(() => [
     { id: null, label: t('All rooms') },
-    ...props.rooms.map(r => ({ id: r.id, label: r.name })),
+    ...props.rooms.map(r => {
+        const groupName = r.groupId ? groupNameById.value[r.groupId] : null
+        return { id: r.id, label: groupName ? `${r.name} (${groupName})` : r.name }
+    }),
 ])
 
 const filteredBookings = computed(() => {

@@ -91,7 +91,7 @@
 
             <!-- Bookings -->
             <div v-if="currentView === 'bookings'" class="tab-content">
-                <BookingOverview :rooms="rooms" :show-weekends="settings.showWeekends" />
+                <BookingOverview :rooms="rooms" :room-groups="roomGroups" :show-weekends="settings.showWeekends" />
             </div>
 
             <!-- Import / Export -->

@@ -10,6 +10,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Known issues
 - **Booking two rooms on one event without auto-accept only requests approval for the first** ([#22](https://github.com/nextcloud/RoomVox/issues/22)): investigated but not yet fixed. RoomVox's per-recipient handling (permission check, PARTSTAT, delivery to each room's calendar, manager notification) is correct and independent per room; the remaining suspect is Sabre/Nextcloud's iTIP dispatch (whether two room attendees produce one `schedule` event or two), which can't be confirmed by static analysis. Fix deferred pending a live trace.
 
+## [1.2.1] - 2026-08-03 - Room group in booking filter
+
+### Changed
+- **Booking administration room filter now shows the room group** ([#19](https://github.com/nextcloud/RoomVox/issues/19)): in installations with multiple room groups, room names are often reused (e.g. "Church" and "Office" in both "Parish A" and "Parish B"), and the filter listed them indistinguishably. Each option is now labelled "Room (Group)" — e.g. "Church (Parish A)" — so rooms can be told apart. Rooms without a group keep their plain name. Frontend-only; no API or data changes.
+
 ## [1.2.0] - 2026-08-03 - Subscribe-able iCal feeds, manager auto-accept & i18n fixes
 
 ### Security
