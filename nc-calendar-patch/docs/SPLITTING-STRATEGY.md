@@ -26,7 +26,7 @@ Add 8 room-specific properties to the principal model: `roomSeatingCapacity`, `r
 
 ### Why
 
-The CalDAV standard defines room properties (`room-seating-capacity`, `room-type`, `room-features`, `room-building-address`, `room-building-floor`, `room-building-room-number`) that are already served by Nextcloud's room backends. The Calendar frontend currently ignores them. Mapping these properties into the principal model makes them available for any UI improvement without changing how principals are fetched.
+The CalDAV standard defines room properties (`room-seating-capacity`, `room-type`, `room-features`, `room-building-address`, `room-building-story`, `room-building-room-number`) that are already served by Nextcloud's room backends. The Calendar frontend currently ignores them. Mapping these properties into the principal model makes them available for any UI improvement without changing how principals are fetched.
 
 ### Scope
 
@@ -41,7 +41,7 @@ The CalDAV standard defines room properties (`room-seating-capacity`, `room-type
 feat(principal): map CalDAV room metadata properties
 
 Extend the principal model to extract room-seating-capacity,
-room-type, room-features, room-building-address, room-building-floor,
+room-type, room-features, room-building-address, room-building-story,
 and room-building-room-number from CalDAV principal responses.
 
 These properties are defined in the CalDAV standard and already

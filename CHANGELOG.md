@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **Room floor was invisible to every CalDAV client**: the room backend published the floor under `{http://nextcloud.com/ns}room-building-floor`, which is not a key any client asks for. Nextcloud defines the property as `IRoomMetadata::BUILDING_STORY` (`room-building-story`), and cdav-library requests only that one in its PROPFIND, so the value never reached Nextcloud Calendar, Outlook, Apple Calendar or Thunderbird. The backend now publishes `room-building-story`. Nothing consumed the old key, so this only adds data where there was none.
+
 ### Known issues
 - **Booking two rooms on one event without auto-accept only requests approval for the first** ([#22](https://github.com/nextcloud/RoomVox/issues/22)): investigated but not yet fixed. RoomVox's per-recipient handling (permission check, PARTSTAT, delivery to each room's calendar, manager notification) is correct and independent per room; the remaining suspect is Sabre/Nextcloud's iTIP dispatch (whether two room attendees produce one `schedule` event or two), which can't be confirmed by static analysis. Fix deferred pending a live trace.
 

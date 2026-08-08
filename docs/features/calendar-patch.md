@@ -120,7 +120,7 @@ The patch extends `principal.js` to map additional DAV properties:
 |----------|---------------|-------|
 | `roomBuildingName` | `{urn:ietf:params:xml:ns:caldav}room-building-name` | Building grouping + filter chips |
 | `roomBuildingAddress` | `{urn:ietf:params:xml:ns:caldav}room-building-address` | Address tooltip |
-| `roomFloor` | `{urn:ietf:params:xml:ns:caldav}room-building-floor` | Floor display in room card |
+| `roomFloor` | `{http://nextcloud.com/ns}room-building-story` | Floor display in room card |
 
 These properties are populated from the room's address and room number fields in RoomVox.
 

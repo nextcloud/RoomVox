@@ -58,7 +58,7 @@ const roomBuildingName = roomBuildingAddress
 **Floor extraction with fallback:**
 ```js
 // Explicit value from DAV, or extracted from room number (e.g. "2.17" → "2")
-const rawFloor = (dav.roomBuildingFloor ?? '').toString().trim() || null
+const rawFloor = (dav.roomBuildingStory ?? '').toString().trim() || null
 const roomFloor = rawFloor || (roomNumber
   ? (roomNumber.match(/^([A-Za-z]?\d+)/) || [])[1] || null
   : null)
@@ -84,7 +84,7 @@ if (commaIdx > 0) {
 | `roomFeatures` | `roomFeatures` | `{urn:ietf:params:xml:ns:caldav}` |
 | `roomBuildingAddress` | `roomBuildingAddress` | `{urn:ietf:params:xml:ns:caldav}` |
 | `roomBuildingName` | Derived from `roomBuildingAddress` | — |
-| `roomFloor` | `roomBuildingFloor` | `{urn:ietf:params:xml:ns:caldav}` |
+| `roomFloor` | `roomBuildingStory` | `{http://nextcloud.com/ns}` |
 | `roomNumber` | `roomBuildingRoomNumber` | `{urn:ietf:params:xml:ns:caldav}` |
 | `roomAddress` | Constructed | — |
 

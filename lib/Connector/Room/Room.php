@@ -15,7 +15,7 @@ class Room implements IRoom, IMetadataProvider {
         '{http://nextcloud.com/ns}room-seating-capacity',
         '{http://nextcloud.com/ns}room-building-address',
         '{http://nextcloud.com/ns}room-building-room-number',
-        '{http://nextcloud.com/ns}room-building-floor',
+        '{http://nextcloud.com/ns}room-building-story',
         '{http://nextcloud.com/ns}room-features',
     ];
 
@@ -97,8 +97,10 @@ class Room implements IRoom, IMetadataProvider {
             '{http://nextcloud.com/ns}room-building-address' => ($this->address !== null && $this->address !== '') ? $this->address : null,
             // Room number in floor.room format: "2.17" (2nd floor, room 17)
             '{http://nextcloud.com/ns}room-building-room-number' => ($this->roomNumber !== null && $this->roomNumber !== '') ? $this->roomNumber : null,
-            // Floor (e.g. "2", "B1") — explicit floor value for filtering
-            '{http://nextcloud.com/ns}room-building-floor' => ($this->floor !== null && $this->floor !== '') ? $this->floor : null,
+            // Floor (e.g. "2", "B1") — explicit floor value for filtering.
+            // Key is room-building-story: that is what IRoomMetadata::BUILDING_STORY
+            // defines and the only floor key cdav-library requests in its PROPFIND.
+            '{http://nextcloud.com/ns}room-building-story' => ($this->floor !== null && $this->floor !== '') ? $this->floor : null,
             '{http://nextcloud.com/ns}room-features' => $this->getFeaturesString(),
             default => null,
         };

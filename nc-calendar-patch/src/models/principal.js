@@ -113,8 +113,8 @@ function mapDavToPrincipal(dav) {
 	const roomBuildingName = roomBuildingAddress ? roomBuildingAddress.split(',')[0].trim() : null
 	// Room number (floor.room format, e.g. "2.17") is stored in room-building-room-number
 	const roomNumber = (dav.roomBuildingRoomNumber ?? '').toString().trim() || null
-	// Floor: explicit value from room-building-floor, or extracted from roomNumber
-	const rawFloor = (dav.roomBuildingFloor ?? '').toString().trim() || null
+	// Floor: explicit value from room-building-story, or extracted from roomNumber
+	const rawFloor = (dav.roomBuildingStory ?? '').toString().trim() || null
 	const roomFloor = rawFloor || (roomNumber ? (roomNumber.match(/^([A-Za-z]?\d+)/) || [])[1] || null : null)
 
 	// Construct roomAddress for event LOCATION field from available properties.

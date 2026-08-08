@@ -121,7 +121,7 @@ The room finder reads metadata from standard CalDAV properties already exposed b
 | `roomFeatures` | `{urn:ietf:params:xml:ns:caldav}room-features` | Feature filter chips |
 | `roomBuildingAddress` | `{urn:ietf:params:xml:ns:caldav}room-building-address` | Address tooltip |
 | `roomBuildingName` | Derived from `roomBuildingAddress` | Building grouping + filter |
-| `roomFloor` | `{urn:ietf:params:xml:ns:caldav}room-building-floor` | Floor filter + display |
+| `roomFloor` | `{http://nextcloud.com/ns}room-building-story` | Floor filter + display |
 | `roomNumber` | `{urn:ietf:params:xml:ns:caldav}room-building-room-number` | Room number display |
 | `roomAddress` | Constructed from above | Location field auto-fill |
 
