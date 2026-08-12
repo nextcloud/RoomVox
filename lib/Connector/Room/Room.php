@@ -92,9 +92,9 @@ class Room implements IRoom, IMetadataProvider {
             '{urn:ietf:params:xml:ns:caldav}calendar-description' => $this->buildDescription(),
             '{http://nextcloud.com/ns}room-type' => $this->roomType,
             '{http://nextcloud.com/ns}room-seating-capacity' => $this->capacity !== null ? (string)$this->capacity : null,
-            // Address includes building name as prefix: "Poppodium, Kerkstraat 10"
-            // The frontend extracts the building name (before first comma) for grouping
-            '{http://nextcloud.com/ns}room-building-address' => ($this->address !== null && $this->address !== '') ? $this->address : null,
+            // Address includes building name as prefix: "Poppodium, Kerkstraat 10".
+            // Clients extract the building name (before the first comma) for grouping.
+            '{http://nextcloud.com/ns}room-building-address' => $this->normalizeAddress($this->address),
             // Room number in floor.room format: "2.17" (2nd floor, room 17)
             '{http://nextcloud.com/ns}room-building-room-number' => ($this->roomNumber !== null && $this->roomNumber !== '') ? $this->roomNumber : null,
             // Floor (e.g. "2", "B1") — explicit floor value for filtering.
@@ -106,11 +106,35 @@ class Room implements IRoom, IMetadataProvider {
         };
     }
 
+    /**
+     * Strip empty segments from an address before publishing it over CalDAV.
+     *
+     * Addresses are stored in a fixed four part format
+     * "Building, Street, PostalCode, City" so the room editor can split them
+     * back apart, which means an imported room without a building or street
+     * yields values like ", , 1098 XG, Amsterdam". That is an internal storage
+     * detail: clients get an address they can display, and derive the building
+     * name from, without having to guess which empty position means what.
+     */
+    private function normalizeAddress(?string $address): ?string {
+        if ($address === null || $address === '') {
+            return null;
+        }
+
+        $segments = array_filter(
+            array_map('trim', explode(',', $address)),
+            static fn (string $segment): bool => $segment !== '',
+        );
+
+        return $segments === [] ? null : implode(', ', $segments);
+    }
+
     private function buildDescription(): string {
         $parts = [$this->displayName];
 
-        if ($this->address !== null && $this->address !== '') {
-            $parts[] = "Address: {$this->address}";
+        $address = $this->normalizeAddress($this->address);
+        if ($address !== null) {
+            $parts[] = "Address: {$address}";
         }
 
         if ($this->roomNumber !== null && $this->roomNumber !== '') {
