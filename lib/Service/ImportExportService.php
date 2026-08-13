@@ -16,6 +16,32 @@ class ImportExportService {
         'facilities', 'description', 'autoAccept', 'active',
     ];
 
+    /**
+     * Lowercased RoomVox column name → canonical (camelCase) field name.
+     *
+     * CSV headers are matched case-insensitively, but the row is keyed by the
+     * canonical field name. Without this map a header like "roomNumber" was
+     * lowercased to "roomnumber", which matches no field, and the value was
+     * silently dropped — so RoomVox's own export could not be re-imported
+     * (issue #29). Derived from EXPORT_COLUMNS so the two cannot drift.
+     */
+    private const CANONICAL_FIELDS = [
+        'name' => 'name',
+        'email' => 'email',
+        'capacity' => 'capacity',
+        'roomnumber' => 'roomNumber',
+        'floor' => 'floor',
+        'roomtype' => 'roomType',
+        'building' => 'building',
+        'street' => 'street',
+        'postalcode' => 'postalCode',
+        'city' => 'city',
+        'facilities' => 'facilities',
+        'description' => 'description',
+        'autoaccept' => 'autoAccept',
+        'active' => 'active',
+    ];
+
     /** MS365 column name → RoomVox field mapping */
     private const MS365_COLUMN_MAP = [
         // Identity
@@ -298,7 +324,7 @@ class ImportExportService {
         if (in_array('name', $headerLower)) {
             $map = [];
             foreach ($header as $col) {
-                $map[$col] = strtolower($col);
+                $map[$col] = self::canonicalField($col);
             }
             return ['format' => 'roomvox', 'map' => $map];
         }
@@ -308,11 +334,7 @@ class ImportExportService {
             $map = [];
             foreach ($header as $col) {
                 $colLower = strtolower($col);
-                if (isset(self::MS365_COLUMN_MAP[$colLower])) {
-                    $map[$col] = self::MS365_COLUMN_MAP[$colLower];
-                } else {
-                    $map[$col] = $colLower;
-                }
+                $map[$col] = self::MS365_COLUMN_MAP[$colLower] ?? self::canonicalField($col);
             }
             return ['format' => 'ms365', 'map' => $map];
         }
@@ -321,13 +343,20 @@ class ImportExportService {
         $map = [];
         foreach ($header as $col) {
             $colLower = strtolower($col);
-            if (isset(self::MS365_COLUMN_MAP[$colLower])) {
-                $map[$col] = self::MS365_COLUMN_MAP[$colLower];
-            } else {
-                $map[$col] = $colLower;
-            }
+            $map[$col] = self::MS365_COLUMN_MAP[$colLower] ?? self::canonicalField($col);
         }
         return ['format' => 'unknown', 'map' => $map];
+    }
+
+    /**
+     * Resolve a CSV header to its canonical RoomVox field name.
+     *
+     * Falls back to the lowercased header so unknown columns keep the previous
+     * behaviour (they simply match no field and are ignored by mapRow()).
+     */
+    private static function canonicalField(string $column): string {
+        $lower = strtolower(trim($column));
+        return self::CANONICAL_FIELDS[$lower] ?? $lower;
     }
 
     /**
