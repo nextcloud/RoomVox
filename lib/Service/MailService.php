@@ -6,8 +6,10 @@ namespace OCA\RoomVox\Service;
 
 use OCA\RoomVox\AppInfo\Application;
 use OCP\IAppConfig;
+use OCP\IL10N;
 use OCP\IURLGenerator;
 use OCP\IUserManager;
+use OCP\L10N\IFactory;
 use OCP\Mail\IMailer;
 use OCP\Security\ICrypto;
 use Psr\Log\LoggerInterface;
@@ -17,6 +19,9 @@ use Symfony\Component\Mailer\Transport\Smtp\EsmtpTransport;
 use Symfony\Component\Mime\Email;
 
 class MailService {
+    /** @var array<string, IL10N> language code → translator */
+    private array $l10nCache = [];
+
     public function __construct(
         private IMailer $mailer,
         private IAppConfig $appConfig,
@@ -25,7 +30,73 @@ class MailService {
         private IUserManager $userManager,
         private IURLGenerator $urlGenerator,
         private LoggerInterface $logger,
+        private ?IFactory $l10nFactory = null,
     ) {
+    }
+
+    /**
+     * Translator for a recipient, by email address.
+     *
+     * Mails must arrive in the *recipient's* language, not the server's: the
+     * organizer, the room managers and the admin can each have a different one
+     * (issue #24). The address is resolved back to a Nextcloud account to read
+     * its configured language; external addresses fall back to the instance
+     * default, which is all we can know about them.
+     */
+    private function getL10nForEmail(string $email): IL10N {
+        $lang = null;
+
+        if ($email !== '' && $this->l10nFactory !== null) {
+            $users = $this->userManager->getByEmail($email);
+            if (count($users) === 1) {
+                $lang = $this->l10nFactory->getUserLanguage($users[0]);
+            }
+        }
+
+        return $this->getL10n($lang);
+    }
+
+    /**
+     * Translator for an explicit language (null = instance default).
+     */
+    private function getL10n(?string $lang = null): IL10N {
+        $key = $lang ?? '';
+        if (isset($this->l10nCache[$key])) {
+            return $this->l10nCache[$key];
+        }
+
+        if ($this->l10nFactory !== null) {
+            return $this->l10nCache[$key] = $this->l10nFactory->get(Application::APP_ID, $lang);
+        }
+
+        // No factory injected (unit tests): fall back to a pass-through so the
+        // mails stay readable English rather than blowing up.
+        return $this->l10nCache[$key] = new class implements IL10N {
+            public function t(string $text, $parameters = []): string {
+                if (!is_array($parameters)) {
+                    $parameters = [$parameters];
+                }
+                return $parameters === [] ? $text : vsprintf($text, $parameters);
+            }
+
+            public function n(string $text_singular, string $text_plural, int $count, array $parameters = []): string {
+                $text = $count === 1 ? $text_singular : $text_plural;
+                $text = str_replace('%n', (string)$count, $text);
+                return $parameters === [] ? $text : vsprintf($text, $parameters);
+            }
+
+            public function l(string $type, $data, array $options = []) {
+                return (string)$data;
+            }
+
+            public function getLanguageCode(): string {
+                return 'en';
+            }
+
+            public function getLocaleCode(): string {
+                return 'en_US';
+            }
+        };
     }
 
     /**
@@ -37,8 +108,9 @@ class MailService {
             return;
         }
 
-        $subject = "Booking confirmed: {$room['name']} — {$eventInfo['summary']}";
-        $body = $this->buildAcceptedBody($room, $eventInfo);
+        $l = $this->getL10nForEmail($eventInfo['organizerEmail']);
+        $subject = $l->t('Booking confirmed: %1$s — %2$s', [$room['name'], $eventInfo['summary']]);
+        $body = $this->buildAcceptedBody($l, $room, $eventInfo);
 
         $this->sendMail(
             $room,
@@ -57,8 +129,9 @@ class MailService {
             return;
         }
 
-        $subject = "Booking declined: {$room['name']} — {$eventInfo['summary']}";
-        $body = $this->buildDeclinedBody($room, $eventInfo);
+        $l = $this->getL10nForEmail($eventInfo['organizerEmail']);
+        $subject = $l->t('Booking declined: %1$s — %2$s', [$room['name'], $eventInfo['summary']]);
+        $body = $this->buildDeclinedBody($l, $room, $eventInfo);
 
         $this->sendMail(
             $room,
@@ -77,8 +150,9 @@ class MailService {
             return;
         }
 
-        $subject = "Booking not permitted: {$room['name']} — {$eventInfo['summary']}";
-        $body = $this->buildPermissionDeniedBody($room, $eventInfo);
+        $l = $this->getL10nForEmail($eventInfo['organizerEmail']);
+        $subject = $l->t('Booking not permitted: %1$s — %2$s', [$room['name'], $eventInfo['summary']]);
+        $body = $this->buildPermissionDeniedBody($l, $room, $eventInfo);
 
         $this->sendMail(
             $room,
@@ -101,10 +175,11 @@ class MailService {
         }
 
         $maxDays = (int)($room['maxBookingHorizon'] ?? 0);
+        $l = $this->getL10nForEmail($eventInfo['organizerEmail']);
         $subject = $maxDays > 0
-            ? "Booking declined: {$room['name']} — {$eventInfo['summary']} (exceeds {$maxDays}-day horizon)"
-            : "Booking declined: {$room['name']} — {$eventInfo['summary']}";
-        $body = $this->buildHorizonExceededBody($room, $eventInfo, $maxDays);
+            ? $l->t('Booking declined: %1$s — %2$s (exceeds %3$d-day horizon)', [$room['name'], $eventInfo['summary'], $maxDays])
+            : $l->t('Booking declined: %1$s — %2$s', [$room['name'], $eventInfo['summary']]);
+        $body = $this->buildHorizonExceededBody($l, $room, $eventInfo, $maxDays);
 
         $this->sendMail(
             $room,
@@ -124,8 +199,9 @@ class MailService {
             return;
         }
 
-        $subject = "Booking declined: {$room['name']} — outside availability hours";
-        $body = $this->buildAvailabilityViolationBody($room, $eventInfo);
+        $l = $this->getL10nForEmail($eventInfo['organizerEmail']);
+        $subject = $l->t('Booking declined: %s — outside availability hours', [$room['name']]);
+        $body = $this->buildAvailabilityViolationBody($l, $room, $eventInfo);
 
         $this->sendMail(
             $room,
@@ -145,8 +221,9 @@ class MailService {
             return;
         }
 
-        $subject = "Booking temporarily unavailable: {$room['name']}";
-        $body = $this->buildSyncInProgressBody($room, $eventInfo);
+        $l = $this->getL10nForEmail($eventInfo['organizerEmail']);
+        $subject = $l->t('Booking temporarily unavailable: %s', [$room['name']]);
+        $body = $this->buildSyncInProgressBody($l, $room, $eventInfo);
 
         $this->sendMail(
             $room,
@@ -165,8 +242,9 @@ class MailService {
             return;
         }
 
-        $subject = "Booking conflict: {$room['name']} — {$eventInfo['summary']}";
-        $body = $this->buildConflictBody($room, $eventInfo);
+        $l = $this->getL10nForEmail($eventInfo['organizerEmail']);
+        $subject = $l->t('Booking conflict: %1$s — %2$s', [$room['name'], $eventInfo['summary']]);
+        $body = $this->buildConflictBody($l, $room, $eventInfo);
 
         $this->sendMail(
             $room,
@@ -205,9 +283,8 @@ class MailService {
             return;
         }
 
-        $subject = "Booking request: {$room['name']} — {$eventInfo['summary']}";
-        $body = $this->buildApprovalRequestBody($room, $eventInfo);
-
+        // Each manager can have their own language, so subject and body are
+        // rendered per recipient rather than once for everyone (issue #24).
         foreach ($managerUserIds as $managerId) {
             $user = $this->userManager->get($managerId);
             if ($user === null) {
@@ -218,6 +295,12 @@ class MailService {
             if ($email === null || $email === '') {
                 continue;
             }
+
+            $l = $this->getL10n(
+                $this->l10nFactory !== null ? $this->l10nFactory->getUserLanguage($user) : null
+            );
+            $subject = $l->t('Booking request: %1$s — %2$s', [$room['name'], $eventInfo['summary']]);
+            $body = $this->buildApprovalRequestBody($l, $room, $eventInfo);
 
             $this->sendMail($room, $email, $subject, $body);
         }
@@ -232,18 +315,16 @@ class MailService {
             return;
         }
 
-        $subject = "Booking cancelled: {$room['name']} — {$eventInfo['summary']}";
-        $body = $this->buildCancelledBody($room, $eventInfo);
-
-        // Notify organizer
+        // Notify organizer, in their own language
+        $organizerL10n = $this->getL10nForEmail($eventInfo['organizerEmail']);
         $this->sendMail(
             $room,
             $eventInfo['organizerEmail'],
-            $subject,
-            $body,
+            $organizerL10n->t('Booking cancelled: %1$s — %2$s', [$room['name'], $eventInfo['summary']]),
+            $this->buildCancelledBody($organizerL10n, $room, $eventInfo),
         );
 
-        // Also notify managers
+        // Also notify managers — each in theirs
         $managerUserIds = $this->permissionService->getManagerUserIds($room['id']);
         foreach ($managerUserIds as $managerId) {
             $user = $this->userManager->get($managerId);
@@ -252,7 +333,15 @@ class MailService {
             }
             $email = $user->getEMailAddress();
             if ($email !== null && $email !== '') {
-                $this->sendMail($room, $email, $subject, $body);
+                $l = $this->getL10n(
+                    $this->l10nFactory !== null ? $this->l10nFactory->getUserLanguage($user) : null
+                );
+                $this->sendMail(
+                    $room,
+                    $email,
+                    $l->t('Booking cancelled: %1$s — %2$s', [$room['name'], $eventInfo['summary']]),
+                    $this->buildCancelledBody($l, $room, $eventInfo),
+                );
             }
         }
     }
@@ -264,8 +353,9 @@ class MailService {
     public function sendRespondAccepted(array $room, array $bookingData): void {
         $eventInfo = $this->bookingDataToEventInfo($bookingData);
 
-        $subject = "Booking confirmed: {$room['name']} — {$eventInfo['summary']}";
-        $body = $this->buildAcceptedBody($room, $eventInfo);
+        $l = $this->getL10nForEmail($eventInfo['organizerEmail']);
+        $subject = $l->t('Booking confirmed: %1$s — %2$s', [$room['name'], $eventInfo['summary']]);
+        $body = $this->buildAcceptedBody($l, $room, $eventInfo);
 
         $this->sendMail($room, $eventInfo['organizerEmail'], $subject, $body);
     }
@@ -277,8 +367,9 @@ class MailService {
     public function sendRespondDeclined(array $room, array $bookingData): void {
         $eventInfo = $this->bookingDataToEventInfo($bookingData);
 
-        $subject = "Booking declined: {$room['name']} — {$eventInfo['summary']}";
-        $body = $this->buildDeclinedBody($room, $eventInfo);
+        $l = $this->getL10nForEmail($eventInfo['organizerEmail']);
+        $subject = $l->t('Booking declined: %1$s — %2$s', [$room['name'], $eventInfo['summary']]);
+        $body = $this->buildDeclinedBody($l, $room, $eventInfo);
 
         $this->sendMail($room, $eventInfo['organizerEmail'], $subject, $body);
     }
@@ -301,9 +392,11 @@ class MailService {
             }
         }
 
-        $suffix = $occurrenceFormatted !== null ? ' (single occurrence)' : '';
-        $subject = "Booking cancelled: {$room['name']} — {$eventInfo['summary']}{$suffix}";
-        $body = $this->buildRespondCancelledBody($room, $eventInfo, $occurrenceFormatted);
+        $l = $this->getL10nForEmail($eventInfo['organizerEmail']);
+        $subject = $occurrenceFormatted !== null
+            ? $l->t('Booking cancelled: %1$s — %2$s (single occurrence)', [$room['name'], $eventInfo['summary']])
+            : $l->t('Booking cancelled: %1$s — %2$s', [$room['name'], $eventInfo['summary']]);
+        $body = $this->buildRespondCancelledBody($l, $room, $eventInfo, $occurrenceFormatted);
 
         $this->sendMail($room, $eventInfo['organizerEmail'], $subject, $body);
     }
@@ -333,11 +426,15 @@ class MailService {
      */
     public function sendTestEmail(array $room, string $recipientEmail): bool {
         try {
+            $l = $this->getL10nForEmail($recipientEmail);
             $this->sendMail(
                 $room,
                 $recipientEmail,
-                "Test email from {$room['name']}",
-                "This is a test email from the room booking system.\n\nRoom: {$room['name']}\nEmail: {$room['email']}\n\nIf you receive this, the SMTP configuration is working correctly."
+                $l->t('Test email from %s', [$room['name']]),
+                $l->t('This is a test email from the room booking system.') . "\n\n"
+                    . $l->t('Room: %s', [$room['name']]) . "\n"
+                    . $l->t('Email: %s', [$room['email']]) . "\n\n"
+                    . $l->t('If you receive this, the SMTP configuration is working correctly.')
             );
             return true;
         } catch (\Exception $e) {
@@ -495,79 +592,88 @@ class MailService {
         ];
     }
 
-    private function buildAcceptedBody(array $room, array $event): string {
-        return "Your booking has been confirmed.\n\n"
-            . "Room: {$room['name']}\n"
-            . "Event: {$event['summary']}\n"
-            . "Date: {$event['dtstartFormatted']} – {$event['dtendFormatted']}\n"
-            . "Organizer: {$event['organizerName']}\n\n"
-            . "The room has been reserved for your event.";
+    /**
+     * The "Room / Event / Date" block every mail opens with. Each label is a
+     * separate translatable string; the values are never translated.
+     */
+    private function buildEventBlock(IL10N $l, array $room, array $event): string {
+        return $l->t('Room: %s', [$room['name']]) . "\n"
+            . $l->t('Event: %s', [$event['summary']]) . "\n"
+            . $l->t('Date: %1$s – %2$s', [$event['dtstartFormatted'], $event['dtendFormatted']]) . "\n";
     }
 
-    private function buildDeclinedBody(array $room, array $event): string {
-        return "Your booking request has been declined.\n\n"
-            . "Room: {$room['name']}\n"
-            . "Event: {$event['summary']}\n"
-            . "Date: {$event['dtstartFormatted']} – {$event['dtendFormatted']}\n\n"
-            . "Please contact the room manager for more information.";
+    private function buildAcceptedBody(IL10N $l, array $room, array $event): string {
+        return $l->t('Your booking has been confirmed.') . "\n\n"
+            . $this->buildEventBlock($l, $room, $event)
+            . $l->t('Organizer: %s', [$event['organizerName']]) . "\n\n"
+            . $l->t('The room has been reserved for your event.');
     }
 
-    private function buildPermissionDeniedBody(array $room, array $event): string {
-        return "Your booking request was automatically declined because you do not have permission to book this room.\n\n"
-            . "Room: {$room['name']}\n"
-            . "Event: {$event['summary']}\n"
-            . "Date: {$event['dtstartFormatted']} – {$event['dtendFormatted']}\n\n"
-            . "Please contact your administrator if you believe this is an error.";
+    private function buildDeclinedBody(IL10N $l, array $room, array $event): string {
+        return $l->t('Your booking request has been declined.') . "\n\n"
+            . $this->buildEventBlock($l, $room, $event) . "\n"
+            . $l->t('Please contact the room manager for more information.');
     }
 
-    private function buildHorizonExceededBody(array $room, array $event, int $maxDays): string {
-        $explanation = "This room has restrictions on how far in advance it can be booked.";
+    private function buildPermissionDeniedBody(IL10N $l, array $room, array $event): string {
+        return $l->t('Your booking request was automatically declined because you do not have permission to book this room.') . "\n\n"
+            . $this->buildEventBlock($l, $room, $event) . "\n"
+            . $l->t('Please contact your administrator if you believe this is an error.');
+    }
+
+    private function buildHorizonExceededBody(IL10N $l, array $room, array $event, int $maxDays): string {
+        $explanation = $l->t('This room has restrictions on how far in advance it can be booked.');
         if ($maxDays > 0) {
             $cutoff = (new \DateTimeImmutable('+' . $maxDays . ' days'))->format('Y-m-d');
-            $explanation = "This room has a maximum booking horizon of {$maxDays} days.\n"
-                . "Bookings on or after {$cutoff} are not allowed.";
+            $explanation = $l->n(
+                'This room has a maximum booking horizon of %n day.',
+                'This room has a maximum booking horizon of %n days.',
+                $maxDays
+            ) . "\n" . $l->t('Bookings on or after %s are not allowed.', [$cutoff]);
         }
 
-        return "Your booking request could not be processed because it exceeds the room's booking horizon.\n\n"
-            . "Room: {$room['name']}\n"
-            . "Event: {$event['summary']}\n"
-            . "Date: {$event['dtstartFormatted']} – {$event['dtendFormatted']}\n\n"
+        return $l->t('Your booking request could not be processed because it exceeds the room\'s booking horizon.') . "\n\n"
+            . $this->buildEventBlock($l, $room, $event) . "\n"
             . $explanation . "\n\n"
-            . "Please choose a different date or contact the room manager.";
+            . $l->t('Please choose a different date or contact the room manager.');
     }
 
-    private function buildAvailabilityViolationBody(array $room, array $event): string {
-        $rulesSummary = $this->formatAvailabilityRules($room);
+    private function buildAvailabilityViolationBody(IL10N $l, array $room, array $event): string {
+        $rulesSummary = $this->formatAvailabilityRules($l, $room);
         $rulesBlock = $rulesSummary !== ''
-            ? "This room is available during:\n{$rulesSummary}\n\n"
+            ? $l->t('This room is available during:') . "\n{$rulesSummary}\n\n"
             : '';
 
-        return "Your booking request could not be processed because it falls outside the room's availability hours.\n\n"
-            . "Room: {$room['name']}\n"
-            . "Event: {$event['summary']}\n"
-            . "Date: {$event['dtstartFormatted']} – {$event['dtendFormatted']}\n\n"
+        return $l->t('Your booking request could not be processed because it falls outside the room\'s availability hours.') . "\n\n"
+            . $this->buildEventBlock($l, $room, $event) . "\n"
             . $rulesBlock
-            . "Please choose a time within the room's availability or contact the room manager.";
+            . $l->t('Please choose a time within the room\'s availability or contact the room manager.');
     }
 
-    private function buildSyncInProgressBody(array $room, array $event): string {
-        return "Your booking request could not be processed right now because the room is still being synchronized.\n\n"
-            . "Room: {$room['name']}\n"
-            . "Event: {$event['summary']}\n"
-            . "Date: {$event['dtstartFormatted']} – {$event['dtendFormatted']}\n\n"
-            . "This is a temporary state — please try again in a few minutes. If the problem persists, contact your administrator.";
+    private function buildSyncInProgressBody(IL10N $l, array $room, array $event): string {
+        return $l->t('Your booking request could not be processed right now because the room is still being synchronized.') . "\n\n"
+            . $this->buildEventBlock($l, $room, $event) . "\n"
+            . $l->t('This is a temporary state — please try again in a few minutes. If the problem persists, contact your administrator.');
     }
 
     /**
      * Format the room's availability rules as a human-readable summary,
      * e.g. "Mon–Fri 09:00–17:00\nSat 10:00–14:00".
      */
-    private function formatAvailabilityRules(array $room): string {
+    private function formatAvailabilityRules(IL10N $l, array $room): string {
         $rules = $room['availabilityRules']['rules'] ?? [];
         if (empty($rules)) {
             return '';
         }
-        $dayLabels = ['mon' => 'Mon', 'tue' => 'Tue', 'wed' => 'Wed', 'thu' => 'Thu', 'fri' => 'Fri', 'sat' => 'Sat', 'sun' => 'Sun'];
+        $dayLabels = [
+            'mon' => $l->t('Mon'),
+            'tue' => $l->t('Tue'),
+            'wed' => $l->t('Wed'),
+            'thu' => $l->t('Thu'),
+            'fri' => $l->t('Fri'),
+            'sat' => $l->t('Sat'),
+            'sun' => $l->t('Sun'),
+        ];
         $lines = [];
         foreach ($rules as $rule) {
             $days = array_map(fn($d) => $dayLabels[strtolower((string)$d)] ?? (string)$d, $rule['days'] ?? []);
@@ -581,51 +687,43 @@ class MailService {
         return implode("\n", $lines);
     }
 
-    private function buildConflictBody(array $room, array $event): string {
-        return "Your booking could not be processed due to a scheduling conflict.\n\n"
-            . "Room: {$room['name']}\n"
-            . "Event: {$event['summary']}\n"
-            . "Date: {$event['dtstartFormatted']} – {$event['dtendFormatted']}\n\n"
-            . "The room is already booked for this time slot. Please choose a different time.";
+    private function buildConflictBody(IL10N $l, array $room, array $event): string {
+        return $l->t('Your booking could not be processed due to a scheduling conflict.') . "\n\n"
+            . $this->buildEventBlock($l, $room, $event) . "\n"
+            . $l->t('The room is already booked for this time slot. Please choose a different time.');
     }
 
-    private function buildApprovalRequestBody(array $room, array $event): string {
+    private function buildApprovalRequestBody(IL10N $l, array $room, array $event): string {
         $settingsUrl = $this->urlGenerator->getAbsoluteURL('/settings/user/' . Application::APP_ID);
 
-        return "A new booking request requires your approval.\n\n"
-            . "Room: {$room['name']}\n"
-            . "Event: {$event['summary']}\n"
-            . "Date: {$event['dtstartFormatted']} – {$event['dtendFormatted']}\n"
-            . "Requested by: {$event['organizerName']} ({$event['organizerEmail']})\n\n"
-            . "Review and respond:\n{$settingsUrl}\n\n"
-            . "Log in to approve or decline this booking request.";
+        return $l->t('A new booking request requires your approval.') . "\n\n"
+            . $this->buildEventBlock($l, $room, $event)
+            . $l->t('Requested by: %1$s (%2$s)', [$event['organizerName'], $event['organizerEmail']]) . "\n\n"
+            . $l->t('Review and respond:') . "\n{$settingsUrl}\n\n"
+            . $l->t('Log in to approve or decline this booking request.');
     }
 
-    private function buildCancelledBody(array $room, array $event): string {
-        return "A booking has been cancelled.\n\n"
-            . "Room: {$room['name']}\n"
-            . "Event: {$event['summary']}\n"
-            . "Date: {$event['dtstartFormatted']} – {$event['dtendFormatted']}\n"
-            . "Cancelled by: {$event['organizerName']}\n\n"
-            . "The room is now available for this time slot.";
+    private function buildCancelledBody(IL10N $l, array $room, array $event): string {
+        return $l->t('A booking has been cancelled.') . "\n\n"
+            . $this->buildEventBlock($l, $room, $event)
+            . $l->t('Cancelled by: %s', [$event['organizerName']]) . "\n\n"
+            . $l->t('The room is now available for this time slot.');
     }
 
-    private function buildRespondCancelledBody(array $room, array $event, ?string $occurrenceFormatted = null): string {
+    private function buildRespondCancelledBody(IL10N $l, array $room, array $event, ?string $occurrenceFormatted = null): string {
         if ($occurrenceFormatted !== null) {
-            return "A single occurrence of your recurring booking has been cancelled by a room manager.\n\n"
-                . "Room: {$room['name']}\n"
-                . "Event: {$event['summary']}\n"
-                . "Cancelled occurrence: {$occurrenceFormatted}\n\n"
-                . "The recurring series continues as scheduled; only this one occurrence has been removed.\n"
-                . "If you still need this room for the cancelled time, please make a new booking or contact the room manager.";
+            return $l->t('A single occurrence of your recurring booking has been cancelled by a room manager.') . "\n\n"
+                . $l->t('Room: %s', [$room['name']]) . "\n"
+                . $l->t('Event: %s', [$event['summary']]) . "\n"
+                . $l->t('Cancelled occurrence: %s', [$occurrenceFormatted]) . "\n\n"
+                . $l->t('The recurring series continues as scheduled; only this one occurrence has been removed.') . "\n"
+                . $l->t('If you still need this room for the cancelled time, please make a new booking or contact the room manager.');
         }
 
-        return "Your booking has been cancelled by a room manager.\n\n"
-            . "Room: {$room['name']}\n"
-            . "Event: {$event['summary']}\n"
-            . "Date: {$event['dtstartFormatted']} – {$event['dtendFormatted']}\n\n"
-            . "The room has been released and is no longer reserved for your event.\n"
-            . "If you still need this room, please make a new booking or contact the room manager.";
+        return $l->t('Your booking has been cancelled by a room manager.') . "\n\n"
+            . $this->buildEventBlock($l, $room, $event) . "\n"
+            . $l->t('The room has been released and is no longer reserved for your event.') . "\n"
+            . $l->t('If you still need this room, please make a new booking or contact the room manager.');
     }
 
 }

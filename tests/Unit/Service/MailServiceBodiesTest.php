@@ -35,9 +35,17 @@ class MailServiceBodiesTest extends TestCase {
         );
     }
 
+    /**
+     * Body builders take an IL10N first (issue #24). No IFactory is injected
+     * here, so getL10n() hands back the pass-through translator and the
+     * assertions below still read the English source strings.
+     */
     private function callBody(string $name, ...$args): string {
+        $l10n = new \ReflectionMethod($this->service, 'getL10n');
+        $l = $l10n->invoke($this->service, null);
+
         $method = new \ReflectionMethod($this->service, $name);
-        return $method->invoke($this->service, ...$args);
+        return $method->invoke($this->service, $l, ...$args);
     }
 
     private function sampleEvent(): array {
