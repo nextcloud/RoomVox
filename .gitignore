@@ -16,3 +16,12 @@ seed-bookings.sh
 *.env
 *.tar.gz
 deploy.conf
+
+# l10n build artefacts. en.json/en.js are generated from the source by
+# scripts/extract-en-json.js — the POT template is the translation source of
+# truth, and the Nextcloud sync-bot removes en.json from the repo after a sync.
+# NOTE: l10n/.source-count.json and l10n/.source-strings.json ARE committed on
+# purpose — scripts/check-l10n-sync.js compares against them to catch source
+# strings that never made it into the POT.
+l10n/en.json
+l10n/en.js

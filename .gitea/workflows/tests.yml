@@ -45,3 +45,23 @@ jobs:
 
       - name: Build
         run: npm run build
+
+  # Backstop for the l10n source-string guard. The primary defence is the
+  # prebuild hook on `npm run build`; this catches a commit that reaches main
+  # without a local build, so new strings cannot silently miss the Transifex
+  # push. Check-only: it never writes, commits or pushes.
+  l10n:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # Pure Node, no dependencies: extract-en-json.js scans src/ and lib/ with
+      # plain regexes and needs neither xgettext nor node_modules.
+      - name: Check l10n source strings are in sync with the manifest
+        run: node scripts/check-l10n-sync.js

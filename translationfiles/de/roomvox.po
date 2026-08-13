@@ -1,0 +1,1424 @@
+# RoomVox de translation.
+# Carried over from the pre-Transifex l10n/de.json bundle.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: RoomVox 1.2.2\n"
+"Report-Msgid-Bugs-To: translations@nextcloud.com\n"
+"PO-Revision-Date: 2026-08-13 00:00+0000\n"
+"Last-Translator: RoomVox <translations@nextcloud.com>\n"
+"Language-Team: de\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: de\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "(saved — enter new value to change)"
+msgstr ""
+
+msgid "{count} rooms found"
+msgstr "{count} Räume gefunden"
+
+msgid "{create} new, {update} existing, {errors} errors"
+msgstr "{create} neu, {update} vorhanden, {errors} Fehler"
+
+msgid "+ Add Rule"
+msgstr "+ Regel hinzufügen"
+
+msgid "A booking has been cancelled."
+msgstr ""
+
+msgid "A new booking request requires your approval."
+msgstr ""
+
+msgid "A single occurrence of your recurring booking has been cancelled by a room manager."
+msgstr ""
+
+msgid "A unique email is auto-generated for CalDAV scheduling. Only change this if you need a specific address."
+msgstr "Eine eindeutige E-Mail-Adresse wird automatisch für die CalDAV-Planung generiert. Ändern Sie diese nur, wenn Sie eine bestimmte Adresse benötigen."
+
+msgid "A unique hash of your instance URL (privacy-friendly identifier)"
+msgstr "Ein eindeutiger Hash Ihrer Instanz-URL (datenschutzfreundliche Kennung)"
+
+msgid "About RoomVox"
+msgstr "Über RoomVox"
+
+msgid "Accept"
+msgstr "Akzeptieren"
+
+msgid "Accepted"
+msgstr "Akzeptiert"
+
+msgid "Action"
+msgstr "Aktion"
+
+msgid "Actions"
+msgstr "Aktionen"
+
+msgid "Active"
+msgstr "Aktiv"
+
+msgid "Active development"
+msgstr "Aktive Entwicklung"
+
+msgid "Active Rooms"
+msgstr "Aktive Räume"
+
+msgid "Add"
+msgstr "Hinzufügen"
+
+msgid "Address"
+msgstr "Adresse"
+
+msgid "Admin"
+msgstr "Administrator"
+
+msgid "All"
+msgstr "Alle"
+
+msgid "All booking requests have been processed"
+msgstr "Alle Buchungsanfragen wurden bearbeitet"
+
+msgid "All booking requests have been processed."
+msgstr "Alle Buchungsanfragen wurden bearbeitet."
+
+msgid "All day"
+msgstr ""
+
+msgid "All rooms"
+msgstr "Alle Räume"
+
+msgid "Anonymous Usage Statistics"
+msgstr "Anonyme Nutzungsstatistiken"
+
+msgid "Anonymous usage statistics help us understand how RoomVox is used and guide future development."
+msgstr "Anonyme Nutzungsstatistiken helfen uns zu verstehen, wie RoomVox verwendet wird, und leiten die zukünftige Entwicklung."
+
+msgid "Anyone with this URL can see the titles and organizers of all bookings for this room. Only share it with people or systems you trust. If a URL leaks, regenerate it below."
+msgstr ""
+
+msgid "API token created"
+msgstr "API-Token erstellt"
+
+msgid "API token deleted"
+msgstr "API-Token gelöscht"
+
+msgid "API Tokens"
+msgstr "API-Tokens"
+
+msgid "App registration client ID"
+msgstr ""
+
+msgid "App registration client secret"
+msgstr ""
+
+msgid "Approvals"
+msgstr "Genehmigungen"
+
+msgid "Are you sure you want to cancel this booking? The booker will be notified by email."
+msgstr "Möchten Sie diese Buchung wirklich stornieren? Die buchende Person wird per E-Mail benachrichtigt."
+
+msgid "Are you sure you want to delete this room group? Rooms in this group will become ungrouped. This only works if no rooms are assigned."
+msgstr "Sind Sie sicher, dass Sie diese Raumgruppe löschen möchten? Räume in dieser Gruppe werden nicht mehr gruppiert. Dies funktioniert nur, wenn keine Räume zugewiesen sind."
+
+msgid "Are you sure you want to delete this room? This action cannot be undone."
+msgstr "Sind Sie sicher, dass Sie diesen Raum löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden."
+
+msgid "Auto-accept"
+msgstr "Auto-Akzeptieren"
+
+msgid "Auto-accept bookings (no manual approval required)"
+msgstr "Buchungen automatisch akzeptieren (keine manuelle Genehmigung erforderlich)"
+
+msgid "Auto-accept bookings by default for new rooms"
+msgstr "Buchungen für neue Räume standardmäßig automatisch akzeptieren"
+
+msgid "Availability"
+msgstr "Verfügbarkeit"
+
+msgid "Azure AD Tenant ID"
+msgstr ""
+
+msgid "Back"
+msgstr "Zurück"
+
+msgid "Booker"
+msgstr "Bucher"
+
+msgid "Bookers"
+msgstr "Bucher"
+
+msgid "Booking accepted"
+msgstr "Buchung akzeptiert"
+
+msgid "Booking cancelled"
+msgstr "Buchung storniert"
+
+msgid "Booking cancelled: %1$s — %2$s"
+msgstr ""
+
+msgid "Booking cancelled: %1$s — %2$s (single occurrence)"
+msgstr ""
+
+msgid "Booking confirmed: %1$s — %2$s"
+msgstr ""
+
+msgid "Booking conflict: %1$s — %2$s"
+msgstr ""
+
+msgid "Booking created successfully"
+msgstr "Buchung erfolgreich erstellt"
+
+msgid "Booking declined"
+msgstr "Buchung abgelehnt"
+
+msgid "Booking declined: %1$s — %2$s"
+msgstr ""
+
+msgid "Booking declined: %1$s — %2$s (exceeds %3$d-day horizon)"
+msgstr ""
+
+msgid "Booking declined: %s — outside availability hours"
+msgstr ""
+
+msgid "Booking Details"
+msgstr "Buchungsdetails"
+
+msgid "Booking details or attendees"
+msgstr "Buchungsdetails oder Teilnehmer"
+
+msgid "Booking not permitted: %1$s — %2$s"
+msgstr ""
+
+msgid "Booking request: %1$s — %2$s"
+msgstr ""
+
+msgid "Booking rescheduled"
+msgstr "Buchung verschoben"
+
+msgid "Booking temporarily unavailable: %s"
+msgstr ""
+
+msgid "Booking updated"
+msgstr "Buchung aktualisiert"
+
+msgid "Bookings"
+msgstr "Buchungen"
+
+msgid "Bookings on or after %s are not allowed."
+msgstr ""
+
+msgid "Building"
+msgstr "Gebäude"
+
+msgid "Calendar view"
+msgstr "Kalenderansicht"
+
+msgid "Cancel"
+msgstr "Abbrechen"
+
+msgid "Cancel booking"
+msgstr "Buchung stornieren"
+
+msgid "Cancelled by: %s"
+msgstr ""
+
+msgid "Cancelled occurrence: %s"
+msgstr ""
+
+msgid "Cannot delete: this facility is in use"
+msgstr "Kann nicht gelöscht werden: diese Ausstattung wird verwendet"
+
+msgid "Cannot delete: this room type is in use"
+msgstr "Löschen nicht möglich: Dieser Raumtyp wird verwendet"
+
+msgid "Capacity"
+msgstr "Kapazität"
+
+msgid "Capacity cannot be negative"
+msgstr "Kapazität darf nicht negativ sein"
+
+msgid "Choose file"
+msgstr "Datei auswählen"
+
+msgid "City"
+msgstr "Stadt"
+
+msgid "Client ID"
+msgstr ""
+
+msgid "Client Secret"
+msgstr ""
+
+msgid "Close"
+msgstr "Schließen"
+
+msgid "Column names are automatically detected and mapped."
+msgstr "Spaltennamen werden automatisch erkannt und zugeordnet."
+
+msgid "Configure the available facilities for rooms. Facilities that are in use cannot be deleted."
+msgstr "Konfigurieren Sie die verfügbare Ausstattung für Räume. Ausstattung die verwendet wird kann nicht gelöscht werden."
+
+msgid "Configure the available room types. Types that are in use cannot be deleted."
+msgstr "Konfigurieren Sie die verfügbaren Raumtypen. Typen, die verwendet werden, können nicht gelöscht werden."
+
+msgid "Connect RoomVox to Microsoft 365 Exchange to sync room calendars. Requires an Azure AD app registration with Calendars.ReadWrite and User.Read.All application permissions."
+msgstr ""
+
+msgid "Connection failed"
+msgstr ""
+
+msgid "Connection successful"
+msgstr ""
+
+msgid "Copied"
+msgstr ""
+
+msgid "Copied!"
+msgstr "Kopiert!"
+
+msgid "Copy"
+msgstr "Kopieren"
+
+msgid "Could not copy to clipboard"
+msgstr ""
+
+msgid "Could not reach the telemetry server. Please try again later."
+msgstr "Der Telemetrie-Server ist nicht erreichbar. Bitte versuchen Sie es später erneut."
+
+msgid "Create Booking"
+msgstr "Buchung erstellen"
+
+msgid "Create Group"
+msgstr "Gruppe erstellen"
+
+msgid "Create new + update existing rooms"
+msgstr "Neue erstellen + vorhandene aktualisieren"
+
+msgid "Create Room"
+msgstr "Raum erstellen"
+
+msgid "Create token"
+msgstr "Token erstellen"
+
+msgid "Create your first room to get started"
+msgstr "Erstellen Sie Ihren ersten Raum, um zu beginnen"
+
+msgid "Created"
+msgstr "Erstellt"
+
+msgid "Custom email address"
+msgstr "Benutzerdefinierte E-Mail-Adresse"
+
+msgid "Date"
+msgstr "Datum"
+
+msgid "Date: %1$s – %2$s"
+msgstr ""
+
+msgid "Day"
+msgstr "Tag"
+
+msgid "days"
+msgstr "Tage"
+
+msgid "Days"
+msgstr "Tage"
+
+msgid "Decline"
+msgstr "Ablehnen"
+
+msgid "Declined"
+msgstr "Abgelehnt"
+
+msgid "Delete"
+msgstr "Löschen"
+
+msgid "Delete Group"
+msgstr "Gruppe löschen"
+
+msgid "Delete Room"
+msgstr "Raum löschen"
+
+msgid "Delete Room Group"
+msgstr "Raumgruppe löschen"
+
+msgid "Description"
+msgstr "Beschreibung"
+
+msgid "Detected format:"
+msgstr "Erkanntes Format:"
+
+msgid "Direct support from the developers"
+msgstr "Direkter Support von den Entwicklern"
+
+msgid "Done"
+msgstr "Fertig"
+
+msgid "Download all rooms as a CSV file. This file can be imported into another RoomVox instance or edited in Excel/LibreOffice."
+msgstr "Laden Sie alle Räume als CSV-Datei herunter. Diese Datei kann in eine andere RoomVox-Installation importiert oder in Excel/LibreOffice bearbeitet werden."
+
+msgid "Download an example file with headers and a sample row"
+msgstr "Laden Sie eine Beispieldatei mit Spaltenüberschriften und einer Beispielzeile herunter"
+
+msgid "Download sample CSV"
+msgstr "Beispiel-CSV herunterladen"
+
+msgid "Drag and drop a CSV file here"
+msgstr "CSV-Datei hierher ziehen"
+
+msgid "e.g. 12345678-abcd-..."
+msgstr ""
+
+msgid "e.g. 2"
+msgstr ""
+
+msgid "e.g. 2.17 (floor.room)"
+msgstr "z. B. 2.17 (Etage.Raum)"
+
+msgid "e.g. 3584 CS"
+msgstr "z. B. 3584 CS"
+
+msgid "e.g. 90"
+msgstr "z. B. 90"
+
+msgid "e.g. anne@voxcloud.nl or 'Ask building manager'"
+msgstr "z.B. anne@voxcloud.de oder 'Hausmeister fragen'"
+
+msgid "e.g. Building A"
+msgstr "z. B. Gebäude A"
+
+msgid "e.g. conference-room@company.com"
+msgstr ""
+
+msgid "e.g. Floor 3"
+msgstr "z. B. Etage 3"
+
+msgid "e.g. Heidelberglaan 8"
+msgstr "z. B. Heidelberglaan 8"
+
+msgid "e.g. Meeting Room 1"
+msgstr "z. B. Besprechungsraum 1"
+
+msgid "e.g. RVOX-XXXX-XXXX-XXXX-XXXX"
+msgstr "z.B. RVOX-XXXX-XXXX-XXXX-XXXX"
+
+msgid "e.g. smtp.company.com"
+msgstr "z. B. smtp.firma.de"
+
+msgid "e.g. Utrecht"
+msgstr "z. B. Utrecht"
+
+msgid "Edit"
+msgstr "Bearbeiten"
+
+msgid "Edit Group"
+msgstr "Gruppe bearbeiten"
+
+msgid "Edit Room"
+msgstr "Raum bearbeiten"
+
+msgid "Edit Room Group"
+msgstr "Raumgruppe bearbeiten"
+
+msgid "Email"
+msgstr "E-Mail"
+
+msgid "Email address"
+msgstr "E-Mail-Adresse"
+
+msgid "Email support"
+msgstr "E-Mail-Support"
+
+msgid "Email: %s"
+msgstr ""
+
+msgid "Enable email notifications"
+msgstr "E-Mail-Benachrichtigungen aktivieren"
+
+msgid "Enable Exchange calendar sync"
+msgstr ""
+
+msgid "Enable Exchange calendar sync for imported rooms"
+msgstr ""
+
+msgid "Enable external feed"
+msgstr ""
+
+msgid "Enable sync for this room"
+msgstr ""
+
+msgid "Encryption"
+msgstr "Verschlüsselung"
+
+msgid "End time"
+msgstr "Endzeit"
+
+msgid "End time must be after start time"
+msgstr "Endzeit muss nach der Startzeit liegen"
+
+msgid "Entire series"
+msgstr "Gesamte Reihe"
+
+msgid "Error"
+msgstr "Fehler"
+
+msgid "Errors"
+msgstr "Fehler"
+
+msgid "Event"
+msgstr "Ereignis"
+
+msgid "Event: %s"
+msgstr ""
+
+msgid "Everything in book + manage rooms and view statistics"
+msgstr "Alles aus book + Räume verwalten und Statistiken anzeigen"
+
+msgid "Everything in read + create and cancel bookings"
+msgstr "Alles aus read + Buchungen erstellen und stornieren"
+
+msgid "Exchange Calendar Sync"
+msgstr ""
+
+msgid "Exchange calendar synced successfully"
+msgstr ""
+
+msgid "Exchange resource email"
+msgstr ""
+
+msgid "Exchange sync queued..."
+msgstr ""
+
+msgid "Export CSV"
+msgstr "CSV exportieren"
+
+msgid "Export Rooms"
+msgstr "Räume exportieren"
+
+msgid "Exported from another RoomVox installation"
+msgstr "Exportiert aus einer anderen RoomVox-Installation"
+
+msgid "Exported via PowerShell (Get-EXOMailbox | Get-Place | Export-Csv)"
+msgstr "Exportiert über PowerShell (Get-EXOMailbox | Get-Place | Export-Csv)"
+
+msgid "External calendar feed"
+msgstr ""
+
+msgid "Facilities"
+msgstr "Ausstattung"
+
+msgid "Failed to cancel booking"
+msgstr "Stornieren der Buchung fehlgeschlagen"
+
+msgid "Failed to copy token"
+msgstr "Token konnte nicht kopiert werden"
+
+msgid "Failed to create API token"
+msgstr "API-Token konnte nicht erstellt werden"
+
+msgid "Failed to delete API token"
+msgstr "API-Token konnte nicht gelöscht werden"
+
+msgid "Failed to delete room"
+msgstr "Raum konnte nicht gelöscht werden"
+
+msgid "Failed to delete room group"
+msgstr "Raumgruppe konnte nicht gelöscht werden"
+
+msgid "Failed to load approvals"
+msgstr "Genehmigungen konnten nicht geladen werden"
+
+msgid "Failed to load bookings"
+msgstr "Buchungen konnten nicht geladen werden"
+
+msgid "Failed to load permissions"
+msgstr "Berechtigungen konnten nicht geladen werden"
+
+msgid "Failed to load rooms"
+msgstr "Räume konnten nicht geladen werden"
+
+msgid "Failed to move room"
+msgstr "Raum konnte nicht verschoben werden"
+
+msgid "Failed to parse CSV file"
+msgstr "CSV-Datei konnte nicht verarbeitet werden"
+
+msgid "Failed to process response"
+msgstr "Antwort konnte nicht verarbeitet werden"
+
+msgid "Failed to queue sync"
+msgstr ""
+
+msgid "Failed to regenerate feed"
+msgstr ""
+
+msgid "Failed to remove subscription key"
+msgstr "Entfernen des Abonnementschlüssels fehlgeschlagen"
+
+msgid "Failed to reschedule booking"
+msgstr "Buchung konnte nicht verschoben werden"
+
+msgid "Failed to respond to booking"
+msgstr "Antwort auf Buchung fehlgeschlagen"
+
+msgid "Failed to save Exchange settings"
+msgstr ""
+
+msgid "Failed to save permissions"
+msgstr "Berechtigungen konnten nicht gespeichert werden"
+
+msgid "Failed to save room"
+msgstr "Raum konnte nicht gespeichert werden"
+
+msgid "Failed to save room group"
+msgstr "Raumgruppe konnte nicht gespeichert werden"
+
+msgid "Failed to save settings"
+msgstr "Einstellungen konnten nicht gespeichert werden"
+
+msgid "Failed to save subscription key"
+msgstr "Speichern des Abonnementschlüssels fehlgeschlagen"
+
+msgid "Failed to send report"
+msgstr "Bericht konnte nicht gesendet werden"
+
+msgid "Failed to update booking"
+msgstr "Buchung konnte nicht aktualisiert werden"
+
+msgid "Failed to update feed"
+msgstr ""
+
+msgid "Failed to update telemetry setting"
+msgstr "Telemetrie-Einstellung konnte nicht aktualisiert werden"
+
+msgid "Feed URL"
+msgstr ""
+
+msgid "Floor"
+msgstr "Etage"
+
+msgid "Fri"
+msgstr "Fr"
+
+msgid "From"
+msgstr "Von"
+
+msgid "General"
+msgstr "Allgemein"
+
+msgid "Group name"
+msgstr "Gruppenname"
+
+msgid "Group name is required"
+msgstr "Gruppenname ist erforderlich"
+
+msgid "Groups that can see and book the room. Bookings follow the auto-accept or approval workflow."
+msgstr "Gruppen, die den Raum sehen und buchen können. Buchungen folgen dem automatischen Akzeptier- oder Genehmigungsablauf."
+
+msgid "Groups that can see the room in their calendar, but cannot book."
+msgstr "Gruppen, die den Raum in ihrem Kalender sehen, aber nicht buchen können."
+
+msgid "Groups that can see, book, and manage the room. Members receive approval requests and can accept/decline bookings."
+msgstr "Gruppen, die den Raum sehen, buchen und verwalten können. Mitglieder erhalten Genehmigungsanfragen und können Buchungen akzeptieren oder ablehnen."
+
+msgid "Guaranteed compatibility"
+msgstr "Garantierte Kompatibilität"
+
+msgid "Help improve RoomVox by sharing anonymous usage statistics."
+msgstr "Helfen Sie, RoomVox zu verbessern, indem Sie anonyme Nutzungsstatistiken teilen."
+
+msgid "Hide email settings"
+msgstr "E-Mail-Einstellungen ausblenden"
+
+msgid "If RoomVox is valuable to your organization, consider subscribing. Your subscription funds active development, guaranteed Nextcloud compatibility, and email support."
+msgstr "Wenn RoomVox für Ihre Organisation wertvoll ist, erwägen Sie ein Abonnement. Ihr Abonnement finanziert aktive Entwicklung, garantierte Nextcloud-Kompatibilität und E-Mail-Support."
+
+msgid "If you receive this, the SMTP configuration is working correctly."
+msgstr ""
+
+msgid "If you still need this room for the cancelled time, please make a new booking or contact the room manager."
+msgstr ""
+
+msgid "If you still need this room, please make a new booking or contact the room manager."
+msgstr ""
+
+msgid "Import"
+msgstr "Importieren"
+
+msgid "Import / Export"
+msgstr "Import / Export"
+
+msgid "Import failed"
+msgstr "Import fehlgeschlagen"
+
+msgid "Import mode:"
+msgstr "Importmodus:"
+
+msgid "Import Rooms"
+msgstr "Räume importieren"
+
+msgid "Importing..."
+msgstr "Importieren..."
+
+msgid "Inactive"
+msgstr "Inaktiv"
+
+msgid "inherited"
+msgstr "geerbt"
+
+msgid "Inherited from group"
+msgstr "Von Gruppe geerbt"
+
+msgid "Initial sync failed:"
+msgstr ""
+
+msgid "Invalid date/time selection"
+msgstr "Ungültige Datums-/Zeitauswahl"
+
+msgid "Invalid email address"
+msgstr "Ungültige E-Mail-Adresse"
+
+msgid "Issues"
+msgstr "Probleme"
+
+msgid "Keep"
+msgstr "Behalten"
+
+msgid "Last error:"
+msgstr ""
+
+msgid "Last report"
+msgstr "Letzter Bericht"
+
+msgid "Last report sent:"
+msgstr "Letzter Bericht gesendet:"
+
+msgid "Last synced:"
+msgstr ""
+
+msgid "Last used"
+msgstr "Zuletzt verwendet"
+
+msgid "Learn more about RoomVox"
+msgstr "Mehr über RoomVox erfahren"
+
+msgid "Leave empty for auto-generated address"
+msgstr "Leer lassen für automatisch generierte Adresse"
+
+msgid "Leave empty to keep current"
+msgstr "Leer lassen, um das aktuelle Passwort beizubehalten"
+
+msgid "Limit how far in advance bookings can be made. Recurring events that extend beyond this limit will be declined. Set to 0 for no limit."
+msgstr "Legen Sie fest, wie weit im Voraus Buchungen vorgenommen werden können. Wiederkehrende Termine, die über dieses Limit hinausgehen, werden abgelehnt. Auf 0 setzen für kein Limit."
+
+msgid "Line {line}"
+msgstr "Zeile {line}"
+
+msgid "Links each room to its MS365 mailbox for bidirectional calendar sync. Requires Exchange sync to be configured in settings."
+msgstr ""
+
+msgid "List view"
+msgstr "Listenansicht"
+
+msgid "Location"
+msgstr "Standort"
+
+msgid "Log in to approve or decline this booking request."
+msgstr ""
+
+msgid "Manage API tokens for external integrations. Tokens allow external systems to access the RoomVox API."
+msgstr "Verwalten Sie API-Tokens für externe Integrationen. Tokens ermöglichen externen Systemen den Zugriff auf die RoomVox-API."
+
+msgid "Manage Permissions"
+msgstr "Berechtigungen verwalten"
+
+msgid "Manager"
+msgstr "Manager"
+
+msgid "Managers"
+msgstr "Verwalter"
+
+msgid "Map this room to a Microsoft 365 Exchange room resource. Bookings will be synced bidirectionally."
+msgstr ""
+
+msgid "Matches: {name}"
+msgstr "Übereinstimmung: {name}"
+
+msgid "Max inline sync per request"
+msgstr ""
+
+msgid "Max inline syncs per 10 sec (default: 5)"
+msgstr ""
+
+msgid "Maximum booking horizon"
+msgstr "Maximaler Buchungshorizont"
+
+msgid "Meeting name"
+msgstr "Name der Besprechung"
+
+msgid "Microsoft Exchange Sync"
+msgstr ""
+
+msgid "Mon"
+msgstr "Mo"
+
+msgid "Month"
+msgstr "Monat"
+
+msgid "My Rooms"
+msgstr "Meine Räume"
+
+msgid "Name"
+msgstr "Name"
+
+msgid "Needs action"
+msgstr "Aktion erforderlich"
+
+msgid "New"
+msgstr "Neu"
+
+msgid "New Booking"
+msgstr "Neue Buchung"
+
+msgid "New facility..."
+msgstr "Neue Ausstattung..."
+
+msgid "New features and improvements"
+msgstr "Neue Funktionen und Verbesserungen"
+
+msgid "New Group"
+msgstr "Neue Gruppe"
+
+msgid "New Room"
+msgstr "Neuer Raum"
+
+msgid "New Room Group"
+msgstr "Neue Raumgruppe"
+
+msgid "New room type..."
+msgstr "Neuer Raumtyp..."
+
+msgid "Nextcloud Enterprise subscription detected on this instance. Contact us at info@voxcloud.nl for enterprise pricing tailored to your organization."
+msgstr ""
+
+msgid "No"
+msgstr "Nein"
+
+msgid "No {role} configured"
+msgstr "Keine {role} konfiguriert"
+
+msgid "No accepted bookings"
+msgstr "Keine akzeptierten Buchungen"
+
+msgid "No API tokens created yet."
+msgstr "Noch keine API-Tokens erstellt."
+
+msgid "No bookings"
+msgstr "Keine Buchungen"
+
+msgid "No declined bookings"
+msgstr "Keine abgelehnten Buchungen"
+
+msgid "No events found for the selected filters"
+msgstr "Keine Ereignisse für die ausgewählten Filter gefunden"
+
+msgid "No group"
+msgstr "Keine Gruppe"
+
+msgid "No matching rooms"
+msgstr "Keine passenden Räume"
+
+msgid "No pending approvals"
+msgstr "Keine ausstehenden Genehmigungen"
+
+msgid "No pending bookings"
+msgstr "Keine ausstehenden Buchungen"
+
+msgid "No report sent yet"
+msgstr "Noch kein Bericht gesendet"
+
+msgid "No rooms"
+msgstr "Keine Räume"
+
+msgid "No rooms configured"
+msgstr "Keine Räume konfiguriert"
+
+msgid "No rooms found in CSV file"
+msgstr "Keine Räume in CSV-Datei gefunden"
+
+msgid "No rooms in this group"
+msgstr "Keine Räume in dieser Gruppe"
+
+msgid "None"
+msgstr "Keine"
+
+msgid "Number of bookings"
+msgstr "Anzahl der Buchungen"
+
+msgid "Number of rooms and room groups"
+msgstr "Anzahl der Räume und Raumgruppen"
+
+msgid "Number of seats"
+msgstr "Anzahl der Sitzplätze"
+
+msgid "Occurrence cancelled"
+msgstr ""
+
+msgid "Only create new rooms (skip existing)"
+msgstr "Nur neue Räume erstellen (vorhandene überspringen)"
+
+msgid "Open in Calendar"
+msgstr "Im Kalender öffnen"
+
+msgid "Optional description"
+msgstr "Optionale Beschreibung"
+
+msgid "Optional room description"
+msgstr "Optionale Raumbeschreibung"
+
+msgid "Optional: configure a dedicated SMTP server for this room. If empty, the global Nextcloud mail configuration is used."
+msgstr "Optional: Konfigurieren Sie einen dedizierten SMTP-Server für diesen Raum. Wenn leer, wird die globale Nextcloud-Mail-Konfiguration verwendet."
+
+msgid "or"
+msgstr "oder"
+
+msgid "Organizer"
+msgstr "Organisator"
+
+msgid "Organizer: %s"
+msgstr ""
+
+msgid "Overview of rooms and bookings in your RoomVox installation."
+msgstr "Übersicht über Räume und Buchungen in Ihrer RoomVox-Installation."
+
+msgid "Password"
+msgstr "Passwort"
+
+msgid "Past"
+msgstr "Vergangen"
+
+msgid "Pending"
+msgstr "Ausstehend"
+
+msgid "Permissions"
+msgstr "Berechtigungen"
+
+msgid "Permissions saved"
+msgstr "Berechtigungen gespeichert"
+
+msgid "Please choose a different date or contact the room manager."
+msgstr ""
+
+msgid "Please choose a time within the room's availability or contact the room manager."
+msgstr ""
+
+msgid "Please contact the room manager for more information."
+msgstr ""
+
+msgid "Please contact your administrator if you believe this is an error."
+msgstr ""
+
+msgid "Please enter a subscription key"
+msgstr "Bitte geben Sie einen Abonnementschlüssel ein"
+
+msgid "Please select a CSV file"
+msgstr "Bitte wählen Sie eine CSV-Datei"
+
+msgid "Port must be between 1 and 65535"
+msgstr "Port muss zwischen 1 und 65535 liegen"
+
+msgid "Postal code"
+msgstr "Postleitzahl"
+
+msgid "Presets:"
+msgstr "Voreinstellungen:"
+
+msgid "Priority bug fixes"
+msgstr "Priorisierte Fehlerbehebungen"
+
+msgid "Publish this room's bookings as an iCal feed that external calendar apps (Nextcloud Calendar, Outlook, Apple Calendar) and signage displays can subscribe to — no login required."
+msgstr ""
+
+msgid "Questions or feedback?"
+msgstr "Fragen oder Feedback?"
+
+msgid "Questions?"
+msgstr ""
+
+msgid "Rate limit (per 10 sec)"
+msgstr ""
+
+msgid "Regenerate URL"
+msgstr ""
+
+msgid "Regenerating creates a new URL and immediately breaks any existing subscriptions."
+msgstr ""
+
+msgid "Remove subscription key"
+msgstr "Abonnementschlüssel entfernen"
+
+msgid "Report sent successfully"
+msgstr "Bericht erfolgreich gesendet"
+
+msgid "Requested by"
+msgstr "Angefragt von"
+
+msgid "Requested by: %1$s (%2$s)"
+msgstr ""
+
+msgid "Resource found"
+msgstr ""
+
+msgid "Resource not found"
+msgstr ""
+
+msgid "Responsible contact"
+msgstr "Verantwortlicher Kontakt"
+
+msgid "Responsible contact (visible to viewers)"
+msgstr "Verantwortlicher Kontakt (für Betrachter sichtbar)"
+
+msgid "Restrict booking hours"
+msgstr "Buchungszeiten einschränken"
+
+msgid "Restrict when this room can be booked. Bookings outside these hours will be automatically declined."
+msgstr "Legen Sie fest, wann dieser Raum gebucht werden kann. Buchungen außerhalb dieser Zeiten werden automatisch abgelehnt."
+
+msgid "Retry"
+msgstr ""
+
+msgid "Review and respond:"
+msgstr ""
+
+msgid "Role"
+msgstr "Rolle"
+
+msgid "Room"
+msgstr "Raum"
+
+msgid "Room created"
+msgstr "Raum erstellt"
+
+msgid "Room deleted"
+msgstr "Raum gelöscht"
+
+msgid "Room Group"
+msgstr "Raumgruppe"
+
+msgid "Room group created"
+msgstr "Raumgruppe erstellt"
+
+msgid "Room group deleted"
+msgstr "Raumgruppe gelöscht"
+
+msgid "Room group updated"
+msgstr "Raumgruppe aktualisiert"
+
+msgid "Room groups"
+msgstr "Raumgruppen"
+
+msgid "Room Groups"
+msgstr "Raumgruppen"
+
+msgid "Room is active and bookable"
+msgstr "Raum ist aktiv und buchbar"
+
+msgid "Room moved to group"
+msgstr "Raum in Gruppe verschoben"
+
+msgid "Room name"
+msgstr "Raumname"
+
+msgid "Room name is required"
+msgstr "Raumname ist erforderlich"
+
+msgid "Room names or descriptions"
+msgstr "Raumnamen oder Beschreibungen"
+
+msgid "Room nr."
+msgstr "Raum Nr."
+
+msgid "Room number"
+msgstr "Raumnummer"
+
+msgid "Room removed from group"
+msgstr "Raum aus Gruppe entfernt"
+
+msgid "Room Statistics"
+msgstr "Raumstatistiken"
+
+msgid "Room type"
+msgstr "Raumtyp"
+
+msgid "Room updated"
+msgstr "Raum aktualisiert"
+
+msgid "Room: %s"
+msgstr ""
+
+msgid "Rooms"
+msgstr "Räume"
+
+msgid "Rooms per request (default: 1)"
+msgstr ""
+
+msgid "roomvox"
+msgstr ""
+
+msgid "RoomVox"
+msgstr ""
+
+msgid "RoomVox is free and open source (AGPL-3.0). You can use all features without a subscription — no limits, no restrictions, no catch."
+msgstr "RoomVox ist kostenlos und quelloffen (AGPL-3.0). Sie können alle Funktionen ohne Abonnement nutzen — keine Limits, keine Einschränkungen."
+
+msgid "RoomVox is open source room booking software for Nextcloud. RoomVox is free for small installations. Larger organisations may require a license in the future."
+msgstr "RoomVox ist eine Open-Source-Raumbuchungssoftware für Nextcloud. RoomVox ist für kleine Installationen kostenlos. Größere Organisationen benötigen möglicherweise in Zukunft eine Lizenz."
+
+msgid "RoomVox, Nextcloud, and PHP version numbers"
+msgstr "Versionsnummern von RoomVox, Nextcloud und PHP"
+
+msgid "Rule"
+msgstr "Regel"
+
+msgid "Sat"
+msgstr "Sa"
+
+msgid "Save & activate"
+msgstr "Speichern & aktivieren"
+
+msgid "Save Changes"
+msgstr "Änderungen speichern"
+
+msgid "Save Permissions"
+msgstr "Berechtigungen speichern"
+
+msgid "Saving..."
+msgstr "Speichern..."
+
+msgid "Scope"
+msgstr "Bereich"
+
+msgid "Scopes"
+msgstr "Bereiche"
+
+msgid "Search groups..."
+msgstr "Gruppen suchen..."
+
+msgid "Search rooms..."
+msgstr "Räume suchen…"
+
+msgid "Select a room"
+msgstr "Raum auswählen"
+
+msgid "Select date"
+msgstr "Datum auswählen"
+
+msgid "Send anonymous usage statistics to help improve RoomVox"
+msgstr "Anonyme Nutzungsstatistiken senden, um RoomVox zu verbessern"
+
+msgid "Send report now"
+msgstr "Bericht jetzt senden"
+
+msgid "Sending..."
+msgstr "Wird gesendet..."
+
+msgid "Settings"
+msgstr "Einstellungen"
+
+msgid "Settings saved"
+msgstr "Einstellungen gespeichert"
+
+msgid "Share anonymous usage statistics"
+msgstr "Anonyme Nutzungsstatistiken teilen"
+
+msgid "Show weekends in calendar"
+msgstr "Wochenenden im Kalender anzeigen"
+
+msgid "Skipped"
+msgstr "Übersprungen"
+
+msgid "SMTP Configuration"
+msgstr "SMTP-Konfiguration"
+
+msgid "SMTP Host"
+msgstr "SMTP-Host"
+
+msgid "SMTP Port"
+msgstr "SMTP-Port"
+
+msgid "SMTP username"
+msgstr "SMTP-Benutzername"
+
+msgid "Start time"
+msgstr "Startzeit"
+
+msgid "Statistics"
+msgstr "Statistiken"
+
+msgid "Status"
+msgstr "Status"
+
+msgid "Street and number"
+msgstr "Straße und Hausnummer"
+
+msgid "Subscription activated!"
+msgstr "Abonnement aktiviert!"
+
+msgid "Subscription active — thank you for supporting RoomVox!"
+msgstr "Abonnement aktiv — vielen Dank für Ihre Unterstützung von RoomVox!"
+
+msgid "Subscription key"
+msgstr "Abonnementschlüssel"
+
+msgid "Subscription key is invalid or expired."
+msgstr "Abonnementschlüssel ist ungültig oder abgelaufen."
+
+msgid "Subscription key removed."
+msgstr "Abonnementschlüssel entfernt."
+
+msgid "Subscription key saved but validation failed."
+msgstr "Abonnementschlüssel gespeichert, aber Validierung fehlgeschlagen."
+
+msgid "Sun"
+msgstr "So"
+
+msgid "Support"
+msgstr "Support"
+
+msgid "Support RoomVox"
+msgstr "Support RoomVox"
+
+msgid "Supported formats"
+msgstr "Unterstützte Formate"
+
+msgid "Syncing Exchange calendar..."
+msgstr ""
+
+msgid "Test Connection"
+msgstr ""
+
+msgid "Test email from %s"
+msgstr ""
+
+msgid "Tested with every new Nextcloud release"
+msgstr "Getestet mit jeder neuen Nextcloud-Version"
+
+msgid "Testing..."
+msgstr ""
+
+msgid "Thank you for helping improve RoomVox!"
+msgstr "Vielen Dank, dass Sie zur Verbesserung von RoomVox beitragen!"
+
+msgid "The booker will be notified by email."
+msgstr "Die buchende Person wird per E-Mail benachrichtigt."
+
+msgid "The recurring series continues as scheduled; only this one occurrence has been removed."
+msgstr ""
+
+msgid "The room has been released and is no longer reserved for your event."
+msgstr ""
+
+msgid "The room has been reserved for your event."
+msgstr ""
+
+msgid "The room is already booked for this time slot. Please choose a different time."
+msgstr ""
+
+msgid "The room is now available for this time slot."
+msgstr ""
+
+msgid "The telemetry server returned an error:"
+msgstr "Der Telemetrie-Server hat einen Fehler zurückgegeben:"
+
+msgid "These permissions apply to all rooms in this group. Individual rooms can have additional permissions on top of these."
+msgstr "Diese Berechtigungen gelten für alle Räume in dieser Gruppe. Einzelne Räume können zusätzliche Berechtigungen haben."
+
+msgid "This booking is part of a recurring series. What would you like to cancel?"
+msgstr "Diese Buchung gehört zu einer wiederkehrenden Reihe. Was möchten Sie stornieren?"
+
+msgid "This is a temporary state — please try again in a few minutes. If the problem persists, contact your administrator."
+msgstr ""
+
+msgid "This is a test email from the room booking system."
+msgstr ""
+
+msgid "This month"
+msgstr "Dieser Monat"
+
+msgid "This occurrence"
+msgstr "Diese Buchung"
+
+msgid "This room has restrictions on how far in advance it can be booked."
+msgstr ""
+
+msgid "This room inherits permissions from its group (shown as \"inherited\" below). You can add room-specific permissions that will be merged with the inherited ones."
+msgstr "Dieser Raum erbt Berechtigungen von seiner Gruppe (unten als ‚geerbt' angezeigt). Sie können raumspezifische Berechtigungen hinzufügen, die mit den geerbten zusammengeführt werden."
+
+msgid "This room is available during:"
+msgstr ""
+
+msgid "This week"
+msgstr "Diese Woche"
+
+msgid "This Week"
+msgstr "Diese Woche"
+
+msgid "Thu"
+msgstr "Do"
+
+msgid "Title"
+msgstr "Titel"
+
+msgid "To"
+msgstr "Bis"
+
+msgid "Today"
+msgstr "Heute"
+
+msgid "Token created! Copy it now — it will not be shown again."
+msgstr "Token erstellt! Kopieren Sie es jetzt — es wird nicht erneut angezeigt."
+
+msgid "Token name (e.g. Lobby Display)"
+msgstr "Tokenname (z.B. Lobby-Display)"
+
+msgid "Tomorrow"
+msgstr "Morgen"
+
+msgid "Total Rooms"
+msgstr "Räume gesamt"
+
+msgid "Total users"
+msgstr "Benutzer gesamt"
+
+msgid "Try a different search query"
+msgstr "Versuchen Sie eine andere Suchanfrage"
+
+msgid "Tue"
+msgstr "Di"
+
+msgid "Type"
+msgstr "Typ"
+
+msgid "Ungrouped Rooms"
+msgstr "Nicht gruppierte Räume"
+
+msgid "Unknown"
+msgstr "Unbekannt"
+
+msgid "Unknown format"
+msgstr "Unbekanntes Format"
+
+msgid "Unnamed event"
+msgstr "Unbenanntes Ereignis"
+
+msgid "Upcoming"
+msgstr "Bevorstehend"
+
+msgid "Update"
+msgstr "Aktualisieren"
+
+msgid "Updated"
+msgstr "Aktualisiert"
+
+msgid "Upload a CSV file to import rooms. RoomVox and MS365 formats are supported."
+msgstr "Laden Sie eine CSV-Datei hoch, um Räume zu importieren. RoomVox- und MS365-Formate werden unterstützt."
+
+msgid "Usage"
+msgstr "Verwendung"
+
+msgid "User names or email addresses"
+msgstr "Benutzernamen oder E-Mail-Adressen"
+
+msgid "Username"
+msgstr "Benutzername"
+
+msgid "Validate"
+msgstr ""
+
+msgid "Validating..."
+msgstr ""
+
+msgid "View pricing & plans"
+msgstr ""
+
+msgid "View rooms, availability, and calendar feed"
+msgstr "Räume, Verfügbarkeit und Kalender-Feed anzeigen"
+
+msgid "Viewer"
+msgstr "Betrachter"
+
+msgid "Viewers"
+msgstr "Betrachter"
+
+msgid "We collect: room counts, booking counts, version info (RoomVox, Nextcloud, PHP), and whether your Nextcloud has an Extended Support / Enterprise subscription (a single yes/no, sourced from Nextcloud's public API). No personal data or booking details are shared."
+msgstr ""
+
+msgid "Wed"
+msgstr "Mi"
+
+msgid "Week"
+msgstr "Woche"
+
+msgid "Weekdays 08-18"
+msgstr "Werktage 08-18"
+
+msgid "Weekdays 09-17"
+msgstr "Werktage 09-17"
+
+msgid "What a subscription includes"
+msgstr "Was ein Abonnement beinhaltet"
+
+msgid "What we collect:"
+msgstr "Was wir erfassen:"
+
+msgid "What we never collect:"
+msgstr "Was wir niemals erfassen:"
+
+msgid "When"
+msgstr "Wann"
+
+msgid "Yes"
+msgstr "Ja"
+
+msgid "You don't have access to any rooms yet. Ask an administrator to grant you access."
+msgstr "Sie haben noch keinen Zugang zu Räumen. Bitten Sie einen Administrator, Ihnen Zugang zu gewähren."
+
+msgid "Your actual server URL"
+msgstr "Ihre tatsächliche Server-URL"
+
+msgid "Your booking could not be processed due to a scheduling conflict."
+msgstr ""
+
+msgid "Your booking has been cancelled by a room manager."
+msgstr ""
+
+msgid "Your booking has been confirmed."
+msgstr ""
+
+msgid "Your booking request could not be processed because it exceeds the room's booking horizon."
+msgstr ""
+
+msgid "Your booking request could not be processed because it falls outside the room's availability hours."
+msgstr ""
+
+msgid "Your booking request could not be processed right now because the room is still being synchronized."
+msgstr ""
+
+msgid "Your booking request has been declined."
+msgstr ""
+
+msgid "Your booking request was automatically declined because you do not have permission to book this room."
+msgstr ""
+
+msgid "Your installation"
+msgstr "Ihre Installation"
+
+msgid "Your issues get priority attention"
+msgstr "Ihre Meldungen werden bevorzugt behandelt"
+
+msgid "This room has a maximum booking horizon of %n day."
+msgid_plural "This room has a maximum booking horizon of %n days."
+msgstr[0] ""
+msgstr[1] ""
