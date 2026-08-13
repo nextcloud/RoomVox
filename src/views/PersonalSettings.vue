@@ -5,14 +5,14 @@
                 :class="['tab-button', { active: currentTab === 'rooms' }]"
                 @click="currentTab = 'rooms'">
                 <DoorOpen :size="16" />
-                {{ $t('My Rooms') }}
+                {{ t('roomvox', 'My Rooms') }}
                 <NcCounterBubble v-if="rooms.length > 0" :count="rooms.length" />
             </button>
             <button
                 :class="['tab-button', { active: currentTab === 'approvals' }]"
                 @click="currentTab = 'approvals'">
                 <CheckDecagram :size="16" />
-                {{ $t('Approvals') }}
+                {{ t('roomvox', 'Approvals') }}
                 <NcCounterBubble v-if="approvals.length > 0" type="highlighted" :count="approvals.length" />
             </button>
             <button
@@ -20,7 +20,7 @@
                 :class="['tab-button', { active: currentTab === 'bookings' }]"
                 @click="currentTab = 'bookings'">
                 <CalendarCheck :size="16" />
-                {{ $t('Bookings') }}
+                {{ t('roomvox', 'Bookings') }}
             </button>
         </nav>
 
@@ -32,8 +32,8 @@
                 </div>
 
                 <NcEmptyContent v-else-if="rooms.length === 0"
-                    :name="$t('No rooms')"
-                    :description="$t('You don\'t have access to any rooms yet. Ask an administrator to grant you access.')">
+                    :name="t('roomvox', 'No rooms')"
+                    :description="t('roomvox', 'You don\'t have access to any rooms yet. Ask an administrator to grant you access.')">
                     <template #icon>
                         <DoorOpen :size="64" />
                     </template>
@@ -42,12 +42,12 @@
                 <table v-else class="rooms-table">
                     <thead>
                         <tr>
-                            <th>{{ $t('Name') }}</th>
-                            <th>{{ $t('Type') }}</th>
-                            <th>{{ $t('Capacity') }}</th>
-                            <th>{{ $t('Location') }}</th>
-                            <th>{{ $t('Responsible contact') }}</th>
-                            <th>{{ $t('Role') }}</th>
+                            <th>{{ t('roomvox', 'Name') }}</th>
+                            <th>{{ t('roomvox', 'Type') }}</th>
+                            <th>{{ t('roomvox', 'Capacity') }}</th>
+                            <th>{{ t('roomvox', 'Location') }}</th>
+                            <th>{{ t('roomvox', 'Responsible contact') }}</th>
+                            <th>{{ t('roomvox', 'Role') }}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -75,8 +75,8 @@
                 </div>
 
                 <NcEmptyContent v-else-if="approvals.length === 0"
-                    :name="$t('No pending approvals')"
-                    :description="$t('All booking requests have been processed.')">
+                    :name="t('roomvox', 'No pending approvals')"
+                    :description="t('roomvox', 'All booking requests have been processed.')">
                     <template #icon>
                         <CheckDecagram :size="64" />
                     </template>
@@ -85,10 +85,10 @@
                 <table v-else class="approvals-table">
                     <thead>
                         <tr>
-                            <th>{{ $t('Room') }}</th>
-                            <th>{{ $t('Event') }}</th>
-                            <th>{{ $t('When') }}</th>
-                            <th>{{ $t('Requested by') }}</th>
+                            <th>{{ t('roomvox', 'Room') }}</th>
+                            <th>{{ t('roomvox', 'Event') }}</th>
+                            <th>{{ t('roomvox', 'When') }}</th>
+                            <th>{{ t('roomvox', 'Requested by') }}</th>
                             <th></th>
                         </tr>
                     </thead>
@@ -153,7 +153,7 @@ import Close from 'vue-material-design-icons/Close.vue'
 import BookingOverview from './BookingOverview.vue'
 import { getMyRooms, getMyApprovals, respondToBooking } from '../services/api.js'
 
-const t = (text, vars = {}) => translate('roomvox', text, vars)
+const t = (app, text, vars = {}) => translate(app, text, vars)
 const ncLocale = getLanguage().replace('_', '-')
 
 const currentTab = ref('rooms')
@@ -170,10 +170,10 @@ const managedRooms = computed(() =>
 
 const getRoleLabel = (role) => {
     switch (role) {
-        case 'admin': return t('Admin')
-        case 'manager': return t('Manager')
-        case 'booker': return t('Booker')
-        case 'viewer': return t('Viewer')
+        case 'admin': return t('roomvox', 'Admin')
+        case 'manager': return t('roomvox', 'Manager')
+        case 'booker': return t('roomvox', 'Booker')
+        case 'viewer': return t('roomvox', 'Viewer')
         default: return role
     }
 }
@@ -201,8 +201,8 @@ const formatRelativeDate = (dateStr) => {
     const tomorrow = new Date()
     tomorrow.setDate(today.getDate() + 1)
 
-    if (d.toDateString() === today.toDateString()) return t('Today')
-    if (d.toDateString() === tomorrow.toDateString()) return t('Tomorrow')
+    if (d.toDateString() === today.toDateString()) return t('roomvox', 'Today')
+    if (d.toDateString() === tomorrow.toDateString()) return t('roomvox', 'Tomorrow')
     return d.toLocaleDateString(ncLocale, { weekday: 'short', day: 'numeric', month: 'short' })
 }
 
@@ -216,10 +216,10 @@ const respond = async (roomId, bookingUid, action) => {
     responding.value = bookingUid
     try {
         await respondToBooking(roomId, bookingUid, action)
-        showSuccess(action === 'accept' ? t('Booking accepted') : t('Booking declined'))
+        showSuccess(action === 'accept' ? t('roomvox', 'Booking accepted') : t('roomvox', 'Booking declined'))
         approvals.value = approvals.value.filter(b => b.uid !== bookingUid)
     } catch (e) {
-        showError(t('Failed to process response'))
+        showError(t('roomvox', 'Failed to process response'))
     } finally {
         responding.value = null
     }
@@ -231,7 +231,7 @@ const loadRooms = async () => {
         const response = await getMyRooms()
         rooms.value = response.data
     } catch (e) {
-        showError(t('Failed to load rooms'))
+        showError(t('roomvox', 'Failed to load rooms'))
     } finally {
         loadingRooms.value = false
     }
@@ -243,7 +243,7 @@ const loadApprovals = async () => {
         const response = await getMyApprovals()
         approvals.value = response.data
     } catch (e) {
-        showError(t('Failed to load approvals'))
+        showError(t('roomvox', 'Failed to load approvals'))
     } finally {
         loadingApprovals.value = false
     }

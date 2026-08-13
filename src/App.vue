@@ -6,38 +6,38 @@
                 :class="['tab-button', { active: isTabActive('rooms') }]"
                 @click="onTabClick('rooms')">
                 <DoorOpen :size="16" />
-                {{ $t('Rooms') }}
+                {{ t('roomvox', 'Rooms') }}
                 <NcCounterBubble v-if="rooms.length > 0" :count="rooms.length" />
             </button>
             <button
                 :class="['tab-button', { active: isTabActive('bookings') }]"
                 @click="onTabClick('bookings')">
                 <CalendarCheck :size="16" />
-                {{ $t('Bookings') }}
+                {{ t('roomvox', 'Bookings') }}
             </button>
             <button
                 :class="['tab-button', { active: isTabActive('import-export') }]"
                 @click="onTabClick('import-export')">
                 <SwapHorizontal :size="16" />
-                {{ $t('Import / Export') }}
+                {{ t('roomvox', 'Import / Export') }}
             </button>
             <button
                 :class="['tab-button', { active: isTabActive('settings') }]"
                 @click="onTabClick('settings')">
                 <Cog :size="16" />
-                {{ $t('Settings') }}
+                {{ t('roomvox', 'Settings') }}
             </button>
             <button
                 :class="['tab-button', { active: isTabActive('statistics') }]"
                 @click="onTabClick('statistics')">
                 <ChartBox :size="16" />
-                {{ $t('Statistics') }}
+                {{ t('roomvox', 'Statistics') }}
             </button>
             <button
                 :class="['tab-button', { active: isTabActive('support') }]"
                 @click="onTabClick('support')">
                 <Heart :size="16" />
-                {{ $t('Support') }}
+                {{ t('roomvox', 'Support') }}
             </button>
         </nav>
 
@@ -98,19 +98,19 @@
             <div v-if="currentView === 'import-export'" class="tab-content">
                 <div class="import-export-tab">
                     <div class="settings-section">
-                        <h2>{{ $t('Export Rooms') }}</h2>
-                        <p class="settings-section-desc">{{ $t('Download all rooms as a CSV file. This file can be imported into another RoomVox instance or edited in Excel/LibreOffice.') }}</p>
+                        <h2>{{ t('roomvox', 'Export Rooms') }}</h2>
+                        <p class="settings-section-desc">{{ t('roomvox', 'Download all rooms as a CSV file. This file can be imported into another RoomVox instance or edited in Excel/LibreOffice.') }}</p>
                         <NcButton type="secondary" @click="handleExport">
                             <template #icon>
                                 <Download :size="20" />
                             </template>
-                            {{ $t('Export CSV') }}
+                            {{ t('roomvox', 'Export CSV') }}
                         </NcButton>
                     </div>
 
                     <div class="settings-section">
-                        <h2>{{ $t('Import Rooms') }}</h2>
-                        <p class="settings-section-desc">{{ $t('Upload a CSV file to import rooms. RoomVox and MS365 formats are supported.') }}</p>
+                        <h2>{{ t('roomvox', 'Import Rooms') }}</h2>
+                        <p class="settings-section-desc">{{ t('roomvox', 'Upload a CSV file to import rooms. RoomVox and MS365 formats are supported.') }}</p>
 
                         <!-- Upload area (step 1) -->
                         <div v-if="importStep === 'upload'" class="import-inline">
@@ -120,10 +120,10 @@
                                  @dragleave="isDraggingImport = false"
                                  @drop.prevent="handleImportDrop">
                                 <Upload :size="48" class="upload-icon" />
-                                <p>{{ $t('Drag and drop a CSV file here') }}</p>
-                                <p class="upload-or">{{ $t('or') }}</p>
+                                <p>{{ t('roomvox', 'Drag and drop a CSV file here') }}</p>
+                                <p class="upload-or">{{ t('roomvox', 'or') }}</p>
                                 <NcButton type="secondary" @click="$refs.importFileInput.click()">
-                                    {{ $t('Choose file') }}
+                                    {{ t('roomvox', 'Choose file') }}
                                 </NcButton>
                                 <input
                                     ref="importFileInput"
@@ -139,20 +139,20 @@
                             </div>
 
                             <div class="import-help">
-                                <h3>{{ $t('Supported formats') }}</h3>
+                                <h3>{{ t('roomvox', 'Supported formats') }}</h3>
                                 <ul>
-                                    <li><strong>RoomVox CSV</strong> — {{ $t('Exported from another RoomVox installation') }}</li>
-                                    <li><strong>Microsoft 365 / Exchange</strong> — {{ $t('Exported via PowerShell (Get-EXOMailbox | Get-Place | Export-Csv)') }}</li>
+                                    <li><strong>RoomVox CSV</strong> — {{ t('roomvox', 'Exported from another RoomVox installation') }}</li>
+                                    <li><strong>Microsoft 365 / Exchange</strong> — {{ t('roomvox', 'Exported via PowerShell (Get-EXOMailbox | Get-Place | Export-Csv)') }}</li>
                                 </ul>
-                                <p class="import-help-note">{{ $t('Column names are automatically detected and mapped.') }}</p>
+                                <p class="import-help-note">{{ t('roomvox', 'Column names are automatically detected and mapped.') }}</p>
                                 <div class="sample-download">
                                     <NcButton type="tertiary" @click="handleDownloadSample">
                                         <template #icon>
                                             <Download :size="20" />
                                         </template>
-                                        {{ $t('Download sample CSV') }}
+                                        {{ t('roomvox', 'Download sample CSV') }}
                                     </NcButton>
-                                    <span class="sample-desc">{{ $t('Download an example file with headers and a sample row') }}</span>
+                                    <span class="sample-desc">{{ t('roomvox', 'Download an example file with headers and a sample row') }}</span>
                                 </div>
                             </div>
                         </div>
@@ -161,13 +161,13 @@
                         <div v-if="importStep === 'preview'" class="import-inline">
                             <div class="preview-info">
                                 <p>
-                                    {{ $t('Detected format:') }}
+                                    {{ t('roomvox', 'Detected format:') }}
                                     <strong>{{ importFormatLabel }}</strong>
                                 </p>
                                 <p>
-                                    {{ $t('{count} rooms found', { count: importPreviewData.rows.length }) }}
+                                    {{ t('roomvox', '{count} rooms found', { count: importPreviewData.rows.length }) }}
                                     —
-                                    {{ $t('{create} new, {update} existing, {errors} errors', {
+                                    {{ t('roomvox', '{create} new, {update} existing, {errors} errors', {
                                         create: importCreateCount,
                                         update: importUpdateCount,
                                         errors: importErrorCount
@@ -179,13 +179,13 @@
                                 <table class="preview-table">
                                     <thead>
                                         <tr>
-                                            <th>{{ $t('Action') }}</th>
-                                            <th>{{ $t('Name') }}</th>
-                                            <th>{{ $t('Email') }}</th>
-                                            <th>{{ $t('Capacity') }}</th>
-                                            <th>{{ $t('Building') }}</th>
-                                            <th>{{ $t('Facilities') }}</th>
-                                            <th>{{ $t('Issues') }}</th>
+                                            <th>{{ t('roomvox', 'Action') }}</th>
+                                            <th>{{ t('roomvox', 'Name') }}</th>
+                                            <th>{{ t('roomvox', 'Email') }}</th>
+                                            <th>{{ t('roomvox', 'Capacity') }}</th>
+                                            <th>{{ t('roomvox', 'Building') }}</th>
+                                            <th>{{ t('roomvox', 'Facilities') }}</th>
+                                            <th>{{ t('roomvox', 'Issues') }}</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -208,7 +208,7 @@
                                                     {{ row.errors.join(', ') }}
                                                 </span>
                                                 <span v-else-if="row.action === 'update'" class="match-text">
-                                                    {{ $t('Matches: {name}', { name: row.matchedName }) }}
+                                                    {{ t('roomvox', 'Matches: {name}', { name: row.matchedName }) }}
                                                 </span>
                                             </td>
                                         </tr>
@@ -217,21 +217,21 @@
                             </div>
 
                             <div class="import-mode">
-                                <label>{{ $t('Import mode:') }}</label>
+                                <label>{{ t('roomvox', 'Import mode:') }}</label>
                                 <div class="mode-options">
                                     <NcCheckboxRadioSwitch
                                         v-model="importMode"
                                         value="create"
                                         name="import-mode"
                                         type="radio">
-                                        {{ $t('Only create new rooms (skip existing)') }}
+                                        {{ t('roomvox', 'Only create new rooms (skip existing)') }}
                                     </NcCheckboxRadioSwitch>
                                     <NcCheckboxRadioSwitch
                                         v-model="importMode"
                                         value="update"
                                         name="import-mode"
                                         type="radio">
-                                        {{ $t('Create new + update existing rooms') }}
+                                        {{ t('roomvox', 'Create new + update existing rooms') }}
                                     </NcCheckboxRadioSwitch>
                                 </div>
                             </div>
@@ -240,16 +240,16 @@
                                 <NcCheckboxRadioSwitch
                                     :model-value="importEnableExchangeSync"
                                     @update:model-value="importEnableExchangeSync = $event">
-                                    {{ $t('Enable Exchange calendar sync for imported rooms') }}
+                                    {{ t('roomvox', 'Enable Exchange calendar sync for imported rooms') }}
                                 </NcCheckboxRadioSwitch>
                                 <p class="import-help-note">
-                                    {{ $t('Links each room to its MS365 mailbox for bidirectional calendar sync. Requires Exchange sync to be configured in settings.') }}
+                                    {{ t('roomvox', 'Links each room to its MS365 mailbox for bidirectional calendar sync. Requires Exchange sync to be configured in settings.') }}
                                 </p>
                             </div>
 
                             <div class="import-actions">
                                 <NcButton type="tertiary" @click="resetImport">
-                                    {{ $t('Back') }}
+                                    {{ t('roomvox', 'Back') }}
                                 </NcButton>
                                 <NcButton type="primary"
                                           :disabled="importErrorCount === importPreviewData.rows.length || importing"
@@ -257,7 +257,7 @@
                                     <template v-if="importing" #icon>
                                         <NcLoadingIcon :size="20" />
                                     </template>
-                                    {{ importing ? $t('Importing...') : $t('Import') }}
+                                    {{ importing ? t('roomvox', 'Importing...') : t('roomvox', 'Import') }}
                                 </NcButton>
                             </div>
                         </div>
@@ -267,27 +267,27 @@
                             <div class="result-summary">
                                 <div class="result-stat result-stat--success">
                                     <span class="result-stat__number">{{ importResult.created }}</span>
-                                    <span class="result-stat__label">{{ $t('Created') }}</span>
+                                    <span class="result-stat__label">{{ t('roomvox', 'Created') }}</span>
                                 </div>
                                 <div class="result-stat result-stat--info">
                                     <span class="result-stat__number">{{ importResult.updated }}</span>
-                                    <span class="result-stat__label">{{ $t('Updated') }}</span>
+                                    <span class="result-stat__label">{{ t('roomvox', 'Updated') }}</span>
                                 </div>
                                 <div class="result-stat result-stat--warning">
                                     <span class="result-stat__number">{{ importResult.skipped }}</span>
-                                    <span class="result-stat__label">{{ $t('Skipped') }}</span>
+                                    <span class="result-stat__label">{{ t('roomvox', 'Skipped') }}</span>
                                 </div>
                                 <div v-if="importResult.errors.length > 0" class="result-stat result-stat--error">
                                     <span class="result-stat__number">{{ importResult.errors.length }}</span>
-                                    <span class="result-stat__label">{{ $t('Errors') }}</span>
+                                    <span class="result-stat__label">{{ t('roomvox', 'Errors') }}</span>
                                 </div>
                             </div>
 
                             <div v-if="importResult.errors.length > 0" class="result-errors">
-                                <h3>{{ $t('Errors') }}</h3>
+                                <h3>{{ t('roomvox', 'Errors') }}</h3>
                                 <ul>
                                     <li v-for="(err, idx) in importResult.errors" :key="idx">
-                                        <strong>{{ $t('Line {line}', { line: err.line }) }}:</strong>
+                                        <strong>{{ t('roomvox', 'Line {line}', { line: err.line }) }}:</strong>
                                         {{ err.name }} — {{ err.errors.join(', ') }}
                                     </li>
                                 </ul>
@@ -295,7 +295,7 @@
 
                             <div class="import-actions">
                                 <NcButton type="primary" @click="resetImport(); loadRooms()">
-                                    {{ $t('Done') }}
+                                    {{ t('roomvox', 'Done') }}
                                 </NcButton>
                             </div>
                         </div>
@@ -306,43 +306,43 @@
             <!-- Statistics -->
             <div v-if="currentView === 'statistics'" class="tab-content">
                 <div class="settings-section">
-                    <h2>{{ $t('Room Statistics') }}</h2>
-                    <p class="settings-section-desc">{{ $t('Overview of rooms and bookings in your RoomVox installation.') }}</p>
+                    <h2>{{ t('roomvox', 'Room Statistics') }}</h2>
+                    <p class="settings-section-desc">{{ t('roomvox', 'Overview of rooms and bookings in your RoomVox installation.') }}</p>
 
                     <div class="stats-overview">
                         <div class="stat-row">
                             <div class="stat-info">
                                 <span class="stat-icon">🚪</span>
-                                <span class="stat-label">{{ $t('Total Rooms') }}</span>
+                                <span class="stat-label">{{ t('roomvox', 'Total Rooms') }}</span>
                             </div>
                             <span class="stat-value">{{ rooms.length }}</span>
                         </div>
                         <div class="stat-row">
                             <div class="stat-info">
                                 <span class="stat-icon">✅</span>
-                                <span class="stat-label">{{ $t('Active Rooms') }}</span>
+                                <span class="stat-label">{{ t('roomvox', 'Active Rooms') }}</span>
                             </div>
                             <span class="stat-value">{{ rooms.filter(r => r.active !== false).length }}</span>
                         </div>
                         <div class="stat-row">
                             <div class="stat-info">
                                 <span class="stat-icon">📁</span>
-                                <span class="stat-label">{{ $t('Room Groups') }}</span>
+                                <span class="stat-label">{{ t('roomvox', 'Room Groups') }}</span>
                             </div>
                             <span class="stat-value">{{ roomGroups.length }}</span>
                         </div>
                     </div>
 
                     <div class="about-info">
-                        <h4>{{ $t('About RoomVox') }}</h4>
-                        <p>{{ $t('RoomVox is open source room booking software for Nextcloud. RoomVox is free for small installations. Larger organisations may require a license in the future.') }}</p>
-                        <p>{{ $t('Anonymous usage statistics help us understand how RoomVox is used and guide future development.') }}</p>
+                        <h4>{{ t('roomvox', 'About RoomVox') }}</h4>
+                        <p>{{ t('roomvox', 'RoomVox is open source room booking software for Nextcloud. RoomVox is free for small installations. Larger organisations may require a license in the future.') }}</p>
+                        <p>{{ t('roomvox', 'Anonymous usage statistics help us understand how RoomVox is used and guide future development.') }}</p>
                     </div>
                 </div>
 
                 <div class="settings-section">
-                    <h2>{{ $t('Anonymous Usage Statistics') }}</h2>
-                    <p class="settings-section-desc">{{ $t('Help improve RoomVox by sharing anonymous usage statistics.') }}</p>
+                    <h2>{{ t('roomvox', 'Anonymous Usage Statistics') }}</h2>
+                    <p class="settings-section-desc">{{ t('roomvox', 'Help improve RoomVox by sharing anonymous usage statistics.') }}</p>
 
                     <div class="telemetry-settings">
                         <div class="engagement-option">
@@ -351,33 +351,33 @@
                                 :model-value="telemetryEnabled"
                                 @update:model-value="toggleTelemetry($event)">
                                 <div class="option-info">
-                                    <span class="option-label">{{ $t('Share anonymous usage statistics') }}</span>
-                                    <span class="option-desc">{{ $t('We collect: room counts, booking counts, version info (RoomVox, Nextcloud, PHP), and whether your Nextcloud has an Extended Support / Enterprise subscription (a single yes/no, sourced from Nextcloud\'s public API). No personal data or booking details are shared.') }}</span>
+                                    <span class="option-label">{{ t('roomvox', 'Share anonymous usage statistics') }}</span>
+                                    <span class="option-desc">{{ t('roomvox', 'We collect: room counts, booking counts, version info (RoomVox, Nextcloud, PHP), and whether your Nextcloud has an Extended Support / Enterprise subscription (a single yes/no, sourced from Nextcloud\'s public API). No personal data or booking details are shared.') }}</span>
                                 </div>
                             </NcCheckboxRadioSwitch>
                         </div>
 
                         <div v-if="telemetryEnabled" class="telemetry-info">
                             <NcNoteCard type="success">
-                                <p>{{ $t('Thank you for helping improve RoomVox!') }}</p>
-                                <p v-if="telemetryLastReport">{{ $t('Last report sent:') }} {{ telemetryLastReport }}</p>
+                                <p>{{ t('roomvox', 'Thank you for helping improve RoomVox!') }}</p>
+                                <p v-if="telemetryLastReport">{{ t('roomvox', 'Last report sent:') }} {{ telemetryLastReport }}</p>
                             </NcNoteCard>
                         </div>
 
                         <div class="telemetry-details">
-                            <h4>{{ $t('What we collect:') }}</h4>
+                            <h4>{{ t('roomvox', 'What we collect:') }}</h4>
                             <ul>
-                                <li>{{ $t('Number of rooms and room groups') }}</li>
-                                <li>{{ $t('Number of bookings') }}</li>
-                                <li>{{ $t('RoomVox, Nextcloud, and PHP version numbers') }}</li>
-                                <li>{{ $t('A unique hash of your instance URL (privacy-friendly identifier)') }}</li>
+                                <li>{{ t('roomvox', 'Number of rooms and room groups') }}</li>
+                                <li>{{ t('roomvox', 'Number of bookings') }}</li>
+                                <li>{{ t('roomvox', 'RoomVox, Nextcloud, and PHP version numbers') }}</li>
+                                <li>{{ t('roomvox', 'A unique hash of your instance URL (privacy-friendly identifier)') }}</li>
                             </ul>
-                            <h4>{{ $t('What we never collect:') }}</h4>
+                            <h4>{{ t('roomvox', 'What we never collect:') }}</h4>
                             <ul class="not-collected">
-                                <li>{{ $t('Room names or descriptions') }}</li>
-                                <li>{{ $t('Booking details or attendees') }}</li>
-                                <li>{{ $t('User names or email addresses') }}</li>
-                                <li>{{ $t('Your actual server URL') }}</li>
+                                <li>{{ t('roomvox', 'Room names or descriptions') }}</li>
+                                <li>{{ t('roomvox', 'Booking details or attendees') }}</li>
+                                <li>{{ t('roomvox', 'User names or email addresses') }}</li>
+                                <li>{{ t('roomvox', 'Your actual server URL') }}</li>
                             </ul>
                         </div>
                     </div>
@@ -389,9 +389,9 @@
 
             <!-- Settings -->
             <div v-if="currentView === 'settings'" class="roomvox-settings">
-                <NcSettingsSection :name="$t('API Tokens')">
+                <NcSettingsSection :name="t('roomvox', 'API Tokens')">
                     <p class="section-description">
-                        {{ $t('Manage API tokens for external integrations. Tokens allow external systems to access the RoomVox API.') }}
+                        {{ t('roomvox', 'Manage API tokens for external integrations. Tokens allow external systems to access the RoomVox API.') }}
                     </p>
 
                     <!-- Token list -->
@@ -399,11 +399,11 @@
                         <table class="token-table">
                             <thead>
                                 <tr>
-                                    <th>{{ $t('Name') }}</th>
-                                    <th>{{ $t('Scope') }}</th>
-                                    <th>{{ $t('Rooms') }}</th>
-                                    <th>{{ $t('Created') }}</th>
-                                    <th>{{ $t('Last used') }}</th>
+                                    <th>{{ t('roomvox', 'Name') }}</th>
+                                    <th>{{ t('roomvox', 'Scope') }}</th>
+                                    <th>{{ t('roomvox', 'Rooms') }}</th>
+                                    <th>{{ t('roomvox', 'Created') }}</th>
+                                    <th>{{ t('roomvox', 'Last used') }}</th>
                                     <th></th>
                                 </tr>
                             </thead>
@@ -413,12 +413,12 @@
                                     <td>
                                         <NcChip :text="tok.scope" no-close :variant="scopeVariant(tok.scope)" />
                                     </td>
-                                    <td>{{ tok.roomIds && tok.roomIds.length > 0 ? tok.roomIds.join(', ') : $t('All rooms') }}</td>
+                                    <td>{{ tok.roomIds && tok.roomIds.length > 0 ? tok.roomIds.join(', ') : t('roomvox', 'All rooms') }}</td>
                                     <td>{{ formatDate(tok.createdAt) }}</td>
                                     <td>{{ tok.lastUsedAt ? formatDate(tok.lastUsedAt) : '—' }}</td>
                                     <td>
                                         <NcButton type="tertiary-no-background"
-                                                  :aria-label="$t('Delete')"
+                                                  :aria-label="t('roomvox', 'Delete')"
                                                   @click="onDeleteToken(tok.id)">
                                             <template #icon>
                                                 <Close :size="20" />
@@ -430,20 +430,20 @@
                         </table>
                     </div>
 
-                    <p v-else class="no-tokens">{{ $t('No API tokens created yet.') }}</p>
+                    <p v-else class="no-tokens">{{ t('roomvox', 'No API tokens created yet.') }}</p>
 
                     <!-- New token created banner -->
                     <div v-if="newlyCreatedToken" class="new-token-banner">
                         <AlertCircle :size="20" />
                         <div class="new-token-info">
-                            <strong>{{ $t('Token created! Copy it now — it will not be shown again.') }}</strong>
+                            <strong>{{ t('roomvox', 'Token created! Copy it now — it will not be shown again.') }}</strong>
                             <div class="new-token-value">
                                 <code>{{ newlyCreatedToken }}</code>
                                 <NcButton type="tertiary" @click="copyToken">
                                     <template #icon>
                                         <ContentCopy :size="20" />
                                     </template>
-                                    {{ tokenCopied ? $t('Copied!') : $t('Copy') }}
+                                    {{ tokenCopied ? t('roomvox', 'Copied!') : t('roomvox', 'Copy') }}
                                 </NcButton>
                             </div>
                         </div>
@@ -456,7 +456,7 @@
                                 v-model="newTokenName"
                                 type="text"
                                 class="room-type-input"
-                                :placeholder="$t('Token name (e.g. Lobby Display)')" />
+                                :placeholder="t('roomvox', 'Token name (e.g. Lobby Display)')" />
                             <select v-model="newTokenScope" class="token-scope-select">
                                 <option value="read">read</option>
                                 <option value="book">book</option>
@@ -468,19 +468,19 @@
                                 <template v-if="creatingToken" #icon>
                                     <NcLoadingIcon :size="20" />
                                 </template>
-                                {{ $t('Create token') }}
+                                {{ t('roomvox', 'Create token') }}
                             </NcButton>
                         </div>
                     </div>
 
                     <div class="token-help">
-                        <h4>{{ $t('Scopes') }}</h4>
+                        <h4>{{ t('roomvox', 'Scopes') }}</h4>
                         <ul>
-                            <li><strong>read</strong> — {{ $t('View rooms, availability, and calendar feed') }}</li>
-                            <li><strong>book</strong> — {{ $t('Everything in read + create and cancel bookings') }}</li>
-                            <li><strong>admin</strong> — {{ $t('Everything in book + manage rooms and view statistics') }}</li>
+                            <li><strong>read</strong> — {{ t('roomvox', 'View rooms, availability, and calendar feed') }}</li>
+                            <li><strong>book</strong> — {{ t('roomvox', 'Everything in read + create and cancel bookings') }}</li>
+                            <li><strong>admin</strong> — {{ t('roomvox', 'Everything in book + manage rooms and view statistics') }}</li>
                         </ul>
-                        <h4>{{ $t('Usage') }}</h4>
+                        <h4>{{ t('roomvox', 'Usage') }}</h4>
                         <code class="token-example">curl -H "Authorization: Bearer rvx_..." {{ apiBaseUrl }}/api/v1/rooms</code>
                     </div>
                 </NcSettingsSection>
@@ -489,23 +489,23 @@
                     <NcCheckboxRadioSwitch
                         :model-value="settings.defaultAutoAccept"
                         @update:model-value="settings.defaultAutoAccept = $event; saveGlobalSettings()">
-                        {{ $t('Auto-accept bookings by default for new rooms') }}
+                        {{ t('roomvox', 'Auto-accept bookings by default for new rooms') }}
                     </NcCheckboxRadioSwitch>
                     <NcCheckboxRadioSwitch
                         :model-value="settings.emailEnabled"
                         @update:model-value="settings.emailEnabled = $event; saveGlobalSettings()">
-                        {{ $t('Enable email notifications') }}
+                        {{ t('roomvox', 'Enable email notifications') }}
                     </NcCheckboxRadioSwitch>
                     <NcCheckboxRadioSwitch
                         :model-value="settings.showWeekends"
                         @update:model-value="settings.showWeekends = $event; saveGlobalSettings()">
-                        {{ $t('Show weekends in calendar') }}
+                        {{ t('roomvox', 'Show weekends in calendar') }}
                     </NcCheckboxRadioSwitch>
                 </NcSettingsSection>
 
-                <NcSettingsSection :name="$t('Microsoft Exchange Sync')">
+                <NcSettingsSection :name="t('roomvox', 'Microsoft Exchange Sync')">
                     <p class="section-description">
-                        {{ $t('Connect RoomVox to Microsoft 365 Exchange to sync room calendars. Requires an Azure AD app registration with Calendars.ReadWrite and User.Read.All application permissions.') }}
+                        {{ t('roomvox', 'Connect RoomVox to Microsoft 365 Exchange to sync room calendars. Requires an Azure AD app registration with Calendars.ReadWrite and User.Read.All application permissions.') }}
                     </p>
 
                     <div class="exchange-settings">
@@ -513,59 +513,59 @@
                             <NcCheckboxRadioSwitch
                                 :model-value="exchangeEnabled"
                                 @update:model-value="exchangeEnabled = $event; saveExchangeSettings()">
-                                {{ $t('Enable Exchange calendar sync') }}
+                                {{ t('roomvox', 'Enable Exchange calendar sync') }}
                             </NcCheckboxRadioSwitch>
                         </div>
 
                         <div v-if="exchangeEnabled" class="exchange-fields">
                             <div class="exchange-grid">
                                 <div class="form-field">
-                                    <label>{{ $t('Azure AD Tenant ID') }}</label>
+                                    <label>{{ t('roomvox', 'Azure AD Tenant ID') }}</label>
                                     <input
                                         v-model="exchangeTenantId"
                                         type="text"
                                         class="room-type-input exchange-input"
-                                        :placeholder="$t('e.g. 12345678-abcd-...')"
+                                        :placeholder="t('roomvox', 'e.g. 12345678-abcd-...')"
                                         @change="saveExchangeSettings" />
                                 </div>
                                 <div class="form-field">
-                                    <label>{{ $t('Client ID') }}</label>
+                                    <label>{{ t('roomvox', 'Client ID') }}</label>
                                     <input
                                         v-model="exchangeClientId"
                                         type="text"
                                         class="room-type-input exchange-input"
-                                        :placeholder="$t('App registration client ID')"
+                                        :placeholder="t('roomvox', 'App registration client ID')"
                                         @change="saveExchangeSettings" />
                                 </div>
                                 <div class="form-field">
-                                    <label>{{ $t('Client Secret') }}</label>
+                                    <label>{{ t('roomvox', 'Client Secret') }}</label>
                                     <input
                                         v-model="exchangeClientSecret"
                                         type="password"
                                         class="room-type-input exchange-input"
-                                        :placeholder="exchangeClientSecret === '***' ? $t('(saved — enter new value to change)') : $t('App registration client secret')"
+                                        :placeholder="exchangeClientSecret === '***' ? t('roomvox', '(saved — enter new value to change)') : t('roomvox', 'App registration client secret')"
                                         @change="saveExchangeSettings" />
                                 </div>
                                 <div class="form-field">
-                                    <label>{{ $t('Max inline sync per request') }}</label>
+                                    <label>{{ t('roomvox', 'Max inline sync per request') }}</label>
                                     <input
                                         v-model.number="exchangeWebhookMaxInlineSync"
                                         type="number"
                                         min="0"
                                         max="10"
                                         class="room-type-input exchange-input"
-                                        :placeholder="$t('Rooms per request (default: 1)')"
+                                        :placeholder="t('roomvox', 'Rooms per request (default: 1)')"
                                         @change="saveExchangeSettings" />
                                 </div>
                                 <div class="form-field">
-                                    <label>{{ $t('Rate limit (per 10 sec)') }}</label>
+                                    <label>{{ t('roomvox', 'Rate limit (per 10 sec)') }}</label>
                                     <input
                                         v-model.number="exchangeWebhookRateLimit"
                                         type="number"
                                         min="0"
                                         max="100"
                                         class="room-type-input exchange-input"
-                                        :placeholder="$t('Max inline syncs per 10 sec (default: 5)')"
+                                        :placeholder="t('roomvox', 'Max inline syncs per 10 sec (default: 5)')"
                                         @change="saveExchangeSettings" />
                                 </div>
                             </div>
@@ -578,7 +578,7 @@
                                     <template v-if="exchangeTesting" #icon>
                                         <NcLoadingIcon :size="20" />
                                     </template>
-                                    {{ exchangeTesting ? $t('Testing...') : $t('Test Connection') }}
+                                    {{ exchangeTesting ? t('roomvox', 'Testing...') : t('roomvox', 'Test Connection') }}
                                 </NcButton>
 
                                 <NcNoteCard v-if="exchangeTestResult" :type="exchangeTestResult.success ? 'success' : 'error'">
@@ -591,7 +591,7 @@
 
                 <NcSettingsSection :name="'Room types'">
                     <p class="section-description">
-                        {{ $t('Configure the available room types. Types that are in use cannot be deleted.') }}
+                        {{ t('roomvox', 'Configure the available room types. Types that are in use cannot be deleted.') }}
                     </p>
                     <ul class="room-type-list">
                         <li v-for="(type, index) in settings.roomTypes"
@@ -612,7 +612,7 @@
                             <span class="room-type-id">{{ type.id }}</span>
                             <NcButton
                                 type="tertiary"
-                                :aria-label="$t('Delete')"
+                                :aria-label="t('roomvox', 'Delete')"
                                 :disabled="isRoomTypeInUse(type.id)"
                                 @click="removeRoomType(index)">
                                 <template #icon>
@@ -626,11 +626,11 @@
                             type="text"
                             v-model="newRoomTypeLabel"
                             class="room-type-input"
-                            :placeholder="$t('New room type...')"
+                            :placeholder="t('roomvox', 'New room type...')"
                             @keyup.enter="addRoomType" />
                         <NcButton
                             type="secondary"
-                            :aria-label="$t('Add')"
+                            :aria-label="t('roomvox', 'Add')"
                             :disabled="!newRoomTypeLabel.trim()"
                             @click="addRoomType">
                             <template #icon>
@@ -642,7 +642,7 @@
 
                 <NcSettingsSection :name="'Facilities'">
                     <p class="section-description">
-                        {{ $t('Configure the available facilities for rooms. Facilities that are in use cannot be deleted.') }}
+                        {{ t('roomvox', 'Configure the available facilities for rooms. Facilities that are in use cannot be deleted.') }}
                     </p>
                     <ul class="room-type-list">
                         <li v-for="(facility, index) in settings.facilities"
@@ -663,7 +663,7 @@
                             <span class="room-type-id">{{ facility.id }}</span>
                             <NcButton
                                 type="tertiary"
-                                :aria-label="$t('Delete')"
+                                :aria-label="t('roomvox', 'Delete')"
                                 :disabled="isFacilityInUse(facility.id)"
                                 @click="removeFacility(index)">
                                 <template #icon>
@@ -677,11 +677,11 @@
                             type="text"
                             v-model="newFacilityLabel"
                             class="room-type-input"
-                            :placeholder="$t('New facility...')"
+                            :placeholder="t('roomvox', 'New facility...')"
                             @keyup.enter="addFacility" />
                         <NcButton
                             type="secondary"
-                            :aria-label="$t('Add')"
+                            :aria-label="t('roomvox', 'Add')"
                             :disabled="!newFacilityLabel.trim()"
                             @click="addFacility">
                             <template #icon>
@@ -692,7 +692,7 @@
                 </NcSettingsSection>
 
                 <NcNoteCard v-if="settingsSaved" type="success">
-                    {{ $t('Settings saved') }}
+                    {{ t('roomvox', 'Settings saved') }}
                 </NcNoteCard>
             </div>
         </div>
@@ -741,7 +741,7 @@ import {
     testExchangeConnection,
 } from './services/api.js'
 
-const t = (text, vars = {}) => translate('roomvox', text, vars)
+const t = (app, text, vars = {}) => translate(app, text, vars)
 
 const currentView = ref('rooms')
 const rooms = ref([])
@@ -798,7 +798,7 @@ const importFormatLabel = computed(() => {
     const labels = {
         roomvox: 'RoomVox CSV',
         ms365: 'Microsoft 365 / Exchange',
-        unknown: t('Unknown format'),
+        unknown: t('roomvox', 'Unknown format'),
     }
     return labels[importPreviewData.value.detected_format] || importPreviewData.value.detected_format
 })
@@ -817,8 +817,8 @@ const importHasEmails = computed(() =>
 )
 
 const importActionLabel = (row) => {
-    if (row.errors.length > 0) return t('Error')
-    return row.action === 'create' ? t('New') : t('Update')
+    if (row.errors.length > 0) return t('roomvox', 'Error')
+    return row.action === 'create' ? t('roomvox', 'New') : t('roomvox', 'Update')
 }
 
 const importActionVariant = (row) => {
@@ -849,7 +849,7 @@ const uploadImportFile = async (file) => {
     importError.value = ''
 
     if (!file.name.endsWith('.csv') && file.type !== 'text/csv') {
-        importError.value = t('Please select a CSV file')
+        importError.value = t('roomvox', 'Please select a CSV file')
         return
     }
 
@@ -863,13 +863,13 @@ const uploadImportFile = async (file) => {
         importPreviewData.value = response.data
 
         if (importPreviewData.value.rows.length === 0) {
-            importError.value = t('No rooms found in CSV file')
+            importError.value = t('roomvox', 'No rooms found in CSV file')
             return
         }
 
         importStep.value = 'preview'
     } catch (err) {
-        importError.value = err.response?.data?.message || t('Failed to parse CSV file')
+        importError.value = err.response?.data?.message || t('roomvox', 'Failed to parse CSV file')
     }
 }
 
@@ -890,7 +890,7 @@ const executeImport = async () => {
         // Refresh room list so newly imported rooms appear immediately
         await loadRooms()
     } catch (err) {
-        importError.value = err.response?.data?.message || t('Import failed')
+        importError.value = err.response?.data?.message || t('roomvox', 'Import failed')
         importStep.value = 'upload'
     } finally {
         importing.value = false
@@ -929,9 +929,9 @@ const onCreateToken = async () => {
         newTokenName.value = ''
         newTokenScope.value = 'read'
         await loadApiTokens()
-        showSuccess(t('API token created'))
+        showSuccess(t('roomvox', 'API token created'))
     } catch (e) {
-        showError(t('Failed to create API token') + ': ' + (e.response?.data?.error || e.message))
+        showError(t('roomvox', 'Failed to create API token') + ': ' + (e.response?.data?.error || e.message))
     } finally {
         creatingToken.value = false
     }
@@ -941,9 +941,9 @@ const onDeleteToken = async (id) => {
     try {
         await deleteApiToken(id)
         await loadApiTokens()
-        showSuccess(t('API token deleted'))
+        showSuccess(t('roomvox', 'API token deleted'))
     } catch (e) {
-        showError(t('Failed to delete API token'))
+        showError(t('roomvox', 'Failed to delete API token'))
     }
 }
 
@@ -954,7 +954,7 @@ const copyToken = async () => {
             tokenCopied.value = true
             setTimeout(() => { tokenCopied.value = false }, 3000)
         } catch {
-            showError(t('Failed to copy token'))
+            showError(t('roomvox', 'Failed to copy token'))
         }
     }
 }
@@ -994,7 +994,7 @@ const loadRooms = async () => {
         rooms.value = roomsRes.data
         roomGroups.value = groupsRes.data
     } catch (e) {
-        showError(t('Failed to load rooms'))
+        showError(t('roomvox', 'Failed to load rooms'))
     } finally {
         loadingRooms.value = false
     }
@@ -1041,27 +1041,27 @@ const onSaveRoom = async (roomData) => {
     try {
         if (creatingRoom.value) {
             await createRoom(roomData)
-            showSuccess(t('Room created'))
+            showSuccess(t('roomvox', 'Room created'))
         } else {
             await updateRoom(selectedRoom.value.id, roomData)
-            showSuccess(t('Room updated'))
+            showSuccess(t('roomvox', 'Room updated'))
         }
         selectedRoom.value = null
         creatingRoom.value = false
         await loadRooms()
     } catch (e) {
-        showError(t('Failed to save room') + ': ' + (e.response?.data?.error || e.message))
+        showError(t('roomvox', 'Failed to save room') + ': ' + (e.response?.data?.error || e.message))
     }
 }
 
 const onDeleteRoom = async (roomId) => {
     try {
         await deleteRoom(roomId)
-        showSuccess(t('Room deleted'))
+        showSuccess(t('roomvox', 'Room deleted'))
         selectedRoom.value = null
         await loadRooms()
     } catch (e) {
-        showError(t('Failed to delete room'))
+        showError(t('roomvox', 'Failed to delete room'))
     }
 }
 
@@ -1081,27 +1081,27 @@ const onSaveRoomGroup = async (groupData) => {
     try {
         if (creatingRoomGroup.value) {
             await createRoomGroup(groupData)
-            showSuccess(t('Room group created'))
+            showSuccess(t('roomvox', 'Room group created'))
         } else {
             await updateRoomGroup(selectedRoomGroup.value.id, groupData)
-            showSuccess(t('Room group updated'))
+            showSuccess(t('roomvox', 'Room group updated'))
         }
         selectedRoomGroup.value = null
         creatingRoomGroup.value = false
         await loadRooms()
     } catch (e) {
-        showError(t('Failed to save room group') + ': ' + (e.response?.data?.error || e.message))
+        showError(t('roomvox', 'Failed to save room group') + ': ' + (e.response?.data?.error || e.message))
     }
 }
 
 const onDeleteRoomGroup = async (groupId) => {
     try {
         await deleteRoomGroup(groupId)
-        showSuccess(t('Room group deleted'))
+        showSuccess(t('roomvox', 'Room group deleted'))
         selectedRoomGroup.value = null
         await loadRooms()
     } catch (e) {
-        showError(t('Failed to delete room group') + ': ' + (e.response?.data?.error || e.message))
+        showError(t('roomvox', 'Failed to delete room group') + ': ' + (e.response?.data?.error || e.message))
     }
 }
 
@@ -1115,10 +1115,10 @@ const onManageGroupPermissions = (group) => {
 const onMoveToGroup = async ({ room, groupId }) => {
     try {
         await updateRoom(room.id, { ...room, groupId })
-        showSuccess(groupId ? t('Room moved to group') : t('Room removed from group'))
+        showSuccess(groupId ? t('roomvox', 'Room moved to group') : t('roomvox', 'Room removed from group'))
         await loadRooms()
     } catch (e) {
-        showError(t('Failed to move room') + ': ' + (e.response?.data?.error || e.message))
+        showError(t('roomvox', 'Failed to move room') + ': ' + (e.response?.data?.error || e.message))
     }
 }
 
@@ -1136,7 +1136,7 @@ const saveExchangeSettings = async () => {
         settingsSaved.value = true
         setTimeout(() => { settingsSaved.value = false }, 3000)
     } catch (e) {
-        showError(t('Failed to save Exchange settings'))
+        showError(t('roomvox', 'Failed to save Exchange settings'))
     }
 }
 
@@ -1154,9 +1154,9 @@ const testExchange = async () => {
             exchangeWebhookRateLimit: exchangeWebhookRateLimit.value,
         })
         const response = await testExchangeConnection()
-        exchangeTestResult.value = { success: true, message: response.data.message || t('Connection successful') }
+        exchangeTestResult.value = { success: true, message: response.data.message || t('roomvox', 'Connection successful') }
     } catch (e) {
-        exchangeTestResult.value = { success: false, message: e.response?.data?.error || t('Connection failed') }
+        exchangeTestResult.value = { success: false, message: e.response?.data?.error || t('roomvox', 'Connection failed') }
     } finally {
         exchangeTesting.value = false
     }
@@ -1168,7 +1168,7 @@ const saveGlobalSettings = async () => {
         settingsSaved.value = true
         setTimeout(() => { settingsSaved.value = false }, 3000)
     } catch (e) {
-        showError(t('Failed to save settings'))
+        showError(t('roomvox', 'Failed to save settings'))
     }
 }
 
@@ -1205,7 +1205,7 @@ const addRoomType = () => {
 const removeRoomType = (index) => {
     const type = settings.value.roomTypes[index]
     if (isRoomTypeInUse(type.id)) {
-        showError(t('Cannot delete: this room type is in use'))
+        showError(t('roomvox', 'Cannot delete: this room type is in use'))
         return
     }
     settings.value.roomTypes.splice(index, 1)
@@ -1262,7 +1262,7 @@ const addFacility = () => {
 const removeFacility = (index) => {
     const facility = settings.value.facilities[index]
     if (isFacilityInUse(facility.id)) {
-        showError(t('Cannot delete: this facility is in use'))
+        showError(t('roomvox', 'Cannot delete: this facility is in use'))
         return
     }
     settings.value.facilities.splice(index, 1)
@@ -1299,10 +1299,10 @@ const toggleTelemetry = async (enabled) => {
         await saveSettings({ telemetryEnabled: enabled })
         telemetryEnabled.value = enabled
         if (enabled) {
-            showSuccess(t('Thank you for helping improve RoomVox!'))
+            showSuccess(t('roomvox', 'Thank you for helping improve RoomVox!'))
         }
     } catch (e) {
-        showError(t('Failed to update telemetry setting'))
+        showError(t('roomvox', 'Failed to update telemetry setting'))
         telemetryEnabled.value = !enabled
     }
 }

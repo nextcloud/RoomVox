@@ -5,49 +5,49 @@
                 <template #icon>
                     <ArrowLeft :size="20" />
                 </template>
-                {{ $t('Back') }}
+                {{ t('roomvox', 'Back') }}
             </NcButton>
-            <h2>{{ creating ? $t('New Room') : $t('Edit Room') }}</h2>
+            <h2>{{ creating ? t('roomvox', 'New Room') : t('roomvox', 'Edit Room') }}</h2>
         </div>
 
         <div class="room-editor__form">
             <div class="form-section">
-                <h3>{{ $t('General') }}</h3>
+                <h3>{{ t('roomvox', 'General') }}</h3>
                 <div class="form-grid">
                     <div class="form-field">
-                        <label>{{ $t('Room name') }}</label>
+                        <label>{{ t('roomvox', 'Room name') }}</label>
                         <NcTextField
                             v-model="form.name"
-                            :placeholder="$t('e.g. Meeting Room 1')"
+                            :placeholder="t('roomvox', 'e.g. Meeting Room 1')"
                             :error="!!errors.name"
                             :helper-text="errors.name"
                             required
                             @update:model-value="clearError('name')" />
                     </div>
                     <div class="form-field">
-                        <label>{{ $t('Room number') }}</label>
+                        <label>{{ t('roomvox', 'Room number') }}</label>
                         <NcTextField
                             v-model="form.roomNumber"
-                            :placeholder="$t('e.g. 2.17 (floor.room)')" />
+                            :placeholder="t('roomvox', 'e.g. 2.17 (floor.room)')" />
                     </div>
                     <div class="form-field">
-                        <label>{{ $t('Capacity') }}</label>
+                        <label>{{ t('roomvox', 'Capacity') }}</label>
                         <NcTextField
                             v-model="form.capacity"
                             :error="!!errors.capacity"
                             :helper-text="errors.capacity"
                             type="number"
-                            :placeholder="$t('Number of seats')"
+                            :placeholder="t('roomvox', 'Number of seats')"
                             @update:model-value="clearError('capacity')" />
                     </div>
                     <div class="form-field">
-                        <label>{{ $t('Floor') }}</label>
+                        <label>{{ t('roomvox', 'Floor') }}</label>
                         <NcTextField
                             v-model="form.floor"
-                            :placeholder="$t('e.g. 2')" />
+                            :placeholder="t('roomvox', 'e.g. 2')" />
                     </div>
                     <div class="form-field">
-                        <label>{{ $t('Room type') }}</label>
+                        <label>{{ t('roomvox', 'Room type') }}</label>
                         <NcSelect
                             :model-value="roomTypeOptions.find(o => o.id === form.roomType) || roomTypeOptions[0]"
                             :options="roomTypeOptions"
@@ -57,52 +57,52 @@
                     </div>
                 </div>
 
-                <h4>{{ $t('Location') }}</h4>
+                <h4>{{ t('roomvox', 'Location') }}</h4>
                 <div class="form-grid">
                     <div class="form-field">
-                        <label>{{ $t('Building') }}</label>
+                        <label>{{ t('roomvox', 'Building') }}</label>
                         <NcTextField
                             v-model="form.building"
-                            :placeholder="$t('e.g. Building A')" />
+                            :placeholder="t('roomvox', 'e.g. Building A')" />
                     </div>
                     <div class="form-field">
-                        <label>{{ $t('Street and number') }}</label>
+                        <label>{{ t('roomvox', 'Street and number') }}</label>
                         <NcTextField
                             v-model="form.street"
-                            :placeholder="$t('e.g. Heidelberglaan 8')" />
+                            :placeholder="t('roomvox', 'e.g. Heidelberglaan 8')" />
                     </div>
                     <div class="form-field">
-                        <label>{{ $t('Postal code') }}</label>
+                        <label>{{ t('roomvox', 'Postal code') }}</label>
                         <NcTextField
                             v-model="form.postalCode"
-                            :placeholder="$t('e.g. 3584 CS')" />
+                            :placeholder="t('roomvox', 'e.g. 3584 CS')" />
                     </div>
                     <div class="form-field">
-                        <label>{{ $t('City') }}</label>
+                        <label>{{ t('roomvox', 'City') }}</label>
                         <NcTextField
                             v-model="form.city"
-                            :placeholder="$t('e.g. Utrecht')" />
+                            :placeholder="t('roomvox', 'e.g. Utrecht')" />
                     </div>
                 </div>
 
                 <div class="form-field">
-                    <label>{{ $t('Description') }}</label>
+                    <label>{{ t('roomvox', 'Description') }}</label>
                     <NcTextArea
                         v-model="form.description"
-                        :placeholder="$t('Optional room description')"
+                        :placeholder="t('roomvox', 'Optional room description')"
                         resize="vertical" />
                 </div>
 
                 <div class="form-field">
-                    <label>{{ $t('Responsible contact (visible to viewers)') }}</label>
+                    <label>{{ t('roomvox', 'Responsible contact (visible to viewers)') }}</label>
                     <NcTextField
                         v-model="form.responsibleContact"
-                        :placeholder="$t('e.g. anne@voxcloud.nl or \'Ask building manager\'')"
+                        :placeholder="t('roomvox', 'e.g. anne@voxcloud.nl or \'Ask building manager\'')"
                         maxlength="255" />
                 </div>
 
                 <div class="form-field">
-                    <label>{{ $t('Facilities') }}</label>
+                    <label>{{ t('roomvox', 'Facilities') }}</label>
                     <div class="facilities-grid">
                         <NcCheckboxRadioSwitch
                             v-for="facility in availableFacilities"
@@ -116,28 +116,28 @@
 
                 <div class="form-field">
                     <NcCheckboxRadioSwitch :model-value="form.autoAccept" @update:model-value="form.autoAccept = $event">
-                        {{ $t('Auto-accept bookings (no manual approval required)') }}
+                        {{ t('roomvox', 'Auto-accept bookings (no manual approval required)') }}
                     </NcCheckboxRadioSwitch>
                 </div>
 
                 <div v-if="!creating" class="form-field">
                     <NcCheckboxRadioSwitch :model-value="form.active" @update:model-value="form.active = $event">
-                        {{ $t('Room is active and bookable') }}
+                        {{ t('roomvox', 'Room is active and bookable') }}
                     </NcCheckboxRadioSwitch>
                 </div>
 
                 <div class="form-field">
                     <NcButton type="tertiary" @click="showEmailField = !showEmailField">
-                        {{ showEmailField ? $t('Hide email settings') : $t('Custom email address') }}
+                        {{ showEmailField ? t('roomvox', 'Hide email settings') : t('roomvox', 'Custom email address') }}
                     </NcButton>
                     <div v-if="showEmailField" class="email-advanced">
                         <p class="section-description">
-                            {{ $t('A unique email is auto-generated for CalDAV scheduling. Only change this if you need a specific address.') }}
+                            {{ t('roomvox', 'A unique email is auto-generated for CalDAV scheduling. Only change this if you need a specific address.') }}
                         </p>
-                        <label>{{ $t('Email address') }}</label>
+                        <label>{{ t('roomvox', 'Email address') }}</label>
                         <NcTextField
                             v-model="form.email"
-                            :placeholder="$t('Leave empty for auto-generated address')"
+                            :placeholder="t('roomvox', 'Leave empty for auto-generated address')"
                             :error="!!errors.email"
                             :helper-text="errors.email"
                             type="email"
@@ -146,7 +146,7 @@
                 </div>
 
                 <div v-if="roomGroups.length > 0" class="form-field">
-                    <label>{{ $t('Room Group') }}</label>
+                    <label>{{ t('roomvox', 'Room Group') }}</label>
                     <NcSelect
                         :model-value="groupOptions.find(o => o.id === form.groupId) || groupOptions[0]"
                         :options="groupOptions"
@@ -157,16 +157,16 @@
             </div>
 
             <div class="form-section">
-                <h3>{{ $t('Availability') }}</h3>
+                <h3>{{ t('roomvox', 'Availability') }}</h3>
                 <p class="section-description">
-                    {{ $t('Restrict when this room can be booked. Bookings outside these hours will be automatically declined.') }}
+                    {{ t('roomvox', 'Restrict when this room can be booked. Bookings outside these hours will be automatically declined.') }}
                 </p>
 
                 <div class="form-field">
                     <NcCheckboxRadioSwitch
                         :model-value="availability.enabled"
                         @update:model-value="availability.enabled = $event">
-                        {{ $t('Restrict booking hours') }}
+                        {{ t('roomvox', 'Restrict booking hours') }}
                     </NcCheckboxRadioSwitch>
                 </div>
 
@@ -175,7 +175,7 @@
                          :key="ruleIndex"
                          class="availability-rule">
                         <div class="rule-header">
-                            <span class="rule-label">{{ $t('Rule') }} {{ ruleIndex + 1 }}</span>
+                            <span class="rule-label">{{ t('roomvox', 'Rule') }} {{ ruleIndex + 1 }}</span>
                             <NcButton v-if="availability.rules.length > 1"
                                       type="tertiary"
                                       @click="removeRule(ruleIndex)">
@@ -186,7 +186,7 @@
                         </div>
 
                         <div class="form-field">
-                            <label>{{ $t('Days') }}</label>
+                            <label>{{ t('roomvox', 'Days') }}</label>
                             <div class="days-grid">
                                 <NcCheckboxRadioSwitch
                                     v-for="day in weekDays"
@@ -200,11 +200,11 @@
 
                         <div class="time-grid">
                             <div class="form-field">
-                                <label>{{ $t('From') }}</label>
+                                <label>{{ t('roomvox', 'From') }}</label>
                                 <input type="time" v-model="rule.startTime" class="time-input" />
                             </div>
                             <div class="form-field">
-                                <label>{{ $t('To') }}</label>
+                                <label>{{ t('roomvox', 'To') }}</label>
                                 <input type="time" v-model="rule.endTime" class="time-input" />
                             </div>
                         </div>
@@ -212,51 +212,51 @@
 
                     <div class="availability-actions">
                         <NcButton type="secondary" @click="addRule">
-                            {{ $t('+ Add Rule') }}
+                            {{ t('roomvox', '+ Add Rule') }}
                         </NcButton>
                     </div>
 
                     <div class="availability-presets">
-                        <span class="presets-label">{{ $t('Presets:') }}</span>
+                        <span class="presets-label">{{ t('roomvox', 'Presets:') }}</span>
                         <NcButton type="tertiary" @click="applyPreset([1,2,3,4,5], '08:00', '18:00')">
-                            {{ $t('Weekdays 08-18') }}
+                            {{ t('roomvox', 'Weekdays 08-18') }}
                         </NcButton>
                         <NcButton type="tertiary" @click="applyPreset([1,2,3,4,5], '09:00', '17:00')">
-                            {{ $t('Weekdays 09-17') }}
+                            {{ t('roomvox', 'Weekdays 09-17') }}
                         </NcButton>
                     </div>
                 </div>
 
                 <div class="form-field horizon-field">
-                    <label>{{ $t('Maximum booking horizon') }}</label>
+                    <label>{{ t('roomvox', 'Maximum booking horizon') }}</label>
                     <p class="section-description">
-                        {{ $t('Limit how far in advance bookings can be made. Recurring events that extend beyond this limit will be declined. Set to 0 for no limit.') }}
+                        {{ t('roomvox', 'Limit how far in advance bookings can be made. Recurring events that extend beyond this limit will be declined. Set to 0 for no limit.') }}
                     </p>
                     <div class="horizon-input">
                         <NcTextField
                             v-model="form.maxBookingHorizon"
                             type="number"
-                            :placeholder="$t('e.g. 90')"
+                            :placeholder="t('roomvox', 'e.g. 90')"
                             min="0" />
-                        <span class="horizon-unit">{{ $t('days') }}</span>
+                        <span class="horizon-unit">{{ t('roomvox', 'days') }}</span>
                     </div>
                 </div>
             </div>
 
             <div class="form-section">
-                <h3>{{ $t('SMTP Configuration') }}</h3>
+                <h3>{{ t('roomvox', 'SMTP Configuration') }}</h3>
                 <p class="section-description">
-                    {{ $t('Optional: configure a dedicated SMTP server for this room. If empty, the global Nextcloud mail configuration is used.') }}
+                    {{ t('roomvox', 'Optional: configure a dedicated SMTP server for this room. If empty, the global Nextcloud mail configuration is used.') }}
                 </p>
                 <div class="form-grid">
                     <div class="form-field">
-                        <label>{{ $t('SMTP Host') }}</label>
+                        <label>{{ t('roomvox', 'SMTP Host') }}</label>
                         <NcTextField
                             v-model="smtp.host"
-                            :placeholder="$t('e.g. smtp.company.com')" />
+                            :placeholder="t('roomvox', 'e.g. smtp.company.com')" />
                     </div>
                     <div class="form-field">
-                        <label>{{ $t('SMTP Port') }}</label>
+                        <label>{{ t('roomvox', 'SMTP Port') }}</label>
                         <NcTextField
                             v-model="smtp.port"
                             :error="!!errors.smtpPort"
@@ -266,20 +266,20 @@
                             @update:model-value="clearError('smtpPort')" />
                     </div>
                     <div class="form-field">
-                        <label>{{ $t('Username') }}</label>
+                        <label>{{ t('roomvox', 'Username') }}</label>
                         <NcTextField
                             v-model="smtp.username"
-                            :placeholder="$t('SMTP username')" />
+                            :placeholder="t('roomvox', 'SMTP username')" />
                     </div>
                     <div class="form-field">
-                        <label>{{ $t('Password') }}</label>
+                        <label>{{ t('roomvox', 'Password') }}</label>
                         <NcPasswordField
                             v-model="smtp.password"
-                            :placeholder="creating ? '' : $t('Leave empty to keep current')" />
+                            :placeholder="creating ? '' : t('roomvox', 'Leave empty to keep current')" />
                     </div>
                 </div>
                 <div class="form-field">
-                    <label>{{ $t('Encryption') }}</label>
+                    <label>{{ t('roomvox', 'Encryption') }}</label>
                     <div class="encryption-options">
                         <NcCheckboxRadioSwitch
                             :model-value="smtp.encryption === 'tls'"
@@ -300,16 +300,16 @@
                             type="radio"
                             name="encryption"
                             @update:model-value="smtp.encryption = 'none'">
-                            {{ $t('None') }}
+                            {{ t('roomvox', 'None') }}
                         </NcCheckboxRadioSwitch>
                     </div>
                 </div>
             </div>
 
             <div v-if="!creating" class="form-section">
-                <h3>{{ $t('External calendar feed') }}</h3>
+                <h3>{{ t('roomvox', 'External calendar feed') }}</h3>
                 <p class="section-description">
-                    {{ $t('Publish this room\'s bookings as an iCal feed that external calendar apps (Nextcloud Calendar, Outlook, Apple Calendar) and signage displays can subscribe to — no login required.') }}
+                    {{ t('roomvox', 'Publish this room\'s bookings as an iCal feed that external calendar apps (Nextcloud Calendar, Outlook, Apple Calendar) and signage displays can subscribe to — no login required.') }}
                 </p>
 
                 <div class="form-field">
@@ -317,34 +317,34 @@
                         :model-value="feed.enabled"
                         :disabled="feed.busy"
                         @update:model-value="toggleFeed($event)">
-                        {{ $t('Enable external feed') }}
+                        {{ t('roomvox', 'Enable external feed') }}
                     </NcCheckboxRadioSwitch>
                 </div>
 
                 <NcNoteCard v-if="feed.enabled" type="warning">
-                    {{ $t('Anyone with this URL can see the titles and organizers of all bookings for this room. Only share it with people or systems you trust. If a URL leaks, regenerate it below.') }}
+                    {{ t('roomvox', 'Anyone with this URL can see the titles and organizers of all bookings for this room. Only share it with people or systems you trust. If a URL leaks, regenerate it below.') }}
                 </NcNoteCard>
 
                 <div v-if="feed.enabled && feed.url" class="form-field">
-                    <label>{{ $t('Feed URL') }}</label>
+                    <label>{{ t('roomvox', 'Feed URL') }}</label>
                     <div class="feed-url-row">
                         <NcTextField
                             :model-value="feed.url"
                             :readonly="true"
-                            :label="$t('Feed URL')"
+                            :label="t('roomvox', 'Feed URL')"
                             :label-visible="false" />
                         <NcButton type="secondary" :disabled="feed.busy" @click="copyFeedUrl">
-                            {{ feed.copied ? $t('Copied') : $t('Copy') }}
+                            {{ feed.copied ? t('roomvox', 'Copied') : t('roomvox', 'Copy') }}
                         </NcButton>
                     </div>
                     <NcButton type="tertiary" :disabled="feed.busy" @click="regenerateFeed">
                         <template #icon>
                             <NcLoadingIcon v-if="feed.busy" :size="20" />
                         </template>
-                        {{ $t('Regenerate URL') }}
+                        {{ t('roomvox', 'Regenerate URL') }}
                     </NcButton>
                     <p class="section-description">
-                        {{ $t('Regenerating creates a new URL and immediately breaks any existing subscriptions.') }}
+                        {{ t('roomvox', 'Regenerating creates a new URL and immediately breaks any existing subscriptions.') }}
                     </p>
                 </div>
 
@@ -354,17 +354,17 @@
             </div>
 
             <div v-if="exchangeGlobalEnabled" class="form-section">
-                <h3>{{ $t('Exchange Calendar Sync') }}</h3>
+                <h3>{{ t('roomvox', 'Exchange Calendar Sync') }}</h3>
                 <p class="section-description">
-                    {{ $t('Map this room to a Microsoft 365 Exchange room resource. Bookings will be synced bidirectionally.') }}
+                    {{ t('roomvox', 'Map this room to a Microsoft 365 Exchange room resource. Bookings will be synced bidirectionally.') }}
                 </p>
 
                 <div class="form-grid">
                     <div class="form-field">
-                        <label>{{ $t('Exchange resource email') }}</label>
+                        <label>{{ t('roomvox', 'Exchange resource email') }}</label>
                         <NcTextField
                             v-model="exchange.resourceEmail"
-                            :placeholder="$t('e.g. conference-room@company.com')"
+                            :placeholder="t('roomvox', 'e.g. conference-room@company.com')"
                             type="email" />
                     </div>
                     <div class="form-field exchange-validate-field">
@@ -376,7 +376,7 @@
                             <template v-if="exchangeValidating" #icon>
                                 <NcLoadingIcon :size="20" />
                             </template>
-                            {{ exchangeValidating ? $t('Validating...') : $t('Validate') }}
+                            {{ exchangeValidating ? t('roomvox', 'Validating...') : t('roomvox', 'Validate') }}
                         </NcButton>
                     </div>
                 </div>
@@ -389,7 +389,7 @@
                     <NcCheckboxRadioSwitch
                         :model-value="exchange.syncEnabled"
                         @update:model-value="exchange.syncEnabled = $event">
-                        {{ $t('Enable sync for this room') }}
+                        {{ t('roomvox', 'Enable sync for this room') }}
                     </NcCheckboxRadioSwitch>
                 </div>
 
@@ -398,27 +398,27 @@
                          class="exchange-initial-sync">
                         <NcLoadingIcon :size="20" />
                         <span>{{ exchange.initialSyncStatus === 'pending'
-                            ? $t('Exchange sync queued...')
-                            : $t('Syncing Exchange calendar...') }}</span>
+                            ? t('roomvox', 'Exchange sync queued...')
+                            : t('roomvox', 'Syncing Exchange calendar...') }}</span>
                     </div>
 
                     <div v-if="exchange.initialSyncStatus === 'failed'" class="exchange-initial-sync exchange-sync-failed">
-                        <span>{{ $t('Initial sync failed:') }} {{ exchange.initialSyncError }}</span>
+                        <span>{{ t('roomvox', 'Initial sync failed:') }} {{ exchange.initialSyncError }}</span>
                         <NcButton type="secondary" @click="retryInitialSync">
-                            {{ $t('Retry') }}
+                            {{ t('roomvox', 'Retry') }}
                         </NcButton>
                     </div>
 
                     <NcNoteCard v-if="exchange.initialSyncStatus === 'completed'" type="success" class="exchange-note">
-                        {{ $t('Exchange calendar synced successfully') }}
+                        {{ t('roomvox', 'Exchange calendar synced successfully') }}
                     </NcNoteCard>
 
                     <div v-if="exchange.lastSyncAt" class="exchange-status-row">
-                        <span class="exchange-status-label">{{ $t('Last synced:') }}</span>
+                        <span class="exchange-status-label">{{ t('roomvox', 'Last synced:') }}</span>
                         <span>{{ new Date(exchange.lastSyncAt).toLocaleString(ncLocale) }}</span>
                     </div>
                     <div v-if="exchange.lastError" class="exchange-status-row exchange-status-error">
-                        <span class="exchange-status-label">{{ $t('Last error:') }}</span>
+                        <span class="exchange-status-label">{{ t('roomvox', 'Last error:') }}</span>
                         <span>{{ exchange.lastError }}</span>
                     </div>
                 </div>
@@ -426,37 +426,37 @@
 
             <div class="form-actions">
                 <NcButton type="primary" @click="save">
-                    {{ creating ? $t('Create Room') : $t('Save Changes') }}
+                    {{ creating ? t('roomvox', 'Create Room') : t('roomvox', 'Save Changes') }}
                 </NcButton>
                 <NcButton type="secondary" @click="$emit('cancel')">
-                    {{ $t('Cancel') }}
+                    {{ t('roomvox', 'Cancel') }}
                 </NcButton>
                 <NcButton
                     v-if="!creating"
                     type="secondary"
                     @click="$emit('manage-permissions', room)">
-                    {{ $t('Manage Permissions') }}
+                    {{ t('roomvox', 'Manage Permissions') }}
                 </NcButton>
                 <NcButton
                     v-if="!creating"
                     type="error"
                     @click="showDeleteDialog = true">
-                    {{ $t('Delete Room') }}
+                    {{ t('roomvox', 'Delete Room') }}
                 </NcButton>
             </div>
         </div>
 
         <NcDialog
             v-if="showDeleteDialog"
-            :name="$t('Delete Room')"
+            :name="t('roomvox', 'Delete Room')"
             @closing="showDeleteDialog = false">
-            <p>{{ $t('Are you sure you want to delete this room? This action cannot be undone.') }}</p>
+            <p>{{ t('roomvox', 'Are you sure you want to delete this room? This action cannot be undone.') }}</p>
             <template #actions>
                 <NcButton type="secondary" @click="showDeleteDialog = false">
-                    {{ $t('Cancel') }}
+                    {{ t('roomvox', 'Cancel') }}
                 </NcButton>
                 <NcButton type="error" @click="showDeleteDialog = false; $emit('delete', room.id)">
-                    {{ $t('Delete') }}
+                    {{ t('roomvox', 'Delete') }}
                 </NcButton>
             </template>
         </NcDialog>
@@ -479,7 +479,7 @@ import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import { translate, getLanguage } from '@nextcloud/l10n'
 import { validateExchangeResource, retryInitialExchangeSync, getSettings, getRoom, manageRoomFeed } from '../services/api.js'
 
-const t = (text, vars = {}) => translate('roomvox', text, vars)
+const t = (app, text, vars = {}) => translate(app, text, vars)
 const ncLocale = getLanguage().replace('_', '-')
 
 const props = defineProps({
@@ -511,18 +511,18 @@ const availableFacilities = computed(() => {
 })
 
 const weekDays = computed(() => [
-    { value: 1, label: t('Mon') },
-    { value: 2, label: t('Tue') },
-    { value: 3, label: t('Wed') },
-    { value: 4, label: t('Thu') },
-    { value: 5, label: t('Fri') },
-    { value: 6, label: t('Sat') },
-    { value: 0, label: t('Sun') },
+    { value: 1, label: t('roomvox', 'Mon') },
+    { value: 2, label: t('roomvox', 'Tue') },
+    { value: 3, label: t('roomvox', 'Wed') },
+    { value: 4, label: t('roomvox', 'Thu') },
+    { value: 5, label: t('roomvox', 'Fri') },
+    { value: 6, label: t('roomvox', 'Sat') },
+    { value: 0, label: t('roomvox', 'Sun') },
 ])
 
 const groupOptions = computed(() => {
     return [
-        { id: null, label: t('No group') },
+        { id: null, label: t('roomvox', 'No group') },
         ...props.roomGroups.map(g => ({ id: g.id, label: g.name })),
     ]
 })
@@ -615,9 +615,9 @@ const validateResource = async () => {
     exchangeValidateResult.value = null
     try {
         const response = await validateExchangeResource(exchange.resourceEmail)
-        exchangeValidateResult.value = { success: true, message: response.data.displayName || t('Resource found') }
+        exchangeValidateResult.value = { success: true, message: response.data.displayName || t('roomvox', 'Resource found') }
     } catch (e) {
-        exchangeValidateResult.value = { success: false, message: e.response?.data?.error || t('Resource not found') }
+        exchangeValidateResult.value = { success: false, message: e.response?.data?.error || t('roomvox', 'Resource not found') }
     } finally {
         exchangeValidating.value = false
     }
@@ -631,7 +631,7 @@ const retryInitialSync = async () => {
         exchange.initialSyncError = null
         startSyncPolling()
     } catch (e) {
-        exchange.initialSyncError = e.response?.data?.error || t('Failed to queue sync')
+        exchange.initialSyncError = e.response?.data?.error || t('roomvox', 'Failed to queue sync')
     }
 }
 
@@ -648,7 +648,7 @@ const toggleFeed = async (enabled) => {
         const res = await manageRoomFeed(props.room.id, enabled ? 'enable' : 'disable')
         applyFeedResult(res.data)
     } catch (e) {
-        feed.error = e.response?.data?.error || t('Failed to update feed')
+        feed.error = e.response?.data?.error || t('roomvox', 'Failed to update feed')
     } finally {
         feed.busy = false
     }
@@ -662,7 +662,7 @@ const regenerateFeed = async () => {
         const res = await manageRoomFeed(props.room.id, 'rotate')
         applyFeedResult(res.data)
     } catch (e) {
-        feed.error = e.response?.data?.error || t('Failed to regenerate feed')
+        feed.error = e.response?.data?.error || t('roomvox', 'Failed to regenerate feed')
     } finally {
         feed.busy = false
     }
@@ -675,7 +675,7 @@ const copyFeedUrl = async () => {
         feed.copied = true
         setTimeout(() => { feed.copied = false }, 2000)
     } catch {
-        feed.error = t('Could not copy to clipboard')
+        feed.error = t('roomvox', 'Could not copy to clipboard')
     }
 }
 
@@ -714,23 +714,23 @@ const validate = () => {
     let valid = true
 
     if (!form.name.trim()) {
-        errors.name = t('Room name is required')
+        errors.name = t('roomvox', 'Room name is required')
         valid = false
     }
 
     if (form.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
-        errors.email = t('Invalid email address')
+        errors.email = t('roomvox', 'Invalid email address')
         valid = false
     }
 
     if (form.capacity < 0) {
-        errors.capacity = t('Capacity cannot be negative')
+        errors.capacity = t('roomvox', 'Capacity cannot be negative')
         valid = false
     }
 
     const port = Number(smtp.port)
     if (smtp.host && (port < 1 || port > 65535)) {
-        errors.smtpPort = t('Port must be between 1 and 65535')
+        errors.smtpPort = t('roomvox', 'Port must be between 1 and 65535')
         valid = false
     }
 

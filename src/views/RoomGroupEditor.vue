@@ -5,64 +5,64 @@
                 <template #icon>
                     <ArrowLeft :size="20" />
                 </template>
-                {{ $t('Back') }}
+                {{ t('roomvox', 'Back') }}
             </NcButton>
-            <h2>{{ creating ? $t('New Room Group') : $t('Edit Room Group') }}</h2>
+            <h2>{{ creating ? t('roomvox', 'New Room Group') : t('roomvox', 'Edit Room Group') }}</h2>
         </div>
 
         <div class="room-group-editor__form">
             <div class="form-section">
-                <h3>{{ $t('General') }}</h3>
+                <h3>{{ t('roomvox', 'General') }}</h3>
                 <div class="form-fields">
                     <NcTextField
-                        :label="$t('Group name')"
+                        :label="t('roomvox', 'Group name')"
                         v-model="form.name"
-                        :placeholder="$t('e.g. Floor 3')"
+                        :placeholder="t('roomvox', 'e.g. Floor 3')"
                         :error="!!errors.name"
                         :helper-text="errors.name"
                         required
                         @update:model-value="errors.name = ''" />
                     <NcTextArea
-                        :label="$t('Description')"
+                        :label="t('roomvox', 'Description')"
                         v-model="form.description"
-                        :placeholder="$t('Optional description')"
+                        :placeholder="t('roomvox', 'Optional description')"
                         resize="vertical" />
                 </div>
             </div>
 
             <div class="form-actions">
                 <NcButton type="primary" @click="save">
-                    {{ creating ? $t('Create Group') : $t('Save Changes') }}
+                    {{ creating ? t('roomvox', 'Create Group') : t('roomvox', 'Save Changes') }}
                 </NcButton>
                 <NcButton type="secondary" @click="$emit('cancel')">
-                    {{ $t('Cancel') }}
+                    {{ t('roomvox', 'Cancel') }}
                 </NcButton>
                 <NcButton
                     v-if="!creating"
                     type="secondary"
                     @click="$emit('manage-permissions', group)">
-                    {{ $t('Manage Permissions') }}
+                    {{ t('roomvox', 'Manage Permissions') }}
                 </NcButton>
                 <NcButton
                     v-if="!creating"
                     type="error"
                     @click="showDeleteDialog = true">
-                    {{ $t('Delete Group') }}
+                    {{ t('roomvox', 'Delete Group') }}
                 </NcButton>
             </div>
         </div>
 
         <NcDialog
             v-if="showDeleteDialog"
-            :name="$t('Delete Room Group')"
+            :name="t('roomvox', 'Delete Room Group')"
             @closing="showDeleteDialog = false">
-            <p>{{ $t('Are you sure you want to delete this room group? Rooms in this group will become ungrouped. This only works if no rooms are assigned.') }}</p>
+            <p>{{ t('roomvox', 'Are you sure you want to delete this room group? Rooms in this group will become ungrouped. This only works if no rooms are assigned.') }}</p>
             <template #actions>
                 <NcButton type="secondary" @click="showDeleteDialog = false">
-                    {{ $t('Cancel') }}
+                    {{ t('roomvox', 'Cancel') }}
                 </NcButton>
                 <NcButton type="error" @click="showDeleteDialog = false; $emit('delete', group.id)">
-                    {{ $t('Delete') }}
+                    {{ t('roomvox', 'Delete') }}
                 </NcButton>
             </template>
         </NcDialog>
@@ -78,7 +78,7 @@ import NcTextArea from '@nextcloud/vue/components/NcTextArea'
 import NcDialog from '@nextcloud/vue/components/NcDialog'
 import ArrowLeft from 'vue-material-design-icons/ArrowLeft.vue'
 
-const t = (text, vars = {}) => translate('roomvox', text, vars)
+const t = (app, text, vars = {}) => translate(app, text, vars)
 
 const props = defineProps({
     group: { type: Object, default: null },
@@ -107,7 +107,7 @@ watch(() => props.group, (group) => {
 
 const save = () => {
     if (!form.name.trim()) {
-        errors.name = t('Group name is required')
+        errors.name = t('roomvox', 'Group name is required')
         return
     }
     emit('save', { ...form })

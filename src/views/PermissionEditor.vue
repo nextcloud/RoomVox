@@ -5,17 +5,17 @@
                 <template #icon>
                     <ArrowLeft :size="20" />
                 </template>
-                {{ $t('Back') }}
+                {{ t('roomvox', 'Back') }}
             </NcButton>
-            <h2>{{ $t('Permissions') }}: {{ target.name }}</h2>
+            <h2>{{ t('roomvox', 'Permissions') }}: {{ target.name }}</h2>
         </div>
 
         <NcNoteCard v-if="targetType === 'group'" type="info" class="permission-editor__info">
-            {{ $t('These permissions apply to all rooms in this group. Individual rooms can have additional permissions on top of these.') }}
+            {{ t('roomvox', 'These permissions apply to all rooms in this group. Individual rooms can have additional permissions on top of these.') }}
         </NcNoteCard>
 
         <NcNoteCard v-if="targetType === 'room' && target.groupId" type="info" class="permission-editor__info">
-            {{ $t('This room inherits permissions from its group (shown as "inherited" below). You can add room-specific permissions that will be merged with the inherited ones.') }}
+            {{ t('roomvox', 'This room inherits permissions from its group (shown as "inherited" below). You can add room-specific permissions that will be merged with the inherited ones.') }}
         </NcNoteCard>
 
         <div v-if="loading" class="permission-editor__loading">
@@ -29,13 +29,13 @@
 
                 <div v-if="hasGroupPermissions && groupPermissions[role.key].length > 0"
                      class="inherited-entries">
-                    <div class="inherited-label">{{ $t('Inherited from group') }}</div>
+                    <div class="inherited-label">{{ t('roomvox', 'Inherited from group') }}</div>
                     <div v-for="(entry, index) in groupPermissions[role.key]"
                          :key="'inherited-' + index"
                          class="permission-entry permission-entry--inherited">
                         <AccountGroup :size="16" />
                         <span class="entry-name">{{ entry.id }}</span>
-                        <span class="inherited-badge">{{ $t('inherited') }}</span>
+                        <span class="inherited-badge">{{ t('roomvox', 'inherited') }}</span>
                     </div>
                 </div>
 
@@ -53,14 +53,14 @@
                     </div>
 
                     <div v-if="permissions[role.key].length === 0 && !(hasGroupPermissions && groupPermissions[role.key].length > 0)" class="no-entries">
-                        {{ $t('No {role} configured', { role: role.label.toLowerCase() }) }}
+                        {{ t('roomvox', 'No {role} configured', { role: role.label.toLowerCase() }) }}
                     </div>
                 </div>
 
                 <div v-if="!readOnly" class="add-entry">
                     <NcTextField
                         v-model="searchQueries[role.key]"
-                        :placeholder="$t('Search groups...')"
+                        :placeholder="t('roomvox', 'Search groups...')"
                         @update:model-value="onSearch(role.key)" />
                     <div v-if="searchResults[role.key]?.length > 0" class="search-results">
                         <div v-for="result in searchResults[role.key]"
@@ -76,13 +76,13 @@
 
             <div v-if="!readOnly" class="form-actions">
                 <NcButton type="primary" @click="save" :disabled="saving">
-                    {{ saving ? $t('Saving...') : $t('Save Permissions') }}
+                    {{ saving ? t('roomvox', 'Saving...') : t('roomvox', 'Save Permissions') }}
                 </NcButton>
             </div>
         </div>
 
         <NcNoteCard v-if="saved" type="success">
-            {{ $t('Permissions saved') }}
+            {{ t('roomvox', 'Permissions saved') }}
         </NcNoteCard>
     </div>
 </template>
@@ -105,7 +105,7 @@ import {
     searchSharees,
 } from '../services/api.js'
 
-const t = (text, vars = {}) => translate('roomvox', text, vars)
+const t = (app, text, vars = {}) => translate(app, text, vars)
 
 const props = defineProps({
     target: { type: Object, required: true },
@@ -116,9 +116,9 @@ const props = defineProps({
 defineEmits(['back'])
 
 const roles = computed(() => [
-    { key: 'viewers', label: t('Viewers'), description: t('Groups that can see the room in their calendar, but cannot book.') },
-    { key: 'bookers', label: t('Bookers'), description: t('Groups that can see and book the room. Bookings follow the auto-accept or approval workflow.') },
-    { key: 'managers', label: t('Managers'), description: t('Groups that can see, book, and manage the room. Members receive approval requests and can accept/decline bookings.') },
+    { key: 'viewers', label: t('roomvox', 'Viewers'), description: t('roomvox', 'Groups that can see the room in their calendar, but cannot book.') },
+    { key: 'bookers', label: t('roomvox', 'Bookers'), description: t('roomvox', 'Groups that can see and book the room. Bookings follow the auto-accept or approval workflow.') },
+    { key: 'managers', label: t('roomvox', 'Managers'), description: t('roomvox', 'Groups that can see, book, and manage the room. Members receive approval requests and can accept/decline bookings.') },
 ])
 
 const loading = ref(true)
@@ -154,7 +154,7 @@ const loadPermissions = async () => {
                 || groupResponse.data.managers.length > 0
         }
     } catch (e) {
-        showError(t('Failed to load permissions'))
+        showError(t('roomvox', 'Failed to load permissions'))
     } finally {
         loading.value = false
     }
@@ -200,10 +200,10 @@ const save = async () => {
             managers: permissions.managers,
         })
         saved.value = true
-        showSuccess(t('Permissions saved'))
+        showSuccess(t('roomvox', 'Permissions saved'))
         setTimeout(() => { saved.value = false }, 3000)
     } catch (e) {
-        showError(t('Failed to save permissions'))
+        showError(t('roomvox', 'Failed to save permissions'))
     } finally {
         saving.value = false
     }

@@ -2,46 +2,46 @@
 	<div class="support-settings">
 		<!-- Section 1: About RoomVox -->
 		<div class="settings-section">
-			<h2>{{ $t('Support RoomVox') }}</h2>
+			<h2>{{ t('roomvox', 'Support RoomVox') }}</h2>
 			<p class="settings-section-desc">
-				{{ $t('RoomVox is free and open source (AGPL-3.0). You can use all features without a subscription — no limits, no restrictions, no catch.') }}
+				{{ t('roomvox', 'RoomVox is free and open source (AGPL-3.0). You can use all features without a subscription — no limits, no restrictions, no catch.') }}
 			</p>
 			<p class="settings-section-desc">
-				{{ $t('If RoomVox is valuable to your organization, consider subscribing. Your subscription funds active development, guaranteed Nextcloud compatibility, and email support.') }}
+				{{ t('roomvox', 'If RoomVox is valuable to your organization, consider subscribing. Your subscription funds active development, guaranteed Nextcloud compatibility, and email support.') }}
 			</p>
 		</div>
 
 		<!-- Section 2: What's included -->
 		<div class="settings-section">
-			<h2>{{ $t('What a subscription includes') }}</h2>
+			<h2>{{ t('roomvox', 'What a subscription includes') }}</h2>
 
 			<div class="includes-list">
 				<div class="includes-item">
 					<span class="includes-check">&#x2705;</span>
 					<div class="includes-text">
-						<span class="includes-label">{{ $t('Guaranteed compatibility') }}</span>
-						<span class="includes-desc">{{ $t('Tested with every new Nextcloud release') }}</span>
+						<span class="includes-label">{{ t('roomvox', 'Guaranteed compatibility') }}</span>
+						<span class="includes-desc">{{ t('roomvox', 'Tested with every new Nextcloud release') }}</span>
 					</div>
 				</div>
 				<div class="includes-item">
 					<span class="includes-check">&#x2705;</span>
 					<div class="includes-text">
-						<span class="includes-label">{{ $t('Email support') }}</span>
-						<span class="includes-desc">{{ $t('Direct support from the developers') }}</span>
+						<span class="includes-label">{{ t('roomvox', 'Email support') }}</span>
+						<span class="includes-desc">{{ t('roomvox', 'Direct support from the developers') }}</span>
 					</div>
 				</div>
 				<div class="includes-item">
 					<span class="includes-check">&#x2705;</span>
 					<div class="includes-text">
-						<span class="includes-label">{{ $t('Priority bug fixes') }}</span>
-						<span class="includes-desc">{{ $t('Your issues get priority attention') }}</span>
+						<span class="includes-label">{{ t('roomvox', 'Priority bug fixes') }}</span>
+						<span class="includes-desc">{{ t('roomvox', 'Your issues get priority attention') }}</span>
 					</div>
 				</div>
 				<div class="includes-item">
 					<span class="includes-check">&#x2705;</span>
 					<div class="includes-text">
-						<span class="includes-label">{{ $t('Active development') }}</span>
-						<span class="includes-desc">{{ $t('New features and improvements') }}</span>
+						<span class="includes-label">{{ t('roomvox', 'Active development') }}</span>
+						<span class="includes-desc">{{ t('roomvox', 'New features and improvements') }}</span>
 					</div>
 				</div>
 			</div>
@@ -54,10 +54,10 @@
 					:href="pricingUrl"
 					target="_blank"
 					rel="noopener noreferrer">
-					{{ $t('View pricing & plans') }}
+					{{ t('roomvox', 'View pricing & plans') }}
 				</NcButton>
 				<p class="cta-contact">
-					{{ $t('Questions?') }}
+					{{ t('roomvox', 'Questions?') }}
 					<a href="mailto:info@voxcloud.nl">info@voxcloud.nl</a>
 				</p>
 			</div>
@@ -65,62 +65,62 @@
 
 		<!-- Section 4: Your installation -->
 		<div class="settings-section">
-			<h2>{{ $t('Your installation') }}</h2>
+			<h2>{{ t('roomvox', 'Your installation') }}</h2>
 
 			<div v-if="licenseStats" class="stats-overview">
 				<div class="stat-row">
 					<div class="stat-info">
 						<span class="stat-icon">🚪</span>
-						<span class="stat-label">{{ $t('Rooms') }}</span>
+						<span class="stat-label">{{ t('roomvox', 'Rooms') }}</span>
 					</div>
 					<span class="stat-value">{{ licenseStats.totalRooms }}</span>
 				</div>
 				<div class="stat-row">
 					<div class="stat-info">
 						<span class="stat-icon">📁</span>
-						<span class="stat-label">{{ $t('Room groups') }}</span>
+						<span class="stat-label">{{ t('roomvox', 'Room groups') }}</span>
 					</div>
 					<span class="stat-value">{{ licenseStats.totalRoomGroups }}</span>
 				</div>
 				<div class="stat-row">
 					<div class="stat-info">
 						<span class="stat-icon">👥</span>
-						<span class="stat-label">{{ $t('Total users') }}</span>
+						<span class="stat-label">{{ t('roomvox', 'Total users') }}</span>
 					</div>
 					<span class="stat-value">{{ licenseStats.totalUsers || 0 }}</span>
 				</div>
 			</div>
 
 			<NcNoteCard v-if="licenseStats && licenseStats.hasLicense && licenseStats.licenseValid" type="success">
-				{{ $t('Subscription active — thank you for supporting RoomVox!') }}
+				{{ t('roomvox', 'Subscription active — thank you for supporting RoomVox!') }}
 			</NcNoteCard>
 
 			<NcNoteCard v-if="licenseStats && licenseStats.hasLicense && !licenseStats.licenseValid" type="warning">
-				{{ $t('Subscription key is invalid or expired.') }}
+				{{ t('roomvox', 'Subscription key is invalid or expired.') }}
 			</NcNoteCard>
 
 			<NcNoteCard v-if="licenseStats && licenseStats.hasExtendedSupport && !licenseStats.hasLicense" type="info">
-				{{ $t('Nextcloud Enterprise subscription detected on this instance. Contact us at info@voxcloud.nl for enterprise pricing tailored to your organization.') }}
+				{{ t('roomvox', 'Nextcloud Enterprise subscription detected on this instance. Contact us at info@voxcloud.nl for enterprise pricing tailored to your organization.') }}
 			</NcNoteCard>
 
 			<div class="telemetry-section">
 				<NcCheckboxRadioSwitch
 					:model-value="telemetryEnabled"
 					@update:model-value="toggleTelemetry">
-					{{ $t('Send anonymous usage statistics to help improve RoomVox') }}
+					{{ t('roomvox', 'Send anonymous usage statistics to help improve RoomVox') }}
 				</NcCheckboxRadioSwitch>
 
 				<div v-if="telemetryEnabled" class="telemetry-actions">
 					<NcButton type="secondary"
 						:disabled="sendingTelemetry"
 						@click="sendTelemetryNow">
-						{{ sendingTelemetry ? $t('Sending...') : $t('Send report now') }}
+						{{ sendingTelemetry ? t('roomvox', 'Sending...') : t('roomvox', 'Send report now') }}
 					</NcButton>
 					<span v-if="telemetryLastReport" class="telemetry-last-report">
-						{{ $t('Last report') }}: {{ formatDate(telemetryLastReport) }}
+						{{ t('roomvox', 'Last report') }}: {{ formatDate(telemetryLastReport) }}
 					</span>
 					<span v-else class="telemetry-last-report">
-						{{ $t('No report sent yet') }}
+						{{ t('roomvox', 'No report sent yet') }}
 					</span>
 				</div>
 
@@ -132,13 +132,13 @@
 
 		<!-- Section 6: Subscription key -->
 		<div class="settings-section">
-			<h2>{{ $t('Subscription key') }}</h2>
+			<h2>{{ t('roomvox', 'Subscription key') }}</h2>
 
 			<div class="field-row">
 				<input id="license-key"
 					v-model="licenseKey"
 					type="text"
-					:placeholder="$t('e.g. RVOX-XXXX-XXXX-XXXX-XXXX')"
+					:placeholder="t('roomvox', 'e.g. RVOX-XXXX-XXXX-XXXX-XXXX')"
 					class="contact-input"
 					@input="_userEditedLicenseKey = true">
 			</div>
@@ -146,13 +146,13 @@
 				<NcButton type="primary"
 					:disabled="savingLicense"
 					@click="saveLicenseKey">
-					{{ savingLicense ? $t('Saving...') : $t('Save & activate') }}
+					{{ savingLicense ? t('roomvox', 'Saving...') : t('roomvox', 'Save & activate') }}
 				</NcButton>
 				<NcButton v-if="licenseStats && licenseStats.hasLicense"
 					type="tertiary"
 					:disabled="savingLicense"
 					@click="removeLicenseKey">
-					{{ $t('Remove subscription key') }}
+					{{ t('roomvox', 'Remove subscription key') }}
 				</NcButton>
 			</div>
 		</div>
@@ -161,11 +161,11 @@
 		<div class="settings-section">
 			<div class="contact-info-block">
 				<p>
-					{{ $t('Learn more about RoomVox') }}:
+					{{ t('roomvox', 'Learn more about RoomVox') }}:
 					<a href="https://voxcloud.nl" target="_blank" rel="noopener noreferrer">voxcloud.nl</a>
 				</p>
 				<p>
-					{{ $t('Questions or feedback?') }}
+					{{ t('roomvox', 'Questions or feedback?') }}
 					<a href="mailto:info@voxcloud.nl">info@voxcloud.nl</a>
 				</p>
 			</div>
@@ -181,7 +181,9 @@
 import { NcButton, NcCheckboxRadioSwitch, NcNoteCard } from '@nextcloud/vue'
 import axios from '@nextcloud/axios'
 import { generateUrl } from '@nextcloud/router'
-import { getLanguage } from '@nextcloud/l10n'
+import { getLanguage, translate } from '@nextcloud/l10n'
+
+const t = (app, text, vars = {}) => translate(app, text, vars)
 
 export default {
 	name: 'SupportSettings',
@@ -220,6 +222,10 @@ export default {
 	},
 
 	methods: {
+		// Exposed so the template can use the same t('roomvox', …) form the
+		// Nextcloud translation bot extracts.
+		t,
+
 		async loadLicenseStats() {
 			try {
 				const response = await axios.get(generateUrl('/apps/roomvox/api/license/stats'))
@@ -240,7 +246,7 @@ export default {
 		async saveLicenseKey() {
 			const key = this.licenseKey.trim()
 			if (!key) {
-				this.showMessage(this.$t('Please enter a subscription key'), 'error')
+				this.showMessage(t('roomvox', 'Please enter a subscription key'), 'error')
 				return
 			}
 			this.savingLicense = true
@@ -250,7 +256,7 @@ export default {
 					licenseKey: key,
 				})
 				if (!saveRes.data.success) {
-					this.showMessage(this.$t('Failed to save subscription key'), 'error')
+					this.showMessage(t('roomvox', 'Failed to save subscription key'), 'error')
 					return
 				}
 
@@ -259,15 +265,15 @@ export default {
 				if (valRes.data.success && valRes.data.validation?.valid) {
 					// Report usage to bind instance to license
 					await axios.post(generateUrl('/apps/roomvox/api/license/update-usage'))
-					this.showMessage(this.$t('Subscription activated!'), 'success')
+					this.showMessage(t('roomvox', 'Subscription activated!'), 'success')
 				} else {
-					this.showMessage(this.$t('Subscription key saved but validation failed.'), 'error')
+					this.showMessage(t('roomvox', 'Subscription key saved but validation failed.'), 'error')
 				}
 
 				await this.loadLicenseStats()
 			} catch (error) {
 				console.error('Failed to save/validate license key:', error)
-				this.showMessage(this.$t('Failed to save subscription key'), 'error')
+				this.showMessage(t('roomvox', 'Failed to save subscription key'), 'error')
 			} finally {
 				this.savingLicense = false
 			}
@@ -282,9 +288,9 @@ export default {
 				this.licenseKey = ''
 				this._userEditedLicenseKey = false
 				await this.loadLicenseStats()
-				this.showMessage(this.$t('Subscription key removed.'), 'success')
+				this.showMessage(t('roomvox', 'Subscription key removed.'), 'success')
 			} catch (error) {
-				this.showMessage(this.$t('Failed to remove subscription key'), 'error')
+				this.showMessage(t('roomvox', 'Failed to remove subscription key'), 'error')
 			} finally {
 				this.savingLicense = false
 			}
@@ -308,18 +314,18 @@ export default {
 				const response = await axios.post(generateUrl('/apps/roomvox/api/license/telemetry'))
 				if (response.data.success) {
 					this.telemetryLastReport = response.data.lastReport
-					this.telemetryMessage = this.$t('Report sent successfully')
+					this.telemetryMessage = t('roomvox', 'Report sent successfully')
 					this.telemetryMessageType = 'success'
 				} else {
 					const serverMsg = response.data.message || ''
 					this.telemetryMessage = serverMsg
-						? this.$t('The telemetry server returned an error:') + ' ' + serverMsg
-						: this.$t('Failed to send report')
+						? t('roomvox', 'The telemetry server returned an error:') + ' ' + serverMsg
+						: t('roomvox', 'Failed to send report')
 					this.telemetryMessageType = 'warning'
 				}
 			} catch (error) {
 				console.error('Failed to send telemetry:', error)
-				this.telemetryMessage = this.$t('Could not reach the telemetry server. Please try again later.')
+				this.telemetryMessage = t('roomvox', 'Could not reach the telemetry server. Please try again later.')
 				this.telemetryMessageType = 'warning'
 			} finally {
 				this.sendingTelemetry = false

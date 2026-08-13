@@ -1,11 +1,11 @@
 <template>
     <div class="room-list">
         <div class="room-list__header">
-            <h2>{{ $t('Rooms') }}</h2>
+            <h2>{{ t('roomvox', 'Rooms') }}</h2>
             <div class="header-actions">
                 <NcTextField
                     v-model="searchQuery"
-                    :placeholder="$t('Search rooms...')"
+                    :placeholder="t('roomvox', 'Search rooms...')"
                     class="search-field"
                     trailing-button-icon="close"
                     :show-trailing-button="searchQuery !== ''"
@@ -14,27 +14,27 @@
                     <template #icon>
                         <FolderPlus :size="20" />
                     </template>
-                    {{ $t('New Group') }}
+                    {{ t('roomvox', 'New Group') }}
                 </NcButton>
                 <NcButton type="primary" @click="$emit('create')">
                     <template #icon>
                         <Plus :size="20" />
                     </template>
-                    {{ $t('New Room') }}
+                    {{ t('roomvox', 'New Room') }}
                 </NcButton>
             </div>
         </div>
 
         <NcEmptyContent
             v-if="!loading && rooms.length === 0"
-            :name="$t('No rooms configured')"
-            :description="$t('Create your first room to get started')">
+            :name="t('roomvox', 'No rooms configured')"
+            :description="t('roomvox', 'Create your first room to get started')">
             <template #icon>
                 <DoorOpen :size="64" />
             </template>
             <template #action>
                 <NcButton type="primary" @click="$emit('create')">
-                    {{ $t('New Room') }}
+                    {{ t('roomvox', 'New Room') }}
                 </NcButton>
             </template>
         </NcEmptyContent>
@@ -45,8 +45,8 @@
 
         <NcEmptyContent
             v-if="!loading && rooms.length > 0 && visibleGroupCount === 0 && filteredUngroupedRooms.length === 0"
-            :name="$t('No matching rooms')"
-            :description="$t('Try a different search query')">
+            :name="t('roomvox', 'No matching rooms')"
+            :description="t('roomvox', 'Try a different search query')">
             <template #icon>
                 <Magnify :size="64" />
             </template>
@@ -71,7 +71,7 @@
                                 <template #icon>
                                     <Pencil :size="20" />
                                 </template>
-                                {{ $t('Edit Group') }}
+                                {{ t('roomvox', 'Edit Group') }}
                             </NcActionButton>
                         </NcActions>
                     </div>
@@ -95,42 +95,42 @@
                                 <tr>
                                     <th @click="toggleSort('name')">
                                         <span class="th-sortable">
-                                            {{ $t('Name') }}
+                                            {{ t('roomvox', 'Name') }}
                                             <ChevronUp v-if="sortBy === 'name' && sortDir === 'asc'" :size="14" />
                                             <ChevronDown v-else-if="sortBy === 'name' && sortDir === 'desc'" :size="14" />
                                         </span>
                                     </th>
                                     <th @click="toggleSort('roomNumber')">
                                         <span class="th-sortable">
-                                            {{ $t('Room nr.') }}
+                                            {{ t('roomvox', 'Room nr.') }}
                                             <ChevronUp v-if="sortBy === 'roomNumber' && sortDir === 'asc'" :size="14" />
                                             <ChevronDown v-else-if="sortBy === 'roomNumber' && sortDir === 'desc'" :size="14" />
                                         </span>
                                     </th>
                                     <th @click="toggleSort('roomType')">
                                         <span class="th-sortable">
-                                            {{ $t('Type') }}
+                                            {{ t('roomvox', 'Type') }}
                                             <ChevronUp v-if="sortBy === 'roomType' && sortDir === 'asc'" :size="14" />
                                             <ChevronDown v-else-if="sortBy === 'roomType' && sortDir === 'desc'" :size="14" />
                                         </span>
                                     </th>
                                     <th @click="toggleSort('address')">
                                         <span class="th-sortable">
-                                            {{ $t('Address') }}
+                                            {{ t('roomvox', 'Address') }}
                                             <ChevronUp v-if="sortBy === 'address' && sortDir === 'asc'" :size="14" />
                                             <ChevronDown v-else-if="sortBy === 'address' && sortDir === 'desc'" :size="14" />
                                         </span>
                                     </th>
                                     <th @click="toggleSort('capacity')">
                                         <span class="th-sortable">
-                                            {{ $t('Capacity') }}
+                                            {{ t('roomvox', 'Capacity') }}
                                             <ChevronUp v-if="sortBy === 'capacity' && sortDir === 'asc'" :size="14" />
                                             <ChevronDown v-else-if="sortBy === 'capacity' && sortDir === 'desc'" :size="14" />
                                         </span>
                                     </th>
-                                    <th>{{ $t('Auto-accept') }}</th>
-                                    <th>{{ $t('Status') }}</th>
-                                    <th class="th-actions">{{ $t('Actions') }}</th>
+                                    <th>{{ t('roomvox', 'Auto-accept') }}</th>
+                                    <th>{{ t('roomvox', 'Status') }}</th>
+                                    <th class="th-actions">{{ t('roomvox', 'Actions') }}</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -150,13 +150,13 @@
                                     <td>{{ room.capacity || '—' }}</td>
                                     <td>
                                         <NcChip
-                                            :text="room.autoAccept ? $t('Yes') : $t('No')"
+                                            :text="room.autoAccept ? t('roomvox', 'Yes') : t('roomvox', 'No')"
                                             :variant="room.autoAccept ? 'success' : 'secondary'"
                                             no-close />
                                     </td>
                                     <td>
                                         <NcChip
-                                            :text="room.active ? $t('Active') : $t('Inactive')"
+                                            :text="room.active ? t('roomvox', 'Active') : t('roomvox', 'Inactive')"
                                             :variant="room.active ? 'success' : 'warning'"
                                             no-close />
                                     </td>
@@ -166,7 +166,7 @@
                                                 <template #icon>
                                                     <Pencil :size="20" />
                                                 </template>
-                                                {{ $t('Edit') }}
+                                                {{ t('roomvox', 'Edit') }}
                                             </NcActionButton>
                                             <NcActionButton v-for="groupOption in moveToGroupOptions(room)"
                                                 :key="groupOption.id ?? 'none'"
@@ -187,7 +187,7 @@
 
                 <div v-if="expandedGroups.has(group.id) && filteredGroupRooms(group.id).length === 0"
                      class="room-group__empty">
-                    {{ $t('No rooms in this group') }}
+                    {{ t('roomvox', 'No rooms in this group') }}
                 </div>
             </div>
 
@@ -197,7 +197,7 @@
                     <ChevronRight v-if="!expandedGroups.has('__ungrouped')" :size="20" class="chevron" />
                     <ChevronDown v-else :size="20" class="chevron" />
                     <FolderMultiple :size="18" />
-                    <span class="room-group__name">{{ $t('Ungrouped Rooms') }}</span>
+                    <span class="room-group__name">{{ t('roomvox', 'Ungrouped Rooms') }}</span>
                     <NcCounterBubble class="room-group__count" :count="filteredUngroupedRooms.length" />
                     <span class="room-group__spacer" />
                 </div>
@@ -219,42 +219,42 @@
                                 <tr>
                                     <th @click="toggleSort('name')">
                                         <span class="th-sortable">
-                                            {{ $t('Name') }}
+                                            {{ t('roomvox', 'Name') }}
                                             <ChevronUp v-if="sortBy === 'name' && sortDir === 'asc'" :size="14" />
                                             <ChevronDown v-else-if="sortBy === 'name' && sortDir === 'desc'" :size="14" />
                                         </span>
                                     </th>
                                     <th @click="toggleSort('roomNumber')">
                                         <span class="th-sortable">
-                                            {{ $t('Room nr.') }}
+                                            {{ t('roomvox', 'Room nr.') }}
                                             <ChevronUp v-if="sortBy === 'roomNumber' && sortDir === 'asc'" :size="14" />
                                             <ChevronDown v-else-if="sortBy === 'roomNumber' && sortDir === 'desc'" :size="14" />
                                         </span>
                                     </th>
                                     <th @click="toggleSort('roomType')">
                                         <span class="th-sortable">
-                                            {{ $t('Type') }}
+                                            {{ t('roomvox', 'Type') }}
                                             <ChevronUp v-if="sortBy === 'roomType' && sortDir === 'asc'" :size="14" />
                                             <ChevronDown v-else-if="sortBy === 'roomType' && sortDir === 'desc'" :size="14" />
                                         </span>
                                     </th>
                                     <th @click="toggleSort('address')">
                                         <span class="th-sortable">
-                                            {{ $t('Address') }}
+                                            {{ t('roomvox', 'Address') }}
                                             <ChevronUp v-if="sortBy === 'address' && sortDir === 'asc'" :size="14" />
                                             <ChevronDown v-else-if="sortBy === 'address' && sortDir === 'desc'" :size="14" />
                                         </span>
                                     </th>
                                     <th @click="toggleSort('capacity')">
                                         <span class="th-sortable">
-                                            {{ $t('Capacity') }}
+                                            {{ t('roomvox', 'Capacity') }}
                                             <ChevronUp v-if="sortBy === 'capacity' && sortDir === 'asc'" :size="14" />
                                             <ChevronDown v-else-if="sortBy === 'capacity' && sortDir === 'desc'" :size="14" />
                                         </span>
                                     </th>
-                                    <th>{{ $t('Auto-accept') }}</th>
-                                    <th>{{ $t('Status') }}</th>
-                                    <th class="th-actions">{{ $t('Actions') }}</th>
+                                    <th>{{ t('roomvox', 'Auto-accept') }}</th>
+                                    <th>{{ t('roomvox', 'Status') }}</th>
+                                    <th class="th-actions">{{ t('roomvox', 'Actions') }}</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -274,13 +274,13 @@
                                     <td>{{ room.capacity || '—' }}</td>
                                     <td>
                                         <NcChip
-                                            :text="room.autoAccept ? $t('Yes') : $t('No')"
+                                            :text="room.autoAccept ? t('roomvox', 'Yes') : t('roomvox', 'No')"
                                             :variant="room.autoAccept ? 'success' : 'secondary'"
                                             no-close />
                                     </td>
                                     <td>
                                         <NcChip
-                                            :text="room.active ? $t('Active') : $t('Inactive')"
+                                            :text="room.active ? t('roomvox', 'Active') : t('roomvox', 'Inactive')"
                                             :variant="room.active ? 'success' : 'warning'"
                                             no-close />
                                     </td>
@@ -290,7 +290,7 @@
                                                 <template #icon>
                                                     <Pencil :size="20" />
                                                 </template>
-                                                {{ $t('Edit') }}
+                                                {{ t('roomvox', 'Edit') }}
                                             </NcActionButton>
                                             <NcActionButton v-for="groupOption in moveToGroupOptions(room)"
                                                 :key="groupOption.id ?? 'none'"
@@ -336,7 +336,7 @@ import ChevronDown from 'vue-material-design-icons/ChevronDown.vue'
 import ChevronRight from 'vue-material-design-icons/ChevronRight.vue'
 import FolderMove from 'vue-material-design-icons/FolderMove.vue'
 import Check from 'vue-material-design-icons/Check.vue'
-const t = (text, vars = {}) => translate('roomvox', text, vars)
+const t = (app, text, vars = {}) => translate(app, text, vars)
 
 const props = defineProps({
     rooms: { type: Array, default: () => [] },
@@ -461,7 +461,7 @@ const moveToGroupOptions = (room) => {
     // Add "No group" option
     options.push({
         id: null,
-        label: '— ' + t('No group') + ' —',
+        label: '— ' + t('roomvox', 'No group') + ' —',
         isCurrent: !room.groupId
     })
     return options

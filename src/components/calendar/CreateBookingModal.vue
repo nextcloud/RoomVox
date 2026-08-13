@@ -1,66 +1,66 @@
 <template>
-    <NcModal :name="$t('Create Booking')" @close="$emit('close')">
+    <NcModal :name="t('roomvox', 'Create Booking')" @close="$emit('close')">
         <div class="create-booking-modal">
-            <h2>{{ $t('New Booking') }}</h2>
+            <h2>{{ t('roomvox', 'New Booking') }}</h2>
 
             <form @submit.prevent="handleSubmit">
                 <div class="form-group">
-                    <label for="booking-summary">{{ $t('Title') }} *</label>
+                    <label for="booking-summary">{{ t('roomvox', 'Title') }} *</label>
                     <NcTextField
                         id="booking-summary"
                         v-model="form.summary"
-                        :placeholder="$t('Meeting name')"
+                        :placeholder="t('roomvox', 'Meeting name')"
                         required />
                 </div>
 
                 <div class="form-group">
-                    <label for="booking-room">{{ $t('Room') }} *</label>
+                    <label for="booking-room">{{ t('roomvox', 'Room') }} *</label>
                     <NcSelect
                         v-model="selectedRoom"
                         :options="roomOptions"
-                        :placeholder="$t('Select a room')"
+                        :placeholder="t('roomvox', 'Select a room')"
                         label="label"
                         :reduce="option => option.value" />
                 </div>
 
                 <div class="form-row">
                     <div class="form-group">
-                        <label for="booking-date">{{ $t('Date') }} *</label>
+                        <label for="booking-date">{{ t('roomvox', 'Date') }} *</label>
                         <NcDateTimePicker
                             id="booking-date"
                             v-model="form.date"
                             type="date"
-                            :placeholder="$t('Select date')" />
+                            :placeholder="t('roomvox', 'Select date')" />
                     </div>
                 </div>
 
                 <div class="form-row">
                     <div class="form-group">
-                        <label for="booking-start">{{ $t('Start time') }} *</label>
+                        <label for="booking-start">{{ t('roomvox', 'Start time') }} *</label>
                         <NcDateTimePicker
                             id="booking-start"
                             v-model="form.startTime"
                             type="time"
                             :minute-step="15"
-                            :placeholder="$t('Start time')" />
+                            :placeholder="t('roomvox', 'Start time')" />
                     </div>
                     <div class="form-group">
-                        <label for="booking-end">{{ $t('End time') }} *</label>
+                        <label for="booking-end">{{ t('roomvox', 'End time') }} *</label>
                         <NcDateTimePicker
                             id="booking-end"
                             v-model="form.endTime"
                             type="time"
                             :minute-step="15"
-                            :placeholder="$t('End time')" />
+                            :placeholder="t('roomvox', 'End time')" />
                     </div>
                 </div>
 
                 <div class="form-group">
-                    <label for="booking-description">{{ $t('Description') }}</label>
+                    <label for="booking-description">{{ t('roomvox', 'Description') }}</label>
                     <NcTextArea
                         id="booking-description"
                         v-model="form.description"
-                        :placeholder="$t('Optional description')"
+                        :placeholder="t('roomvox', 'Optional description')"
                         :rows="3" />
                 </div>
 
@@ -70,7 +70,7 @@
 
                 <div class="modal-actions">
                     <NcButton type="tertiary" @click="$emit('close')">
-                        {{ $t('Cancel') }}
+                        {{ t('roomvox', 'Cancel') }}
                     </NcButton>
                     <NcButton
                         type="primary"
@@ -79,7 +79,7 @@
                         <template v-if="loading">
                             <NcLoadingIcon :size="20" />
                         </template>
-                        {{ $t('Create Booking') }}
+                        {{ t('roomvox', 'Create Booking') }}
                     </NcButton>
                 </div>
             </form>
@@ -102,7 +102,7 @@ import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 
 import { createBooking } from '../../services/api.js'
 
-const t = (text, vars = {}) => translate('roomvox', text, vars)
+const t = (app, text, vars = {}) => translate(app, text, vars)
 
 const props = defineProps({
     roomId: { type: String, default: null },
@@ -184,13 +184,13 @@ async function handleSubmit() {
         const endISO = combineDateTime(form.value.date, form.value.endTime)
 
         if (!startISO || !endISO) {
-            error.value = t('Invalid date/time selection')
+            error.value = t('roomvox', 'Invalid date/time selection')
             return
         }
 
         // Validate end is after start
         if (new Date(endISO) <= new Date(startISO)) {
-            error.value = t('End time must be after start time')
+            error.value = t('roomvox', 'End time must be after start time')
             return
         }
 
@@ -201,7 +201,7 @@ async function handleSubmit() {
             description: form.value.description.trim(),
         })
 
-        showSuccess(t('Booking created successfully'))
+        showSuccess(t('roomvox', 'Booking created successfully'))
         emit('created')
     } catch (e) {
         const message = e.response?.data?.error || 'Failed to create booking'
