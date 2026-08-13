@@ -112,9 +112,15 @@ class PersonalApiController extends Controller {
             return $isAdmin || $this->permissionService->canManage($userId, $room['id']);
         });
 
+        // Only bookings that have not ended yet: approving a meeting that is
+        // already over serves no purpose, and expired requests piled up in the
+        // queue indefinitely (issue #28). getBookings() drops anything whose
+        // end lies before $from, so a meeting in progress still shows up.
+        $now = (new \DateTimeImmutable('now'))->format('c');
+
         $pendingBookings = [];
         foreach ($managedRooms as $room) {
-            $bookings = $this->calDAVService->getBookings($room['userId']);
+            $bookings = $this->calDAVService->getBookings($room['userId'], $now);
 
             foreach ($bookings as $booking) {
                 if (($booking['partstat'] ?? '') === 'TENTATIVE') {
