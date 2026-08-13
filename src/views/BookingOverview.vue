@@ -4,15 +4,15 @@
         <div class="stats-row">
             <div class="stat-card">
                 <div class="stat-value">{{ stats.today }}</div>
-                <div class="stat-label">{{ $t('Today') }}</div>
+                <div class="stat-label">{{ t('roomvox', 'Today') }}</div>
             </div>
             <div class="stat-card stat-card--warning" @click="statusFilter = 'pending'">
                 <div class="stat-value">{{ stats.pending }}</div>
-                <div class="stat-label">{{ $t('Pending') }}</div>
+                <div class="stat-label">{{ t('roomvox', 'Pending') }}</div>
             </div>
             <div class="stat-card">
                 <div class="stat-value">{{ stats.thisWeek }}</div>
-                <div class="stat-label">{{ $t('This Week') }}</div>
+                <div class="stat-label">{{ t('roomvox', 'This Week') }}</div>
             </div>
         </div>
 
@@ -22,7 +22,7 @@
                 <NcSelect
                     v-model="selectedRoom"
                     :options="roomOptions"
-                    :placeholder="$t('All rooms')"
+                    :placeholder="t('roomvox', 'All rooms')"
                     label="label"
                     track-by="id"
                     :clearable="true"
@@ -62,13 +62,13 @@
                     <button
                         :class="['view-btn', { active: viewMode === 'list' }]"
                         @click="viewMode = 'list'"
-                        :title="$t('List view')">
+                        :title="t('roomvox', 'List view')">
                         <FormatListBulleted :size="20" />
                     </button>
                     <button
                         :class="['view-btn', { active: viewMode === 'calendar' }]"
                         @click="viewMode = 'calendar'"
-                        :title="$t('Calendar view')">
+                        :title="t('roomvox', 'Calendar view')">
                         <CalendarMonth :size="20" />
                     </button>
                 </div>
@@ -105,40 +105,43 @@
                 <thead>
                     <tr>
                         <th class="th-sortable" @click="toggleSort('summary')">
-                            {{ $t('Event') }}
+                            {{ t('roomvox', 'Event') }}
                             <span v-if="sortField === 'summary'" class="sort-icon">{{ sortDirection === 'asc' ? '▲' : '▼' }}</span>
                         </th>
                         <th class="th-sortable" @click="toggleSort('roomName')">
-                            {{ $t('Room') }}
+                            {{ t('roomvox', 'Room') }}
                             <span v-if="sortField === 'roomName'" class="sort-icon">{{ sortDirection === 'asc' ? '▲' : '▼' }}</span>
                         </th>
                         <th class="th-sortable" @click="toggleSort('roomLocation')">
-                            {{ $t('Location') }}
+                            {{ t('roomvox', 'Location') }}
                             <span v-if="sortField === 'roomLocation'" class="sort-icon">{{ sortDirection === 'asc' ? '▲' : '▼' }}</span>
                         </th>
                         <th class="th-sortable" @click="toggleSort('dtstart')">
-                            {{ $t('When') }}
+                            {{ t('roomvox', 'When') }}
                             <span v-if="sortField === 'dtstart'" class="sort-icon">{{ sortDirection === 'asc' ? '▲' : '▼' }}</span>
                         </th>
                         <th class="th-sortable" @click="toggleSort('organizerName')">
-                            {{ $t('Organizer') }}
+                            {{ t('roomvox', 'Organizer') }}
                             <span v-if="sortField === 'organizerName'" class="sort-icon">{{ sortDirection === 'asc' ? '▲' : '▼' }}</span>
                         </th>
                         <th class="th-sortable" @click="toggleSort('partstat')">
-                            {{ $t('Status') }}
+                            {{ t('roomvox', 'Status') }}
                             <span v-if="sortField === 'partstat'" class="sort-icon">{{ sortDirection === 'asc' ? '▲' : '▼' }}</span>
                         </th>
-                        <th class="th-actions">{{ $t('Actions') }}</th>
+                        <th class="th-actions">{{ t('roomvox', 'Actions') }}</th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr v-for="booking in filteredBookings" :key="booking.uid + booking.roomId">
-                        <td class="booking-summary">{{ booking.summary || $t('Unnamed event') }}</td>
+                        <td class="booking-summary">{{ booking.summary || t('roomvox', 'Unnamed event') }}</td>
                         <td class="booking-room">{{ booking.roomName }}</td>
                         <td>{{ booking.roomLocation || '—' }}</td>
                         <td class="booking-when">
                             <div class="when-date">{{ formatRelativeDate(booking.dtstart) }}</div>
-                            <div class="when-time">{{ formatTime(booking.dtstart) }} – {{ formatTime(booking.dtend) }}</div>
+                            <div class="when-time">
+                                <template v-if="booking.allDay">{{ t('roomvox', 'All day') }}</template>
+                                <template v-else>{{ formatTime(booking.dtstart) }} – {{ formatTime(booking.dtend) }}</template>
+                            </div>
                         </td>
                         <td>{{ booking.organizerName || booking.organizer }}</td>
                         <td>
@@ -170,14 +173,14 @@
                                 <NcButton
                                     type="tertiary"
                                     :href="getCalendarLink(booking)"
-                                    :title="$t('Open in Calendar')">
+                                    :title="t('roomvox', 'Open in Calendar')">
                                     <template #icon>
                                         <OpenInNew :size="20" />
                                     </template>
                                 </NcButton>
                                 <NcButton
                                     type="tertiary"
-                                    :title="$t('Cancel booking')"
+                                    :title="t('roomvox', 'Cancel booking')"
                                     @click="confirmDelete(booking)">
                                     <template #icon>
                                         <Delete :size="20" />
@@ -200,32 +203,32 @@
         <!-- Cancel Booking Confirmation Dialog -->
         <NcDialog
             v-if="deleteTarget"
-            :name="$t('Cancel booking')"
+            :name="t('roomvox', 'Cancel booking')"
             :open="!!deleteTarget"
             @close="deleteTarget = null">
             <template v-if="deleteTarget?.recurrenceId">
-                <p>{{ $t('This booking is part of a recurring series. What would you like to cancel?') }}</p>
+                <p>{{ t('roomvox', 'This booking is part of a recurring series. What would you like to cancel?') }}</p>
                 <p><strong>{{ deleteTarget?.summary }}</strong></p>
                 <p>{{ formatRelativeDate(deleteTarget?.dtstart) }} {{ formatTime(deleteTarget?.dtstart) }} – {{ formatTime(deleteTarget?.dtend) }}</p>
-                <p>{{ $t('The booker will be notified by email.') }}</p>
+                <p>{{ t('roomvox', 'The booker will be notified by email.') }}</p>
             </template>
             <template v-else>
-                <p>{{ $t('Are you sure you want to cancel this booking? The booker will be notified by email.') }}</p>
+                <p>{{ t('roomvox', 'Are you sure you want to cancel this booking? The booker will be notified by email.') }}</p>
                 <p><strong>{{ deleteTarget?.summary }}</strong></p>
                 <p>{{ formatRelativeDate(deleteTarget?.dtstart) }} {{ formatTime(deleteTarget?.dtstart) }} – {{ formatTime(deleteTarget?.dtend) }}</p>
             </template>
             <template #actions>
-                <NcButton type="tertiary" @click="deleteTarget = null">{{ $t('Keep') }}</NcButton>
+                <NcButton type="tertiary" @click="deleteTarget = null">{{ t('roomvox', 'Keep') }}</NcButton>
                 <template v-if="deleteTarget?.recurrenceId">
                     <NcButton type="warning" :disabled="deleting" @click="executeDelete('occurrence')">
-                        {{ $t('This occurrence') }}
+                        {{ t('roomvox', 'This occurrence') }}
                     </NcButton>
                     <NcButton type="error" :disabled="deleting" @click="executeDelete('series')">
-                        {{ $t('Entire series') }}
+                        {{ t('roomvox', 'Entire series') }}
                     </NcButton>
                 </template>
                 <NcButton v-else type="error" :disabled="deleting" @click="executeDelete('series')">
-                    {{ $t('Cancel booking') }}
+                    {{ t('roomvox', 'Cancel booking') }}
                 </NcButton>
             </template>
         </NcDialog>
@@ -255,7 +258,7 @@ import ResourceCalendar from '../components/calendar/ResourceCalendar.vue'
 import { getAllBookings, respondToBooking, deleteBooking } from '../services/api.js'
 import { generateUrl } from '@nextcloud/router'
 
-const t = (text, vars = {}) => translate('roomvox', text, vars)
+const t = (app, text, vars = {}) => translate(app, text, vars)
 const ncLocale = getLanguage().replace('_', '-')
 
 const props = defineProps({
@@ -288,18 +291,18 @@ const stats = ref({
 })
 
 const statusTabs = computed(() => [
-    { value: 'all', label: t('All') },
-    { value: 'pending', label: t('Pending') },
-    { value: 'accepted', label: t('Accepted') },
-    { value: 'declined', label: t('Declined') },
+    { value: 'all', label: t('roomvox', 'All') },
+    { value: 'pending', label: t('roomvox', 'Pending') },
+    { value: 'accepted', label: t('roomvox', 'Accepted') },
+    { value: 'declined', label: t('roomvox', 'Declined') },
 ])
 
 const dateRangeTabs = computed(() => [
-    { value: 'upcoming', label: t('Upcoming') },
-    { value: 'thisWeek', label: t('This week') },
-    { value: 'thisMonth', label: t('This month') },
-    { value: 'all', label: t('All') },
-    { value: 'past', label: t('Past') },
+    { value: 'upcoming', label: t('roomvox', 'Upcoming') },
+    { value: 'thisWeek', label: t('roomvox', 'This week') },
+    { value: 'thisMonth', label: t('roomvox', 'This month') },
+    { value: 'all', label: t('roomvox', 'All') },
+    { value: 'past', label: t('roomvox', 'Past') },
 ])
 
 const groupNameById = computed(() => {
@@ -314,7 +317,7 @@ const groupNameById = computed(() => {
 // apart in the filter (issue #19). Rooms without a (resolvable) group keep
 // their plain name.
 const roomOptions = computed(() => [
-    { id: null, label: t('All rooms') },
+    { id: null, label: t('roomvox', 'All rooms') },
     ...props.rooms.map(r => {
         const groupName = r.groupId ? groupNameById.value[r.groupId] : null
         return { id: r.id, label: groupName ? `${r.name} (${groupName})` : r.name }
@@ -343,15 +346,15 @@ const filteredBookings = computed(() => {
 })
 
 const emptyTitle = computed(() => {
-    if (statusFilter.value === 'pending') return t('No pending bookings')
-    if (statusFilter.value === 'accepted') return t('No accepted bookings')
-    if (statusFilter.value === 'declined') return t('No declined bookings')
-    return t('No bookings')
+    if (statusFilter.value === 'pending') return t('roomvox', 'No pending bookings')
+    if (statusFilter.value === 'accepted') return t('roomvox', 'No accepted bookings')
+    if (statusFilter.value === 'declined') return t('roomvox', 'No declined bookings')
+    return t('roomvox', 'No bookings')
 })
 
 const emptyDescription = computed(() => {
-    if (statusFilter.value === 'pending') return t('All booking requests have been processed')
-    return t('No events found for the selected filters')
+    if (statusFilter.value === 'pending') return t('roomvox', 'All booking requests have been processed')
+    return t('roomvox', 'No events found for the selected filters')
 })
 
 const roomsForCalendar = computed(() => {
@@ -416,7 +419,7 @@ const loadBookings = async () => {
         bookings.value = response.data.bookings || []
         stats.value = response.data.stats || { today: 0, pending: 0, thisWeek: 0 }
     } catch (e) {
-        showError(t('Failed to load bookings'))
+        showError(t('roomvox', 'Failed to load bookings'))
         bookings.value = []
     } finally {
         loading.value = false
@@ -427,27 +430,40 @@ const respond = async (roomId, bookingUid, action) => {
     responding.value = bookingUid
     try {
         await respondToBooking(roomId, bookingUid, action)
-        showSuccess(action === 'accept' ? t('Booking accepted') : t('Booking declined'))
+        showSuccess(action === 'accept' ? t('roomvox', 'Booking accepted') : t('roomvox', 'Booking declined'))
         await loadBookings()
     } catch (e) {
-        showError(t('Failed to process response'))
+        showError(t('roomvox', 'Failed to process response'))
     } finally {
         responding.value = null
     }
 }
 
+/**
+ * Parse a booking boundary. All-day bookings arrive as a bare "YYYY-MM-DD",
+ * which `new Date()` reads as UTC midnight — west of UTC that renders as the
+ * previous day. Build those as a local date instead (issue #27).
+ */
+const parseBookingDate = (dateStr) => {
+    const dateOnly = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateStr)
+    if (dateOnly) {
+        return new Date(Number(dateOnly[1]), Number(dateOnly[2]) - 1, Number(dateOnly[3]))
+    }
+    return new Date(dateStr)
+}
+
 const formatRelativeDate = (dateStr) => {
     if (!dateStr) return '—'
-    const d = new Date(dateStr)
+    const d = parseBookingDate(dateStr)
     const today = new Date()
     const tomorrow = new Date()
     tomorrow.setDate(today.getDate() + 1)
 
     if (d.toDateString() === today.toDateString()) {
-        return t('Today')
+        return t('roomvox', 'Today')
     }
     if (d.toDateString() === tomorrow.toDateString()) {
-        return t('Tomorrow')
+        return t('roomvox', 'Tomorrow')
     }
     return d.toLocaleDateString(ncLocale, { weekday: 'short', day: 'numeric', month: 'short' })
 }
@@ -469,11 +485,11 @@ const getStatusType = (partstat) => {
 
 const getStatusLabel = (partstat) => {
     switch (partstat) {
-        case 'ACCEPTED': return t('Accepted')
-        case 'DECLINED': return t('Declined')
-        case 'TENTATIVE': return t('Pending')
-        case 'NEEDS-ACTION': return t('Needs action')
-        default: return partstat || t('Unknown')
+        case 'ACCEPTED': return t('roomvox', 'Accepted')
+        case 'DECLINED': return t('roomvox', 'Declined')
+        case 'TENTATIVE': return t('roomvox', 'Pending')
+        case 'NEEDS-ACTION': return t('roomvox', 'Needs action')
+        default: return partstat || t('roomvox', 'Unknown')
     }
 }
 
@@ -493,11 +509,11 @@ const executeDelete = async (mode = 'series') => {
     const recurrenceId = mode === 'occurrence' ? deleteTarget.value.recurrenceId : null
     try {
         await deleteBooking(deleteTarget.value.roomId, deleteTarget.value.uid, recurrenceId)
-        showSuccess(mode === 'occurrence' ? t('Occurrence cancelled') : t('Booking cancelled'))
+        showSuccess(mode === 'occurrence' ? t('roomvox', 'Occurrence cancelled') : t('roomvox', 'Booking cancelled'))
         deleteTarget.value = null
         await loadBookings()
     } catch (e) {
-        showError(t('Failed to cancel booking'))
+        showError(t('roomvox', 'Failed to cancel booking'))
     } finally {
         deleting.value = false
     }

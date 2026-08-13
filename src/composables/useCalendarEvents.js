@@ -11,6 +11,10 @@ export function useCalendarEvents(bookingsRef, roomsRef) {
             title: b.summary || 'Unnamed',
             start: b.dtstart,
             end: b.dtend,
+            // All-day bookings arrive as bare Y-m-d dates; telling FullCalendar
+            // so keeps it from interpreting them in the local timezone and
+            // shifting them into the next day (issue #27).
+            allDay: b.allDay === true,
             extendedProps: {
                 organizer: b.organizer,
                 organizerName: b.organizerName,

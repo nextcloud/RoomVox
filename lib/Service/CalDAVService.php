@@ -12,6 +12,10 @@ use Sabre\VObject\Reader;
 
 class CalDAVService {
     private ?ExchangeSyncService $exchangeSyncService = null;
+    private ?RoomService $roomService = null;
+
+    /** @var array<string, string> Cached roomUserId → lowercase room email */
+    private array $roomEmailByUserId = [];
 
     public function __construct(
         private CalDavBackend $calDavBackend,
@@ -26,6 +30,81 @@ class CalDAVService {
      */
     public function setExchangeSyncService(ExchangeSyncService $service): void {
         $this->exchangeSyncService = $service;
+    }
+
+    /**
+     * Set the room service, used to resolve which ATTENDEE line belongs to the
+     * room whose calendar is being read. Late injection keeps CalDAVService
+     * constructible without it (RoomService itself never needs CalDAVService,
+     * so this is for test ergonomics rather than a dependency cycle).
+     */
+    public function setRoomService(RoomService $service): void {
+        $this->roomService = $service;
+    }
+
+    /**
+     * Resolve the email address of the room owning $roomUserId, or '' when it
+     * cannot be determined (no RoomService injected, or unknown user id).
+     */
+    private function getRoomEmail(string $roomUserId): string {
+        if (isset($this->roomEmailByUserId[$roomUserId])) {
+            return $this->roomEmailByUserId[$roomUserId];
+        }
+
+        $email = '';
+        if ($this->roomService !== null) {
+            $room = $this->roomService->getRoomByUserId($roomUserId);
+            if ($room !== null) {
+                $email = strtolower(RoomService::stripMailto((string)($room['email'] ?? '')));
+            }
+        }
+
+        return $this->roomEmailByUserId[$roomUserId] = $email;
+    }
+
+    /**
+     * Find the PARTSTAT of a specific room's ATTENDEE line in an event.
+     *
+     * An event booked into two rooms carries BOTH room attendees, and each room
+     * calendar holds a copy of that same event. Matching on "first CUTYPE=ROOM"
+     * therefore reports the *other* room's status once a second room is added
+     * (issue #22), so the owning room's email is matched first and the CUTYPE
+     * heuristic only serves as a fallback for single-room events.
+     *
+     * @return string PARTSTAT value, defaulting to 'NEEDS-ACTION'
+     */
+    private function extractRoomPartstat(
+        \Sabre\VObject\Component\VEvent $vEvent,
+        string $roomEmail,
+        string $organizerEmail,
+    ): string {
+        $attendees = $vEvent->select('ATTENDEE');
+
+        // 1. Exact match on the owning room's own attendee line.
+        if ($roomEmail !== '') {
+            foreach ($attendees as $attendee) {
+                $email = strtolower(RoomService::stripMailto((string)$attendee));
+                if ($email === $roomEmail) {
+                    return isset($attendee['PARTSTAT']) ? (string)$attendee['PARTSTAT'] : 'NEEDS-ACTION';
+                }
+            }
+        }
+
+        // 2. Fallback: first CUTYPE=ROOM, then first non-organizer attendee
+        //    (clients like iOS send CUTYPE=INDIVIDUAL for rooms).
+        $fallbackPartstat = null;
+        foreach ($attendees as $attendee) {
+            $cutype = isset($attendee['CUTYPE']) ? (string)$attendee['CUTYPE'] : '';
+            if ($cutype === 'ROOM') {
+                return isset($attendee['PARTSTAT']) ? (string)$attendee['PARTSTAT'] : 'NEEDS-ACTION';
+            }
+            $attendeeEmail = strtolower(RoomService::stripMailto((string)$attendee));
+            if ($attendeeEmail !== $organizerEmail && $fallbackPartstat === null) {
+                $fallbackPartstat = isset($attendee['PARTSTAT']) ? (string)$attendee['PARTSTAT'] : 'NEEDS-ACTION';
+            }
+        }
+
+        return $fallbackPartstat ?? 'NEEDS-ACTION';
     }
 
     /**
@@ -86,6 +165,7 @@ class CalDAVService {
 
         $objects = $this->calDavBackend->getCalendarObjects($calendarId);
         $bookings = [];
+        $roomEmail = $this->getRoomEmail($roomUserId);
 
         foreach ($objects as $object) {
             $fullObject = $this->calDavBackend->getCalendarObject($calendarId, $object['uri']);
@@ -151,34 +231,19 @@ class CalDAVService {
                     $organizerName = isset($masterEvent->ORGANIZER['CN']) ? (string)$masterEvent->ORGANIZER['CN'] : $organizer;
                 }
 
-                // Extract PARTSTAT from master event (same for all occurrences)
-                // First try CUTYPE=ROOM, then fall back to non-organizer attendee
-                // (some clients like iOS send CUTYPE=INDIVIDUAL for rooms)
-                $partstat = 'NEEDS-ACTION';
+                // Extract PARTSTAT from master event (same for all occurrences).
+                // Matched on this room's own attendee line so a second room on
+                // the same event does not report the first room's status (#22).
                 $organizerEmail = $organizer ? strtolower(RoomService::stripMailto($organizer)) : '';
-                $attendees = $masterEvent->select('ATTENDEE');
-                $fallbackPartstat = null;
-                foreach ($attendees as $attendee) {
-                    $cutype = isset($attendee['CUTYPE']) ? (string)$attendee['CUTYPE'] : '';
-                    if ($cutype === 'ROOM') {
-                        $partstat = isset($attendee['PARTSTAT']) ? (string)$attendee['PARTSTAT'] : 'NEEDS-ACTION';
-                        $fallbackPartstat = null;
-                        break;
-                    }
-                    $attendeeEmail = strtolower(RoomService::stripMailto((string)$attendee));
-                    if ($attendeeEmail !== $organizerEmail && $fallbackPartstat === null) {
-                        $fallbackPartstat = isset($attendee['PARTSTAT']) ? (string)$attendee['PARTSTAT'] : 'NEEDS-ACTION';
-                    }
-                }
-                if ($fallbackPartstat !== null) {
-                    $partstat = $fallbackPartstat;
-                }
+                $partstat = $this->extractRoomPartstat($masterEvent, $roomEmail, $organizerEmail);
 
                 $uid = (string)($masterEvent->UID ?? $object['uri']);
                 $summary = (string)($masterEvent->SUMMARY ?? '');
                 $description = (string)($masterEvent->DESCRIPTION ?? '');
                 $status = (string)($masterEvent->STATUS ?? '');
                 $location = (string)($masterEvent->LOCATION ?? '');
+
+                $isAllDay = $this->isAllDayEvent($masterEvent);
 
                 foreach ($vEvents as $evt) {
                     $dtStart = $evt->DTSTART ? $evt->DTSTART->getDateTime() : null;
@@ -205,8 +270,9 @@ class CalDAVService {
                         'uri' => $object['uri'],
                         'summary' => $summary,
                         'description' => $description,
-                        'dtstart' => $dtStart ? $dtStart->format('c') : null,
-                        'dtend' => $dtEnd ? $dtEnd->format('c') : null,
+                        'dtstart' => $this->formatEventDate($dtStart, $isAllDay),
+                        'dtend' => $this->formatEventDate($dtEnd, $isAllDay),
+                        'allDay' => $isAllDay,
                         'organizer' => $organizer,
                         'organizerName' => $organizerName,
                         'partstat' => $partstat,
@@ -230,6 +296,43 @@ class CalDAVService {
     }
 
     /**
+     * Is this an all-day event, i.e. is DTSTART a DATE rather than a DATE-TIME?
+     *
+     * An all-day VEVENT carries `DTSTART;VALUE=DATE:20260813` — a calendar date
+     * with no time and no zone. Sabre still hands that back as a DateTime at
+     * midnight, so serialising it with format('c') invents an instant: rendered
+     * east of UTC that midnight becomes 02:00 and the event appears to run into
+     * the next day (issue #27). Detecting it lets us emit a bare date instead.
+     */
+    private function isAllDayEvent(?\Sabre\VObject\Component\VEvent $vEvent): bool {
+        if ($vEvent === null || !$vEvent->DTSTART) {
+            return false;
+        }
+
+        $dtStart = $vEvent->DTSTART;
+
+        // Preferred: ask the property itself (Sabre\VObject\Property\ICalendar\DateTime).
+        if (method_exists($dtStart, 'hasTime')) {
+            return !$dtStart->hasTime();
+        }
+
+        // Fallback: the explicit VALUE=DATE parameter.
+        $valueType = isset($dtStart['VALUE']) ? strtoupper((string)$dtStart['VALUE']) : '';
+        return $valueType === 'DATE';
+    }
+
+    /**
+     * Serialise an event boundary: bare `Y-m-d` for all-day events, full
+     * ISO-8601 with offset otherwise.
+     */
+    private function formatEventDate(?\DateTimeInterface $date, bool $isAllDay): ?string {
+        if ($date === null) {
+            return null;
+        }
+        return $isAllDay ? $date->format('Y-m-d') : $date->format('c');
+    }
+
+    /**
      * Get raw VObject calendar objects for a room without expanding RRULE.
      *
      * Used by the iCal feed: clients (Apple Calendar, Thunderbird, Outlook)
@@ -249,6 +352,7 @@ class CalDAVService {
 
         $objects = $this->calDavBackend->getCalendarObjects($calendarId);
         $result = [];
+        $roomEmail = $this->getRoomEmail($roomUserId);
 
         foreach ($objects as $object) {
             $fullObject = $this->calDavBackend->getCalendarObject($calendarId, $object['uri']);
@@ -268,32 +372,15 @@ class CalDAVService {
                     continue;
                 }
 
-                // PARTSTAT extraction (same logic as getBookings():134-152):
-                // CUTYPE=ROOM first, then non-organizer attendee fallback for
-                // clients like iOS that send CUTYPE=INDIVIDUAL for rooms.
+                // PARTSTAT extraction shared with getBookings(): this room's own
+                // attendee line first, CUTYPE=ROOM / non-organizer only as a
+                // fallback for single-room events (#22).
                 $organizerEmail = '';
                 if ($masterEvent->ORGANIZER) {
                     $organizerEmail = strtolower(RoomService::stripMailto((string)$masterEvent->ORGANIZER));
                 }
 
-                $partstat = 'NEEDS-ACTION';
-                $fallbackPartstat = null;
-                $attendees = $masterEvent->select('ATTENDEE');
-                foreach ($attendees as $attendee) {
-                    $cutype = isset($attendee['CUTYPE']) ? (string)$attendee['CUTYPE'] : '';
-                    if ($cutype === 'ROOM') {
-                        $partstat = isset($attendee['PARTSTAT']) ? (string)$attendee['PARTSTAT'] : 'NEEDS-ACTION';
-                        $fallbackPartstat = null;
-                        break;
-                    }
-                    $attendeeEmail = strtolower(RoomService::stripMailto((string)$attendee));
-                    if ($attendeeEmail !== $organizerEmail && $fallbackPartstat === null) {
-                        $fallbackPartstat = isset($attendee['PARTSTAT']) ? (string)$attendee['PARTSTAT'] : 'NEEDS-ACTION';
-                    }
-                }
-                if ($fallbackPartstat !== null) {
-                    $partstat = $fallbackPartstat;
-                }
+                $partstat = $this->extractRoomPartstat($masterEvent, $roomEmail, $organizerEmail);
 
                 if ($acceptedOnly !== null && $partstat !== $acceptedOnly) {
                     continue;
@@ -359,16 +446,33 @@ class CalDAVService {
                 }
                 $roomEmail = '';
 
-                // Update PARTSTAT for room attendee (CUTYPE=ROOM or non-organizer fallback)
+                // Update PARTSTAT for this room's attendee line. On an event
+                // booked into two rooms both room attendees are present, so
+                // matching the owning room's email first prevents approving
+                // room B from writing onto room A's line (#22).
                 $attendees = $vEvent->select('ATTENDEE');
                 $updated = false;
-                foreach ($attendees as $attendee) {
-                    $cutype = isset($attendee['CUTYPE']) ? (string)$attendee['CUTYPE'] : '';
-                    if ($cutype === 'ROOM') {
-                        $attendee['PARTSTAT'] = $partstat;
-                        $roomEmail = strtolower(RoomService::stripMailto((string)$attendee));
-                        $updated = true;
-                        break;
+                $ownEmail = $this->getRoomEmail($roomUserId);
+                if ($ownEmail !== '') {
+                    foreach ($attendees as $attendee) {
+                        $email = strtolower(RoomService::stripMailto((string)$attendee));
+                        if ($email === $ownEmail) {
+                            $attendee['PARTSTAT'] = $partstat;
+                            $roomEmail = $email;
+                            $updated = true;
+                            break;
+                        }
+                    }
+                }
+                if (!$updated) {
+                    foreach ($attendees as $attendee) {
+                        $cutype = isset($attendee['CUTYPE']) ? (string)$attendee['CUTYPE'] : '';
+                        if ($cutype === 'ROOM') {
+                            $attendee['PARTSTAT'] = $partstat;
+                            $roomEmail = strtolower(RoomService::stripMailto((string)$attendee));
+                            $updated = true;
+                            break;
+                        }
                     }
                 }
                 if (!$updated) {

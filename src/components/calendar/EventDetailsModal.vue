@@ -1,8 +1,8 @@
 <template>
-    <NcModal :name="$t('Booking Details')" @close="$emit('close')">
+    <NcModal :name="t('roomvox', 'Booking Details')" @close="$emit('close')">
         <div class="event-details-modal">
             <div class="event-header">
-                <h2>{{ booking.summary || $t('Unnamed event') }}</h2>
+                <h2>{{ booking.summary || t('roomvox', 'Unnamed event') }}</h2>
                 <span :class="['status-badge', statusClass]">
                     {{ statusLabel }}
                 </span>
@@ -43,7 +43,7 @@
                         <template #icon>
                             <CheckIcon :size="20" />
                         </template>
-                        {{ $t('Accept') }}
+                        {{ t('roomvox', 'Accept') }}
                     </NcButton>
                     <NcButton
                         type="error"
@@ -52,7 +52,7 @@
                         <template #icon>
                             <CloseIcon :size="20" />
                         </template>
-                        {{ $t('Decline') }}
+                        {{ t('roomvox', 'Decline') }}
                     </NcButton>
                 </template>
 
@@ -64,7 +64,7 @@
                     <template #icon>
                         <OpenInNewIcon :size="20" />
                     </template>
-                    {{ $t('Open in Calendar') }}
+                    {{ t('roomvox', 'Open in Calendar') }}
                 </NcButton>
 
                 <!-- Delete button -->
@@ -75,41 +75,41 @@
                     <template #icon>
                         <DeleteIcon :size="20" />
                     </template>
-                    {{ $t('Cancel booking') }}
+                    {{ t('roomvox', 'Cancel booking') }}
                 </NcButton>
 
                 <div class="spacer" />
 
                 <NcButton type="tertiary" @click="$emit('close')">
-                    {{ $t('Close') }}
+                    {{ t('roomvox', 'Close') }}
                 </NcButton>
             </div>
         </div>
 
         <NcDialog
             v-if="showDeleteDialog"
-            :name="$t('Cancel booking')"
+            :name="t('roomvox', 'Cancel booking')"
             :open="showDeleteDialog"
             @close="showDeleteDialog = false">
             <template v-if="booking.recurrenceId">
-                <p>{{ $t('This booking is part of a recurring series. What would you like to cancel?') }}</p>
-                <p>{{ $t('The booker will be notified by email.') }}</p>
+                <p>{{ t('roomvox', 'This booking is part of a recurring series. What would you like to cancel?') }}</p>
+                <p>{{ t('roomvox', 'The booker will be notified by email.') }}</p>
             </template>
             <template v-else>
-                <p>{{ $t('Are you sure you want to cancel this booking? The booker will be notified by email.') }}</p>
+                <p>{{ t('roomvox', 'Are you sure you want to cancel this booking? The booker will be notified by email.') }}</p>
             </template>
             <template #actions>
-                <NcButton type="tertiary" @click="showDeleteDialog = false">{{ $t('Keep') }}</NcButton>
+                <NcButton type="tertiary" @click="showDeleteDialog = false">{{ t('roomvox', 'Keep') }}</NcButton>
                 <template v-if="booking.recurrenceId">
                     <NcButton type="warning" :disabled="loading" @click="executeDelete('occurrence')">
-                        {{ $t('This occurrence') }}
+                        {{ t('roomvox', 'This occurrence') }}
                     </NcButton>
                     <NcButton type="error" :disabled="loading" @click="executeDelete('series')">
-                        {{ $t('Entire series') }}
+                        {{ t('roomvox', 'Entire series') }}
                     </NcButton>
                 </template>
                 <NcButton v-else type="error" :disabled="loading" @click="executeDelete('series')">
-                    {{ $t('Cancel booking') }}
+                    {{ t('roomvox', 'Cancel booking') }}
                 </NcButton>
             </template>
         </NcDialog>
@@ -137,7 +137,7 @@ import OpenInNewIcon from 'vue-material-design-icons/OpenInNew.vue'
 
 import { respondToBooking, deleteBooking } from '../../services/api.js'
 
-const t = (text, vars = {}) => translate('roomvox', text, vars)
+const t = (app, text, vars = {}) => translate(app, text, vars)
 const ncLocale = getLanguage().replace('_', '-')
 
 const props = defineProps({
@@ -163,17 +163,30 @@ const statusClass = computed(() => {
 
 const statusLabel = computed(() => {
     switch (props.booking.partstat) {
-        case 'ACCEPTED': return t('Accepted')
-        case 'TENTATIVE': return t('Pending')
-        case 'DECLINED': return t('Declined')
-        default: return props.booking.partstat || t('Unknown')
+        case 'ACCEPTED': return t('roomvox', 'Accepted')
+        case 'TENTATIVE': return t('roomvox', 'Pending')
+        case 'DECLINED': return t('roomvox', 'Declined')
+        default: return props.booking.partstat || t('roomvox', 'Unknown')
     }
 })
+
+/**
+ * All-day bookings arrive as a bare "YYYY-MM-DD", which `new Date()` reads as
+ * UTC midnight — west of UTC that renders as the previous day. Build those as
+ * a local date instead (issue #27).
+ */
+const parseBookingDate = (dateStr) => {
+    const dateOnly = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateStr)
+    if (dateOnly) {
+        return new Date(Number(dateOnly[1]), Number(dateOnly[2]) - 1, Number(dateOnly[3]))
+    }
+    return new Date(dateStr)
+}
 
 // Date formatting
 const formattedDate = computed(() => {
     if (!props.booking.dtstart) return ''
-    const date = new Date(props.booking.dtstart)
+    const date = parseBookingDate(props.booking.dtstart)
     return date.toLocaleDateString(ncLocale, {
         weekday: 'long',
         day: 'numeric',
@@ -183,6 +196,7 @@ const formattedDate = computed(() => {
 })
 
 const formattedTime = computed(() => {
+    if (props.booking.allDay) return t('roomvox', 'All day')
     if (!props.booking.dtstart || !props.booking.dtend) return ''
     const start = new Date(props.booking.dtstart)
     const end = new Date(props.booking.dtend)
@@ -194,8 +208,14 @@ const formattedTime = computed(() => {
 // Calendar link
 const calendarLink = computed(() => {
     if (!props.booking.dtstart) return '#'
-    const date = new Date(props.booking.dtstart)
-    const dateStr = date.toISOString().split('T')[0]
+    // Format from the local date parts: toISOString() would convert back to
+    // UTC and can land on the wrong day.
+    const date = parseBookingDate(props.booking.dtstart)
+    const dateStr = [
+        date.getFullYear(),
+        String(date.getMonth() + 1).padStart(2, '0'),
+        String(date.getDate()).padStart(2, '0'),
+    ].join('-')
     return generateUrl(`/apps/calendar/dayGridMonth/${dateStr}`)
 })
 
@@ -204,10 +224,10 @@ async function handleRespond(action) {
     loading.value = true
     try {
         await respondToBooking(props.booking.roomId, props.booking.uid, action)
-        showSuccess(action === 'accept' ? t('Booking accepted') : t('Booking declined'))
+        showSuccess(action === 'accept' ? t('roomvox', 'Booking accepted') : t('roomvox', 'Booking declined'))
         emit('updated')
     } catch (e) {
-        showError(t('Failed to respond to booking'))
+        showError(t('roomvox', 'Failed to respond to booking'))
     } finally {
         loading.value = false
     }
@@ -222,11 +242,11 @@ async function executeDelete(mode) {
     loading.value = true
     try {
         await deleteBooking(props.booking.roomId, props.booking.uid, recurrenceId)
-        showSuccess(mode === 'occurrence' ? t('Occurrence cancelled') : t('Booking cancelled'))
+        showSuccess(mode === 'occurrence' ? t('roomvox', 'Occurrence cancelled') : t('roomvox', 'Booking cancelled'))
         showDeleteDialog.value = false
         emit('deleted')
     } catch (e) {
-        showError(t('Failed to cancel booking'))
+        showError(t('roomvox', 'Failed to cancel booking'))
     } finally {
         loading.value = false
     }
