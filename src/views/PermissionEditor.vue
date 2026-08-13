@@ -60,7 +60,7 @@
                 <div v-if="!readOnly" class="add-entry">
                     <NcTextField
                         v-model="searchQueries[role.key]"
-                        :placeholder="t('roomvox', 'Search groups...')"
+                        :placeholder="t('roomvox', 'Search groups …')"
                         @update:model-value="onSearch(role.key)" />
                     <div v-if="searchResults[role.key]?.length > 0" class="search-results">
                         <div v-for="result in searchResults[role.key]"
@@ -76,7 +76,7 @@
 
             <div v-if="!readOnly" class="form-actions">
                 <NcButton type="primary" @click="save" :disabled="saving">
-                    {{ saving ? t('roomvox', 'Saving...') : t('roomvox', 'Save Permissions') }}
+                    {{ saving ? t('roomvox', 'Saving …') : t('roomvox', 'Save permissions') }}
                 </NcButton>
             </div>
         </div>

@@ -7,7 +7,7 @@
                 </template>
                 {{ t('roomvox', 'Back') }}
             </NcButton>
-            <h2>{{ creating ? t('roomvox', 'New Room Group') : t('roomvox', 'Edit Room Group') }}</h2>
+            <h2>{{ creating ? t('roomvox', 'New room group') : t('roomvox', 'Edit room group') }}</h2>
         </div>
 
         <div class="room-group-editor__form">
@@ -32,7 +32,7 @@
 
             <div class="form-actions">
                 <NcButton type="primary" @click="save">
-                    {{ creating ? t('roomvox', 'Create Group') : t('roomvox', 'Save Changes') }}
+                    {{ creating ? t('roomvox', 'Create group') : t('roomvox', 'Save changes') }}
                 </NcButton>
                 <NcButton type="secondary" @click="$emit('cancel')">
                     {{ t('roomvox', 'Cancel') }}
@@ -41,20 +41,20 @@
                     v-if="!creating"
                     type="secondary"
                     @click="$emit('manage-permissions', group)">
-                    {{ t('roomvox', 'Manage Permissions') }}
+                    {{ t('roomvox', 'Manage permissions') }}
                 </NcButton>
                 <NcButton
                     v-if="!creating"
                     type="error"
                     @click="showDeleteDialog = true">
-                    {{ t('roomvox', 'Delete Group') }}
+                    {{ t('roomvox', 'Delete group') }}
                 </NcButton>
             </div>
         </div>
 
         <NcDialog
             v-if="showDeleteDialog"
-            :name="t('roomvox', 'Delete Room Group')"
+            :name="t('roomvox', 'Delete room group')"
             @closing="showDeleteDialog = false">
             <p>{{ t('roomvox', 'Are you sure you want to delete this room group? Rooms in this group will become ungrouped. This only works if no rooms are assigned.') }}</p>
             <template #actions>

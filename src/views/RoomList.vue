@@ -5,7 +5,7 @@
             <div class="header-actions">
                 <NcTextField
                     v-model="searchQuery"
-                    :placeholder="t('roomvox', 'Search rooms...')"
+                    :placeholder="t('roomvox', 'Search rooms …')"
                     class="search-field"
                     trailing-button-icon="close"
                     :show-trailing-button="searchQuery !== ''"
@@ -14,13 +14,13 @@
                     <template #icon>
                         <FolderPlus :size="20" />
                     </template>
-                    {{ t('roomvox', 'New Group') }}
+                    {{ t('roomvox', 'New group') }}
                 </NcButton>
                 <NcButton type="primary" @click="$emit('create')">
                     <template #icon>
                         <Plus :size="20" />
                     </template>
-                    {{ t('roomvox', 'New Room') }}
+                    {{ t('roomvox', 'New room') }}
                 </NcButton>
             </div>
         </div>
@@ -34,7 +34,7 @@
             </template>
             <template #action>
                 <NcButton type="primary" @click="$emit('create')">
-                    {{ t('roomvox', 'New Room') }}
+                    {{ t('roomvox', 'New room') }}
                 </NcButton>
             </template>
         </NcEmptyContent>
@@ -71,7 +71,7 @@
                                 <template #icon>
                                     <Pencil :size="20" />
                                 </template>
-                                {{ t('roomvox', 'Edit Group') }}
+                                {{ t('roomvox', 'Edit group') }}
                             </NcActionButton>
                         </NcActions>
                     </div>
@@ -197,7 +197,7 @@
                     <ChevronRight v-if="!expandedGroups.has('__ungrouped')" :size="20" class="chevron" />
                     <ChevronDown v-else :size="20" class="chevron" />
                     <FolderMultiple :size="18" />
-                    <span class="room-group__name">{{ t('roomvox', 'Ungrouped Rooms') }}</span>
+                    <span class="room-group__name">{{ t('roomvox', 'Ungrouped rooms') }}</span>
                     <NcCounterBubble class="room-group__count" :count="filteredUngroupedRooms.length" />
                     <span class="room-group__spacer" />
                 </div>

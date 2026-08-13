@@ -7,7 +7,7 @@
                 </template>
                 {{ t('roomvox', 'Back') }}
             </NcButton>
-            <h2>{{ creating ? t('roomvox', 'New Room') : t('roomvox', 'Edit Room') }}</h2>
+            <h2>{{ creating ? t('roomvox', 'New room') : t('roomvox', 'Edit room') }}</h2>
         </div>
 
         <div class="room-editor__form">
@@ -146,7 +146,7 @@
                 </div>
 
                 <div v-if="roomGroups.length > 0" class="form-field">
-                    <label>{{ t('roomvox', 'Room Group') }}</label>
+                    <label>{{ t('roomvox', 'Room group') }}</label>
                     <NcSelect
                         :model-value="groupOptions.find(o => o.id === form.groupId) || groupOptions[0]"
                         :options="groupOptions"
@@ -212,7 +212,7 @@
 
                     <div class="availability-actions">
                         <NcButton type="secondary" @click="addRule">
-                            {{ t('roomvox', '+ Add Rule') }}
+                            {{ t('roomvox', '+ Add rule') }}
                         </NcButton>
                     </div>
 
@@ -244,7 +244,7 @@
             </div>
 
             <div class="form-section">
-                <h3>{{ t('roomvox', 'SMTP Configuration') }}</h3>
+                <h3>{{ t('roomvox', 'SMTP configuration') }}</h3>
                 <p class="section-description">
                     {{ t('roomvox', 'Optional: configure a dedicated SMTP server for this room. If empty, the global Nextcloud mail configuration is used.') }}
                 </p>
@@ -354,7 +354,7 @@
             </div>
 
             <div v-if="exchangeGlobalEnabled" class="form-section">
-                <h3>{{ t('roomvox', 'Exchange Calendar Sync') }}</h3>
+                <h3>{{ t('roomvox', 'Exchange calendar sync') }}</h3>
                 <p class="section-description">
                     {{ t('roomvox', 'Map this room to a Microsoft 365 Exchange room resource. Bookings will be synced bidirectionally.') }}
                 </p>
@@ -376,7 +376,7 @@
                             <template v-if="exchangeValidating" #icon>
                                 <NcLoadingIcon :size="20" />
                             </template>
-                            {{ exchangeValidating ? t('roomvox', 'Validating...') : t('roomvox', 'Validate') }}
+                            {{ exchangeValidating ? t('roomvox', 'Validating …') : t('roomvox', 'Validate') }}
                         </NcButton>
                     </div>
                 </div>
@@ -398,8 +398,8 @@
                          class="exchange-initial-sync">
                         <NcLoadingIcon :size="20" />
                         <span>{{ exchange.initialSyncStatus === 'pending'
-                            ? t('roomvox', 'Exchange sync queued...')
-                            : t('roomvox', 'Syncing Exchange calendar...') }}</span>
+                            ? t('roomvox', 'Exchange sync queued …')
+                            : t('roomvox', 'Syncing Exchange calendar …') }}</span>
                     </div>
 
                     <div v-if="exchange.initialSyncStatus === 'failed'" class="exchange-initial-sync exchange-sync-failed">
@@ -426,7 +426,7 @@
 
             <div class="form-actions">
                 <NcButton type="primary" @click="save">
-                    {{ creating ? t('roomvox', 'Create Room') : t('roomvox', 'Save Changes') }}
+                    {{ creating ? t('roomvox', 'Create room') : t('roomvox', 'Save changes') }}
                 </NcButton>
                 <NcButton type="secondary" @click="$emit('cancel')">
                     {{ t('roomvox', 'Cancel') }}
@@ -435,20 +435,20 @@
                     v-if="!creating"
                     type="secondary"
                     @click="$emit('manage-permissions', room)">
-                    {{ t('roomvox', 'Manage Permissions') }}
+                    {{ t('roomvox', 'Manage permissions') }}
                 </NcButton>
                 <NcButton
                     v-if="!creating"
                     type="error"
                     @click="showDeleteDialog = true">
-                    {{ t('roomvox', 'Delete Room') }}
+                    {{ t('roomvox', 'Delete room') }}
                 </NcButton>
             </div>
         </div>
 
         <NcDialog
             v-if="showDeleteDialog"
-            :name="t('roomvox', 'Delete Room')"
+            :name="t('roomvox', 'Delete room')"
             @closing="showDeleteDialog = false">
             <p>{{ t('roomvox', 'Are you sure you want to delete this room? This action cannot be undone.') }}</p>
             <template #actions>

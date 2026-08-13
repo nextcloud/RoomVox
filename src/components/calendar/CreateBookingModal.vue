@@ -1,7 +1,7 @@
 <template>
-    <NcModal :name="t('roomvox', 'Create Booking')" @close="$emit('close')">
+    <NcModal :name="t('roomvox', 'Create booking')" @close="$emit('close')">
         <div class="create-booking-modal">
-            <h2>{{ t('roomvox', 'New Booking') }}</h2>
+            <h2>{{ t('roomvox', 'New booking') }}</h2>
 
             <form @submit.prevent="handleSubmit">
                 <div class="form-group">
@@ -79,7 +79,7 @@
                         <template v-if="loading">
                             <NcLoadingIcon :size="20" />
                         </template>
-                        {{ t('roomvox', 'Create Booking') }}
+                        {{ t('roomvox', 'Create booking') }}
                     </NcButton>
                 </div>
             </form>

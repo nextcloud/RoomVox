@@ -19,7 +19,7 @@
                 :class="['tab-button', { active: isTabActive('import-export') }]"
                 @click="onTabClick('import-export')">
                 <SwapHorizontal :size="16" />
-                {{ t('roomvox', 'Import / Export') }}
+                {{ t('roomvox', 'Import / export') }}
             </button>
             <button
                 :class="['tab-button', { active: isTabActive('settings') }]"
@@ -98,7 +98,7 @@
             <div v-if="currentView === 'import-export'" class="tab-content">
                 <div class="import-export-tab">
                     <div class="settings-section">
-                        <h2>{{ t('roomvox', 'Export Rooms') }}</h2>
+                        <h2>{{ t('roomvox', 'Export rooms') }}</h2>
                         <p class="settings-section-desc">{{ t('roomvox', 'Download all rooms as a CSV file. This file can be imported into another RoomVox instance or edited in Excel/LibreOffice.') }}</p>
                         <NcButton type="secondary" @click="handleExport">
                             <template #icon>
@@ -109,7 +109,7 @@
                     </div>
 
                     <div class="settings-section">
-                        <h2>{{ t('roomvox', 'Import Rooms') }}</h2>
+                        <h2>{{ t('roomvox', 'Import rooms') }}</h2>
                         <p class="settings-section-desc">{{ t('roomvox', 'Upload a CSV file to import rooms. RoomVox and MS365 formats are supported.') }}</p>
 
                         <!-- Upload area (step 1) -->
@@ -257,7 +257,7 @@
                                     <template v-if="importing" #icon>
                                         <NcLoadingIcon :size="20" />
                                     </template>
-                                    {{ importing ? t('roomvox', 'Importing...') : t('roomvox', 'Import') }}
+                                    {{ importing ? t('roomvox', 'Importing …') : t('roomvox', 'Import') }}
                                 </NcButton>
                             </div>
                         </div>
@@ -306,28 +306,28 @@
             <!-- Statistics -->
             <div v-if="currentView === 'statistics'" class="tab-content">
                 <div class="settings-section">
-                    <h2>{{ t('roomvox', 'Room Statistics') }}</h2>
+                    <h2>{{ t('roomvox', 'Room statistics') }}</h2>
                     <p class="settings-section-desc">{{ t('roomvox', 'Overview of rooms and bookings in your RoomVox installation.') }}</p>
 
                     <div class="stats-overview">
                         <div class="stat-row">
                             <div class="stat-info">
                                 <span class="stat-icon">🚪</span>
-                                <span class="stat-label">{{ t('roomvox', 'Total Rooms') }}</span>
+                                <span class="stat-label">{{ t('roomvox', 'Total rooms') }}</span>
                             </div>
                             <span class="stat-value">{{ rooms.length }}</span>
                         </div>
                         <div class="stat-row">
                             <div class="stat-info">
                                 <span class="stat-icon">✅</span>
-                                <span class="stat-label">{{ t('roomvox', 'Active Rooms') }}</span>
+                                <span class="stat-label">{{ t('roomvox', 'Active rooms') }}</span>
                             </div>
                             <span class="stat-value">{{ rooms.filter(r => r.active !== false).length }}</span>
                         </div>
                         <div class="stat-row">
                             <div class="stat-info">
                                 <span class="stat-icon">📁</span>
-                                <span class="stat-label">{{ t('roomvox', 'Room Groups') }}</span>
+                                <span class="stat-label">{{ t('roomvox', 'Room groups') }}</span>
                             </div>
                             <span class="stat-value">{{ roomGroups.length }}</span>
                         </div>
@@ -341,7 +341,7 @@
                 </div>
 
                 <div class="settings-section">
-                    <h2>{{ t('roomvox', 'Anonymous Usage Statistics') }}</h2>
+                    <h2>{{ t('roomvox', 'Anonymous usage statistics') }}</h2>
                     <p class="settings-section-desc">{{ t('roomvox', 'Help improve RoomVox by sharing anonymous usage statistics.') }}</p>
 
                     <div class="telemetry-settings">
@@ -389,7 +389,7 @@
 
             <!-- Settings -->
             <div v-if="currentView === 'settings'" class="roomvox-settings">
-                <NcSettingsSection :name="t('roomvox', 'API Tokens')">
+                <NcSettingsSection :name="t('roomvox', 'API tokens')">
                     <p class="section-description">
                         {{ t('roomvox', 'Manage API tokens for external integrations. Tokens allow external systems to access the RoomVox API.') }}
                     </p>
@@ -503,7 +503,7 @@
                     </NcCheckboxRadioSwitch>
                 </NcSettingsSection>
 
-                <NcSettingsSection :name="t('roomvox', 'Microsoft Exchange Sync')">
+                <NcSettingsSection :name="t('roomvox', 'Microsoft Exchange sync')">
                     <p class="section-description">
                         {{ t('roomvox', 'Connect RoomVox to Microsoft 365 Exchange to sync room calendars. Requires an Azure AD app registration with Calendars.ReadWrite and User.Read.All application permissions.') }}
                     </p>
@@ -525,7 +525,7 @@
                                         v-model="exchangeTenantId"
                                         type="text"
                                         class="room-type-input exchange-input"
-                                        :placeholder="t('roomvox', 'e.g. 12345678-abcd-...')"
+                                        :placeholder="t('roomvox', 'e.g. 12345678-abcd-…')"
                                         @change="saveExchangeSettings" />
                                 </div>
                                 <div class="form-field">
@@ -578,7 +578,7 @@
                                     <template v-if="exchangeTesting" #icon>
                                         <NcLoadingIcon :size="20" />
                                     </template>
-                                    {{ exchangeTesting ? t('roomvox', 'Testing...') : t('roomvox', 'Test Connection') }}
+                                    {{ exchangeTesting ? t('roomvox', 'Testing …') : t('roomvox', 'Test connection') }}
                                 </NcButton>
 
                                 <NcNoteCard v-if="exchangeTestResult" :type="exchangeTestResult.success ? 'success' : 'error'">
@@ -626,7 +626,7 @@
                             type="text"
                             v-model="newRoomTypeLabel"
                             class="room-type-input"
-                            :placeholder="t('roomvox', 'New room type...')"
+                            :placeholder="t('roomvox', 'New room type …')"
                             @keyup.enter="addRoomType" />
                         <NcButton
                             type="secondary"
@@ -677,7 +677,7 @@
                             type="text"
                             v-model="newFacilityLabel"
                             class="room-type-input"
-                            :placeholder="t('roomvox', 'New facility...')"
+                            :placeholder="t('roomvox', 'New facility …')"
                             @keyup.enter="addFacility" />
                         <NcButton
                             type="secondary"

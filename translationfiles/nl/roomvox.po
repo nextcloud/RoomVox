@@ -23,7 +23,7 @@ msgstr "{count} ruimtes gevonden"
 msgid "{create} new, {update} existing, {errors} errors"
 msgstr "{create} nieuw, {update} bestaand, {errors} fouten"
 
-msgid "+ Add Rule"
+msgid "+ Add rule"
 msgstr "+ Regel toevoegen"
 
 msgid "A booking has been cancelled."
@@ -62,7 +62,7 @@ msgstr "Actief"
 msgid "Active development"
 msgstr "Actieve ontwikkeling"
 
-msgid "Active Rooms"
+msgid "Active rooms"
 msgstr "Actieve ruimtes"
 
 msgid "Add"
@@ -89,7 +89,7 @@ msgstr ""
 msgid "All rooms"
 msgstr "Alle ruimtes"
 
-msgid "Anonymous Usage Statistics"
+msgid "Anonymous usage statistics"
 msgstr "Anonieme gebruiksstatistieken"
 
 msgid "Anonymous usage statistics help us understand how RoomVox is used and guide future development."
@@ -104,7 +104,7 @@ msgstr "API token aangemaakt"
 msgid "API token deleted"
 msgstr "API token verwijderd"
 
-msgid "API Tokens"
+msgid "API tokens"
 msgstr "API Tokens"
 
 msgid "App registration client ID"
@@ -182,7 +182,7 @@ msgstr ""
 msgid "Booking declined: %s — outside availability hours"
 msgstr ""
 
-msgid "Booking Details"
+msgid "Booking details"
 msgstr "Boekingsdetails"
 
 msgid "Booking details or attendees"
@@ -287,16 +287,16 @@ msgstr ""
 msgid "Could not reach the telemetry server. Please try again later."
 msgstr "Kan de telemetrieserver niet bereiken. Probeer het later opnieuw."
 
-msgid "Create Booking"
+msgid "Create booking"
 msgstr "Boeking aanmaken"
 
-msgid "Create Group"
+msgid "Create group"
 msgstr "Groep aanmaken"
 
 msgid "Create new + update existing rooms"
 msgstr "Nieuwe aanmaken + bestaande bijwerken"
 
-msgid "Create Room"
+msgid "Create room"
 msgstr "Ruimte aanmaken"
 
 msgid "Create token"
@@ -335,13 +335,13 @@ msgstr "Afgewezen"
 msgid "Delete"
 msgstr "Verwijderen"
 
-msgid "Delete Group"
+msgid "Delete group"
 msgstr "Groep verwijderen"
 
-msgid "Delete Room"
+msgid "Delete room"
 msgstr "Ruimte verwijderen"
 
-msgid "Delete Room Group"
+msgid "Delete room group"
 msgstr "Ruimtegroep verwijderen"
 
 msgid "Description"
@@ -368,7 +368,7 @@ msgstr "Voorbeeld-CSV downloaden"
 msgid "Drag and drop a CSV file here"
 msgstr "Sleep een CSV-bestand hierheen"
 
-msgid "e.g. 12345678-abcd-..."
+msgid "e.g. 12345678-abcd-…"
 msgstr ""
 
 msgid "e.g. 2"
@@ -413,13 +413,13 @@ msgstr "bijv. Utrecht"
 msgid "Edit"
 msgstr "Bewerken"
 
-msgid "Edit Group"
+msgid "Edit group"
 msgstr "Groep bewerken"
 
-msgid "Edit Room"
+msgid "Edit room"
 msgstr "Ruimte bewerken"
 
-msgid "Edit Room Group"
+msgid "Edit room group"
 msgstr "Ruimtegroep bewerken"
 
 msgid "Email"
@@ -479,7 +479,7 @@ msgstr "Alles van book + kamers beheren en statistieken bekijken"
 msgid "Everything in read + create and cancel bookings"
 msgstr "Alles van read + boekingen aanmaken en annuleren"
 
-msgid "Exchange Calendar Sync"
+msgid "Exchange calendar sync"
 msgstr ""
 
 msgid "Exchange calendar synced successfully"
@@ -488,13 +488,13 @@ msgstr ""
 msgid "Exchange resource email"
 msgstr ""
 
-msgid "Exchange sync queued..."
+msgid "Exchange sync queued …"
 msgstr ""
 
 msgid "Export CSV"
 msgstr "CSV exporteren"
 
-msgid "Export Rooms"
+msgid "Export rooms"
 msgstr "Ruimtes exporteren"
 
 msgid "Exported from another RoomVox installation"
@@ -647,7 +647,7 @@ msgstr ""
 msgid "Import"
 msgstr "Importeren"
 
-msgid "Import / Export"
+msgid "Import / export"
 msgstr "Import / Export"
 
 msgid "Import failed"
@@ -656,11 +656,11 @@ msgstr "Import mislukt"
 msgid "Import mode:"
 msgstr "Importmodus:"
 
-msgid "Import Rooms"
+msgid "Import rooms"
 msgstr "Ruimtes importeren"
 
-msgid "Importing..."
-msgstr "Importeren..."
+msgid "Importing …"
+msgstr "Importeren …"
 
 msgid "Inactive"
 msgstr "Inactief"
@@ -731,7 +731,7 @@ msgstr ""
 msgid "Manage API tokens for external integrations. Tokens allow external systems to access the RoomVox API."
 msgstr "Beheer API tokens voor externe integraties. Tokens geven externe systemen toegang tot de RoomVox API."
 
-msgid "Manage Permissions"
+msgid "Manage permissions"
 msgstr "Rechten beheren"
 
 msgid "Manager"
@@ -758,7 +758,7 @@ msgstr "Maximale boekingshorizon"
 msgid "Meeting name"
 msgstr "Naam van de vergadering"
 
-msgid "Microsoft Exchange Sync"
+msgid "Microsoft Exchange sync"
 msgstr ""
 
 msgid "Mon"
@@ -767,7 +767,7 @@ msgstr "Ma"
 msgid "Month"
 msgstr "Maand"
 
-msgid "My Rooms"
+msgid "My rooms"
 msgstr "Mijn kamers"
 
 msgid "Name"
@@ -779,26 +779,26 @@ msgstr "Actie vereist"
 msgid "New"
 msgstr "Nieuw"
 
-msgid "New Booking"
+msgid "New booking"
 msgstr "Nieuwe boeking"
 
-msgid "New facility..."
-msgstr "Nieuwe faciliteit..."
+msgid "New facility …"
+msgstr "Nieuwe faciliteit …"
 
 msgid "New features and improvements"
 msgstr "Nieuwe functies en verbeteringen"
 
-msgid "New Group"
+msgid "New group"
 msgstr "Nieuwe groep"
 
-msgid "New Room"
+msgid "New room"
 msgstr "Nieuwe ruimte"
 
-msgid "New Room Group"
+msgid "New room group"
 msgstr "Nieuwe ruimtegroep"
 
-msgid "New room type..."
-msgstr "Nieuw ruimtetype..."
+msgid "New room type …"
+msgstr "Nieuw ruimtetype …"
 
 msgid "Nextcloud Enterprise subscription detected on this instance. Contact us at info@voxcloud.nl for enterprise pricing tailored to your organization."
 msgstr ""
@@ -1004,7 +1004,7 @@ msgstr "Ruimte aangemaakt"
 msgid "Room deleted"
 msgstr "Ruimte verwijderd"
 
-msgid "Room Group"
+msgid "Room group"
 msgstr "Ruimtegroep"
 
 msgid "Room group created"
@@ -1017,9 +1017,6 @@ msgid "Room group updated"
 msgstr "Ruimtegroep bijgewerkt"
 
 msgid "Room groups"
-msgstr "Ruimtegroepen"
-
-msgid "Room Groups"
 msgstr "Ruimtegroepen"
 
 msgid "Room is active and bookable"
@@ -1046,7 +1043,7 @@ msgstr "Ruimtenummer"
 msgid "Room removed from group"
 msgstr "Ruimte verwijderd uit groep"
 
-msgid "Room Statistics"
+msgid "Room statistics"
 msgstr "Ruimtestatistieken"
 
 msgid "Room type"
@@ -1088,14 +1085,14 @@ msgstr "Za"
 msgid "Save & activate"
 msgstr "Opslaan & activeren"
 
-msgid "Save Changes"
+msgid "Save changes"
 msgstr "Wijzigingen opslaan"
 
-msgid "Save Permissions"
+msgid "Save permissions"
 msgstr "Rechten opslaan"
 
-msgid "Saving..."
-msgstr "Opslaan..."
+msgid "Saving …"
+msgstr "Opslaan …"
 
 msgid "Scope"
 msgstr "Scope"
@@ -1103,10 +1100,10 @@ msgstr "Scope"
 msgid "Scopes"
 msgstr "Scopes"
 
-msgid "Search groups..."
-msgstr "Groepen zoeken..."
+msgid "Search groups …"
+msgstr "Groepen zoeken …"
 
-msgid "Search rooms..."
+msgid "Search rooms …"
 msgstr "Ruimtes zoeken…"
 
 msgid "Select a room"
@@ -1121,8 +1118,8 @@ msgstr "Anonieme gebruiksstatistieken versturen om RoomVox te verbeteren"
 msgid "Send report now"
 msgstr "Rapport nu versturen"
 
-msgid "Sending..."
-msgstr "Versturen..."
+msgid "Sending …"
+msgstr "Versturen …"
 
 msgid "Settings"
 msgstr "Instellingen"
@@ -1139,7 +1136,7 @@ msgstr "Weekenden tonen in kalender"
 msgid "Skipped"
 msgstr "Overgeslagen"
 
-msgid "SMTP Configuration"
+msgid "SMTP configuration"
 msgstr "SMTP-configuratie"
 
 msgid "SMTP Host"
@@ -1193,10 +1190,10 @@ msgstr "Ondersteuning RoomVox"
 msgid "Supported formats"
 msgstr "Ondersteunde formaten"
 
-msgid "Syncing Exchange calendar..."
+msgid "Syncing Exchange calendar …"
 msgstr ""
 
-msgid "Test Connection"
+msgid "Test connection"
 msgstr ""
 
 msgid "Test email from %s"
@@ -1205,7 +1202,7 @@ msgstr ""
 msgid "Tested with every new Nextcloud release"
 msgstr "Getest met elke nieuwe Nextcloud-versie"
 
-msgid "Testing..."
+msgid "Testing …"
 msgstr ""
 
 msgid "Thank you for helping improve RoomVox!"
@@ -1262,9 +1259,6 @@ msgstr ""
 msgid "This week"
 msgstr "Deze week"
 
-msgid "This Week"
-msgstr "Deze week"
-
 msgid "Thu"
 msgstr "Do"
 
@@ -1286,7 +1280,7 @@ msgstr "Tokennaam (bijv. Lobby Display)"
 msgid "Tomorrow"
 msgstr "Morgen"
 
-msgid "Total Rooms"
+msgid "Total rooms"
 msgstr "Totaal aantal ruimtes"
 
 msgid "Total users"
@@ -1301,7 +1295,7 @@ msgstr "Di"
 msgid "Type"
 msgstr "Type"
 
-msgid "Ungrouped Rooms"
+msgid "Ungrouped rooms"
 msgstr "Ongegroepeerde ruimtes"
 
 msgid "Unknown"
@@ -1337,7 +1331,7 @@ msgstr "Gebruikersnaam"
 msgid "Validate"
 msgstr ""
 
-msgid "Validating..."
+msgid "Validating …"
 msgstr ""
 
 msgid "View pricing & plans"

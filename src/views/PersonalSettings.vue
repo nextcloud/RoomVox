@@ -5,7 +5,7 @@
                 :class="['tab-button', { active: currentTab === 'rooms' }]"
                 @click="currentTab = 'rooms'">
                 <DoorOpen :size="16" />
-                {{ t('roomvox', 'My Rooms') }}
+                {{ t('roomvox', 'My rooms') }}
                 <NcCounterBubble v-if="rooms.length > 0" :count="rooms.length" />
             </button>
             <button

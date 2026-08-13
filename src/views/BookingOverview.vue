@@ -12,7 +12,7 @@
             </div>
             <div class="stat-card">
                 <div class="stat-value">{{ stats.thisWeek }}</div>
-                <div class="stat-label">{{ t('roomvox', 'This Week') }}</div>
+                <div class="stat-label">{{ t('roomvox', 'This week') }}</div>
             </div>
         </div>
 

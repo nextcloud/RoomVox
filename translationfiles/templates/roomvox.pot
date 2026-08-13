@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: RoomVox 1.2.2\n"
 "Report-Msgid-Bugs-To: translations@nextcloud.com\n"
-"POT-Creation-Date: 2026-08-13 11:19+0000\n"
+"POT-Creation-Date: 2026-08-13 13:16+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -24,7 +24,7 @@ msgstr ""
 msgid "{create} new, {update} existing, {errors} errors"
 msgstr ""
 
-msgid "+ Add Rule"
+msgid "+ Add rule"
 msgstr ""
 
 msgid "A booking has been cancelled."
@@ -63,7 +63,7 @@ msgstr ""
 msgid "Active development"
 msgstr ""
 
-msgid "Active Rooms"
+msgid "Active rooms"
 msgstr ""
 
 msgid "Add"
@@ -90,7 +90,7 @@ msgstr ""
 msgid "All rooms"
 msgstr ""
 
-msgid "Anonymous Usage Statistics"
+msgid "Anonymous usage statistics"
 msgstr ""
 
 msgid "Anonymous usage statistics help us understand how RoomVox is used and guide future development."
@@ -105,7 +105,7 @@ msgstr ""
 msgid "API token deleted"
 msgstr ""
 
-msgid "API Tokens"
+msgid "API tokens"
 msgstr ""
 
 msgid "App registration client ID"
@@ -183,7 +183,7 @@ msgstr ""
 msgid "Booking declined: %s — outside availability hours"
 msgstr ""
 
-msgid "Booking Details"
+msgid "Booking details"
 msgstr ""
 
 msgid "Booking details or attendees"
@@ -288,16 +288,16 @@ msgstr ""
 msgid "Could not reach the telemetry server. Please try again later."
 msgstr ""
 
-msgid "Create Booking"
+msgid "Create booking"
 msgstr ""
 
-msgid "Create Group"
+msgid "Create group"
 msgstr ""
 
 msgid "Create new + update existing rooms"
 msgstr ""
 
-msgid "Create Room"
+msgid "Create room"
 msgstr ""
 
 msgid "Create token"
@@ -336,13 +336,13 @@ msgstr ""
 msgid "Delete"
 msgstr ""
 
-msgid "Delete Group"
+msgid "Delete group"
 msgstr ""
 
-msgid "Delete Room"
+msgid "Delete room"
 msgstr ""
 
-msgid "Delete Room Group"
+msgid "Delete room group"
 msgstr ""
 
 msgid "Description"
@@ -369,7 +369,7 @@ msgstr ""
 msgid "Drag and drop a CSV file here"
 msgstr ""
 
-msgid "e.g. 12345678-abcd-..."
+msgid "e.g. 12345678-abcd-…"
 msgstr ""
 
 msgid "e.g. 2"
@@ -414,13 +414,13 @@ msgstr ""
 msgid "Edit"
 msgstr ""
 
-msgid "Edit Group"
+msgid "Edit group"
 msgstr ""
 
-msgid "Edit Room"
+msgid "Edit room"
 msgstr ""
 
-msgid "Edit Room Group"
+msgid "Edit room group"
 msgstr ""
 
 msgid "Email"
@@ -480,7 +480,7 @@ msgstr ""
 msgid "Everything in read + create and cancel bookings"
 msgstr ""
 
-msgid "Exchange Calendar Sync"
+msgid "Exchange calendar sync"
 msgstr ""
 
 msgid "Exchange calendar synced successfully"
@@ -489,13 +489,13 @@ msgstr ""
 msgid "Exchange resource email"
 msgstr ""
 
-msgid "Exchange sync queued..."
+msgid "Exchange sync queued …"
 msgstr ""
 
 msgid "Export CSV"
 msgstr ""
 
-msgid "Export Rooms"
+msgid "Export rooms"
 msgstr ""
 
 msgid "Exported from another RoomVox installation"
@@ -648,7 +648,7 @@ msgstr ""
 msgid "Import"
 msgstr ""
 
-msgid "Import / Export"
+msgid "Import / export"
 msgstr ""
 
 msgid "Import failed"
@@ -657,10 +657,10 @@ msgstr ""
 msgid "Import mode:"
 msgstr ""
 
-msgid "Import Rooms"
+msgid "Import rooms"
 msgstr ""
 
-msgid "Importing..."
+msgid "Importing …"
 msgstr ""
 
 msgid "Inactive"
@@ -732,7 +732,7 @@ msgstr ""
 msgid "Manage API tokens for external integrations. Tokens allow external systems to access the RoomVox API."
 msgstr ""
 
-msgid "Manage Permissions"
+msgid "Manage permissions"
 msgstr ""
 
 msgid "Manager"
@@ -759,7 +759,7 @@ msgstr ""
 msgid "Meeting name"
 msgstr ""
 
-msgid "Microsoft Exchange Sync"
+msgid "Microsoft Exchange sync"
 msgstr ""
 
 msgid "Mon"
@@ -768,7 +768,7 @@ msgstr ""
 msgid "Month"
 msgstr ""
 
-msgid "My Rooms"
+msgid "My rooms"
 msgstr ""
 
 msgid "Name"
@@ -780,25 +780,25 @@ msgstr ""
 msgid "New"
 msgstr ""
 
-msgid "New Booking"
+msgid "New booking"
 msgstr ""
 
-msgid "New facility..."
+msgid "New facility …"
 msgstr ""
 
 msgid "New features and improvements"
 msgstr ""
 
-msgid "New Group"
+msgid "New group"
 msgstr ""
 
-msgid "New Room"
+msgid "New room"
 msgstr ""
 
-msgid "New Room Group"
+msgid "New room group"
 msgstr ""
 
-msgid "New room type..."
+msgid "New room type …"
 msgstr ""
 
 msgid "Nextcloud Enterprise subscription detected on this instance. Contact us at info@voxcloud.nl for enterprise pricing tailored to your organization."
@@ -1005,7 +1005,7 @@ msgstr ""
 msgid "Room deleted"
 msgstr ""
 
-msgid "Room Group"
+msgid "Room group"
 msgstr ""
 
 msgid "Room group created"
@@ -1018,9 +1018,6 @@ msgid "Room group updated"
 msgstr ""
 
 msgid "Room groups"
-msgstr ""
-
-msgid "Room Groups"
 msgstr ""
 
 msgid "Room is active and bookable"
@@ -1047,7 +1044,7 @@ msgstr ""
 msgid "Room removed from group"
 msgstr ""
 
-msgid "Room Statistics"
+msgid "Room statistics"
 msgstr ""
 
 msgid "Room type"
@@ -1089,13 +1086,13 @@ msgstr ""
 msgid "Save & activate"
 msgstr ""
 
-msgid "Save Changes"
+msgid "Save changes"
 msgstr ""
 
-msgid "Save Permissions"
+msgid "Save permissions"
 msgstr ""
 
-msgid "Saving..."
+msgid "Saving …"
 msgstr ""
 
 msgid "Scope"
@@ -1104,10 +1101,10 @@ msgstr ""
 msgid "Scopes"
 msgstr ""
 
-msgid "Search groups..."
+msgid "Search groups …"
 msgstr ""
 
-msgid "Search rooms..."
+msgid "Search rooms …"
 msgstr ""
 
 msgid "Select a room"
@@ -1122,7 +1119,7 @@ msgstr ""
 msgid "Send report now"
 msgstr ""
 
-msgid "Sending..."
+msgid "Sending …"
 msgstr ""
 
 msgid "Settings"
@@ -1140,7 +1137,7 @@ msgstr ""
 msgid "Skipped"
 msgstr ""
 
-msgid "SMTP Configuration"
+msgid "SMTP configuration"
 msgstr ""
 
 msgid "SMTP Host"
@@ -1194,10 +1191,10 @@ msgstr ""
 msgid "Supported formats"
 msgstr ""
 
-msgid "Syncing Exchange calendar..."
+msgid "Syncing Exchange calendar …"
 msgstr ""
 
-msgid "Test Connection"
+msgid "Test connection"
 msgstr ""
 
 msgid "Test email from %s"
@@ -1206,7 +1203,7 @@ msgstr ""
 msgid "Tested with every new Nextcloud release"
 msgstr ""
 
-msgid "Testing..."
+msgid "Testing …"
 msgstr ""
 
 msgid "Thank you for helping improve RoomVox!"
@@ -1263,9 +1260,6 @@ msgstr ""
 msgid "This week"
 msgstr ""
 
-msgid "This Week"
-msgstr ""
-
 msgid "Thu"
 msgstr ""
 
@@ -1287,7 +1281,7 @@ msgstr ""
 msgid "Tomorrow"
 msgstr ""
 
-msgid "Total Rooms"
+msgid "Total rooms"
 msgstr ""
 
 msgid "Total users"
@@ -1302,7 +1296,7 @@ msgstr ""
 msgid "Type"
 msgstr ""
 
-msgid "Ungrouped Rooms"
+msgid "Ungrouped rooms"
 msgstr ""
 
 msgid "Unknown"
@@ -1338,7 +1332,7 @@ msgstr ""
 msgid "Validate"
 msgstr ""
 
-msgid "Validating..."
+msgid "Validating …"
 msgstr ""
 
 msgid "View pricing & plans"

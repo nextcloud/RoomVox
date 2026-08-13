@@ -1,5 +1,5 @@
 <template>
-    <NcModal :name="t('roomvox', 'Booking Details')" @close="$emit('close')">
+    <NcModal :name="t('roomvox', 'Booking details')" @close="$emit('close')">
         <div class="event-details-modal">
             <div class="event-header">
                 <h2>{{ booking.summary || t('roomvox', 'Unnamed event') }}</h2>

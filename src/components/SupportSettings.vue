@@ -114,7 +114,7 @@
 					<NcButton type="secondary"
 						:disabled="sendingTelemetry"
 						@click="sendTelemetryNow">
-						{{ sendingTelemetry ? t('roomvox', 'Sending...') : t('roomvox', 'Send report now') }}
+						{{ sendingTelemetry ? t('roomvox', 'Sending …') : t('roomvox', 'Send report now') }}
 					</NcButton>
 					<span v-if="telemetryLastReport" class="telemetry-last-report">
 						{{ t('roomvox', 'Last report') }}: {{ formatDate(telemetryLastReport) }}
@@ -146,7 +146,7 @@
 				<NcButton type="primary"
 					:disabled="savingLicense"
 					@click="saveLicenseKey">
-					{{ savingLicense ? t('roomvox', 'Saving...') : t('roomvox', 'Save & activate') }}
+					{{ savingLicense ? t('roomvox', 'Saving …') : t('roomvox', 'Save & activate') }}
 				</NcButton>
 				<NcButton v-if="licenseStats && licenseStats.hasLicense"
 					type="tertiary"
