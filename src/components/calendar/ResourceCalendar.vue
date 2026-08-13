@@ -110,7 +110,8 @@ const detailsModal = ref({
 // Use composable for data transformation
 const { events, resources } = useCalendarEvents(
     computed(() => props.bookings),
-    computed(() => props.rooms)
+    computed(() => props.rooms),
+    currentView
 )
 
 // Calendar options
@@ -128,6 +129,9 @@ const calendarOptions = computed(() => ({
     resourceAreaWidth: '130px',
     slotMinTime: '08:00:00',
     slotMaxTime: '19:00:00',
+    // An event that ends on the grid boundary must stay on its own day rather
+    // than bleeding into the next column (issue #27).
+    nextDayThreshold: '23:59:59',
     slotDuration: '01:00:00',
     snapDuration: '00:15:00',
     scrollTime: '08:00:00',
@@ -148,9 +152,14 @@ const calendarOptions = computed(() => ({
     eventContent: (arg) => {
         const status = arg.event.extendedProps?.partstat || ''
         const statusClass = getStatusClass(status)
+        // An all-day booking has no meaningful clock time — showing the
+        // clamped 08:00 would be misleading (issue #27).
+        const timeText = arg.event.extendedProps?.allDay
+            ? t('roomvox', 'All day')
+            : arg.timeText
         return {
             html: `<div class="fc-event-content ${statusClass}">
-                <span class="fc-event-time">${arg.timeText}</span>
+                <span class="fc-event-time">${timeText}</span>
                 <span class="fc-event-title">${arg.event.title}</span>
             </div>`,
         }
