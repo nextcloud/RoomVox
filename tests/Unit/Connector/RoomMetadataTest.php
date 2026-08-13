@@ -10,6 +10,7 @@ use PHPUnit\Framework\TestCase;
 
 class RoomMetadataTest extends TestCase {
     private const ADDRESS = '{http://nextcloud.com/ns}room-building-address';
+    private const BUILDING_NAME = '{http://nextcloud.com/ns}room-building-name';
     private const STORY = '{http://nextcloud.com/ns}room-building-story';
     private const ROOM_NUMBER = '{http://nextcloud.com/ns}room-building-room-number';
     private const CAPACITY = '{http://nextcloud.com/ns}room-seating-capacity';
@@ -68,6 +69,28 @@ class RoomMetadataTest extends TestCase {
             'empty building and street' => [', , 1098 XG, Amsterdam', '1098 XG, Amsterdam'],
             'trailing separators' => ['Poppodium, Kerkstraat 10, , ', 'Poppodium, Kerkstraat 10'],
             'only separators' => [', , , ', null],
+            'empty' => ['', null],
+            'not set' => [null, null],
+        ];
+    }
+
+    /**
+     * @dataProvider buildingNameProvider
+     */
+    public function testPublishesTheBuildingName(?string $stored, ?string $expected): void {
+        $room = $this->makeRoom(address: $stored);
+
+        $this->assertSame($expected, $room->getMetadataForKey(self::BUILDING_NAME));
+    }
+
+    public static function buildingNameProvider(): array {
+        return [
+            'complete' => ['Poppodium, Kerkstraat 10, 1098 XG, Amsterdam', 'Poppodium'],
+            // An empty building column means the room has no building name.
+            // The street must not stand in for one.
+            'empty building' => [', Science Park 140, 1098 XG, Amsterdam', null],
+            'empty building and street' => [', , 1098 XG, Amsterdam', null],
+            'only a building' => ['Poppodium', 'Poppodium'],
             'empty' => ['', null],
             'not set' => [null, null],
         ];

@@ -13,6 +13,7 @@ class Room implements IRoom, IMetadataProvider {
         '{urn:ietf:params:xml:ns:caldav}calendar-description',
         '{http://nextcloud.com/ns}room-type',
         '{http://nextcloud.com/ns}room-seating-capacity',
+        '{http://nextcloud.com/ns}room-building-name',
         '{http://nextcloud.com/ns}room-building-address',
         '{http://nextcloud.com/ns}room-building-room-number',
         '{http://nextcloud.com/ns}room-building-story',
@@ -92,8 +93,10 @@ class Room implements IRoom, IMetadataProvider {
             '{urn:ietf:params:xml:ns:caldav}calendar-description' => $this->buildDescription(),
             '{http://nextcloud.com/ns}room-type' => $this->roomType,
             '{http://nextcloud.com/ns}room-seating-capacity' => $this->capacity !== null ? (string)$this->capacity : null,
+            // Published separately so clients can group rooms by building
+            // without having to guess one from the address.
+            '{http://nextcloud.com/ns}room-building-name' => $this->buildingName(),
             // Address includes building name as prefix: "Poppodium, Kerkstraat 10".
-            // Clients extract the building name (before the first comma) for grouping.
             '{http://nextcloud.com/ns}room-building-address' => $this->normalizeAddress($this->address),
             // Room number in floor.room format: "2.17" (2nd floor, room 17)
             '{http://nextcloud.com/ns}room-building-room-number' => ($this->roomNumber !== null && $this->roomNumber !== '') ? $this->roomNumber : null,
@@ -104,6 +107,24 @@ class Room implements IRoom, IMetadataProvider {
             '{http://nextcloud.com/ns}room-features' => $this->getFeaturesString(),
             default => null,
         };
+    }
+
+    /**
+     * The name of the building this room is in, if it has one.
+     *
+     * Addresses are stored as "Building, Street, PostalCode, City", so the
+     * first position is the building field of the room editor rather than
+     * something to be inferred: an empty one means the room has no building
+     * name, not that the street should stand in for it.
+     */
+    private function buildingName(): ?string {
+        if ($this->address === null || $this->address === '') {
+            return null;
+        }
+
+        $building = trim(explode(',', $this->address)[0]);
+
+        return $building === '' ? null : $building;
     }
 
     /**

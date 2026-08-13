@@ -12,6 +12,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.2.2] - 2026-08-12 - Room metadata reaches CalDAV clients
 
+### Added
+- **Rooms publish their building name**: RoomVox holds the building as its own field, but CalDAV had nowhere to put it, so clients that group rooms per building had to infer one from the address — usually by taking everything before the first comma, which turns a room at "1098 XG, Amsterdam" into a building called "1098 XG". Rooms now publish `{http://nextcloud.com/ns}room-building-name`, taken from the building field itself rather than guessed. Proposed upstream as `IRoomMetadata::BUILDING_NAME`; clients that do not know the key yet simply ignore it.
+
 ### Fixed
 - **Room floor was invisible to every CalDAV client**: the room backend published the floor under `{http://nextcloud.com/ns}room-building-floor`, which is not a key any client asks for. Nextcloud defines the property as `IRoomMetadata::BUILDING_STORY` (`room-building-story`), and cdav-library requests only that one in its PROPFIND, so the value never reached Nextcloud Calendar, Outlook, Apple Calendar or Thunderbird. The backend now publishes `room-building-story`. Nothing consumed the old key, so this only adds data where there was none.
 - **Imported rooms published a malformed address**: addresses are stored in a fixed four part format ("Building, Street, PostalCode, City") so the room editor can split them back apart, but that is an internal detail. A room imported without a building or street was published to CalDAV clients as `, , 1098 XG, Amsterdam`, which clients show verbatim and use to derive a building name. Empty positions are now dropped when publishing, and in the room description, without touching how rooms are stored — the editor keeps its four fields. This matters more now that Nextcloud Calendar groups rooms by building; see [nextcloud/calendar#8264](https://github.com/nextcloud/calendar/pull/8264).
