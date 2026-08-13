@@ -406,7 +406,12 @@ class SchedulingPlugin extends ServerPlugin {
             $attendees = $vEvent->select('ATTENDEE');
             $roomMap = $this->getRoomsByEmail(); // One cached lookup for all checks
 
-            // 1. Fix existing room attendees: CUTYPE + PARTSTAT write-back
+            // 1. Fix existing room attendees: CUTYPE + PARTSTAT write-back.
+            //    Declined rooms are collected and removed after the loop:
+            //    removing inside it invalidates the iterator, which previously
+            //    skipped every later room on a multi-room event (#22).
+            /** @var list<\Sabre\VObject\Property> */
+            $declinedAttendees = [];
             foreach ($attendees as $attendee) {
                 $email = strtolower(RoomService::stripMailto((string)$attendee));
                 $cutype = isset($attendee['CUTYPE']) ? (string)$attendee['CUTYPE'] : '';
@@ -430,16 +435,16 @@ class SchedulingPlugin extends ServerPlugin {
                     $partstatKey = $email . '|' . $uid;
                     if (isset($this->scheduledPartstats[$partstatKey])) {
                         if ($this->scheduledPartstats[$partstatKey] === 'DECLINED') {
-                            // Remove the room attendee entirely so Room Finder shows it as available
-                            $vEvent->remove($attendee);
-                            unset($vEvent->LOCATION);
+                            // Mark for removal so Room Finder shows it as available.
+                            // Deferred until after the loop — see note above.
+                            $declinedAttendees[] = $attendee;
                             $this->cancelledRoomEmails[] = $email;
                             // Remove from tracking arrays since this room is no longer an attendee
                             $roomEmails = array_filter($roomEmails, fn($e) => $e !== $email);
                             unset($currentRoomInfo[$email]);
                             $changed = true;
                             $this->logger->info("RoomVox: Removed declined room {$email} from organizer event {$path}");
-                            break; // Iterator invalidated after remove
+                            continue;
                         }
 
                         $currentPartstat = isset($attendee['PARTSTAT']) ? (string)$attendee['PARTSTAT'] : '';
@@ -448,6 +453,23 @@ class SchedulingPlugin extends ServerPlugin {
                             $changed = true;
                             $this->logger->info("RoomVox: Updated PARTSTAT to {$this->scheduledPartstats[$partstatKey]} for room {$email} in organizer event {$path}");
                         }
+                    }
+                }
+            }
+
+            // 1b. Apply the deferred removals of declined rooms. LOCATION is only
+            //     cleared when no room attendee survives — on a two-room event a
+            //     decline for one room must not wipe the other room's location.
+            if ($declinedAttendees !== []) {
+                foreach ($declinedAttendees as $declined) {
+                    $vEvent->remove($declined);
+                }
+                if ($roomEmails === []) {
+                    unset($vEvent->LOCATION);
+                } else {
+                    $survivor = $roomMap[reset($roomEmails)] ?? null;
+                    if ($survivor !== null) {
+                        $vEvent->LOCATION = $this->roomService->buildRoomLocation($survivor);
                     }
                 }
             }

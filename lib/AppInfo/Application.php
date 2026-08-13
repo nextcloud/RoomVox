@@ -51,6 +51,10 @@ class Application extends App implements IBootstrap {
         $permissionService = $server->get(PermissionService::class);
         $permissionService->setRoomService($server->get(RoomService::class));
 
+        // CalDAV service needs room lookups to tell apart the attendee lines of
+        // two rooms booked on the same event (issue #22)
+        $server->get(CalDAVService::class)->setRoomService($server->get(RoomService::class));
+
         // Wire Exchange sync service into CalDAV service for conflict checking
         try {
             $exchangeSyncService = $server->get(ExchangeSyncService::class);
