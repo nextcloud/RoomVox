@@ -13,24 +13,24 @@
                         <ChevronRight :size="20" />
                     </template>
                 </NcButton>
-                <NcButton type="tertiary" @click="goToToday">{{ $t('Today') }}</NcButton>
+                <NcButton type="tertiary" @click="goToToday">{{ t('roomvox', 'Today') }}</NcButton>
             </div>
             <div class="toolbar-right">
                 <div class="view-selector">
                     <NcButton
                         :type="currentView === 'resourceTimelineDay' ? 'primary' : 'tertiary'"
                         @click="changeView('resourceTimelineDay')">
-                        {{ $t('Day') }}
+                        {{ t('roomvox', 'Day') }}
                     </NcButton>
                     <NcButton
                         :type="currentView === 'resourceTimelineWeek' ? 'primary' : 'tertiary'"
                         @click="changeView('resourceTimelineWeek')">
-                        {{ $t('Week') }}
+                        {{ t('roomvox', 'Week') }}
                     </NcButton>
                     <NcButton
                         :type="currentView === 'dayGridMonth' ? 'primary' : 'tertiary'"
                         @click="changeView('dayGridMonth')">
-                        {{ $t('Month') }}
+                        {{ t('roomvox', 'Month') }}
                     </NcButton>
                 </div>
             </div>
@@ -70,7 +70,7 @@ import timeGridPlugin from '@fullcalendar/timegrid'
 import interactionPlugin from '@fullcalendar/interaction'
 import { showError, showSuccess } from '@nextcloud/dialogs'
 import { translate, getLanguage } from '@nextcloud/l10n'
-const t = (text, vars = {}) => translate('roomvox', text, vars)
+const t = (app, text, vars = {}) => translate(app, text, vars)
 const ncLocale = getLanguage().replace('_', '-')
 
 import NcButton from '@nextcloud/vue/components/NcButton'
@@ -135,10 +135,10 @@ const calendarOptions = computed(() => ({
     locale: ncLocale,
     firstDay: 1,
     buttonText: {
-        today: t('Today'),
-        day: t('Day'),
-        week: t('Week'),
-        month: t('Month'),
+        today: t('roomvox', 'Today'),
+        day: t('roomvox', 'Day'),
+        week: t('roomvox', 'Week'),
+        month: t('roomvox', 'Month'),
     },
     resources: resources.value,
     events: events.value,
@@ -177,7 +177,11 @@ function handleDatesSet(dateInfo) {
     const end = dateInfo.end
 
     if (currentView.value === 'dayGridMonth') {
-        dateTitle.value = start.toLocaleDateString(ncLocale, { month: 'long', year: 'numeric' })
+        // The month grid pads with days from the neighbouring months, so
+        // dateInfo.start is the first *visible* cell (e.g. 27 July for August)
+        // rather than the month being shown. currentStart is the period itself.
+        const monthStart = dateInfo.view?.currentStart ?? start
+        dateTitle.value = monthStart.toLocaleDateString(ncLocale, { month: 'long', year: 'numeric' })
     } else if (currentView.value === 'resourceTimelineDay') {
         dateTitle.value = start.toLocaleDateString(ncLocale, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
     } else {
@@ -222,10 +226,10 @@ async function handleEventDrop(info) {
             end: event.end.toISOString(),
             roomId: newRoomId !== originalRoomId ? newRoomId : undefined,
         })
-        showSuccess(t('Booking rescheduled'))
+        showSuccess(t('roomvox', 'Booking rescheduled'))
         emit('reload')
     } catch (e) {
-        showError(t('Failed to reschedule booking'))
+        showError(t('roomvox', 'Failed to reschedule booking'))
         revert()
     }
 }
@@ -244,10 +248,10 @@ async function handleEventResize(info) {
             start: event.start.toISOString(),
             end: event.end.toISOString(),
         })
-        showSuccess(t('Booking updated'))
+        showSuccess(t('roomvox', 'Booking updated'))
         emit('reload')
     } catch (e) {
-        showError(t('Failed to update booking'))
+        showError(t('roomvox', 'Failed to update booking'))
         revert()
     }
 }
