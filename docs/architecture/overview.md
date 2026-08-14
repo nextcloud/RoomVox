@@ -49,16 +49,40 @@ RoomVox implements Nextcloud's `IBackend` interface to expose rooms as CalDAV re
 
 The Room class implements `IRoom` and publishes CalDAV properties:
 
-| DAV Property | Source |
-|-------------|--------|
-| `{urn:ietf:params:xml:ns:caldav}calendar-description` | Formatted room description |
-| `{http://nextcloud.com/ns}room-type` | Room type ID |
-| `{http://nextcloud.com/ns}room-seating-capacity` | Capacity number |
-| `{http://nextcloud.com/ns}room-building-address` | Room address |
-| `{http://nextcloud.com/ns}room-building-room-number` | Room number |
-| `{http://nextcloud.com/ns}room-features` | Comma-separated facility IDs |
+| DAV Property | Source | `IRoomMetadata` constant |
+|-------------|--------|--------------------------|
+| `{urn:ietf:params:xml:ns:caldav}calendar-description` | Formatted room description | — |
+| `{http://nextcloud.com/ns}room-type` | Room type ID | `ROOM_TYPE` |
+| `{http://nextcloud.com/ns}room-seating-capacity` | Capacity number | `CAPACITY` |
+| `{http://nextcloud.com/ns}room-building-address` | Room address, empty segments dropped | `BUILDING_ADDRESS` |
+| `{http://nextcloud.com/ns}room-building-story` | Floor | `BUILDING_STORY` |
+| `{http://nextcloud.com/ns}room-building-name` | Building field | **none — see below** |
+| `{http://nextcloud.com/ns}room-building-room-number` | Room number | `BUILDING_ROOM_NUMBER` |
+| `{http://nextcloud.com/ns}room-features` | Comma-separated facility IDs | `FEATURES` |
 
 Room visibility in calendar apps is controlled via `group_restrictions` derived from group entries in the permission system.
+
+### Pending upstream: `room-building-name`
+
+`room-building-name` is the one property with no constant behind it. Nextcloud's
+`OCP\Calendar\Room\IRoomMetadata` defines keys for a room's address, story and
+number, but not for the name of the building it is in — so clients that group
+rooms per building have to guess one from the address, usually the segment
+before the first comma. That breaks whenever the building field is empty: on a
+113-room test instance, 51 rooms would group under a postal code rather than a
+building.
+
+Since 1.3.0 RoomVox publishes the key as a plain string so clients that
+understand it can use real data; clients that do not simply ignore it. The
+constant has been proposed upstream in
+[nextcloud/server#63244](https://github.com/nextcloud/server/pull/63244). If it
+is accepted, replace the literal with `IRoomMetadata::BUILDING_NAME` — the key
+string itself does not change, so this is a readability change, not a
+behavioural one.
+
+Related: [nextcloud/calendar#8264](https://github.com/nextcloud/calendar/pull/8264)
+adds a room browser that groups rooms per building and currently carries the
+address heuristic this property is meant to replace.
 
 ### Scheduling Plugin
 
