@@ -1,6 +1,6 @@
 # Beschikbaarheids-regels
 
-> **Let op:** de volledige documentatie van dit onderwerp wordt onderhouden in het Engels. Raadpleeg de [Engelse versie](availability-rules.en.md) voor de actuele en gedetailleerde inhoud.
+> **Let op:** de volledige documentatie van dit onderwerp wordt onderhouden in het Engels. Raadpleeg de [Engelse versie](availability-rules.md) voor de actuele en gedetailleerde inhoud.
 
 ## Wat deze pagina behandelt
 
@@ -17,7 +17,7 @@ Deze pagina is onderdeel van de RoomVox-documentatie. De originele (Engelse) ver
 
 ## Voor de volledige content
 
-Open de [Engelse versie](availability-rules.en.md) voor stap-voor-stap-instructies, code-voorbeelden, screenshots en troubleshooting-details.
+Open de [Engelse versie](availability-rules.md) voor stap-voor-stap-instructies, code-voorbeelden, screenshots en troubleshooting-details.
 
 ## Zie ook
 
