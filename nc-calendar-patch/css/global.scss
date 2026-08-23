@@ -1,0 +1,18 @@
+/*!
+ * SPDX-FileCopyrightText: 2019 Nextcloud GmbH and Nextcloud contributors
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ */
+
+.toast-calendar-multiline {
+	white-space: pre-wrap;
+}
+
+.content.app-calendar {
+	> div.app-content {
+		overflow-x: hidden;
+	}
+}
+
+.app-navigation-spacer {
+	list-style-type: none;
+}

@@ -25,3 +25,7 @@ deploy.conf
 # strings that never made it into the POT.
 l10n/en.json
 l10n/en.js
+
+# PHPUnit-cache en patch-backups horen niet in git
+.phpunit.result.cache
+nc-calendar-patch.backup.*/
