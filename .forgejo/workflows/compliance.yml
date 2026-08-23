@@ -43,25 +43,17 @@ jobs:
           extensions: gd, pdo, intl, zip, sqlite3, xml, dom, mbstring
           tools: composer:v2
 
-      # Zonder token geeft GitHub 60 API-requests per uur per IP; composer
-      # haalt er tientallen op en faalt dan met "Could not authenticate
-      # against github.com" -- wat op een auth-probleem lijkt maar
-      # rate-limiting is. Met token 5000/uur. Op Gitea speelde dit niet:
-      # die runner had een eigen IP-budget.
-      # PAT_GITHUB is een scope-loos classic token (org-secret voxcloud-apps).
-      - name: Composer auth voor GitHub
-        env:
-          PAT: ${{ secrets.PAT_GITHUB }}
-        run: |
-          if [ -n "$PAT" ]; then
-            composer config -g github-oauth.github.com "$PAT"
-            echo "composer: GitHub-token ingesteld"
-          else
-            echo "LET OP: PAT_GITHUB leeg; composer loopt op de anonieme limiet"
-          fi
-
       - name: Composer install
         continue-on-error: true
+        env:
+          # composer leest dit rechtstreeks uit de omgeving, zonder
+          # auth.json. Dat is hier nodig omdat actions/checkout HOME per
+          # stap tijdelijk verzet ("Temporarily overriding HOME=..."), zodat
+          # een `composer config -g` in een eerdere stap in een andere
+          # home belandt dan de install-stap leest -- het token werd dan
+          # netjes gezet en vervolgens genegeerd.
+          # PAT_GITHUB is een scope-loos classic token (org-secret voxcloud-apps).
+          COMPOSER_AUTH: '{"github-oauth":{"github.com":"${{ secrets.PAT_GITHUB }}"}}'
         run: |
           if [ -f composer.json ]; then
             composer install --no-progress --no-interaction || true
