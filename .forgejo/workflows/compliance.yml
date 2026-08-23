@@ -43,6 +43,23 @@ jobs:
           extensions: gd, pdo, intl, zip, sqlite3, xml, dom, mbstring
           tools: composer:v2
 
+      # Zonder token geeft GitHub 60 API-requests per uur per IP; composer
+      # haalt er tientallen op en faalt dan met "Could not authenticate
+      # against github.com" -- wat op een auth-probleem lijkt maar
+      # rate-limiting is. Met token 5000/uur. Op Gitea speelde dit niet:
+      # die runner had een eigen IP-budget.
+      # PAT_GITHUB is een scope-loos classic token (org-secret voxcloud-apps).
+      - name: Composer auth voor GitHub
+        env:
+          PAT: ${{ secrets.PAT_GITHUB }}
+        run: |
+          if [ -n "$PAT" ]; then
+            composer config -g github-oauth.github.com "$PAT"
+            echo "composer: GitHub-token ingesteld"
+          else
+            echo "LET OP: PAT_GITHUB leeg; composer loopt op de anonieme limiet"
+          fi
+
       - name: Composer install
         continue-on-error: true
         run: |
