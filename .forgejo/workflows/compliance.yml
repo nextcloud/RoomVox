@@ -153,6 +153,17 @@ jobs:
           echo "Posting payload to ingest:"
           echo "$PAYLOAD"
 
+          # Overslaan als het secret niet gezet is. Zonder deze guard wordt dit
+          # `curl -X POST ""`, wat de job rood maakt terwijl alle checks
+          # geslaagd zijn -- de uitslag is dan onzichtbaar door een ontbrekende
+          # bestemming. Het dashboard is optioneel; de checks zijn dat niet.
+          if [ -z "${{ secrets.COMPLIANCE_INGEST_URL }}" ]; then
+            echo "COMPLIANCE_INGEST_URL niet gezet -- ingest overgeslagen."
+            echo "De checks hierboven zijn wel gedraaid; alleen het dashboard"
+            echo "krijgt geen melding."
+            exit 0
+          fi
+
           curl -sS -X POST "${{ secrets.COMPLIANCE_INGEST_URL }}" \
             -H "Authorization: Bearer ${{ secrets.COMPLIANCE_INGEST_TOKEN }}" \
             -H "Content-Type: application/json" \
