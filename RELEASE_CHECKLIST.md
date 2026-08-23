@@ -181,7 +181,7 @@ cp -r appinfo lib l10n templates css img js "$TEMP_DIR/roomvox/" && \
 cp CHANGELOG.md LICENSE README.md "$TEMP_DIR/roomvox/" && \
 cd "$TEMP_DIR" && \
 tar -czf roomvox-X.Y.Z.tar.gz roomvox && \
-mv roomvox-X.Y.Z.tar.gz /Users/rikdekker/Documents/Development/RoomVox/ && \
+mv roomvox-X.Y.Z.tar.gz /Users/rikdekker/Documents/Development/voxcloud-apps/roomvox/ && \
 rm -rf "$TEMP_DIR"
 ```
 
