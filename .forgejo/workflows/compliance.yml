@@ -107,6 +107,15 @@ jobs:
         if: always()
         run: |
           REF="${GITHUB_REF_NAME:-main}"
+          # Bewust hardcoded. De env-var die hier eerst stond bestaat niet in
+          # Forgejo en is leeg; GITHUB_SERVER_URL staat op het interne
+          # http://forgejo:3000, een adres dat buiten het Docker-netwerk
+          # nergens op uitkomt. Beide leveren een POST die slaagt met een
+          # kapotte run_url erin — de fout valt dus pas op in het dashboard.
+          SERVER_URL="https://forgejo.voxcloud.nl"
+          # source blijft bewust "gitea": dat veld gaat naar de ingest van het
+          # compliance-dashboard en het is hier niet te controleren of die op
+          # die waarde filtert. Pas het aan zodra de ingest-kant nagekeken is.
           # Build the JSON body without heredoc + jq — just printf.
           PAYLOAD=$(printf '{"app_id":"%s","git_ref":"%s","nc_version":"%s","status":"%s","source":"gitea","checks":{"phpstan":"%s","psalm":"%s","phpcs":"%s","tests":"%s"},"quality_score":%s,"run_url":"%s/%s/actions/runs/%s"}' \
             "$APP_ID" \
@@ -118,7 +127,7 @@ jobs:
             "${{ steps.phpcs.outputs.result }}" \
             "${{ steps.phpunit.outputs.result }}" \
             "${{ steps.status.outputs.score }}" \
-            "$GITEA_SERVER_URL" \
+            "$SERVER_URL" \
             "$GITHUB_REPOSITORY" \
             "$GITHUB_RUN_ID")
 
