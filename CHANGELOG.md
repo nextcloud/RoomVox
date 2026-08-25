@@ -5,6 +5,14 @@ All notable changes to RoomVox will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- **Telemetry mis-detected Nextcloud Enterprise.** The subscription check read the *Extended Support* add-on rather than the subscription itself, so instances with a plain Enterprise subscription were reported as Community. It now uses `IRegistry::delegateHasValidSubscription()` (public API since NC 17). This only affects the usage figures reported back to VoxCloud; nothing in the app behaves differently.
+- **The instance identifier did not line up with the other VoxCloud apps.** Without `overwrite.cli.url` it was derived from a bare hostname where the other apps use a full URL, so the same server appeared as a different instance per app. Instances affected by this migrate themselves at the next report; nothing needs to be reconfigured.
+- **The reported user count left out LDAP and SSO accounts,** because it counted database rows rather than asking Nextcloud. Counting now goes through `callForAllUsers()`, which covers every user backend, and the report says which method was used so the licence server can tell older readings apart. Only affects reporting, not any limit enforced in the app.
+
 ## [1.3.0] - 2026-08-13 - Room metadata, multi-room bookings & translatable emails
 
 Room metadata that RoomVox already held — floor, address, building — never fully arrived at the calendar clients that show it. This release fixes the publishing side, which matters now that Nextcloud Calendar is gaining a room browser that groups rooms per building and filters on floor and capacity ([nextcloud/calendar#8264](https://github.com/nextcloud/calendar/pull/8264)). It also fixes booking one event into two rooms at once, and makes notification emails translatable. No stored data changes; the room editor keeps its fields exactly as they are.
