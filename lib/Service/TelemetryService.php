@@ -147,6 +147,7 @@ class TelemetryService {
             'availabilityRulesEnabled' => $roomStats['availabilityRulesEnabled'],
             'totalUsers' => $this->getUserCount(),
             'activeUsers30d' => $this->getActiveUserCount(30),
+            'disabledUsers' => $this->getDisabledUserCount(),
             'nextcloudVersion' => $this->getNextcloudVersion(),
             'phpVersion' => PHP_VERSION,
             'countryCode' => $this->getCountryCode(),
@@ -301,6 +302,33 @@ class TelemetryService {
     /**
      * Get total user count.
      */
+    /**
+     * Accounts that exist but are disabled.
+     *
+     * They count towards the named-user total, because disabling is how
+     * Nextcloud offboards someone while keeping their file ownership. Reported
+     * separately so the difference is visible when usage is compared against a
+     * contract -- otherwise a customer who has shrunk looks like one who never
+     * did.
+     *
+     * Returns null rather than 0 on failure: the licence server distinguishes
+     * "this app does not report the figure" from "measured, nobody disabled",
+     * and a swallowed error must not read as the latter.
+     */
+    private function getDisabledUserCount(): ?int {
+        try {
+            $count = 0;
+            $this->userManager->callForAllUsers(function ($user) use (&$count) {
+                if (!$user->isEnabled()) {
+                    $count++;
+                }
+            });
+            return $count;
+        } catch (\Exception $e) {
+            return null;
+        }
+    }
+
     private function getUserCount(): int {
         try {
             $count = 0;
