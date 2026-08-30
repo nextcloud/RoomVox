@@ -11,19 +11,24 @@ use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
 /**
- * Pins down what counts as a "named user".
+ * Pins down what counts as a "named user": every account, disabled included.
  *
- * Nextcloud's definition, confirmed by Fabrice Mous in August 2026: the
- * accounts with access to the environment — "alle gebruikersaccounts die kunnen
- * inloggen", from any backend. A disabled account still exists and still owns
- * its files, but cannot log in, so it is not a named user.
+ * Nextcloud's own wording is "accounts that can log in", which reads as
+ * excluding disabled accounts. We count them anyway, and the reason is worth
+ * writing down because the phrasing invites the opposite conclusion.
  *
- * This is worth pinning because the intuitive reading goes the other way: a
- * disabled account occupies a seat, so counting it feels defensible. It is
- * also the figure Nextcloud invoices on, and an app that reports a different
- * number puts a discrepancy on a customer's invoice.
+ * That wording describes a Microsoft-shaped model, where a licence is the key
+ * that switches a product on: an account without one has no access, so it
+ * genuinely costs nothing. Nothing in RoomVox is gated — it runs in full for
+ * every account on the server, licensed or not — so "can log in" no longer
+ * marks the line between who is served and who is not. A disabled account also
+ * keeps its rooms, bookings and file ownership: the seat is retired, not
+ * released.
+ *
+ * The disabled count is still measured and reported on its own, so the licence
+ * server can move to a different basis without an app release.
  */
-class NamedUserCountTest extends TestCase {
+class UserCountTest extends TestCase {
     private LicenseService $service;
     private IUserManager $userManager;
 
@@ -69,44 +74,48 @@ class NamedUserCountTest extends TestCase {
         return $m->invoke($this->service);
     }
 
-    public function testDisabledAccountsAreNotNamedUsers(): void {
-        $this->givenAccounts([true, true, true, false, false]);
-        $this->assertSame(3, $this->invoke('countNamedUsers'));
-    }
-
-    /** The raw total still counts everything — it is what makes the split checkable. */
-    public function testTheAccountTotalStillCountsDisabledAccounts(): void {
+    /** The point of the whole file: disabling an account does not remove it. */
+    public function testDisabledAccountsCountTowardsTheTotal(): void {
         $this->givenAccounts([true, true, true, false, false]);
         $this->assertSame(5, $this->invoke('countAllUsers'));
     }
 
-    public function testDisabledAccountsAreCountedSeparately(): void {
+    public function testDisabledAccountsAreAlsoCountedSeparately(): void {
         $this->givenAccounts([true, true, true, false, false]);
         $this->assertSame(2, $this->invoke('countDisabledUsers'));
     }
 
-    /** named + disabled must reconcile to the total, or the invoice cannot be explained. */
-    public function testTheThreeFiguresReconcile(): void {
+    /**
+     * The disabled count must never exceed the total. It is reported alongside
+     * it so the licence server can subtract if the basis ever changes, and that
+     * subtraction has to stay non-negative.
+     */
+    public function testTheDisabledCountNeverExceedsTheTotal(): void {
         $this->givenAccounts([true, false, true, false, true, true]);
-        $this->assertSame(
+        $this->assertLessThanOrEqual(
             $this->invoke('countAllUsers'),
-            $this->invoke('countNamedUsers') + $this->invoke('countDisabledUsers'),
+            $this->invoke('countDisabledUsers'),
         );
     }
 
     public function testAnInstanceWithNoDisabledAccountsCountsAllOfThem(): void {
         $this->givenAccounts([true, true, true]);
-        $this->assertSame(3, $this->invoke('countNamedUsers'));
+        $this->assertSame(3, $this->invoke('countAllUsers'));
+        $this->assertSame(0, $this->invoke('countDisabledUsers'));
     }
 
-    /** Every account disabled is a real state (a decommissioned instance), not an error. */
-    public function testAnInstanceWithEveryAccountDisabledHasNoNamedUsers(): void {
+    /**
+     * A decommissioned instance: every account disabled. Still five accounts,
+     * because nothing was deleted and RoomVox still runs.
+     */
+    public function testAnInstanceWithEveryAccountDisabledStillCountsThem(): void {
         $this->givenAccounts([false, false]);
-        $this->assertSame(0, $this->invoke('countNamedUsers'));
+        $this->assertSame(2, $this->invoke('countAllUsers'));
     }
 
-    public function testAnEmptyInstanceHasNoNamedUsers(): void {
+    public function testAnEmptyInstanceCountsNothing(): void {
         $this->givenAccounts([]);
-        $this->assertSame(0, $this->invoke('countNamedUsers'));
+        $this->assertSame(0, $this->invoke('countAllUsers'));
+        $this->assertSame(0, $this->invoke('countDisabledUsers'));
     }
 }

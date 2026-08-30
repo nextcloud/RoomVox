@@ -193,9 +193,7 @@ class LicenseService {
 					'appType' => 'roomvox',
 					'currentRooms' => $stats['totalRooms'],
 					'currentRoomGroups' => $stats['totalRoomGroups'],
-					// The billing figure: accounts that can log in.
-					'currentUsers' => $stats['namedUsers'],
-					'totalAccounts' => $stats['totalUsers'],
+					'currentUsers' => $stats['totalUsers'],
 					'disabledUsers' => $this->countDisabledUsers(),
 					// Tells the server how the count was taken, so readings from
 					// releases that counted unreliably stay out of the averages
@@ -297,7 +295,6 @@ class LicenseService {
 			'totalRooms' => $stats['totalRooms'],
 			'totalRoomGroups' => $stats['totalRoomGroups'],
 			'totalUsers' => $stats['totalUsers'],
-			'namedUsers' => $stats['namedUsers'],
 			'hasLicense' => $hasLicense,
 			'licenseValid' => $licenseValid,
 			'licenseInfo' => $licenseInfo,
@@ -371,13 +368,11 @@ class LicenseService {
 			$totalRoomGroups = count($groups);
 
 			$totalUsers = $this->countAllUsers();
-			$namedUsers = $this->countNamedUsers();
 
 			return [
 				'totalRooms' => $totalRooms,
 				'totalRoomGroups' => $totalRoomGroups,
 				'totalUsers' => $totalUsers,
-				'namedUsers' => $namedUsers,
 			];
 		} catch (\Exception $e) {
 			$this->logger->warning('LicenseService: Failed to get usage stats', [
@@ -387,7 +382,6 @@ class LicenseService {
 				'totalRooms' => 0,
 				'totalRoomGroups' => 0,
 				'totalUsers' => 0,
-				'namedUsers' => 0,
 			];
 		}
 	}
@@ -403,13 +397,23 @@ class LicenseService {
 	public const COUNT_METHOD = 'callForAllUsers';
 
 	/**
-	 * Every account that exists, disabled ones included.
+	 * Named users: every account that exists, disabled ones included.
 	 *
-	 * This is NOT the named-user figure a subscription is priced on — see
-	 * countNamedUsers() for that. It is kept because the split between total
-	 * and disabled is what makes the named-user number checkable: reporting
-	 * only the outcome would leave a customer unable to see how it was
-	 * reached.
+	 * Nextcloud's own wording is "accounts that can log in", which reads as
+	 * excluding disabled accounts. We count them anyway, because that phrasing
+	 * describes Microsoft's model rather than this one: there a licence is the
+	 * key that switches a product on, so an account without one genuinely has
+	 * no access and costs nothing. Nothing here is gated — RoomVox runs in full
+	 * for every account on the server, licensed or not — so "can log in" stops
+	 * being the line that separates who is served from who is not.
+	 *
+	 * A disabled account also keeps its rooms, its bookings and its file
+	 * ownership; the seat is retired, not released. Counting it is the reading
+	 * that matches what the software actually does.
+	 *
+	 * The disabled count is reported separately (see countDisabledUsers()), so
+	 * the split stays visible and a different basis can be applied server-side
+	 * without shipping a new release.
 	 *
 	 * callForAllUsers covers every backend, so LDAP and SSO users are included.
 	 * Counting rows in oc_users misses them entirely: those accounts often
@@ -424,41 +428,14 @@ class LicenseService {
 		return $count;
 	}
 
-	/**
-	 * Named users: accounts that can actually log in.
-	 *
-	 * Nextcloud's definition, confirmed by Fabrice Mous in August 2026: "het
-	 * aantal named users met toegang tot de Nextcloud-omgeving [...] alle
-	 * gebruikersaccounts die kunnen inloggen, ongeacht of die lokaal in
-	 * Nextcloud zijn aangemaakt of via LDAP/Active Directory of een andere
-	 * identity provider worden gekoppeld."
-	 *
-	 * Two halves to that. Every backend counts, which callForAllUsers already
-	 * handled. And it is accounts that *can log in* — a disabled account
-	 * cannot, so it is not a named user, even though it still exists and still
-	 * owns its files. Nextcloud invoices the end customer on this basis and we
-	 * follow their number: reporting a different one puts a gap on the invoice
-	 * that the customer spots before either party does.
-	 *
-	 * Counted in one pass rather than as countAllUsers() - countDisabledUsers()
-	 * so the two figures cannot be taken from different moments and disagree.
-	 */
-	private function countNamedUsers(): int {
-		$count = 0;
-		$this->userManager->callForAllUsers(function ($user) use (&$count) {
-			if ($user->isEnabled()) {
-				$count++;
-			}
-		});
-		return $count;
-	}
 
 	/**
-	 * Users that exist but are disabled, and therefore cannot log in.
+	 * Users that exist but are disabled.
 	 *
-	 * Excluded from the named-user total (see countNamedUsers()), but reported
-	 * on its own so the difference between "accounts on this server" and
-	 * "accounts being charged for" stays visible rather than implied.
+	 * Included in the named-user total — disabling retires a seat without
+	 * releasing it, and RoomVox keeps working for the rest of the server
+	 * regardless. Reported on its own so the split stays visible and the
+	 * licence server can apply a different basis without an app release.
 	 */
 	private function countDisabledUsers(): int {
 		try {

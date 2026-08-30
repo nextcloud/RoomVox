@@ -154,13 +154,6 @@ class TelemetryService {
             'exchangeSyncEnabled' => $this->isExchangeSyncEnabled(),
             'roomsWithExchange' => $roomStats['roomsWithExchange'],
             'totalUsers' => $this->getUserCount(),
-            // The billing figure: accounts that can log in. Nextcloud counts
-            // named users as those with access to the environment (confirmed
-            // August 2026), so a disabled account is not one. Sent explicitly
-            // rather than left as totalUsers minus disabledUsers, so the server
-            // never has to reconstruct it from two figures that a failure in
-            // either could skew.
-            'namedUsers' => $this->getNamedUserCount(),
             'activeUsers30d' => $this->getActiveUserCount(30),
             'disabledUsers' => $this->getDisabledUserCount(),
             'nextcloudVersion' => $this->getNextcloudVersion(),
@@ -374,29 +367,6 @@ class TelemetryService {
         } catch (\Exception $e) {
             return null;
         }
-    }
-
-    /**
-     * Accounts that can log in — the figure a subscription is priced on.
-     *
-     * Unreported (null) rather than guessed when the count fails, so the
-     * licence server can tell "could not measure" from "nobody enabled".
-     */
-    private function getNamedUserCount(): ?int {
-        try {
-            $count = 0;
-            $this->userManager->callForAllUsers(function ($user) use (&$count) {
-                if ($user->isEnabled()) {
-                    $count++;
-                }
-            });
-            return $count;
-        } catch (\Throwable $e) {
-            $this->logger->debug('TelemetryService: named user count failed', [
-                'error' => $e->getMessage()
-            ]);
-        }
-        return null;
     }
 
     private function getUserCount(): int {

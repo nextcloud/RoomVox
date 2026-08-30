@@ -87,10 +87,9 @@
 						<span class="stat-icon">👥</span>
 						<span class="stat-label">{{ t('roomvox', 'Named users') }}</span>
 					</div>
-					<!-- The figure a subscription is priced on: accounts that can log
-					     in. Disabled accounts still exist on the server but cannot,
-					     so they are not named users. -->
-					<span class="stat-value">{{ licenseStats.namedUsers ?? licenseStats.totalUsers ?? 0 }}</span>
+					<!-- Every account on the server, disabled ones included: nothing
+					     is gated, so RoomVox runs in full for all of them. -->
+					<span class="stat-value">{{ licenseStats.totalUsers || 0 }}</span>
 				</div>
 			</div>
 
@@ -247,9 +246,8 @@ export default {
 			// Absent threshold means an older backend; say nothing rather than
 			// guessing a number the server did not send.
 			const threshold = s.supportNudgeUserThreshold
-			// Named users, not raw accounts — the threshold has to mean the same
-			// thing as the figure a subscription is priced on.
-			const users = s.namedUsers ?? s.totalUsers
+			// The same figure a subscription is priced on: every account.
+			const users = s.totalUsers
 			if (typeof threshold !== 'number' || typeof users !== 'number' || users <= threshold) {
 				return null
 			}
