@@ -1,6 +1,6 @@
 {
-    "count": 469,
-    "sha256": "2d8b8b6683b0b5fffc06e518675e6a45e72bba667214ef5f46fdc0d1d9f4f5d3",
+    "count": 470,
+    "sha256": "c2c438064b7047df4bffc56b047cb44f89325d6aa8d782afc4cbd82e69db6f72",
     "strings": [
         "(saved — enter new value to change)",
         "{count} rooms found",
@@ -311,6 +311,7 @@
         "Port must be between 1 and 65535",
         "Postal code",
         "Presets:",
+        "Pricing details",
         "Priority bug fixes",
         "Publish this room's bookings as an iCal feed that external calendar apps (Nextcloud Calendar, Outlook, Apple Calendar) and signage displays can subscribe to — no login required.",
         "Questions or feedback?",
@@ -445,7 +446,7 @@
         "Username",
         "Validate",
         "Validating …",
-        "View pricing & plans",
+        "View in the Nextcloud App Store",
         "View rooms, availability, and calendar feed",
         "Viewer",
         "Viewers",

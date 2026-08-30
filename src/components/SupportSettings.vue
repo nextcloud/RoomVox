@@ -54,7 +54,13 @@
 					:href="pricingUrl"
 					target="_blank"
 					rel="noopener noreferrer">
-					{{ t('roomvox', 'View pricing & plans') }}
+					{{ t('roomvox', 'Pricing details') }}
+				</NcButton>
+				<NcButton type="tertiary"
+					:href="appStoreUrl"
+					target="_blank"
+					rel="noopener noreferrer">
+					{{ t('roomvox', 'View in the Nextcloud App Store') }}
 				</NcButton>
 				<p class="cta-contact">
 					{{ t('roomvox', 'Questions?') }}
@@ -224,9 +230,34 @@ export default {
 			return buildSubscriptionNudge(this.licenseStats)
 		},
 
+		/**
+		 * Where the price actually lives.
+		 *
+		 * Deliberately not the App Store: it has no price field at all — the API
+		 * exposes versions, licences and ratings, nothing commercial — so linking
+		 * there for pricing would move the reader further from the answer.
+		 * Collabora and OnlyOffice point at their own sites for the same reason.
+		 *
+		 * This is the information page, not the purchase route. Subscriptions are
+		 * sold through Nextcloud, which is what the subscription notice says; the
+		 * label says "details" so the two do not read as competing offers.
+		 *
+		 * Intended to move to a Nextcloud-hosted page once one exists. Not linked
+		 * speculatively: a URL that 404s would ship in a release that sits on the
+		 * App Store for months.
+		 */
 		pricingUrl() {
 			const lang = (window.document?.documentElement?.lang || '').split('-')[0]
 			return lang === 'nl' ? 'https://voxcloud.nl/pricing/#roomvox' : 'https://voxcloud.nl/en/pricing/#roomvox'
+		},
+
+		/**
+		 * Where an administrator finds reviews, the changelog and the install
+		 * button — a different question from "what does it cost", hence its own
+		 * link rather than a replacement for the one above.
+		 */
+		appStoreUrl() {
+			return 'https://apps.nextcloud.com/apps/roomvox'
 		},
 	},
 
