@@ -9,6 +9,7 @@ use OCP\Http\Client\IClientService;
 use OCP\IConfig;
 use OCP\IDBConnection;
 use OCP\IUserManager;
+use OCP\Support\Subscription\IRegistry;
 use Psr\Log\LoggerInterface;
 
 class LicenseService {
@@ -24,6 +25,7 @@ class LicenseService {
 		private RoomGroupService $roomGroupService,
 		private IUserManager $userManager,
 		private LoggerInterface $logger,
+		private ?IRegistry $subscriptionRegistry = null,
 	) {
 	}
 
@@ -291,23 +293,56 @@ class LicenseService {
 			'limits' => $limits,
 			'freeRoomLimit' => self::FREE_ROOM_LIMIT,
 			'freeRoomGroupLimit' => self::FREE_ROOM_GROUP_LIMIT,
+			'hasValidSubscription' => $this->hasValidSubscription(),
 			'hasExtendedSupport' => $this->hasExtendedSupport(),
 		];
 	}
 
 	/**
-	 * Detect whether the host Nextcloud has an Extended Support / Enterprise
-	 * subscription. Uses Nextcloud's public API (OCP\Util::hasExtendedSupport).
-	 * Returns false on any failure so a Community instance is never reported
-	 * as Enterprise.
+	 * Whether the host Nextcloud has a valid Enterprise subscription.
+	 *
+	 * Asks IRegistry directly rather than going through
+	 * OCP\Util::hasExtendedSupport(). That helper answers a different question:
+	 * delegateHasExtendedSupport() reports the paid *Extended Support* add-on,
+	 * which sits on top of a subscription. An ordinary Enterprise customer
+	 * without that add-on answers false, so every such instance looked like
+	 * Community. Nextcloud core itself never uses hasExtendedSupport() for
+	 * subscription decisions -- ServerDevNotice, PushService and
+	 * updatenotification all call delegateHasValidSubscription().
+	 *
+	 * It also drops a spoofing hole: Util::hasExtendedSupport() falls back to
+	 * the `extendedSupport` system config value when the registry is missing,
+	 * so any admin could set it by hand. IRegistry only answers true when a
+	 * real ISubscription handler is registered.
+	 *
+	 * Returns false on any failure, so Community is never reported as
+	 * Enterprise. Mirrors TelemetryService, so the admin panel and the report
+	 * sent to the licence server cannot disagree about the same instance.
+	 */
+	private function hasValidSubscription(): bool {
+		try {
+			return $this->subscriptionRegistry?->delegateHasValidSubscription() ?? false;
+		} catch (\Throwable $e) {
+			$this->logger->debug('LicenseService: delegateHasValidSubscription() check failed', [
+				'error' => $e->getMessage()
+			]);
+		}
+		return false;
+	}
+
+	/**
+	 * Whether that subscription also carries the Extended Support add-on.
+	 *
+	 * Reported separately so the two signals stay distinguishable: this is a
+	 * strict subset of hasValidSubscription() and is not a substitute for it.
 	 */
 	private function hasExtendedSupport(): bool {
 		try {
-			if (class_exists(\OCP\Util::class) && method_exists(\OCP\Util::class, 'hasExtendedSupport')) {
-				return \OCP\Util::hasExtendedSupport();
-			}
+			return $this->subscriptionRegistry?->delegateHasExtendedSupport() ?? false;
 		} catch (\Throwable $e) {
-			// Silently fall back to false — never claim Enterprise on error.
+			$this->logger->debug('LicenseService: delegateHasExtendedSupport() check failed', [
+				'error' => $e->getMessage()
+			]);
 		}
 		return false;
 	}

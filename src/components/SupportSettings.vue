@@ -99,7 +99,7 @@
 				{{ t('roomvox', 'Subscription key is invalid or expired.') }}
 			</NcNoteCard>
 
-			<NcNoteCard v-if="licenseStats && licenseStats.hasExtendedSupport && !licenseStats.hasLicense" type="info">
+			<NcNoteCard v-if="licenseStats && (licenseStats.hasValidSubscription || licenseStats.hasExtendedSupport) && !licenseStats.hasLicense" type="info">
 				{{ t('roomvox', 'Nextcloud Enterprise subscription detected on this instance. Contact us at info@voxcloud.nl for enterprise pricing tailored to your organization.') }}
 			</NcNoteCard>
 
