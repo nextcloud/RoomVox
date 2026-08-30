@@ -1360,11 +1360,31 @@ onMounted(() => {
     margin-bottom: 12px;
 }
 
+/* Phones. The five tabs need roughly 710px laid out in a row; a phone offers
+   about 350px inside the page padding, so they wrap regardless. These rules
+   only decide how many rows that costs: trimming the page and tab padding and
+   dropping a step of type gets it to two rows instead of three, which matters
+   because every row here pushes the actual content further down. */
+@media (max-width: 500px) {
+    .roomvox-app {
+        padding: 12px;
+    }
+
+    .tab-button {
+        padding: 10px 12px;
+        font-size: 13px;
+    }
+}
+
 /* Tab Navigation - IntraVox/FormVox style */
 .tab-navigation {
     border-bottom: 1px solid var(--color-border);
     display: flex;
-    gap: 10px;
+    /* Wrap to a second row instead of pushing the page sideways. Five tabs do
+       not fit a phone, and without this the whole layout scrolls horizontally
+       — taking the banner and the content with it. Matches IntraVox/MetaVox. */
+    flex-wrap: wrap;
+    gap: 4px 10px;
     margin-bottom: 20px;
 }
 
@@ -1372,6 +1392,9 @@ onMounted(() => {
     display: flex;
     align-items: center;
     gap: 8px;
+    /* Keep a label on one line: "Import / export" would otherwise break at both
+       spaces and turn one tab into three rows, dragging the row height with it. */
+    white-space: nowrap;
     padding: 12px 20px;
     border: none;
     background: none;
