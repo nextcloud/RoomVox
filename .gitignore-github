@@ -1,0 +1,25 @@
+# Files excluded from GitHub (kept on Forgejo only)
+# Used by push-to-github.sh — see the other VoxCloud apps for the same list.
+#
+# The rule of thumb: anything that describes how *we* run and release the app,
+# rather than how someone else installs and uses it.
+
+# Internal documentation
+docs/internal/
+tasks/
+CLAUDE.md
+RELEASE_CHECKLIST.md
+
+# Deploy and maintenance scripts — these carry server names and assume our
+# infrastructure. deploy.conf itself is gitignored outright and never reaches
+# either remote.
+deploy.sh
+deploy-tst.sh
+deploy-calendar.sh
+deploy-demo-users.sh
+deploy.conf.example
+fix-locations.sh
+fix-room-addresses.sh
+
+# The push script itself
+push-to-github.sh
