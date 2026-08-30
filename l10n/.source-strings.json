@@ -1,6 +1,6 @@
 {
     "count": 468,
-    "sha256": "a4ffa34c1c0c888475bab66178545799d10277b9ed56c39f83bc54120e85515f",
+    "sha256": "b935281e757c4b3462f461f8f8d661f85e580b52a38c320c2fc4bcff743647bd",
     "strings": [
         "(saved — enter new value to change)",
         "{count} rooms found",
@@ -255,6 +255,7 @@
         "Month",
         "My rooms",
         "Name",
+        "Named users",
         "Needs action",
         "New",
         "New booking",
@@ -427,7 +428,6 @@
         "Token name (e.g. Lobby Display)",
         "Tomorrow",
         "Total rooms",
-        "Total users",
         "Try a different search query",
         "Tue",
         "Type",

@@ -193,7 +193,9 @@ class LicenseService {
 					'appType' => 'roomvox',
 					'currentRooms' => $stats['totalRooms'],
 					'currentRoomGroups' => $stats['totalRoomGroups'],
-					'currentUsers' => $stats['totalUsers'],
+					// The billing figure: accounts that can log in.
+					'currentUsers' => $stats['namedUsers'],
+					'totalAccounts' => $stats['totalUsers'],
 					'disabledUsers' => $this->countDisabledUsers(),
 					// Tells the server how the count was taken, so readings from
 					// releases that counted unreliably stay out of the averages
@@ -295,6 +297,7 @@ class LicenseService {
 			'totalRooms' => $stats['totalRooms'],
 			'totalRoomGroups' => $stats['totalRoomGroups'],
 			'totalUsers' => $stats['totalUsers'],
+			'namedUsers' => $stats['namedUsers'],
 			'hasLicense' => $hasLicense,
 			'licenseValid' => $licenseValid,
 			'licenseInfo' => $licenseInfo,
@@ -368,11 +371,13 @@ class LicenseService {
 			$totalRoomGroups = count($groups);
 
 			$totalUsers = $this->countAllUsers();
+			$namedUsers = $this->countNamedUsers();
 
 			return [
 				'totalRooms' => $totalRooms,
 				'totalRoomGroups' => $totalRoomGroups,
 				'totalUsers' => $totalUsers,
+				'namedUsers' => $namedUsers,
 			];
 		} catch (\Exception $e) {
 			$this->logger->warning('LicenseService: Failed to get usage stats', [
@@ -382,6 +387,7 @@ class LicenseService {
 				'totalRooms' => 0,
 				'totalRoomGroups' => 0,
 				'totalUsers' => 0,
+				'namedUsers' => 0,
 			];
 		}
 	}
@@ -397,15 +403,13 @@ class LicenseService {
 	public const COUNT_METHOD = 'callForAllUsers';
 
 	/**
-	 * Total named users — every account, disabled ones included.
+	 * Every account that exists, disabled ones included.
 	 *
-	 * Nextcloud confirmed this definition (Fabrice, August 2026): a named user
-	 * is any account that exists, and Nextcloud invoices the end customer on
-	 * that basis. Matching their number matters more than our own preference,
-	 * which had leaned towards excluding disabled accounts: if we report a
-	 * smaller figure than the invoice states, the customer notices the gap
-	 * before either party does. Disabled accounts are reported separately by
-	 * telemetry, so the distinction stays visible without changing the total.
+	 * This is NOT the named-user figure a subscription is priced on — see
+	 * countNamedUsers() for that. It is kept because the split between total
+	 * and disabled is what makes the named-user number checkable: reporting
+	 * only the outcome would leave a customer unable to see how it was
+	 * reached.
 	 *
 	 * callForAllUsers covers every backend, so LDAP and SSO users are included.
 	 * Counting rows in oc_users misses them entirely: those accounts often
@@ -421,10 +425,40 @@ class LicenseService {
 	}
 
 	/**
-	 * Users that exist but are disabled. They count towards the named-user
-	 * total, because disabling is how an account is retired without deleting
-	 * its data — the seat is still occupied. Confirmed with Nextcloud in
-	 * August 2026; reported on its own so the split stays visible.
+	 * Named users: accounts that can actually log in.
+	 *
+	 * Nextcloud's definition, confirmed by Fabrice Mous in August 2026: "het
+	 * aantal named users met toegang tot de Nextcloud-omgeving [...] alle
+	 * gebruikersaccounts die kunnen inloggen, ongeacht of die lokaal in
+	 * Nextcloud zijn aangemaakt of via LDAP/Active Directory of een andere
+	 * identity provider worden gekoppeld."
+	 *
+	 * Two halves to that. Every backend counts, which callForAllUsers already
+	 * handled. And it is accounts that *can log in* — a disabled account
+	 * cannot, so it is not a named user, even though it still exists and still
+	 * owns its files. Nextcloud invoices the end customer on this basis and we
+	 * follow their number: reporting a different one puts a gap on the invoice
+	 * that the customer spots before either party does.
+	 *
+	 * Counted in one pass rather than as countAllUsers() - countDisabledUsers()
+	 * so the two figures cannot be taken from different moments and disagree.
+	 */
+	private function countNamedUsers(): int {
+		$count = 0;
+		$this->userManager->callForAllUsers(function ($user) use (&$count) {
+			if ($user->isEnabled()) {
+				$count++;
+			}
+		});
+		return $count;
+	}
+
+	/**
+	 * Users that exist but are disabled, and therefore cannot log in.
+	 *
+	 * Excluded from the named-user total (see countNamedUsers()), but reported
+	 * on its own so the difference between "accounts on this server" and
+	 * "accounts being charged for" stays visible rather than implied.
 	 */
 	private function countDisabledUsers(): int {
 		try {
