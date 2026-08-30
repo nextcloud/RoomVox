@@ -7,20 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.4.0] - 2026-08-30 - Subscription notice, Exchange usage reporting & Enterprise detection
+
+Installations above 100 users now see a note about a subscription in the settings screen. Nothing is gated by it: RoomVox keeps working in full, for every account, with or without a subscription.
+
+> **Translations.** The strings added in this release are not translated yet — RoomVox is still waiting for its resource on the Nextcloud community translation platform ([nextcloud/docker-ci#986](https://github.com/nextcloud/docker-ci/issues/986)). Until it opens, new text falls back to English; the interface stays translated where it already was.
+
 ### Added
 
-- **The settings page suggests a subscription on installations above 100 users.** RoomVox stays free and fully functional either side of that number — nothing is limited, gated or enforced — but 100 users is where paid subscriptions begin on the price list, so below it there is nothing to suggest. At most one suggestion is ever shown: an instance with a Nextcloud Enterprise subscription sees that message instead, since two notices both asking the administrator to get in touch reads as nagging. Both point at Nextcloud rather than at VoxCloud, because subscriptions are sold and invoiced by Nextcloud GmbH under the ISV agreement and first-line support runs through them — a VoxCloud address here would route an administrator past their own account manager.
+- **A subscription note on installations above 100 users.** Shown on every tab of the settings screen, not only under Support. Instances with a Nextcloud Enterprise subscription see a note pointing at their Nextcloud account manager instead. Nothing is limited or enforced either way.
+- **Telemetry reports whether the Microsoft Exchange sync is used** — whether it is switched on, and how many rooms are linked to a resource mailbox. The Azure tenant ID, client ID and client secret are never read and never sent.
+- **Telemetry reports disabled accounts** separately from the total, so the difference is visible when usage is compared against a contract.
 
-- **Telemetry reports whether the Microsoft Exchange sync is used.** Two figures: whether an administrator switched the integration on, and how many rooms are actually wired to a resource mailbox. The two answer different questions — the flag says *switched on*, not *working*, because an expired client secret stops the sync without changing it, so the room count is what shows whether it is really in use. Deliberately narrow: the Azure tenant ID, client ID and client secret sitting next to the flag in the app configuration are never read and never sent. A tenant ID identifies an organisation outright and would undo the anonymity the rest of the report is built on — hashing it would not help, since the set of tenant IDs is small enough to work through. A unit test asserts those three keys are never read. The privacy summary on the settings page lists both new figures. Reporting only, nothing in the app behaves differently.
+### Changed
 
-- **Disabled accounts are now reported in telemetry.** Disabling is how Nextcloud offboards someone while keeping their file ownership, so those accounts still count towards the named-user total. Reporting them separately makes the difference visible when usage is compared against a contract — otherwise a customer who has shrunk looks like one who never did. IntraVox and FormVox already sent this; the count is unreported rather than zero when it cannot be taken, so a failure is never mistaken for "nobody disabled". Reporting only, nothing in the app behaves differently.
+- **The pricing button is labelled "Pricing details"** and no longer reads as a purchase button. Subscriptions are sold through Nextcloud.
 
 ### Fixed
 
-- **The admin panel mis-detected Nextcloud Enterprise too.** The same wrong check that telemetry used also drove the settings page, so an instance with a plain Enterprise subscription never saw the enterprise-pricing note. It now uses `IRegistry` exactly as telemetry does, which also means the panel and the report sent to VoxCloud can no longer disagree about the same server. The subscription is reported as `hasValidSubscription` alongside the existing `hasExtendedSupport` add-on signal.
-- **Telemetry mis-detected Nextcloud Enterprise.** The subscription check read the *Extended Support* add-on rather than the subscription itself, so instances with a plain Enterprise subscription were reported as Community. It now uses `IRegistry::delegateHasValidSubscription()` (public API since NC 17). This only affects the usage figures reported back to VoxCloud; nothing in the app behaves differently.
-- **The instance identifier did not line up with the other VoxCloud apps.** Without `overwrite.cli.url` it was derived from a bare hostname where the other apps use a full URL, so the same server appeared as a different instance per app. Instances affected by this migrate themselves at the next report; nothing needs to be reconfigured.
-- **The reported user count left out LDAP and SSO accounts,** because it counted database rows rather than asking Nextcloud. Counting now goes through `callForAllUsers()`, which covers every user backend, and the report says which method was used so the licence server can tell older readings apart. Only affects reporting, not any limit enforced in the app.
+- **Nextcloud Enterprise was detected with the wrong check,** so instances with a plain Enterprise subscription were treated as Community — both in the settings screen and in the usage figures reported back to VoxCloud. Nothing in the app behaved differently.
+- **The reported user count left out LDAP and SSO accounts,** because it counted database rows rather than asking Nextcloud. Only affects reporting, not any limit in the app.
+- **The instance identifier did not line up with the other VoxCloud apps,** so one server could appear as a different instance per app. Affected instances migrate themselves at the next report; nothing needs reconfiguring.
+- **The tab bar pushed the page sideways on phones.** The tabs now wrap to a second row instead of overflowing.
 
 ## [1.3.0] - 2026-08-13 - Room metadata, multi-room bookings & translatable emails
 
