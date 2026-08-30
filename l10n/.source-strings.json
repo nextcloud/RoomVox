@@ -1,6 +1,6 @@
 {
-    "count": 470,
-    "sha256": "c2c438064b7047df4bffc56b047cb44f89325d6aa8d782afc4cbd82e69db6f72",
+    "count": 469,
+    "sha256": "566945aaa66d42b06282dc805dbb6c7437872de21bff1463d5cc6aa19191ce46",
     "strings": [
         "(saved — enter new value to change)",
         "{count} rooms found",
@@ -446,7 +446,6 @@
         "Username",
         "Validate",
         "Validating …",
-        "View in the Nextcloud App Store",
         "View rooms, availability, and calendar feed",
         "Viewer",
         "Viewers",

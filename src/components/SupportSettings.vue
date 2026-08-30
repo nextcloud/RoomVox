@@ -56,12 +56,6 @@
 					rel="noopener noreferrer">
 					{{ t('roomvox', 'Pricing details') }}
 				</NcButton>
-				<NcButton type="tertiary"
-					:href="appStoreUrl"
-					target="_blank"
-					rel="noopener noreferrer">
-					{{ t('roomvox', 'View in the Nextcloud App Store') }}
-				</NcButton>
 				<p class="cta-contact">
 					{{ t('roomvox', 'Questions?') }}
 					<a href="mailto:info@voxcloud.nl">info@voxcloud.nl</a>
@@ -240,7 +234,10 @@ export default {
 		 *
 		 * This is the information page, not the purchase route. Subscriptions are
 		 * sold through Nextcloud, which is what the subscription notice says; the
-		 * label says "details" so the two do not read as competing offers.
+		 * label says "details" so the two do not read as competing offers. There
+		 * is deliberately no second button to the App Store listing either: it
+		 * tells an administrator nothing they cannot see from inside their own
+		 * server.
 		 *
 		 * Intended to move to a Nextcloud-hosted page once one exists. Not linked
 		 * speculatively: a URL that 404s would ship in a release that sits on the
@@ -251,14 +248,6 @@ export default {
 			return lang === 'nl' ? 'https://voxcloud.nl/pricing/#roomvox' : 'https://voxcloud.nl/en/pricing/#roomvox'
 		},
 
-		/**
-		 * Where an administrator finds reviews, the changelog and the install
-		 * button — a different question from "what does it cost", hence its own
-		 * link rather than a replacement for the one above.
-		 */
-		appStoreUrl() {
-			return 'https://apps.nextcloud.com/apps/roomvox'
-		},
 	},
 
 	mounted() {
