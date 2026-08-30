@@ -145,6 +145,14 @@ class TelemetryService {
             'autoAcceptCount' => $roomStats['autoAcceptCount'],
             'roomsWithSmtp' => $roomStats['roomsWithSmtp'],
             'availabilityRulesEnabled' => $roomStats['availabilityRulesEnabled'],
+            // Whether the Microsoft Exchange integration is switched on, plus how
+            // many rooms are actually wired to a resource mailbox. Deliberately
+            // only the on/off flag and a count: the tenant id, client id and
+            // client secret sitting next to it in appconfig are never reported.
+            // A tenant id would identify the organisation outright and break the
+            // anonymity the rest of this payload is built on.
+            'exchangeSyncEnabled' => $this->isExchangeSyncEnabled(),
+            'roomsWithExchange' => $roomStats['roomsWithExchange'],
             'totalUsers' => $this->getUserCount(),
             'activeUsers30d' => $this->getActiveUserCount(30),
             'disabledUsers' => $this->getDisabledUserCount(),
@@ -223,12 +231,31 @@ class TelemetryService {
     /**
      * Calculate aggregate statistics from room data.
      */
+    /**
+     * Whether the admin switched the Microsoft Exchange integration on.
+     *
+     * Reads the single `exchange_enabled` flag and nothing else. The
+     * neighbouring `exchange_tenant_id`, `exchange_client_id` and
+     * `exchange_client_secret` keys stay out of telemetry by design -- a
+     * tenant id is directly traceable to an organisation, so reporting it
+     * would undo the anonymity of the instance hash. Hashing it would not
+     * help: the set of tenant ids is small enough to enumerate.
+     *
+     * Says "switched on", not "working": an instance whose client secret has
+     * expired still reports true while nothing actually syncs. That is what
+     * roomsWithExchange is for.
+     */
+    private function isExchangeSyncEnabled(): bool {
+        return $this->config->getAppValue(Application::APP_ID, 'exchange_enabled', 'false') === 'true';
+    }
+
     private function calculateRoomStats(array $rooms): array {
         $roomTypeCounts = [];
         $facilitiesCounts = [];
         $autoAcceptCount = 0;
         $roomsWithSmtp = 0;
         $availabilityRulesEnabled = 0;
+        $roomsWithExchange = 0;
         $totalCapacity = 0;
         $capacityCount = 0;
 
@@ -257,6 +284,18 @@ class TelemetryService {
                 $availabilityRulesEnabled++;
             }
 
+            // Rooms actually wired to an Exchange resource. Mirrors
+            // ExchangeSyncService::isExchangeRoom() minus the global flag,
+            // which is reported separately -- a room stays counted here when
+            // the admin flips the global switch off, so the two figures
+            // together show how much would break if the sync went away.
+            $exchangeConfig = $room['exchangeConfig'] ?? null;
+            if (is_array($exchangeConfig)
+                && !empty($exchangeConfig['resourceEmail'])
+                && !empty($exchangeConfig['syncEnabled'])) {
+                $roomsWithExchange++;
+            }
+
             // Capacity for average
             $capacity = $room['capacity'] ?? 0;
             if ($capacity > 0) {
@@ -271,6 +310,7 @@ class TelemetryService {
             'autoAcceptCount' => $autoAcceptCount,
             'roomsWithSmtp' => $roomsWithSmtp,
             'availabilityRulesEnabled' => $availabilityRulesEnabled,
+            'roomsWithExchange' => $roomsWithExchange,
             'avgCapacity' => $capacityCount > 0 ? round($totalCapacity / $capacityCount, 2) : 0,
         ];
     }

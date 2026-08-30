@@ -352,7 +352,7 @@
                                 @update:model-value="toggleTelemetry($event)">
                                 <div class="option-info">
                                     <span class="option-label">{{ t('roomvox', 'Share anonymous usage statistics') }}</span>
-                                    <span class="option-desc">{{ t('roomvox', 'We collect: room counts, booking counts, version info (RoomVox, Nextcloud, PHP), and whether your Nextcloud has an Extended Support / Enterprise subscription (a single yes/no, sourced from Nextcloud\'s public API). No personal data or booking details are shared.') }}</span>
+                                    <span class="option-desc">{{ t('roomvox', 'We collect: room counts, booking counts, version info (RoomVox, Nextcloud, PHP), whether your Nextcloud has an Extended Support / Enterprise subscription (a single yes/no, sourced from Nextcloud\'s public API), and whether the Microsoft Exchange sync is switched on plus how many rooms use it. No personal data, booking details or Exchange credentials are shared — the tenant ID, client ID and client secret never leave your server.') }}</span>
                                 </div>
                             </NcCheckboxRadioSwitch>
                         </div>

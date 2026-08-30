@@ -1,6 +1,6 @@
 {
     "count": 467,
-    "sha256": "1442fbfea7ae50859b63d1457cc71aadc9a9954c90d4b57d83ffaa0cbbb88b45",
+    "sha256": "4c62dd2efd6b12594dad0a4e05a8c49a84772a781d3b4265f95d1531fbd9c72b",
     "strings": [
         "(saved — enter new value to change)",
         "{count} rooms found",
@@ -447,7 +447,7 @@
         "View rooms, availability, and calendar feed",
         "Viewer",
         "Viewers",
-        "We collect: room counts, booking counts, version info (RoomVox, Nextcloud, PHP), and whether your Nextcloud has an Extended Support / Enterprise subscription (a single yes/no, sourced from Nextcloud's public API). No personal data or booking details are shared.",
+        "We collect: room counts, booking counts, version info (RoomVox, Nextcloud, PHP), whether your Nextcloud has an Extended Support / Enterprise subscription (a single yes/no, sourced from Nextcloud's public API), and whether the Microsoft Exchange sync is switched on plus how many rooms use it. No personal data, booking details or Exchange credentials are shared — the tenant ID, client ID and client secret never leave your server.",
         "Wed",
         "Week",
         "Weekdays 08-18",
