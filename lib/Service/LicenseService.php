@@ -397,12 +397,20 @@ class LicenseService {
 	public const COUNT_METHOD = 'callForAllUsers';
 
 	/**
-	 * Total named users.
+	 * Total named users — every account, disabled ones included.
+	 *
+	 * Nextcloud confirmed this definition (Fabrice, August 2026): a named user
+	 * is any account that exists, and Nextcloud invoices the end customer on
+	 * that basis. Matching their number matters more than our own preference,
+	 * which had leaned towards excluding disabled accounts: if we report a
+	 * smaller figure than the invoice states, the customer notices the gap
+	 * before either party does. Disabled accounts are reported separately by
+	 * telemetry, so the distinction stays visible without changing the total.
 	 *
 	 * callForAllUsers covers every backend, so LDAP and SSO users are included.
 	 * Counting rows in oc_users misses them entirely: those accounts often
 	 * exist only in the backend, which understated exactly the large customers
-	 * a subscription is priced on ("per named user").
+	 * a subscription is priced on.
 	 */
 	private function countAllUsers(): int {
 		$count = 0;
@@ -415,7 +423,8 @@ class LicenseService {
 	/**
 	 * Users that exist but are disabled. They count towards the named-user
 	 * total, because disabling is how an account is retired without deleting
-	 * its data — the seat is still occupied.
+	 * its data — the seat is still occupied. Confirmed with Nextcloud in
+	 * August 2026; reported on its own so the split stays visible.
 	 */
 	private function countDisabledUsers(): int {
 		try {
