@@ -99,8 +99,10 @@
 				{{ t('roomvox', 'Subscription key is invalid or expired.') }}
 			</NcNoteCard>
 
-			<NcNoteCard v-if="licenseStats && (licenseStats.hasValidSubscription || licenseStats.hasExtendedSupport) && !licenseStats.hasLicense" type="info">
-				{{ t('roomvox', 'Nextcloud Enterprise subscription detected on this instance. Contact us at info@voxcloud.nl for enterprise pricing tailored to your organization.') }}
+			<!-- One card at most. An Enterprise instance with 400 users matches both
+			     conditions, and two cards both asking to get in touch reads as nagging. -->
+			<NcNoteCard v-if="subscriptionNudge" type="info">
+				{{ subscriptionNudge }}
 			</NcNoteCard>
 
 			<div class="telemetry-section">
@@ -211,6 +213,45 @@ export default {
 	},
 
 	computed: {
+		/**
+		 * The single suggestion shown to an instance without a subscription, or
+		 * null when there is nothing worth saying.
+		 *
+		 * Enterprise wins when both apply: an organisation already paying
+		 * Nextcloud for a subscription is a stronger signal than headcount
+		 * alone, and repeating the point in a second card underneath adds
+		 * nothing.
+		 *
+		 * Neither branch is a limit. RoomVox behaves identically above and
+		 * below the threshold — the wording leads with that, because a message
+		 * appearing at 100 users otherwise reads as a cap being approached.
+		 * The number is not arbitrary: paid subscriptions start at 100 users
+		 * in the price list, so below it there is nothing to suggest.
+		 *
+		 * Both texts point at Nextcloud, not at us. Subscriptions are sold and
+		 * invoiced by Nextcloud GmbH under the ISV agreement and first-line
+		 * support runs through them, so a VoxCloud address here would send an
+		 * administrator down the wrong path and bypass their account manager.
+		 */
+		subscriptionNudge() {
+			const s = this.licenseStats
+			if (!s || s.hasLicense) return null
+
+			if (s.hasValidSubscription || s.hasExtendedSupport) {
+				return t('roomvox', 'Nextcloud Enterprise subscription detected on this instance. RoomVox subscriptions are sold through Nextcloud — contact your Nextcloud account manager or sales@nextcloud.com.')
+			}
+
+			// Absent threshold means an older backend; say nothing rather than
+			// guessing a number the server did not send.
+			const threshold = s.supportNudgeUserThreshold
+			const users = s.totalUsers
+			if (typeof threshold !== 'number' || typeof users !== 'number' || users <= threshold) {
+				return null
+			}
+
+			return t('roomvox', 'RoomVox is running for {count} users here. It stays free and fully functional under the AGPL — a subscription adds maintenance and support, and is sold through Nextcloud. Contact your Nextcloud account manager or sales@nextcloud.com.', { count: users })
+		},
+
 		pricingUrl() {
 			const lang = (window.document?.documentElement?.lang || '').split('-')[0]
 			return lang === 'nl' ? 'https://voxcloud.nl/pricing/#roomvox' : 'https://voxcloud.nl/en/pricing/#roomvox'

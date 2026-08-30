@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: RoomVox 1.3.0\n"
 "Report-Msgid-Bugs-To: translations@nextcloud.com\n"
-"POT-Creation-Date: 2026-08-30 10:11+0000\n"
+"POT-Creation-Date: 2026-08-30 10:27+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -801,7 +801,7 @@ msgstr ""
 msgid "New room type …"
 msgstr ""
 
-msgid "Nextcloud Enterprise subscription detected on this instance. Contact us at info@voxcloud.nl for enterprise pricing tailored to your organization."
+msgid "Nextcloud Enterprise subscription detected on this instance. RoomVox subscriptions are sold through Nextcloud — contact your Nextcloud account manager or sales@nextcloud.com."
 msgstr ""
 
 msgid "No"
@@ -1072,6 +1072,9 @@ msgid "RoomVox is free and open source (AGPL-3.0). You can use all features with
 msgstr ""
 
 msgid "RoomVox is open source room booking software for Nextcloud. RoomVox is free for small installations. Larger organisations may require a license in the future."
+msgstr ""
+
+msgid "RoomVox is running for {count} users here. It stays free and fully functional under the AGPL — a subscription adds maintenance and support, and is sold through Nextcloud. Contact your Nextcloud account manager or sales@nextcloud.com."
 msgstr ""
 
 msgid "RoomVox, Nextcloud, and PHP version numbers"

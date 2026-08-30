@@ -15,6 +15,15 @@ use Psr\Log\LoggerInterface;
 class LicenseService {
 	private const FREE_ROOM_LIMIT = 10;
 	private const FREE_ROOM_GROUP_LIMIT = 3;
+	/**
+	 * Above this many users the settings page suggests a support subscription.
+	 *
+	 * Not a limit and not enforced anywhere -- RoomVox keeps working exactly the
+	 * same on either side of it. It marks the point where an instance is large
+	 * enough that a support line is worth having, which is what the subscription
+	 * actually buys.
+	 */
+	private const SUPPORT_NUDGE_USER_THRESHOLD = 100;
 	private const LICENSE_SERVER_URL = 'https://licenses.voxcloud.nl';
 
 	public function __construct(
@@ -293,6 +302,7 @@ class LicenseService {
 			'limits' => $limits,
 			'freeRoomLimit' => self::FREE_ROOM_LIMIT,
 			'freeRoomGroupLimit' => self::FREE_ROOM_GROUP_LIMIT,
+			'supportNudgeUserThreshold' => self::SUPPORT_NUDGE_USER_THRESHOLD,
 			'hasValidSubscription' => $this->hasValidSubscription(),
 			'hasExtendedSupport' => $this->hasExtendedSupport(),
 		];
