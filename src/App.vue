@@ -1,5 +1,20 @@
 <template>
     <div class="roomvox-app">
+        <!-- Sits above the tabs so it is visible on every tab, not only on
+             Support. Deliberately not dismissible: it states a fact about this
+             installation rather than interrupting a task, and a dismissal we
+             did not remember would be worse than none at all. The button is
+             hidden on Support itself, where it would scroll to what is already
+             on screen. -->
+        <NcNoteCard v-if="subscriptionBanner" type="info" class="subscription-banner">
+            {{ subscriptionBanner }}
+            <NcButton v-if="currentView !== 'support'"
+                type="tertiary"
+                @click="onTabClick('support')">
+                {{ t('roomvox', 'Learn more') }}
+            </NcButton>
+        </NcNoteCard>
+
         <!-- Tab Navigation - IntraVox/FormVox style -->
         <nav class="tab-navigation">
             <button
@@ -708,6 +723,7 @@ import NcCounterBubble from '@nextcloud/vue/components/NcCounterBubble'
 import NcSettingsSection from '@nextcloud/vue/components/NcSettingsSection'
 import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwitch'
 import NcNoteCard from '@nextcloud/vue/components/NcNoteCard'
+import { subscriptionNudge as buildSubscriptionNudge } from './composables/useSubscriptionNudge.js'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import DoorOpen from 'vue-material-design-icons/DoorOpen.vue'
 import Close from 'vue-material-design-icons/Close.vue'
@@ -739,6 +755,7 @@ import {
     exportRoomsUrl, sampleCsvUrl, importPreview as apiImportPreview, importRooms as apiImportRooms,
     getApiTokens, createApiToken, deleteApiToken,
     testExchangeConnection,
+    getLicenseStats,
 } from './services/api.js'
 
 const t = (app, text, vars = {}) => translate(app, text, vars)
@@ -1307,16 +1324,40 @@ const toggleTelemetry = async (enabled) => {
     }
 }
 
+// Licence figures for the banner above the tabs. Failing quietly is deliberate:
+// the banner is a courtesy, so a stats call that does not come back should leave
+// the interface alone rather than show an error the administrator cannot act on.
+const licenseStats = ref(null)
+const subscriptionBanner = computed(() => buildSubscriptionNudge(licenseStats.value))
+
+async function loadLicenseStats() {
+    try {
+        const { data } = await getLicenseStats()
+        if (data.success) {
+            licenseStats.value = data.stats
+        }
+    } catch (e) {
+        // no banner
+    }
+}
+
 onMounted(() => {
     loadRooms()
     loadSettings()
     loadApiTokens()
+    loadLicenseStats()
 })
 </script>
 
 <style scoped>
 .roomvox-app {
     padding: 20px;
+}
+
+/* Subscription banner — sits above the tabs, so it needs its own spacing to
+   avoid crowding the tab row. */
+.subscription-banner {
+    margin-bottom: 12px;
 }
 
 /* Tab Navigation - IntraVox/FormVox style */

@@ -53,6 +53,9 @@ export const importRooms = (formData) => axios.post(baseUrl('/api/rooms/import')
 export const getSettings = () => axios.get(baseUrl('/api/settings'))
 export const saveSettings = (data) => axios.put(baseUrl('/api/settings'), data)
 
+// Licence
+export const getLicenseStats = () => axios.get(baseUrl('/api/license/stats'))
+
 // API Tokens
 export const getApiTokens = () => axios.get(baseUrl('/api/tokens'))
 export const createApiToken = (data) => axios.post(baseUrl('/api/tokens'), data)

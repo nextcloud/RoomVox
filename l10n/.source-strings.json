@@ -1,6 +1,6 @@
 {
-    "count": 468,
-    "sha256": "b935281e757c4b3462f461f8f8d661f85e580b52a38c320c2fc4bcff743647bd",
+    "count": 469,
+    "sha256": "2d8b8b6683b0b5fffc06e518675e6a45e72bba667214ef5f46fdc0d1d9f4f5d3",
     "strings": [
         "(saved — enter new value to change)",
         "{count} rooms found",
@@ -231,6 +231,7 @@
         "Last report sent:",
         "Last synced:",
         "Last used",
+        "Learn more",
         "Learn more about RoomVox",
         "Leave empty for auto-generated address",
         "Leave empty to keep current",
@@ -356,7 +357,7 @@
         "RoomVox",
         "RoomVox is free and open source (AGPL-3.0). You can use all features without a subscription — no limits, no restrictions, no catch.",
         "RoomVox is open source room booking software for Nextcloud. RoomVox is free for small installations. Larger organisations may require a license in the future.",
-        "RoomVox is running for {count} users here. It stays free and fully functional under the AGPL — a subscription adds maintenance and support, and is sold through Nextcloud. Contact your Nextcloud account manager or sales@nextcloud.com.",
+        "RoomVox is running for {count} users here and keeps working in full without a subscription. If your organisation gets value from it, a subscription is much appreciated — it funds the maintenance. Sold through Nextcloud: contact your account manager or sales@nextcloud.com.",
         "RoomVox, Nextcloud, and PHP version numbers",
         "Rule",
         "Sat",
