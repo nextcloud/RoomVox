@@ -185,26 +185,106 @@ Referentie: <https://owasp.org/Top10/2025/> · Cheat Sheets: <https://cheatsheet
 
 ## 2. Translations (l10n/)
 
-Supported languages: **EN, NL, DE, FR**
+Supported languages: **EN (source), NL, DE, FR**
 
-- [ ] Check that all languages have identical keys:
+### The model (read once)
+
+Since v1.3.0 RoomVox uses the POT-based Nextcloud community workflow, the same as
+IntraVox and MetaVox. The old hand-maintained `l10n/*.json` model is gone.
+
+- **Source strings live in code** — `t('roomvox', …)` in `src/**`, `$l->t(…)` in
+  `lib/**`. The committed manifest `l10n/.source-strings.json` (sha256 + the sorted
+  msgid list) records the exact set that has been handed off for translation.
+- **The moment you add, change or remove a translatable string, regenerate and push
+  it — the same day, not at release.** A prebuild guard
+  (`scripts/check-l10n-sync.js`) fails `npm run build` until you do:
+  ```bash
+  npm run l10n:push        # extract → lint → regenerate POT + manifest (all local)
+  git add translationfiles/templates/roomvox.pot l10n/.source-strings.json l10n/.source-count.json
+  git commit -s -m "l10n: push <N> new source strings for translation"
+  git push github main     # the Nextcloud bot reads the POT from GitHub only
+  ```
+  Note `npm run l10n:push` does **not** talk to Transifex — it only regenerates local
+  files. The handoff is the GitHub push.
+- **Never commit the manifest ahead of the code that uses the strings.** The guard
+  compares manifest against code *per commit*, so an l10n commit landing before its
+  feature commit fails CI — and reports the new strings as *removed*, which reads as
+  the opposite of what happened. Commit the feature first and the manifest second, or
+  both in one commit.
+- **Never hand-edit `l10n/<lang>.{js,json}`, and never run `npm run l10n:generate-js`
+  to "fix" a gap.** It regenerates `.js` from `.json` and silently drops any string
+  missing from `.json`, desyncing the pair. Those files are the bot's output, not
+  ours.
+
+### ⚠️ The Transifex resource does not exist yet
+
+RoomVox is **not yet on Transifex**. The request is
+[nextcloud/docker-ci#986](https://github.com/nextcloud/docker-ci/issues/986), open
+since 13-08-2026; Nextcloud has new resources on hold because translators cannot keep
+up with the influx ([#977](https://github.com/nextcloud/docker-ci/issues/977)).
+FormVox is queued behind it ([#989](https://github.com/nextcloud/docker-ci/issues/989)).
+
+Consequences while this is open — none of these block a release:
+
+- `tx push` / `tx pull` **will fail**. `.tx/config` points at
+  `o:nextcloud:p:nextcloud:r:roomvox`, which is not created yet. Do not try to work
+  around this.
+- `translationfiles/{de,fr,nl}/roomvox.po` are **seeded and frozen** at the 13-08
+  migration: 359 of 467 strings carried over from the old hand-maintained files. They
+  will not move until the resource goes live. Do not hand-edit them either.
+- **~110 strings ship untranslated** and fall back to English, including everything
+  added since 13-08. That is expected, not a defect.
+- Pushing the POT to GitHub is still the right thing to do every time. When the
+  resource goes live the bot reads it from there.
+
+- [ ] Check whether the resource has gone live yet:
+  ```bash
+  gh issue view 986 --repo nextcloud/docker-ci --json state,updatedAt,comments
+  ```
+  Once it is closed and the bot has landed its first `fix(l10n)` commit, delete this
+  subsection and treat the workflow as normal. The bot **deletes the POT** in that
+  commit — that is normal; the POT is a transient handoff file and the manifest is
+  the durable record.
+
+### Checks
+
+- [ ] Source strings are in sync with the manifest (also enforced by the prebuild hook):
+  ```bash
+  node scripts/check-l10n-sync.js
+  ```
+- [ ] If it reports new strings, push them **before** cutting the release (see above).
+- [ ] Measure the real gap — do not read it off the PO files, which overstate it:
   ```bash
   python3 -c "
   import json
-  langs = ['en','nl','de','fr']
-  ref = set(json.load(open('l10n/en.json'))['translations'].keys())
-  for l in langs:
-      keys = set(json.load(open(f'l10n/{l}.json'))['translations'].keys())
-      missing = ref - keys
-      extra = keys - ref
-      print(f'{l}: {len(keys)} keys', '✓' if keys == ref else f'✗ missing: {missing}, extra: {extra}')
+  src = set(json.load(open('l10n/.source-strings.json'))['strings'])
+  for l in ['nl','de','fr']:
+      d = json.load(open(f'l10n/{l}.json'))['translations']
+      print(f'{l}: {len(src - set(d))} untranslated of {len(src)}')
   "
   ```
+  A missing key falls back to English. `msgstr == msgid` is **not** a gap — for
+  proper nouns and technical terms that is the correct translation.
 - [ ] Validate JSON syntax in all translation files:
   ```bash
   for f in l10n/*.json; do python3 -c "import json; json.load(open('$f')); print('✓ $f')" 2>&1 || echo "✗ $f"; done
   ```
-- [ ] Verify JS translation files are up-to-date with JSON files
+- [ ] `l10n/*.js` and `l10n/*.json` hold the same keys per language. If they diverge,
+  something hand-edited them — investigate, do **not** "repair" with
+  `l10n:generate-js`, which would drop strings and widen the split.
+  ```bash
+  python3 -c "
+  import json, re, pathlib
+  for l in ['nl','de','fr']:   # not 'en' — en.json/en.js are gitignored build artefacts
+      j = set(json.loads(pathlib.Path(f'l10n/{l}.json').read_text())['translations'])
+      raw = pathlib.Path(f'l10n/{l}.js').read_text()
+      body = raw[raw.index('{'):raw.rindex('}')+1]
+      js = set(json.loads(re.sub(r',(\s*[}\]])', r'\1', body)))
+      print(f'{l}: json={len(j)} js={len(js)}', 'OK' if j == js else f'DIVERGED: {len(j ^ js)} keys differ')
+  "
+  ```
+- [ ] Note untranslated strings in the CHANGELOG release notes, so administrators know
+      why parts of the interface are English (see the v1.3.0 note for wording).
 
 ---
 
