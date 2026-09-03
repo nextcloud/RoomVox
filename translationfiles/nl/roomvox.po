@@ -258,7 +258,7 @@ msgid "Column names are automatically detected and mapped."
 msgstr "Kolomnamen worden automatisch gedetecteerd en gekoppeld."
 
 msgid "Configure the available facilities for rooms. Facilities that are in use cannot be deleted."
-msgstr "Configureer de beschikbare faciliteiten voor kamers. Faciliteiten die in gebruik zijn kunnen niet verwijderd worden."
+msgstr "Configureer de beschikbare faciliteiten voor ruimtes. Faciliteiten die in gebruik zijn kunnen niet verwijderd worden."
 
 msgid "Configure the available room types. Types that are in use cannot be deleted."
 msgstr "Configureer de beschikbare ruimtetypes. Types die in gebruik zijn kunnen niet worden verwijderd."
@@ -474,7 +474,7 @@ msgid "Event: %s"
 msgstr "Afspraak: %s"
 
 msgid "Everything in book + manage rooms and view statistics"
-msgstr "Alles van book + kamers beheren en statistieken bekijken"
+msgstr "Alles van book + ruimtes beheren en statistieken bekijken"
 
 msgid "Everything in read + create and cancel bookings"
 msgstr "Alles van read + boekingen aanmaken en annuleren"
@@ -768,7 +768,7 @@ msgid "Month"
 msgstr "Maand"
 
 msgid "My rooms"
-msgstr "Mijn kamers"
+msgstr "Mijn ruimtes"
 
 msgid "Name"
 msgstr "Naam"
@@ -840,7 +840,7 @@ msgid "No report sent yet"
 msgstr "Nog geen rapport verstuurd"
 
 msgid "No rooms"
-msgstr "Geen kamers"
+msgstr "Geen ruimtes"
 
 msgid "No rooms configured"
 msgstr "Geen ruimtes geconfigureerd"
@@ -1338,7 +1338,7 @@ msgid "View pricing & plans"
 msgstr "Tarieven & abonnementen bekijken"
 
 msgid "View rooms, availability, and calendar feed"
-msgstr "Kamers, beschikbaarheid en agendafeed bekijken"
+msgstr "Ruimtes, beschikbaarheid en agendafeed bekijken"
 
 msgid "Viewer"
 msgstr "Bekijker"
@@ -1377,7 +1377,7 @@ msgid "Yes"
 msgstr "Ja"
 
 msgid "You don't have access to any rooms yet. Ask an administrator to grant you access."
-msgstr "Je hebt nog geen toegang tot kamers. Vraag een beheerder om je toegang te verlenen."
+msgstr "U hebt nog geen toegang tot ruimtes. Vraag een beheerder om u toegang te verlenen."
 
 msgid "Your actual server URL"
 msgstr "Uw werkelijke server-URL"
