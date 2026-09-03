@@ -15,7 +15,7 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
 msgid "(saved — enter new value to change)"
-msgstr ""
+msgstr "(opgeslagen — voer een nieuwe waarde in om te wijzigen)"
 
 msgid "{count} rooms found"
 msgstr "{count} ruimtes gevonden"
@@ -27,13 +27,13 @@ msgid "+ Add rule"
 msgstr "+ Regel toevoegen"
 
 msgid "A booking has been cancelled."
-msgstr ""
+msgstr "Een boeking is geannuleerd."
 
 msgid "A new booking request requires your approval."
-msgstr ""
+msgstr "Een nieuwe boekingsaanvraag wacht op uw goedkeuring."
 
 msgid "A single occurrence of your recurring booking has been cancelled by a room manager."
-msgstr ""
+msgstr "Eén afspraak uit uw herhaalreeks is geannuleerd door een ruimtebeheerder."
 
 msgid "A unique email is auto-generated for CalDAV scheduling. Only change this if you need a specific address."
 msgstr "Er wordt automatisch een uniek e-mailadres gegenereerd voor CalDAV-planning. Wijzig dit alleen als u een specifiek adres nodig hebt."
@@ -84,7 +84,7 @@ msgid "All booking requests have been processed."
 msgstr "Alle boekingsverzoeken zijn verwerkt."
 
 msgid "All day"
-msgstr ""
+msgstr "Hele dag"
 
 msgid "All rooms"
 msgstr "Alle ruimtes"
@@ -96,7 +96,7 @@ msgid "Anonymous usage statistics help us understand how RoomVox is used and gui
 msgstr "Anonieme gebruiksstatistieken helpen ons te begrijpen hoe RoomVox wordt gebruikt en geven richting aan toekomstige ontwikkeling."
 
 msgid "Anyone with this URL can see the titles and organizers of all bookings for this room. Only share it with people or systems you trust. If a URL leaks, regenerate it below."
-msgstr ""
+msgstr "Iedereen met deze URL kan de titels en organisatoren van alle boekingen voor deze ruimte zien. Deel de URL alleen met mensen of systemen die u vertrouwt. Als een URL uitlekt, genereer deze dan hieronder opnieuw."
 
 msgid "API token created"
 msgstr "API token aangemaakt"
@@ -108,10 +108,10 @@ msgid "API tokens"
 msgstr "API Tokens"
 
 msgid "App registration client ID"
-msgstr ""
+msgstr "Client-ID van de app-registratie"
 
 msgid "App registration client secret"
-msgstr ""
+msgstr "Clientgeheim van de app-registratie"
 
 msgid "Approvals"
 msgstr "Goedkeuringen"
@@ -138,7 +138,7 @@ msgid "Availability"
 msgstr "Beschikbaarheid"
 
 msgid "Azure AD Tenant ID"
-msgstr ""
+msgstr "Azure AD-tenant-ID"
 
 msgid "Back"
 msgstr "Terug"
@@ -156,16 +156,16 @@ msgid "Booking cancelled"
 msgstr "Reservering geannuleerd"
 
 msgid "Booking cancelled: %1$s — %2$s"
-msgstr ""
+msgstr "Boeking geannuleerd: %1$s — %2$s"
 
 msgid "Booking cancelled: %1$s — %2$s (single occurrence)"
-msgstr ""
+msgstr "Boeking geannuleerd: %1$s — %2$s (één afspraak)"
 
 msgid "Booking confirmed: %1$s — %2$s"
-msgstr ""
+msgstr "Boeking bevestigd: %1$s — %2$s"
 
 msgid "Booking conflict: %1$s — %2$s"
-msgstr ""
+msgstr "Boekingsconflict: %1$s — %2$s"
 
 msgid "Booking created successfully"
 msgstr "Boeking succesvol aangemaakt"
@@ -174,13 +174,13 @@ msgid "Booking declined"
 msgstr "Boeking afgewezen"
 
 msgid "Booking declined: %1$s — %2$s"
-msgstr ""
+msgstr "Boeking afgewezen: %1$s — %2$s"
 
 msgid "Booking declined: %1$s — %2$s (exceeds %3$d-day horizon)"
-msgstr ""
+msgstr "Boeking afgewezen: %1$s — %2$s (overschrijdt de horizon van %3$d dagen)"
 
 msgid "Booking declined: %s — outside availability hours"
-msgstr ""
+msgstr "Boeking afgewezen: %s — buiten de beschikbaarheidstijden"
 
 msgid "Booking details"
 msgstr "Boekingsdetails"
@@ -189,16 +189,16 @@ msgid "Booking details or attendees"
 msgstr "Boekingsdetails of deelnemers"
 
 msgid "Booking not permitted: %1$s — %2$s"
-msgstr ""
+msgstr "Boeking niet toegestaan: %1$s — %2$s"
 
 msgid "Booking request: %1$s — %2$s"
-msgstr ""
+msgstr "Boekingsaanvraag: %1$s — %2$s"
 
 msgid "Booking rescheduled"
 msgstr "Boeking verplaatst"
 
 msgid "Booking temporarily unavailable: %s"
-msgstr ""
+msgstr "Boeking tijdelijk niet beschikbaar: %s"
 
 msgid "Booking updated"
 msgstr "Boeking bijgewerkt"
@@ -207,7 +207,7 @@ msgid "Bookings"
 msgstr "Boekingen"
 
 msgid "Bookings on or after %s are not allowed."
-msgstr ""
+msgstr "Boekingen op of na %s zijn niet toegestaan."
 
 msgid "Building"
 msgstr "Gebouw"
@@ -222,10 +222,10 @@ msgid "Cancel booking"
 msgstr "Reservering annuleren"
 
 msgid "Cancelled by: %s"
-msgstr ""
+msgstr "Geannuleerd door: %s"
 
 msgid "Cancelled occurrence: %s"
-msgstr ""
+msgstr "Geannuleerde afspraak: %s"
 
 msgid "Cannot delete: this facility is in use"
 msgstr "Kan niet verwijderen: deze faciliteit is in gebruik"
@@ -246,10 +246,10 @@ msgid "City"
 msgstr "Stad"
 
 msgid "Client ID"
-msgstr ""
+msgstr "Client-ID"
 
 msgid "Client Secret"
-msgstr ""
+msgstr "Clientgeheim"
 
 msgid "Close"
 msgstr "Sluiten"
@@ -264,16 +264,16 @@ msgid "Configure the available room types. Types that are in use cannot be delet
 msgstr "Configureer de beschikbare ruimtetypes. Types die in gebruik zijn kunnen niet worden verwijderd."
 
 msgid "Connect RoomVox to Microsoft 365 Exchange to sync room calendars. Requires an Azure AD app registration with Calendars.ReadWrite and User.Read.All application permissions."
-msgstr ""
+msgstr "Verbind RoomVox met Microsoft 365 Exchange om ruimteagenda's te synchroniseren. Vereist een Azure AD-app-registratie met de applicatierechten Calendars.ReadWrite en User.Read.All."
 
 msgid "Connection failed"
-msgstr ""
+msgstr "Verbinding mislukt"
 
 msgid "Connection successful"
-msgstr ""
+msgstr "Verbinding geslaagd"
 
 msgid "Copied"
-msgstr ""
+msgstr "Gekopieerd"
 
 msgid "Copied!"
 msgstr "Gekopieerd!"
@@ -282,7 +282,7 @@ msgid "Copy"
 msgstr "Kopiëren"
 
 msgid "Could not copy to clipboard"
-msgstr ""
+msgstr "Kopiëren naar klembord mislukt"
 
 msgid "Could not reach the telemetry server. Please try again later."
 msgstr "Kan de telemetrieserver niet bereiken. Probeer het later opnieuw."
@@ -315,7 +315,7 @@ msgid "Date"
 msgstr "Datum"
 
 msgid "Date: %1$s – %2$s"
-msgstr ""
+msgstr "Datum: %1$s – %2$s"
 
 msgid "Day"
 msgstr "Dag"
@@ -369,10 +369,10 @@ msgid "Drag and drop a CSV file here"
 msgstr "Sleep een CSV-bestand hierheen"
 
 msgid "e.g. 12345678-abcd-…"
-msgstr ""
+msgstr "bv. 12345678-abcd-…"
 
 msgid "e.g. 2"
-msgstr ""
+msgstr "bv. 2"
 
 msgid "e.g. 2.17 (floor.room)"
 msgstr "bijv. 2.17 (verdieping.ruimte)"
@@ -390,7 +390,7 @@ msgid "e.g. Building A"
 msgstr "bijv. Gebouw A"
 
 msgid "e.g. conference-room@company.com"
-msgstr ""
+msgstr "bv. vergaderzaal@bedrijf.nl"
 
 msgid "e.g. Floor 3"
 msgstr "bijv. Verdieping 3"
@@ -432,22 +432,22 @@ msgid "Email support"
 msgstr "E-mailondersteuning"
 
 msgid "Email: %s"
-msgstr ""
+msgstr "E-mail: %s"
 
 msgid "Enable email notifications"
 msgstr "E-mailmeldingen inschakelen"
 
 msgid "Enable Exchange calendar sync"
-msgstr ""
+msgstr "Exchange-agendasynchronisatie inschakelen"
 
 msgid "Enable Exchange calendar sync for imported rooms"
-msgstr ""
+msgstr "Exchange-agendasynchronisatie inschakelen voor geïmporteerde ruimtes"
 
 msgid "Enable external feed"
-msgstr ""
+msgstr "Externe feed inschakelen"
 
 msgid "Enable sync for this room"
-msgstr ""
+msgstr "Synchronisatie inschakelen voor deze ruimte"
 
 msgid "Encryption"
 msgstr "Versleuteling"
@@ -471,7 +471,7 @@ msgid "Event"
 msgstr "Evenement"
 
 msgid "Event: %s"
-msgstr ""
+msgstr "Afspraak: %s"
 
 msgid "Everything in book + manage rooms and view statistics"
 msgstr "Alles van book + kamers beheren en statistieken bekijken"
@@ -480,16 +480,16 @@ msgid "Everything in read + create and cancel bookings"
 msgstr "Alles van read + boekingen aanmaken en annuleren"
 
 msgid "Exchange calendar sync"
-msgstr ""
+msgstr "Exchange-agendasynchronisatie"
 
 msgid "Exchange calendar synced successfully"
-msgstr ""
+msgstr "Exchange-agenda succesvol gesynchroniseerd"
 
 msgid "Exchange resource email"
-msgstr ""
+msgstr "E-mailadres van de Exchange-resource"
 
 msgid "Exchange sync queued …"
-msgstr ""
+msgstr "Exchange-synchronisatie in de wachtrij …"
 
 msgid "Export CSV"
 msgstr "CSV exporteren"
@@ -504,7 +504,7 @@ msgid "Exported via PowerShell (Get-EXOMailbox | Get-Place | Export-Csv)"
 msgstr "Geëxporteerd via PowerShell (Get-EXOMailbox | Get-Place | Export-Csv)"
 
 msgid "External calendar feed"
-msgstr ""
+msgstr "Externe agendafeed"
 
 msgid "Facilities"
 msgstr "Faciliteiten"
@@ -549,10 +549,10 @@ msgid "Failed to process response"
 msgstr "Verwerken van reactie mislukt"
 
 msgid "Failed to queue sync"
-msgstr ""
+msgstr "In de wachtrij zetten van de synchronisatie mislukt"
 
 msgid "Failed to regenerate feed"
-msgstr ""
+msgstr "Opnieuw genereren van de feed mislukt"
 
 msgid "Failed to remove subscription key"
 msgstr "Verwijderen van abonnementssleutel mislukt"
@@ -564,7 +564,7 @@ msgid "Failed to respond to booking"
 msgstr "Reageren op boeking mislukt"
 
 msgid "Failed to save Exchange settings"
-msgstr ""
+msgstr "Opslaan van Exchange-instellingen mislukt"
 
 msgid "Failed to save permissions"
 msgstr "Opslaan van rechten mislukt"
@@ -588,13 +588,13 @@ msgid "Failed to update booking"
 msgstr "Bijwerken van boeking mislukt"
 
 msgid "Failed to update feed"
-msgstr ""
+msgstr "Bijwerken van de feed mislukt"
 
 msgid "Failed to update telemetry setting"
 msgstr "Bijwerken van telemetrie-instelling mislukt"
 
 msgid "Feed URL"
-msgstr ""
+msgstr "Feed-URL"
 
 msgid "Floor"
 msgstr "Verdieping"
@@ -636,13 +636,13 @@ msgid "If RoomVox is valuable to your organization, consider subscribing. Your s
 msgstr "Als RoomVox waardevol is voor je organisatie, overweeg dan een abonnement. Je abonnement financiert actieve ontwikkeling, gegarandeerde Nextcloud-compatibiliteit en e-mailsupport."
 
 msgid "If you receive this, the SMTP configuration is working correctly."
-msgstr ""
+msgstr "Als u dit ontvangt, werkt de SMTP-configuratie correct."
 
 msgid "If you still need this room for the cancelled time, please make a new booking or contact the room manager."
-msgstr ""
+msgstr "Hebt u deze ruimte nog nodig op het geannuleerde tijdstip? Maak dan een nieuwe boeking of neem contact op met de ruimtebeheerder."
 
 msgid "If you still need this room, please make a new booking or contact the room manager."
-msgstr ""
+msgstr "Hebt u deze ruimte nog nodig? Maak dan een nieuwe boeking of neem contact op met de ruimtebeheerder."
 
 msgid "Import"
 msgstr "Importeren"
@@ -672,7 +672,7 @@ msgid "Inherited from group"
 msgstr "Overgenomen van groep"
 
 msgid "Initial sync failed:"
-msgstr ""
+msgstr "Eerste synchronisatie mislukt:"
 
 msgid "Invalid date/time selection"
 msgstr "Ongeldige datum-/tijdselectie"
@@ -687,7 +687,7 @@ msgid "Keep"
 msgstr "Behouden"
 
 msgid "Last error:"
-msgstr ""
+msgstr "Laatste fout:"
 
 msgid "Last report"
 msgstr "Laatste rapport"
@@ -696,7 +696,7 @@ msgid "Last report sent:"
 msgstr "Laatste rapport verzonden:"
 
 msgid "Last synced:"
-msgstr ""
+msgstr "Laatst gesynchroniseerd:"
 
 msgid "Last used"
 msgstr "Laatst gebruikt"
@@ -717,7 +717,7 @@ msgid "Line {line}"
 msgstr "Regel {line}"
 
 msgid "Links each room to its MS365 mailbox for bidirectional calendar sync. Requires Exchange sync to be configured in settings."
-msgstr ""
+msgstr "Koppelt elke ruimte aan de bijbehorende MS365-mailbox voor tweerichtingssynchronisatie van de agenda. Vereist dat Exchange-synchronisatie is ingesteld bij de instellingen."
 
 msgid "List view"
 msgstr "Lijstweergave"
@@ -726,7 +726,7 @@ msgid "Location"
 msgstr "Locatie"
 
 msgid "Log in to approve or decline this booking request."
-msgstr ""
+msgstr "Log in om deze boekingsaanvraag goed te keuren of af te wijzen."
 
 msgid "Manage API tokens for external integrations. Tokens allow external systems to access the RoomVox API."
 msgstr "Beheer API tokens voor externe integraties. Tokens geven externe systemen toegang tot de RoomVox API."
@@ -741,16 +741,16 @@ msgid "Managers"
 msgstr "Beheerders"
 
 msgid "Map this room to a Microsoft 365 Exchange room resource. Bookings will be synced bidirectionally."
-msgstr ""
+msgstr "Koppel deze ruimte aan een Microsoft 365 Exchange-ruimteresource. Boekingen worden in twee richtingen gesynchroniseerd."
 
 msgid "Matches: {name}"
 msgstr "Komt overeen met: {name}"
 
 msgid "Max inline sync per request"
-msgstr ""
+msgstr "Maximaal aantal directe synchronisaties per verzoek"
 
 msgid "Max inline syncs per 10 sec (default: 5)"
-msgstr ""
+msgstr "Maximaal aantal directe synchronisaties per 10 sec (standaard: 5)"
 
 msgid "Maximum booking horizon"
 msgstr "Maximale boekingshorizon"
@@ -759,7 +759,7 @@ msgid "Meeting name"
 msgstr "Naam van de vergadering"
 
 msgid "Microsoft Exchange sync"
-msgstr ""
+msgstr "Microsoft Exchange-synchronisatie"
 
 msgid "Mon"
 msgstr "Ma"
@@ -801,7 +801,7 @@ msgid "New room type …"
 msgstr "Nieuw ruimtetype …"
 
 msgid "Nextcloud Enterprise subscription detected on this instance. Contact us at info@voxcloud.nl for enterprise pricing tailored to your organization."
-msgstr ""
+msgstr "Nextcloud Enterprise-abonnement gedetecteerd op deze instantie. Neem contact met ons op via info@voxcloud.nl voor enterprise-tarieven op maat van uw organisatie."
 
 msgid "No"
 msgstr "Nee"
@@ -864,7 +864,7 @@ msgid "Number of seats"
 msgstr "Aantal zitplaatsen"
 
 msgid "Occurrence cancelled"
-msgstr ""
+msgstr "Afspraak geannuleerd"
 
 msgid "Only create new rooms (skip existing)"
 msgstr "Alleen nieuwe ruimtes aanmaken (bestaande overslaan)"
@@ -888,7 +888,7 @@ msgid "Organizer"
 msgstr "Organisator"
 
 msgid "Organizer: %s"
-msgstr ""
+msgstr "Organisator: %s"
 
 msgid "Overview of rooms and bookings in your RoomVox installation."
 msgstr "Overzicht van ruimtes en boekingen in uw RoomVox-installatie."
@@ -909,16 +909,16 @@ msgid "Permissions saved"
 msgstr "Rechten opgeslagen"
 
 msgid "Please choose a different date or contact the room manager."
-msgstr ""
+msgstr "Kies een andere datum of neem contact op met de ruimtebeheerder."
 
 msgid "Please choose a time within the room's availability or contact the room manager."
-msgstr ""
+msgstr "Kies een tijdstip binnen de beschikbaarheid van de ruimte of neem contact op met de ruimtebeheerder."
 
 msgid "Please contact the room manager for more information."
-msgstr ""
+msgstr "Neem contact op met de ruimtebeheerder voor meer informatie."
 
 msgid "Please contact your administrator if you believe this is an error."
-msgstr ""
+msgstr "Neem contact op met uw beheerder als u denkt dat dit een fout is."
 
 msgid "Please enter a subscription key"
 msgstr "Voer een abonnementssleutel in"
@@ -939,22 +939,22 @@ msgid "Priority bug fixes"
 msgstr "Prioriteit bij bugfixes"
 
 msgid "Publish this room's bookings as an iCal feed that external calendar apps (Nextcloud Calendar, Outlook, Apple Calendar) and signage displays can subscribe to — no login required."
-msgstr ""
+msgstr "Publiceer de boekingen van deze ruimte als iCal-feed waarop externe agenda-apps (Nextcloud Agenda, Outlook, Apple Agenda) en informatieschermen zich kunnen abonneren — zonder in te loggen."
 
 msgid "Questions or feedback?"
 msgstr "Vragen of feedback?"
 
 msgid "Questions?"
-msgstr ""
+msgstr "Vragen?"
 
 msgid "Rate limit (per 10 sec)"
-msgstr ""
+msgstr "Snelheidslimiet (per 10 sec)"
 
 msgid "Regenerate URL"
-msgstr ""
+msgstr "URL opnieuw genereren"
 
 msgid "Regenerating creates a new URL and immediately breaks any existing subscriptions."
-msgstr ""
+msgstr "Opnieuw genereren maakt een nieuwe URL aan en verbreekt bestaande abonnementen onmiddellijk."
 
 msgid "Remove subscription key"
 msgstr "Abonnementssleutel verwijderen"
@@ -966,13 +966,13 @@ msgid "Requested by"
 msgstr "Aangevraagd door"
 
 msgid "Requested by: %1$s (%2$s)"
-msgstr ""
+msgstr "Aangevraagd door: %1$s (%2$s)"
 
 msgid "Resource found"
-msgstr ""
+msgstr "Resource gevonden"
 
 msgid "Resource not found"
-msgstr ""
+msgstr "Resource niet gevonden"
 
 msgid "Responsible contact"
 msgstr "Verantwoordelijke contactpersoon"
@@ -987,10 +987,10 @@ msgid "Restrict when this room can be booked. Bookings outside these hours will 
 msgstr "Beperk wanneer deze ruimte kan worden geboekt. Boekingen buiten deze uren worden automatisch afgewezen."
 
 msgid "Retry"
-msgstr ""
+msgstr "Opnieuw proberen"
 
 msgid "Review and respond:"
-msgstr ""
+msgstr "Bekijken en reageren:"
 
 msgid "Role"
 msgstr "Rol"
@@ -1053,19 +1053,19 @@ msgid "Room updated"
 msgstr "Ruimte bijgewerkt"
 
 msgid "Room: %s"
-msgstr ""
+msgstr "Ruimte: %s"
 
 msgid "Rooms"
 msgstr "Ruimtes"
 
 msgid "Rooms per request (default: 1)"
-msgstr ""
+msgstr "Ruimtes per verzoek (standaard: 1)"
 
 msgid "roomvox"
-msgstr ""
+msgstr "roomvox"
 
 msgid "RoomVox"
-msgstr ""
+msgstr "RoomVox"
 
 msgid "RoomVox is free and open source (AGPL-3.0). You can use all features without a subscription — no limits, no restrictions, no catch."
 msgstr "RoomVox is gratis en open source (AGPL-3.0). Je kunt alle functies gebruiken zonder abonnement — geen limieten, geen beperkingen."
@@ -1191,19 +1191,19 @@ msgid "Supported formats"
 msgstr "Ondersteunde formaten"
 
 msgid "Syncing Exchange calendar …"
-msgstr ""
+msgstr "Exchange-agenda synchroniseren …"
 
 msgid "Test connection"
-msgstr ""
+msgstr "Verbinding testen"
 
 msgid "Test email from %s"
-msgstr ""
+msgstr "Testbericht van %s"
 
 msgid "Tested with every new Nextcloud release"
 msgstr "Getest met elke nieuwe Nextcloud-versie"
 
 msgid "Testing …"
-msgstr ""
+msgstr "Testen …"
 
 msgid "Thank you for helping improve RoomVox!"
 msgstr "Bedankt voor uw bijdrage aan het verbeteren van RoomVox!"
@@ -1212,19 +1212,19 @@ msgid "The booker will be notified by email."
 msgstr "De boeker krijgt een e-mailbericht."
 
 msgid "The recurring series continues as scheduled; only this one occurrence has been removed."
-msgstr ""
+msgstr "De herhaalreeks loopt gewoon door; alleen deze ene afspraak is verwijderd."
 
 msgid "The room has been released and is no longer reserved for your event."
-msgstr ""
+msgstr "De ruimte is vrijgegeven en is niet langer gereserveerd voor uw afspraak."
 
 msgid "The room has been reserved for your event."
-msgstr ""
+msgstr "De ruimte is gereserveerd voor uw afspraak."
 
 msgid "The room is already booked for this time slot. Please choose a different time."
-msgstr ""
+msgstr "De ruimte is al geboekt voor dit tijdslot. Kies een ander tijdstip."
 
 msgid "The room is now available for this time slot."
-msgstr ""
+msgstr "De ruimte is nu beschikbaar voor dit tijdslot."
 
 msgid "The telemetry server returned an error:"
 msgstr "De telemetrieserver gaf een fout:"
@@ -1236,10 +1236,10 @@ msgid "This booking is part of a recurring series. What would you like to cancel
 msgstr "Deze reservering maakt deel uit van een herhaalreeks. Wat wilt u annuleren?"
 
 msgid "This is a temporary state — please try again in a few minutes. If the problem persists, contact your administrator."
-msgstr ""
+msgstr "Dit is een tijdelijke situatie — probeer het over een paar minuten opnieuw. Neem contact op met uw beheerder als het probleem aanhoudt."
 
 msgid "This is a test email from the room booking system."
-msgstr ""
+msgstr "Dit is een testbericht van het ruimtereserveringssysteem."
 
 msgid "This month"
 msgstr "Deze maand"
@@ -1248,13 +1248,13 @@ msgid "This occurrence"
 msgstr "Deze afspraak"
 
 msgid "This room has restrictions on how far in advance it can be booked."
-msgstr ""
+msgstr "Voor deze ruimte gelden beperkingen voor hoe ver van tevoren er geboekt kan worden."
 
 msgid "This room inherits permissions from its group (shown as \"inherited\" below). You can add room-specific permissions that will be merged with the inherited ones."
 msgstr "Deze ruimte erft rechten van de groep (hieronder weergegeven als \"overgenomen\"). Je kunt ruimte-specifieke rechten toevoegen die worden samengevoegd met de overgenomen rechten."
 
 msgid "This room is available during:"
-msgstr ""
+msgstr "Deze ruimte is beschikbaar op:"
 
 msgid "This week"
 msgstr "Deze week"
@@ -1329,13 +1329,13 @@ msgid "Username"
 msgstr "Gebruikersnaam"
 
 msgid "Validate"
-msgstr ""
+msgstr "Valideren"
 
 msgid "Validating …"
-msgstr ""
+msgstr "Valideren …"
 
 msgid "View pricing & plans"
-msgstr ""
+msgstr "Tarieven & abonnementen bekijken"
 
 msgid "View rooms, availability, and calendar feed"
 msgstr "Kamers, beschikbaarheid en agendafeed bekijken"
@@ -1347,7 +1347,7 @@ msgid "Viewers"
 msgstr "Kijkers"
 
 msgid "We collect: room counts, booking counts, version info (RoomVox, Nextcloud, PHP), and whether your Nextcloud has an Extended Support / Enterprise subscription (a single yes/no, sourced from Nextcloud's public API). No personal data or booking details are shared."
-msgstr ""
+msgstr "Wij verzamelen: aantallen ruimtes, aantallen boekingen, versie-informatie (RoomVox, Nextcloud, PHP) en of uw Nextcloud een Extended Support- of Enterprise-abonnement heeft (één ja/nee, afkomstig uit de openbare API van Nextcloud). Er worden geen persoonsgegevens of boekingsdetails gedeeld."
 
 msgid "Wed"
 msgstr "Wo"
@@ -1383,28 +1383,28 @@ msgid "Your actual server URL"
 msgstr "Uw werkelijke server-URL"
 
 msgid "Your booking could not be processed due to a scheduling conflict."
-msgstr ""
+msgstr "Uw boeking kon niet worden verwerkt vanwege een planningsconflict."
 
 msgid "Your booking has been cancelled by a room manager."
-msgstr ""
+msgstr "Uw boeking is geannuleerd door een ruimtebeheerder."
 
 msgid "Your booking has been confirmed."
-msgstr ""
+msgstr "Uw boeking is bevestigd."
 
 msgid "Your booking request could not be processed because it exceeds the room's booking horizon."
-msgstr ""
+msgstr "Uw boekingsaanvraag kon niet worden verwerkt omdat deze de boekingshorizon van de ruimte overschrijdt."
 
 msgid "Your booking request could not be processed because it falls outside the room's availability hours."
-msgstr ""
+msgstr "Uw boekingsaanvraag kon niet worden verwerkt omdat deze buiten de beschikbaarheidstijden van de ruimte valt."
 
 msgid "Your booking request could not be processed right now because the room is still being synchronized."
-msgstr ""
+msgstr "Uw boekingsaanvraag kon nu niet worden verwerkt omdat de ruimte nog wordt gesynchroniseerd."
 
 msgid "Your booking request has been declined."
-msgstr ""
+msgstr "Uw boekingsaanvraag is afgewezen."
 
 msgid "Your booking request was automatically declined because you do not have permission to book this room."
-msgstr ""
+msgstr "Uw boekingsaanvraag is automatisch afgewezen omdat u geen rechten hebt om deze ruimte te boeken."
 
 msgid "Your installation"
 msgstr "Je installatie"
@@ -1414,5 +1414,5 @@ msgstr "Jouw meldingen krijgen voorrang"
 
 msgid "This room has a maximum booking horizon of %n day."
 msgid_plural "This room has a maximum booking horizon of %n days."
-msgstr[0] ""
-msgstr[1] ""
+msgstr[0] "Deze ruimte heeft een maximale boekingshorizon van %n dag."
+msgstr[1] "Deze ruimte heeft een maximale boekingshorizon van %n dagen."
