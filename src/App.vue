@@ -25,6 +25,13 @@
                 <NcCounterBubble v-if="rooms.length > 0" :count="rooms.length" />
             </button>
             <button
+                :class="['tab-button', { active: isTabActive('locations') }]"
+                @click="onTabClick('locations')">
+                <MapMarker :size="16" />
+                {{ t('roomvox', 'Locations') }}
+                <NcCounterBubble v-if="locations.length > 0" :count="locations.length" />
+            </button>
+            <button
                 :class="['tab-button', { active: isTabActive('bookings') }]"
                 @click="onTabClick('bookings')">
                 <CalendarCheck :size="16" />
@@ -73,11 +80,15 @@
                 @refresh="loadRooms"
                 @move-to-group="onMoveToGroup" />
 
+            <LocationList v-if="currentView === 'locations'"
+                :locations="locations" :rooms="rooms" :loading="loadingRooms" @changed="loadRooms" />
+
             <!-- Room editor -->
             <RoomEditor
                 v-if="currentView === 'rooms' && (selectedRoom || creatingRoom)"
                 :room="selectedRoom"
                 :creating="creatingRoom"
+                :locations="locations"
                 :room-groups="roomGroups"
                 :room-types="settings.roomTypes"
                 :facilities="settings.facilities"
@@ -741,6 +752,8 @@ import Heart from 'vue-material-design-icons/Heart.vue'
 import NcChip from '@nextcloud/vue/components/NcChip'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 
+import MapMarker from 'vue-material-design-icons/MapMarker.vue'
+import LocationList from './views/LocationList.vue'
 import RoomList from './views/RoomList.vue'
 import RoomEditor from './views/RoomEditor.vue'
 import RoomGroupEditor from './views/RoomGroupEditor.vue'
@@ -749,7 +762,7 @@ import BookingOverview from './views/BookingOverview.vue'
 import SupportSettings from './components/SupportSettings.vue'
 
 import {
-    getRooms, createRoom, updateRoom, deleteRoom,
+    getRooms, createRoom, updateRoom, deleteRoom, getLocations,
     getRoomGroups, createRoomGroup, updateRoomGroup, deleteRoomGroup,
     getSettings, saveSettings,
     exportRoomsUrl, sampleCsvUrl, importPreview as apiImportPreview, importRooms as apiImportRooms,
@@ -763,6 +776,7 @@ const t = (app, text, vars = {}) => translate(app, text, vars)
 const currentView = ref('rooms')
 const rooms = ref([])
 const roomGroups = ref([])
+const locations = ref([])
 const selectedRoom = ref(null)
 const creatingRoom = ref(false)
 const selectedRoomGroup = ref(null)
@@ -1007,9 +1021,10 @@ const onTabClick = (tabId) => {
 const loadRooms = async () => {
     loadingRooms.value = true
     try {
-        const [roomsRes, groupsRes] = await Promise.all([getRooms(), getRoomGroups()])
+        const [roomsRes, groupsRes, locationsRes] = await Promise.all([getRooms(), getRoomGroups(), getLocations()])
         rooms.value = roomsRes.data
         roomGroups.value = groupsRes.data
+        locations.value = locationsRes.data
     } catch (e) {
         showError(t('roomvox', 'Failed to load rooms'))
     } finally {

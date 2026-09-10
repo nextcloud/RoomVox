@@ -35,6 +35,12 @@ return [
         ['name' => 'booking_api#respond', 'url' => '/api/rooms/{id}/bookings/{uid}/respond', 'verb' => 'POST'],
         ['name' => 'booking_api#destroy', 'url' => '/api/rooms/{id}/bookings/{uid}', 'verb' => 'DELETE'],
 
+        // Locations (admin only)
+        ['name' => 'location_api#index', 'url' => '/api/locations', 'verb' => 'GET'],
+        ['name' => 'location_api#create', 'url' => '/api/locations', 'verb' => 'POST'],
+        ['name' => 'location_api#update', 'url' => '/api/locations/{id}', 'verb' => 'PUT'],
+        ['name' => 'location_api#destroy', 'url' => '/api/locations/{id}', 'verb' => 'DELETE'],
+
         // Room Groups API
         ['name' => 'room_group_api#index', 'url' => '/api/room-groups', 'verb' => 'GET'],
         ['name' => 'room_group_api#create', 'url' => '/api/room-groups', 'verb' => 'POST'],

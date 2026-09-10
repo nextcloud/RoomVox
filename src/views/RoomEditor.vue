@@ -58,7 +58,18 @@
                 </div>
 
                 <h4>{{ t('roomvox', 'Location') }}</h4>
-                <div class="form-grid">
+                <div class="form-field">
+                    <NcSelect
+                        :model-value="locations.find(location => location.id === form.locationId) || null"
+                        :options="locations"
+                        :input-label="t('roomvox', 'Location')"
+                        :placeholder="t('roomvox', 'No location — enter address manually')"
+                        label="name"
+                        @update:model-value="form.locationId = $event?.id || null" />
+                    <p v-if="form.locationId">{{ t('roomvox', 'The address is managed in Locations.') }}</p>
+                    <p v-if="selectedLocation">{{ [selectedLocation.building, selectedLocation.street, selectedLocation.postalCode, selectedLocation.city, selectedLocation.country].filter(Boolean).join(', ') }}</p>
+                </div>
+                <div v-if="!form.locationId" class="form-grid">
                     <div class="form-field">
                         <label>{{ t('roomvox', 'Building') }}</label>
                         <NcTextField
@@ -486,6 +497,7 @@ const props = defineProps({
     room: { type: Object, default: null },
     creating: { type: Boolean, default: false },
     roomGroups: { type: Array, default: () => [] },
+    locations: { type: Array, default: () => [] },
     roomTypes: { type: Array, default: () => [] },
     facilities: { type: Array, default: () => [] },
 })
@@ -555,8 +567,11 @@ const form = reactive({
     autoAccept: false,
     active: true,
     groupId: null,
+    locationId: null,
     maxBookingHorizon: 0,
 })
+
+const selectedLocation = computed(() => props.locations.find(location => location.id === form.locationId))
 
 const smtp = reactive({
     host: '',
@@ -785,6 +800,7 @@ watch(() => props.room, (room) => {
             autoAccept: room.autoAccept || false,
             active: room.active !== false,
             groupId: room.groupId || null,
+            locationId: room.locationId || null,
             maxBookingHorizon: room.maxBookingHorizon || 0,
         })
         // Show email field if room has a custom (non-auto-generated) email

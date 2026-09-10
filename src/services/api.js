@@ -75,3 +75,9 @@ export const retryInitialExchangeSync = (roomId) =>
     axios.post(baseUrl(`/api/rooms/${roomId}/exchange/initial-sync`))
 export const getExchangeSyncStatus = () => axios.get(baseUrl('/api/exchange/status'))
 
+
+// Locations
+export const getLocations = () => axios.get(baseUrl('/api/locations'))
+export const createLocation = data => axios.post(baseUrl('/api/locations'), data)
+export const updateLocation = (id, data) => axios.put(baseUrl(`/api/locations/${encodeURIComponent(id)}`), data)
+export const deleteLocation = id => axios.delete(baseUrl(`/api/locations/${encodeURIComponent(id)}`))

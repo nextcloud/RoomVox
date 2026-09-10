@@ -232,6 +232,7 @@ class RoomApiController extends Controller {
             'floor' => $this->request->getParam('floor', ''),
             'roomType' => $this->request->getParam('roomType', 'meeting-room'),
             'address' => $this->request->getParam('address', ''),
+            'locationId' => $this->request->getParam('locationId', null),
             'facilities' => $this->request->getParam('facilities', []),
             'autoAccept' => $this->request->getParam('autoAccept', false),
             'smtpConfig' => $this->request->getParam('smtpConfig', null),
@@ -272,6 +273,8 @@ class RoomApiController extends Controller {
             }
 
             return new JSONResponse($room, 201);
+        } catch (\InvalidArgumentException $e) {
+            return new JSONResponse(['error' => $e->getMessage()], 400);
         } catch (\Exception $e) {
             $this->logger->error("Failed to create room: " . $e->getMessage());
             return new JSONResponse(['error' => 'Failed to create room: ' . $e->getMessage()], 500);
@@ -292,9 +295,9 @@ class RoomApiController extends Controller {
         }
 
         $data = [];
-        $updatableFields = ['name', 'email', 'description', 'responsibleContact', 'capacity', 'roomNumber', 'floor', 'roomType', 'address', 'facilities', 'autoAccept', 'active', 'smtpConfig', 'exchangeConfig', 'groupId', 'availabilityRules', 'maxBookingHorizon'];
+        $updatableFields = ['name', 'email', 'description', 'responsibleContact', 'capacity', 'roomNumber', 'floor', 'roomType', 'address', 'facilities', 'autoAccept', 'active', 'smtpConfig', 'exchangeConfig', 'groupId', 'locationId', 'availabilityRules', 'maxBookingHorizon'];
         // Fields that can be explicitly set to null (e.g. removing a room from a group)
-        $nullableFields = ['groupId'];
+        $nullableFields = ['groupId', 'locationId'];
         $params = $this->request->getParams();
 
         foreach ($updatableFields as $field) {
@@ -340,6 +343,8 @@ class RoomApiController extends Controller {
             }
 
             return new JSONResponse($room);
+        } catch (\InvalidArgumentException $e) {
+            return new JSONResponse(['error' => $e->getMessage()], 400);
         } catch (\Exception $e) {
             $this->logger->error("Failed to update room {$id}: " . $e->getMessage());
             return new JSONResponse(['error' => 'Failed to update room'], 500);

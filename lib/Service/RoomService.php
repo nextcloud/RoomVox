@@ -20,12 +20,16 @@ class RoomService {
     /** @var array<string, string>|null Cached email → userId map (built once per request) */
     private ?array $emailToUserId = null;
 
+    private LocationService $locationService;
+
     public function __construct(
         private IAppConfig $appConfig,
         private ICrypto $crypto,
         private ISecureRandom $secureRandom,
         private LoggerInterface $logger,
+        ?LocationService $locationService = null,
     ) {
+        $this->locationService = $locationService ?? new LocationService($appConfig);
     }
 
     /**
@@ -84,6 +88,8 @@ class RoomService {
             unset($room['location']);
         }
 
+        $room = $this->resolveLocation($room);
+
         // Decrypt SMTP password if present
         if (!empty($room['smtpConfig']['password'])) {
             try {
@@ -93,6 +99,26 @@ class RoomService {
             }
         }
 
+        return $room;
+    }
+
+    private function resolveLocation(array $room, bool $validate = false): array {
+        $id = $room['locationId'] ?? null;
+        if ($id === null || $id === '') {
+            $room['locationId'] = null;
+            return $room;
+        }
+        if (!is_string($id)) {
+            throw new \InvalidArgumentException('Invalid location ID');
+        }
+        $location = $this->locationService->getLocation($id);
+        if ($location === null) {
+            if ($validate) {
+                throw new \InvalidArgumentException('Location not found');
+            }
+            return $room;
+        }
+        $room['address'] = LocationService::formatAddress($location);
         return $room;
     }
 
@@ -137,6 +163,7 @@ class RoomService {
             'floor' => $data['floor'] ?? '',
             'roomType' => $data['roomType'] ?? 'meeting-room',
             'address' => $data['address'] ?? '',
+            'locationId' => $data['locationId'] ?? null,
             'facilities' => $data['facilities'] ?? [],
             'autoAccept' => (bool)($data['autoAccept'] ?? false),
             'groupId' => $data['groupId'] ?? null,
@@ -157,6 +184,7 @@ class RoomService {
             $room['smtpConfig'] = $this->prepareSMTPConfig($data['smtpConfig']);
         }
 
+        $room = $this->resolveLocation($room, true);
         $this->saveRoom($room);
         $this->addRoomId($roomId);
 
@@ -174,7 +202,7 @@ class RoomService {
             return null;
         }
 
-        $updatableFields = ['name', 'email', 'description', 'responsibleContact', 'capacity', 'roomNumber', 'floor', 'roomType', 'address', 'facilities', 'autoAccept', 'active', 'groupId', 'availabilityRules', 'maxBookingHorizon'];
+        $updatableFields = ['name', 'email', 'description', 'responsibleContact', 'capacity', 'roomNumber', 'floor', 'roomType', 'address', 'facilities', 'autoAccept', 'active', 'groupId', 'locationId', 'availabilityRules', 'maxBookingHorizon'];
 
         foreach ($updatableFields as $field) {
             if (array_key_exists($field, $data)) {
@@ -209,6 +237,7 @@ class RoomService {
             }
         }
 
+        $room = $this->resolveLocation($room, true);
         $this->saveRoom($room);
 
         $this->logger->info("Room updated: {$roomId}");
@@ -578,6 +607,7 @@ class RoomService {
      * Address is stored as "Building, Street, PostalCode, City".
      */
     public function buildRoomLocation(array $room): string {
+        $room = $this->resolveLocation($room);
         $address = trim($room['address'] ?? '');
         $roomNumber = trim($room['roomNumber'] ?? '');
 
