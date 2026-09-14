@@ -544,6 +544,8 @@ GET /api/rooms/export
 
 **Required:** Admin
 
+A non-admin caller does not get a `403` here: the response is an empty CSV named `error.csv` with HTTP 200. Check the filename, not the status code.
+
 Downloads all rooms as a CSV file with the following columns:
 
 | Column | Description |
@@ -568,7 +570,9 @@ Downloads all rooms as a CSV file with the following columns:
 GET /api/rooms/sample-csv
 ```
 
-**Required:** Admin
+**Required:** Admin session (framework-level; the method itself performs no check)
+
+Returns a static template with the expected headers and one example row. It contains no instance data.
 
 Downloads a sample CSV file with headers and one example row. Useful as a template for creating import files.
 
@@ -631,6 +635,7 @@ POST /api/rooms/import
 |-----------|------|---------|-------------|
 | `file` | file | — | CSV file (required, max 5 MB) |
 | `mode` | string | `create` | `create` (skip existing) or `update` (create + update existing) |
+| `enableExchangeSync` | bool | `false` | Turn on Exchange sync for imported rooms that carry a resource mailbox |
 
 **Response:**
 ```json
@@ -673,6 +678,24 @@ The format is automatically detected based on column names.
 
 The internal API is used by the RoomVox admin interface. It requires Nextcloud session authentication (cookies + CSRF token).
 
+### Conventions
+
+Three things are easy to get wrong here, so they are worth stating once.
+
+**Collections are returned as bare JSON arrays, not wrapped in an object.** `GET /api/rooms` returns `[{...}, {...}]`, not `{"rooms": [...]}`. The same holds for room bookings, room groups, sharees, the personal endpoints and the token list. The only endpoint that wraps a collection is `GET /api/all-bookings`, which has to, because it also carries a `stats` object.
+
+**Most endpoints require an administrator.** Nextcloud's controller layer requires an admin session unless a method is marked `#[NoAdminRequired]`. In the internal API only `GET /api/rooms`, `GET /api/all-bookings` and the three `/api/personal/*` endpoints are reachable by non-admins; those filter on the caller's own permissions. Everything else is admin-only, and most of them check again inside the method. Per-endpoint requirements below say "Admin" when both apply.
+
+**Errors are not uniform across the API.** There are three shapes:
+
+| Shape | Used by |
+|---|---|
+| `{"error": "Description"}` | Everything except the two below |
+| `{"success": false, "message": "Description"}` | `/api/license/*` and `/api/settings/license` |
+| Empty body, status only | `POST /api/webhook/exchange` |
+
+Some endpoints also report failure with **HTTP 200** and a flag in the body rather than a 4xx status — see [Soft failures](#soft-failures).
+
 ## Rooms
 
 ### List All Rooms
@@ -681,33 +704,47 @@ The internal API is used by the RoomVox admin interface. It requires Nextcloud s
 GET /api/rooms
 ```
 
-Returns all rooms visible to the current user, with permission flags.
+Returns every room the caller may at least view, each with permission flags for that caller. Admins see all rooms.
 
-**Response:**
+**Required:** any logged-in user (`401` without a session)
+
+**Response:** a bare JSON array — there is no `rooms` wrapper.
+
 ```json
-{
-  "rooms": [
-    {
-      "id": "meeting-room-1",
-      "name": "Meeting Room 1",
-      "roomNumber": "2.17",
-      "address": "Main Building, Kerkstraat 10, Amsterdam",
-      "roomType": "meeting-room",
-      "capacity": 10,
-      "email": "meeting-room-1@roomvox.local",
-      "description": "Corner room with projector",
-      "facilities": ["projector", "whiteboard"],
-      "autoAccept": true,
-      "active": true,
-      "groupId": "building-a",
-      "canBook": true,
-      "canManage": false
-    }
-  ]
-}
+[
+  {
+    "id": "meeting-room-1",
+    "name": "Meeting Room 1",
+    "roomNumber": "2.17",
+    "floor": "2",
+    "address": "Main Building, Kerkstraat 10, 1017 AA, Amsterdam",
+    "roomType": "meeting-room",
+    "capacity": 10,
+    "email": "meeting-room-1@roomvox.local",
+    "description": "Corner room with projector",
+    "responsibleContact": "facilities@company.com",
+    "facilities": ["projector", "whiteboard"],
+    "autoAccept": true,
+    "active": true,
+    "groupId": "building-a",
+    "availabilityRules": {},
+    "maxBookingHorizon": null,
+    "calendarUri": "room-meeting-room-1",
+    "smtpConfig": {},
+    "exchangeConfig": {},
+    "feedEnabled": false,
+    "createdAt": "2026-02-20T09:14:00+01:00",
+    "canView": true,
+    "canBook": true,
+    "canManage": false
+  }
+]
 ```
 
-> **Note:** SMTP passwords are always masked as `"***"` in responses.
+Two fields are deliberately not what the stored room holds:
+
+- `smtpConfig.password` is always `"***"` when a password is set.
+- `feedSecret` is stripped entirely and replaced by the boolean `feedEnabled`. The subscribe URL is only handed out by `GET /api/rooms/{id}` and `POST /api/rooms/{id}/feed`, because this list is reachable by viewers.
 
 ### Create Room
 
@@ -729,7 +766,7 @@ POST /api/rooms
   "responsibleContact": "Anne Janssen (anne@voxcloud.nl)",
   "facilities": ["projector", "whiteboard", "videoconf"],
   "autoAccept": true,
-  "groupId": "building-a",
+  "floor": "2",
   "email": "room1@company.com",
   "availabilityRules": {
     "enabled": true,
@@ -750,7 +787,9 @@ POST /api/rooms
 
 Only `name` is required. All other fields are optional. The `address` field uses the 4-part comma-separated format (`Building, Street, Postal code, City`) — empty parts are preserved so partial addresses round-trip correctly. The `responsibleContact` field (since 1.1.0, max 255 chars) is visible to every user with view-permission in Personal Settings → My Rooms.
 
-**Response:** The created room object.
+**Response:** `201 Created` with the created room object.
+
+> **`groupId` is ignored on create.** The controller does not read it, so a new room is always created without a room group regardless of what is sent. Assign the group with `PUT /api/rooms/{id}` right after creating, which does honour it.
 
 ### Get Room
 
@@ -826,13 +865,14 @@ Returns bookings across all rooms visible to the current user.
     }
   ],
   "stats": {
-    "total": 42,
-    "accepted": 35,
+    "today": 3,
     "pending": 5,
-    "declined": 2
+    "thisWeek": 12
   }
 }
 ```
+
+`stats` counts bookings in the returned set: `today` and `thisWeek` by start date, `pending` by `partstat = TENTATIVE`. There is no total, accepted or declined count.
 
 ### List Room Bookings
 
@@ -849,23 +889,29 @@ GET /api/rooms/{id}/bookings
 | `from` | string | Start date (ISO 8601) |
 | `to` | string | End date (ISO 8601) |
 
-**Response:**
+**Response:** a bare JSON array — there is no `bookings` wrapper.
+
 ```json
-{
-  "bookings": [
-    {
-      "uid": "abc123-def456",
-      "summary": "Team Meeting",
-      "dtstart": "2026-03-01T10:00:00Z",
-      "dtend": "2026-03-01T11:00:00Z",
-      "organizer": "alice@company.com",
-      "organizerName": "Alice",
-      "partstat": "ACCEPTED",
-      "status": "CONFIRMED"
-    }
-  ]
-}
+[
+  {
+    "uid": "abc123-def456",
+    "uri": "abc123-def456.ics",
+    "summary": "Team Meeting",
+    "description": "Sprint review",
+    "location": "Meeting Room 1",
+    "dtstart": "2026-03-01T10:00:00Z",
+    "dtend": "2026-03-01T11:00:00Z",
+    "allDay": false,
+    "organizer": "alice@company.com",
+    "organizerName": "Alice",
+    "partstat": "ACCEPTED",
+    "status": "CONFIRMED",
+    "recurrenceId": null
+  }
+]
 ```
+
+**Errors:** `401` no session · `404` room not found
 
 ### Create Booking
 
@@ -887,7 +933,8 @@ POST /api/rooms/{id}/bookings
 
 `summary`, `start`, and `end` are required.
 
-**Response:**
+**Response:** `201 Created`
+
 ```json
 {
   "status": "ok",
@@ -895,13 +942,13 @@ POST /api/rooms/{id}/bookings
 }
 ```
 
-**Error (409 Conflict):**
-```json
-{
-  "status": "error",
-  "message": "Time conflict with existing booking"
-}
-```
+**Errors:**
+
+| Status | Body |
+|---|---|
+| `400` | `{"error": "Summary, start, and end are required"}` |
+| `404` | `{"error": "Room not found"}` |
+| `409` | `{"error": "Time slot conflicts with existing booking"}` |
 
 ### Update Booking
 
@@ -926,7 +973,8 @@ If `roomId` is provided and differs from the current room, the booking is moved 
 ```json
 {
   "status": "ok",
-  "movedUid": "new-uid-789"
+  "uid": "new-uid-789",
+  "moved": true
 }
 ```
 
@@ -963,15 +1011,21 @@ DELETE /api/rooms/{id}/bookings/{uid}
 
 **Required:** Organizer, Manager, or Admin
 
+**Query parameters:**
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `recurrenceId` | string | Cancel a single occurrence of a recurring booking instead of the whole series. Omit it to cancel every occurrence. |
+
 **Side effects (since 1.1.0):**
 
-When called by a manager or admin on an already-accepted booking, the booking is fully cancelled, not just removed from the room calendar:
+A delete is a full cancellation, not just a removal from the room calendar:
 
 1. The booking is deleted from the room calendar (and Exchange, if configured)
 2. The room attendee is removed from the booker's own calendar event and `LOCATION` is cleared, so the slot frees up in the Room Finder
 3. A `Booking cancelled` email is sent to the booker explaining the booking was cancelled by a room manager
 
-Steps 2 and 3 are non-blocking — if the organizer's calendar cleanup or the mail fails, the API still returns `200 OK` and the failure is logged.
+Steps 2 and 3 are non-blocking — if the organizer's calendar cleanup or the mail fails, the API still returns `200 OK` and the failure is logged. They run whenever the booking has both an organizer address and a room address, regardless of who deletes it or whether the booking had been accepted.
 
 **Response:**
 ```json
@@ -1029,18 +1083,17 @@ GET /api/room-groups
 
 **Required:** Admin
 
-**Response:**
+**Response:** a bare JSON array — there is no `groups` wrapper.
+
 ```json
-{
-  "groups": [
-    {
-      "id": "building-a",
-      "name": "Building A",
-      "description": "Main office building",
-      "createdAt": "2026-01-15T10:00:00Z"
-    }
-  ]
-}
+[
+  {
+    "id": "building-a",
+    "name": "Building A",
+    "description": "Main office building",
+    "createdAt": "2026-01-15T10:00:00Z"
+  }
+]
 ```
 
 ### Create Room Group
@@ -1061,7 +1114,7 @@ POST /api/room-groups
 
 `name` is required.
 
-**Response:** Created group object.
+**Response:** `201 Created` with the created group object.
 
 ### Get Room Group
 
@@ -1125,6 +1178,187 @@ PUT /api/room-groups/{id}/permissions
 { "status": "ok" }
 ```
 
+## Personal
+
+Endpoints behind the user's own Personal settings page. These are the only internal endpoints besides `GET /api/rooms` and `GET /api/all-bookings` that a non-admin can call; each one filters on the caller's own permissions.
+
+### List My Rooms
+
+```
+GET /api/personal/rooms
+```
+
+**Required:** any logged-in user
+
+Rooms the caller has any role on, sorted by role (admin, then manager, booker, viewer). Administrators get every room with `role: "admin"`.
+
+**Response:** bare array.
+
+```json
+[
+  {
+    "id": "meeting-room-1",
+    "name": "Meeting Room 1",
+    "roomType": "meeting-room",
+    "capacity": 10,
+    "address": "Main Building, Kerkstraat 10, 1017 AA, Amsterdam",
+    "responsibleContact": "facilities@company.com",
+    "role": "manager"
+  }
+]
+```
+
+### List Viewable Rooms
+
+```
+GET /api/personal/rooms/viewable
+```
+
+**Required:** any logged-in user
+
+The id and email of every room the caller may view — enough to filter a calendar view without pulling full room objects.
+
+**Response:** bare array of `{"id": "...", "email": "..."}`.
+
+### List Pending Approvals
+
+```
+GET /api/personal/approvals
+```
+
+**Required:** any logged-in user
+
+Bookings awaiting a decision (`partstat = TENTATIVE`) in rooms the caller manages, from now onwards, sorted by start time. Answer them with `POST /api/rooms/{id}/bookings/{uid}/respond`.
+
+**Response:** bare array.
+
+```json
+[
+  {
+    "uid": "abc123-def456",
+    "roomId": "meeting-room-1",
+    "roomName": "Meeting Room 1",
+    "summary": "Team Meeting",
+    "dtstart": "2026-03-01T10:00:00+01:00",
+    "dtend": "2026-03-01T11:00:00+01:00",
+    "organizerName": "Alice",
+    "organizer": "alice@company.com",
+    "partstat": "TENTATIVE"
+  }
+]
+```
+
+All-day bookings carry a bare `YYYY-MM-DD` in `dtstart`/`dtend` rather than a timestamp.
+
+---
+
+## Exchange
+
+Configuration and status for the Microsoft Exchange integration. All of these require an administrator. See [Exchange Integration](exchange-integration.md) for how the sync itself works.
+
+### Test Connection
+
+```
+POST /api/exchange/test
+```
+
+Checks the configured tenant credentials against Microsoft Graph. Returns `{"success": true, "tenantName": "..."}`, or `{"success": false, "error": "..."}` — **both with HTTP 200**, see [Soft failures](#soft-failures). Returns `400` when the Exchange integration is switched off.
+
+### Validate Resource Mailbox
+
+```
+POST /api/exchange/validate-resource
+```
+
+**Body:** `{ "email": "boardroom@company.com" }`
+
+Checks that the address exists in Exchange before it is linked to a room. Returns `{"valid": true, "displayName": "..."}` or `{"valid": false, "error": "..."}`, again both with HTTP 200. `400` when `email` is missing.
+
+### Retry Initial Sync
+
+```
+POST /api/rooms/{id}/exchange/initial-sync
+```
+
+Queues a fresh initial sync for one room after a failed attempt, and returns `{"status": "queued"}` immediately — the work happens in a background job. Poll `GET /api/exchange/status`, or read `exchangeConfig.initialSyncStatus` on the room. Returns `404` if the room does not exist, `400` if it has no Exchange configuration.
+
+### Sync Status
+
+```
+GET /api/exchange/status
+```
+
+```json
+{
+  "globalEnabled": true,
+  "configured": true,
+  "rooms": [
+    {
+      "roomId": "meeting-room-1",
+      "roomName": "Meeting Room 1",
+      "resourceEmail": "boardroom@company.com",
+      "syncEnabled": true,
+      "lastSyncAt": "2026-03-01T09:00:00+01:00",
+      "lastError": null
+    }
+  ]
+}
+```
+
+Rooms without a resource mailbox are left out.
+
+### Webhook Status
+
+```
+GET /api/exchange/webhooks
+```
+
+```json
+{
+  "notificationUrl": "https://cloud.example.com/apps/roomvox/api/webhook/exchange",
+  "httpsAvailable": true,
+  "rooms": [
+    {
+      "roomId": "meeting-room-1",
+      "roomName": "Meeting Room 1",
+      "subscriptionId": "a1b2c3",
+      "expiresAt": "2026-03-04T09:00:00+01:00",
+      "hasWebhook": true
+    }
+  ]
+}
+```
+
+`notificationUrl` is `null` when the instance has no HTTPS URL — Microsoft Graph refuses to deliver to plain HTTP, so no subscription can be created. Only rooms with sync enabled are listed.
+
+### Create Webhooks
+
+```
+POST /api/exchange/webhooks
+```
+
+Creates or renews a Graph subscription for every Exchange-enabled room. Returns `{"results": [{"roomId": "...", "roomName": "...", "success": true}]}` — a per-room result, so a partial failure still returns HTTP 200.
+
+### Webhook Receiver
+
+```
+POST /api/webhook/exchange
+```
+
+**Public endpoint — no authentication.** This is where Microsoft Graph delivers change notifications, so it cannot require a session. It is protected instead by the `subscriptionId` lookup plus a constant-time comparison of the `clientState` secret that RoomVox generated when creating the subscription; notifications that fail either check are logged and ignored.
+
+It is the one endpoint that does not speak JSON:
+
+| Situation | Response |
+|---|---|
+| Graph handshake (`?validationToken=...`) | `200` with the token echoed back as `text/plain` |
+| Change notification accepted | `202` with an empty body |
+| Body is not a Graph notification | `400` with an empty body |
+
+A `202` means the notification was taken, not that a sync has finished — small batches are synced inline, larger ones are queued.
+
+---
+
 ## Settings
 
 ### Get Settings
@@ -1138,15 +1372,29 @@ GET /api/settings
 **Response:**
 ```json
 {
-  "defaultAutoAccept": true,
+  "defaultAutoAccept": false,
   "emailEnabled": true,
+  "telemetryEnabled": true,
+  "showWeekends": true,
   "roomTypes": [
     { "id": "meeting-room", "label": "Meeting Room" },
     { "id": "studio", "label": "Studio" },
     { "id": "lecture-hall", "label": "Lecture Hall" }
-  ]
+  ],
+  "facilities": [
+    { "id": "projector", "label": "Projector" },
+    { "id": "whiteboard", "label": "Whiteboard" }
+  ],
+  "exchangeEnabled": false,
+  "exchangeTenantId": "",
+  "exchangeClientId": "",
+  "exchangeClientSecret": "",
+  "exchangeWebhookMaxInlineSync": 1,
+  "exchangeWebhookRateLimit": 5
 }
 ```
+
+`exchangeClientSecret` is never returned: it reads `"***"` when a secret is stored and `""` when it is not. Sending `"***"` back on save is ignored, so a round-trip through this endpoint cannot wipe the stored secret.
 
 ### Save Settings
 
@@ -1165,31 +1413,35 @@ PUT /api/settings
 
 ## Sharees
 
-### Search Users and Groups
+### Search Groups
 
 ```
 GET /api/sharees?search={query}
 ```
 
-Search for Nextcloud users and groups to add in the permission editor.
+Search Nextcloud groups to add in the permission editor.
+
+**Groups only — individual users are not searchable here.** That is deliberate: Nextcloud Calendar filters room visibility through `group_restrictions`, which is group-based, so a per-user permission would not be reflected in the calendar picker.
+
+**Required:** Admin
 
 **Query parameters:**
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
-| `search` | string | Search query (name or group name) |
+| `search` | string | Matched against the group display name. An empty query returns the first groups the backend offers. |
 
-**Response:**
+At most 25 groups are returned. If the query matches a group ID exactly but that group did not surface in the search — which happens with LDAP backends, where the search matches the display name attribute rather than the ID — the exact match is added as well.
+
+**Response:** a bare JSON array. `type` is always `"group"`.
+
 ```json
-{
-  "users": [
-    { "id": "alice", "displayName": "Alice Smith" }
-  ],
-  "groups": [
-    { "id": "developers", "displayName": "Developers" }
-  ]
-}
+[
+  { "type": "group", "id": "developers", "label": "Developers" }
+]
 ```
+
+The `label` is for display; permission entries are stored by `type` and `id`.
 
 ## License & Telemetry
 
@@ -1226,6 +1478,16 @@ POST /api/license/validate
 
 Validates the stored license key with the license server.
 
+### Update Usage
+
+```
+POST /api/license/update-usage
+```
+
+**Required:** Admin
+
+Reports the current room and user counts to the license server, so the subscription tier can be checked against actual usage. Returns `{"success": true, "result": {...}}` where `result` is the server's answer — or a `{"success": false, "reason": "..."}` object when there is no license key or the server is unreachable. See [Soft failures](#soft-failures).
+
 ### Send Telemetry Report
 
 ```
@@ -1258,6 +1520,26 @@ GET /api/debug/rooms
 
 Returns internal details about room backend registration, room principals, and CalDAV calendars. Useful for troubleshooting.
 
+```json
+{
+  "backends": ["OCA\\RoomVox\\Connector\\Room\\RoomBackend"],
+  "rooms": [
+    {
+      "id": "meeting-room-1",
+      "displayName": "Meeting Room 1",
+      "email": "meeting-room-1@roomvox.local",
+      "backend": "OCA\\RoomVox\\Connector\\Room\\RoomBackend",
+      "groupRestrictions": []
+    }
+  ],
+  "raw_rooms": [
+    { "id": "meeting-room-1", "name": "Meeting Room 1", "email": "meeting-room-1@roomvox.local", "active": true }
+  ]
+}
+```
+
+`rooms` is what Nextcloud's room manager reports, `raw_rooms` is what RoomVox has stored. A room present in `raw_rooms` but missing from `rooms` means the backend did not publish it — the usual reason a room does not show up in the calendar picker.
+
 ---
 
 ## Error Responses
@@ -1275,10 +1557,28 @@ Returns internal details about room backend registration, room principals, and C
 **Error format:**
 ```json
 {
-  "status": "error",
-  "message": "Description of the error"
+  "error": "Description of the error"
 }
 ```
+
+Two groups of endpoints deviate:
+
+- `/api/license/*` and `/api/settings/license` answer with `{"success": false, "message": "..."}`.
+- `POST /api/webhook/exchange` returns an empty body and communicates only through the status code.
+
+### Soft failures
+
+Some endpoints report a failure with **HTTP 200** and a flag in the body. Checking the status code alone is not enough there:
+
+| Endpoint | Failure looks like |
+|---|---|
+| `POST /api/exchange/test` | `{"success": false, "error": "..."}` |
+| `POST /api/exchange/validate-resource` | `{"valid": false, "error": "..."}` |
+| `POST /api/license/validate` | `{"success": true, "validation": {"valid": false, ...}}` |
+| `POST /api/license/update-usage` | `{"success": true, "result": {"success": false, ...}}` |
+| `POST /api/license/telemetry` | `{"success": false, "reason": "..."}` |
+
+The two license endpoints nest the real outcome: the outer `success` says the call was handled, the inner object says whether it worked.
 
 ### Public API v1
 
