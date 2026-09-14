@@ -86,7 +86,7 @@ Je kunt types toevoegen, bewerken, verwijderen of van volgorde wisselen via de s
 
 Tokens worden **één keer** getoond, bij het aanmaken — kopieer ze meteen. Daarna wordt alleen de prefix (`rvx_xxxx...`) getoond.
 
-Zie [Public API](../features/public-api.md) en [API-referentie](../architecture/api-reference.md#public-api-v1) voor details.
+Zie [Public API](../features/public-api.md) en [API-referentie](../architecture/api-reference.md#inleiding) voor details.
 
 ## Exchange-sync (optioneel)
 

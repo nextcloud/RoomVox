@@ -2,7 +2,7 @@
 
 RoomVox biedt een REST-API met **Bearer token-authenticatie** op `/api/v1/*` voor externe integraties — digital signage, ruimte-displays, kiosks, geplande imports en boekings-flows van derden.
 
-Voor de volledige endpoint-referentie, zie [API-referentie → Public API v1](../architecture/api-reference.md#public-api-v1).
+Voor de volledige endpoint-referentie, zie [API-referentie → Public API v1](../architecture/api-reference.md#inleiding).
 
 ## Wanneer gebruik je de Public API
 
@@ -71,7 +71,7 @@ De header is hoofdletterongevoelig (`bearer` werkt ook). Tokens beginnen altijd 
 | `GET` | `/api/v1/rooms/{id}/feed/{secret}/calendar.ics` | — (secret per ruimte) | Publieke iCalendar-feed voor externe agenda-apps en signage — geen Bearer-header |
 | `GET` | `/api/v1/statistics` | `admin` | Gebruiks-statistieken |
 
-Volledige request-/response-schema's, voorbeelden en fout-formaten: [API-referentie → Public API v1](../architecture/api-reference.md#public-api-v1).
+Volledige request-/response-schema's, voorbeelden en fout-formaten: [API-referentie → Public API v1](../architecture/api-reference.md#inleiding).
 
 ## Snel voorbeeld: lobby-display
 
