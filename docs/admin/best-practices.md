@@ -157,9 +157,11 @@ tail -f /var/www/nextcloud/data/nextcloud.log | grep -i "RoomVox.*permission\|Ro
 
 If you deploy the [Calendar Patch](../features/calendar-patch.md), every Nextcloud or Calendar-app update may overwrite the patched JS files. Re-deploy with `./deploy-calendar.sh <target>` after each update — and check whether the upstream Calendar version is still v6.2.0 (the patch is pinned to it).
 
-### Plan for NC34
+### Planning a Nextcloud upgrade
 
-NC34 reached GA in June 2026. RoomVox is NC34-ready — see [Nextcloud 34 Compatibility](../architecture/nc34-compatibility.md). Bump `info.xml`'s `max-version` to `34` when upgrading.
+RoomVox declares NC 32 to 35 in `appinfo/info.xml`, so upgrades within that range need no action on your side. Each ceiling is raised only after an audit against a running instance — see [Nextcloud 34 Compatibility](../architecture/nc34-compatibility.md) and [Nextcloud 35 Compatibility](../architecture/nc35-compatibility.md).
+
+Upgrading to a Nextcloud major above the declared ceiling is the one case to wait for: the App Store will not offer RoomVox for it until a release raises `max-version`. Do not edit `info.xml` yourself to get around that — an unaudited major can fail in ways that only show up at runtime.
 
 ## See Also
 

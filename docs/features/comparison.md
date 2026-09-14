@@ -6,9 +6,9 @@ This document compares RoomVox with Nextcloud's built-in [Calendar Resource Mana
 
 | | **RoomVox** | **Calendar Resource Management** |
 |---|---|---|
-| Version | 1.0.1 | 0.12.0-dev.1 |
+| Version | 1.5.0 | 0.12.0-dev.1 |
 | License | AGPL-3.0 | AGPL-3.0 |
-| Nextcloud | 32–33 | 31–34 |
+| Nextcloud | 32–35 | 31–34 |
 | PHP | 8.2+ | 8.1–8.5 |
 | Data storage | IAppConfig (no database) | Database (6+ tables) |
 | Admin interface | Full web UI | CLI only (`occ` commands) |

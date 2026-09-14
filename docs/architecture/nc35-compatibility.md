@@ -2,7 +2,7 @@
 
 Audit of RoomVox's compatibility with Nextcloud 35 (Hub 26 Summer). Performed 2026-09-10 against a **running Nextcloud 35.0.0 RC3 on PHP 8.5.9**, before NC35 GA on 2026-09-16.
 
-**Conclusion**: RoomVox 1.4.1 runs on NC35 unchanged. Only the declared `max-version` blocked installation; no API surface changes are required.
+**Conclusion**: RoomVox runs on NC35 unchanged. The audit ran against the 1.4.x tree; the raised ceiling shipped in 1.5.0. Only the declared `max-version` blocked installation; no API surface changes are required.
 
 This closes item 7 of [NC 34 Compatibility](./nc34-compatibility.md) ("re-audit when NC35 beta appears").
 

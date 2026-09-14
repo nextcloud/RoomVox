@@ -6,7 +6,7 @@ This guide covers the requirements and installation process for RoomVox.
 
 | Component | Requirement |
 |-----------|-------------|
-| Nextcloud | 32 or 33 |
+| Nextcloud | 32 to 35 |
 | PHP | 8.2 or higher |
 | SMTP | Configured in Nextcloud (for email notifications) |
 

@@ -56,7 +56,8 @@ Technische documentatie voor integratie, evaluatie en bijdragen.
 - [Backend-architectuur](architecture/backend-architecture.md) — IAppConfig-opslag, virtuele gebruikers, servicelaag
 - [CalDAV-scheduling](architecture/caldav-scheduling.md) — Sabre-plugin, iTIP-flow, PARTSTAT-handling
 - [Exchange-integratie](architecture/exchange-integration.md) — Microsoft Graph-sync, webhooks, conflictdetectie
-- [Nextcloud 34-compatibility](architecture/nc34-compatibility.md) — NC34-audit, 1.2.0 release-plan
+- [Nextcloud 34-compatibility](architecture/nc34-compatibility.md) — NC34-audit (uitgebracht in 1.2.0)
+- [Nextcloud 35-compatibility](architecture/nc35-compatibility.md) — NC35-audit (uitgebracht in 1.5.0)
 
 ### Deployment
 

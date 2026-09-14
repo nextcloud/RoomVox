@@ -236,9 +236,16 @@ If the §"Verify the Certificate Pair" MD5 comparison shows different hashes, yo
 
 The root folder must be `roomvox` (lowercase, no version suffix). Get it wrong and the App Store install fails with `App not found in archive`. Verify with `tar -tzf roomvox-X.Y.Z.tar.gz | head -3`.
 
-### `vendor/` Missing From Tarball
+### `vendor/` Is Not Shipped
 
-Unlike pure-JS Nextcloud apps, RoomVox depends on Composer packages (Symfony Mailer for per-room SMTP, Microsoft Graph SDK for Exchange). The `vendor/` directory **must** be included. Run `composer install --no-dev` before building, and verify with `tar -tzf roomvox-X.Y.Z.tar.gz | grep vendor/ | head`.
+RoomVox has **no runtime Composer dependencies** — `composer.json` requires only `php: >=8.2`, and `require-dev` (PHPUnit and the `nextcloud/ocp` API stubs) never leaves the build machine. So the tarball ships no `vendor/` directory, which is correct and needs no action.
+
+Two things that look like dependencies but are not:
+
+- **Per-room SMTP** uses Symfony Mailer, which Nextcloud ships itself in `3rdparty/symfony/mailer` (verified on NC 32 through 35).
+- **Exchange sync** does not use the Microsoft Graph SDK. `lib/Service/Exchange/GraphApiClient.php` calls the Graph REST API directly over Nextcloud's own `OCP\Http\Client\IClientService`.
+
+Should a real runtime dependency ever be added, `vendor/` has to go into the tarball — and `composer install --no-dev` before building, so no dev packages tag along.
 
 ### API Token Expired
 

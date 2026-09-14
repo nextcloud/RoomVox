@@ -4,7 +4,7 @@ Deze gids helpt je RoomVox op te zetten en je eerste reserveerbare ruimte aan te
 
 ## Vereisten
 
-- Nextcloud 32 of 33
+- Nextcloud 32 t/m 35
 - PHP 8.2+
 - SMTP geconfigureerd in Nextcloud (voor e-mailnotificaties)
 - RoomVox-app geïnstalleerd (zie [Installatie-gids](deployment/installation.md))

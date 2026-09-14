@@ -4,7 +4,7 @@ This guide will help you set up RoomVox and create your first bookable room in j
 
 ## Prerequisites
 
-- Nextcloud 32 or 33
+- Nextcloud 32 to 35
 - PHP 8.2+
 - SMTP configured in Nextcloud (for email notifications)
 - RoomVox app installed (see [Installation Guide](deployment/installation.md))

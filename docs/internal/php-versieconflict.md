@@ -1,7 +1,21 @@
 # CI faalt op nextcloud/ocp dev-master
 
-> Uitgezocht 2026-08-23 bij de Forgejo-migratie. **Niet toegepast** — dit is een
-> inhoudelijke keuze in deze repo, geen migratiewijziging.
+> **OPGELOST in 1.5.0 (14-09-2026) — dit document is historie, geen actie.**
+>
+> Uitgezocht 2026-08-23 bij de Forgejo-migratie en toen bewust niet toegepast.
+> Het bleef daarna drie weken liggen tot een externe bijdrager er tegenaan liep en
+> het rapporteerde als [#35](https://github.com/nextcloud/RoomVox/issues/35):
+> `composer install` kon niet resolven op PHP 8.2/8.3.
+>
+> **Wat er uiteindelijk is gedaan wijkt af van de "Voorgestelde fix" hieronder.**
+> Niet de range `>=32.0 <35.0`, maar `dev-stable32` — precies de MetaVox-aanpak
+> die dit document zelf als vergelijking noemt. Een harde bovengrens `<35.0` zou
+> nu bovendien botsen met `max-version="35"` in `info.xml`.
+>
+> In dezelfde fix zijn `composer.lock` en `package-lock.json` gecommit; die waren
+> gitignored, waardoor `npm ci` niet kon werken vanaf een verse clone. De
+> beschrijving hieronder van symptoom en oorzaak klopt nog steeds en is de reden
+> dat het is bewaard — de toestand die het beschrijft bestaat niet meer.
 
 ## Symptoom
 

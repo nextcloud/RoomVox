@@ -56,7 +56,8 @@ Technical documentation for integration, evaluation, and contribution.
 - [Backend Architecture](architecture/backend-architecture.md) — IAppConfig storage, virtual users, service layer
 - [CalDAV Scheduling](architecture/caldav-scheduling.md) — Sabre plugin, iTIP flow, PARTSTAT handling
 - [Exchange Integration](architecture/exchange-integration.md) — Microsoft Graph sync, webhooks, conflict detection
-- [Nextcloud 34 Compatibility](architecture/nc34-compatibility.md) — NC34 audit, 1.2.0 release plan
+- [Nextcloud 34 Compatibility](architecture/nc34-compatibility.md) — NC34 audit (shipped in 1.2.0)
+- [Nextcloud 35 Compatibility](architecture/nc35-compatibility.md) — NC35 audit (shipped in 1.5.0)
 
 ### Deployment
 

@@ -175,16 +175,16 @@ python3 regenerate_js_translations.py  # if applicable, or via webpack
 npm run build
 ```
 
-## NC 34 Release (Planned for v1.2.0)
+## Raising the Nextcloud ceiling
 
-The NC 34 audit ([NC 34 Compatibility](../architecture/nc34-compatibility.md)) concluded RoomVox is already NC34-ready. The 1.2.0 release will:
+Both majors since 1.1.x followed the same route, and it is the one to repeat:
 
-1. Bump `info.xml` `max-version` from `33` to `34`
-2. Bump version `1.1.x` → `1.2.0`
-3. Add a CHANGELOG entry under `[1.2.0]`
-4. Smoke-test on `nc-34-dev` (Hetzner) before release
+1. Audit against a **running** instance of the new major, not against release notes — resolve every `OCP\` symbol the app imports, load every class (a class that no longer fully implements a widened OCP interface turns abstract and fatals), install and enable, and check the log.
+2. Write the audit up under `docs/architecture/`, so the version range has a traceable reason.
+3. Bump `info.xml` `max-version`, and the version in both `package.json` and `appinfo/info.xml`.
+4. Add a CHANGELOG entry, then smoke-test on the matching test server before release.
 
-No API surface changes are required.
+Done so far: NC 34 in 1.2.0 ([audit](../architecture/nc34-compatibility.md)) and NC 35 in 1.5.0 ([audit](../architecture/nc35-compatibility.md)). Neither needed an API-surface change; in both cases the declared ceiling was the only thing blocking installation.
 
 ## Lessons Learned
 
