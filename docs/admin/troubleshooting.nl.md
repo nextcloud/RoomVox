@@ -76,7 +76,7 @@ Een update van Nextcloud of de Calendar-app kan de gepatchte bestanden overschre
 **Probeer:**
 
 1. Rol de calendar-patch opnieuw uit: `./deploy-calendar.sh <target>`
-2. Als de versie van de Calendar-app veranderd is, bekijk de wijzigingen in de stock-bestanden en werk de patch bij — zie [Calendar-patch](../features/calendar-patch.md#updating-after-nc-upgrades)
+2. Als de versie van de Calendar-app veranderd is, bekijk de wijzigingen in de stock-bestanden en werk de patch bij — zie [Calendar-patch](../features/calendar-patch.md#bijwerken-na-nc-upgrades)
 
 ### Fout "resource_booking_enabled" (NC33)
 
