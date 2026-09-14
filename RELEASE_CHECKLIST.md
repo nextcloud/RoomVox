@@ -33,6 +33,48 @@ Follow this checklist for every release to the Nextcloud App Store.
 
 ---
 
+## 0a. Open pull requests (doe dit VÓÓR je de versie bumpt)
+
+Een release die openstaande PR's overslaat, levert een tarball die achterloopt op
+wat er al beoordeeld en klaar is — en bij een security-fix betekent dat een
+kwetsbaarheid die nog een release lang blijft staan. De App Store-upload is niet
+terug te draaien: hertaggen zet de GitHub-release terug naar draft en geeft 404's
+op de download (zie Sectie 9), dus "we doen er meteen een release achteraan" kost
+een heel nieuw versienummer.
+
+**Let op: de PR's staan op GitHub, niet op Forgejo.** Externe bijdragers en
+Dependabot werken op `nextcloud/RoomVox`; de dagelijkse PR's staan op Forgejo.
+Beide moeten dus langs.
+
+- [ ] Open PR's ophalen op **beide** remotes:
+  ```bash
+  gh pr list --repo nextcloud/RoomVox --state open \
+    --json number,title,author,createdAt \
+    --jq '.[] | "#\(.number) \(.author.login) \(.createdAt[0:10]) \(.title)"'
+
+  curl -s -H "Authorization: token $FORGEJO_TOKEN" \
+    "https://forgejo.voxcloud.nl/api/v1/repos/voxcloud-apps/roomvox/pulls?state=open" \
+    | python3 -c 'import json,sys; [print("#%s %s" % (p["number"], p["title"])) for p in json.load(sys.stdin)]'
+  ```
+- [ ] Per PR een expliciet besluit: **mee in deze release**, of **bewust uitgesteld**.
+      Noteer uitgestelde PR's in de release notes of in de PR zelf, zodat de
+      volgende release ze niet opnieuw over het hoofd ziet.
+- [ ] **Security-PR's krijgen voorrang.** Ga daarbij niet af op het
+      `build(deps)`/`deps-dev`-label van Dependabot: dat beschrijft de plek in
+      `package.json`, niet of de code wordt uitgeleverd. Meet het (`npm ls`,
+      `grep` in `js/`, `grep` in de tarball — zie Sectie 8). Zit een pakket
+      alleen in de buildketen, dan mag het wachten.
+- [ ] Externe PR's: check de diff, niet alleen de titel. Een PR van een
+      bijdrager toont vaak honderden verwijderde regels omdat `push-to-github.sh`
+      onze interne bestanden (`CLAUDE.md`, `RELEASE_CHECKLIST.md`, `deploy*.sh`)
+      uit de GitHub-boom filtert — die bestaan daar niet, dus zijn branch ziet ze
+      als verwijderd. **Cherry-pick in dat geval de echte code-bestanden; gebruik
+      de merge-knop niet**, anders verdwijnen ze op Forgejo.
+- [ ] Blijft een PR liggen omdat hij nog getest moet worden? Dan is dát de vraag
+      die je beantwoordt vóór de versie-bump, niet erna.
+
+---
+
 ## 1. Code Quality & Security
 
 - [ ] Remove all debug `console.log()` statements from JavaScript (`src/`)
@@ -481,6 +523,52 @@ en bezit alleen `metavox`. De rechtencheck komt vóór de signature-check, dus e
 - [ ] Verify CalDAV resources appear after install
 - [ ] Test booking workflow end-to-end
 
+### Nieuwe PR's die de release zelf uitlokt
+
+Een lockfile-wijziging wekt Dependabot: zolang er geen `package-lock.json` in de
+repo stond kon het niets, en zodra die er wel is opent het in één klap alle
+achterstallige bumps. Dat is normaal en geen reden voor een nieuwe release.
+
+Bij v1.5.0 bleek de timing scherper dan verwacht en het is precies waarom Sectie
+0a bestaat. Gemeten op 14-09-2026:
+
+| Gebeurtenis | Tijd (UTC) |
+|---|---|
+| PR #33 en #34 (externe bijdrager) geopend | 07-09, een week eerder |
+| Dependabot opent #36 t/m #40 na de lockfile-push | 06:50 |
+| GitHub-release v1.5.0 aangemaakt | **06:54** |
+
+Alle zeven stonden dus al open tóén de release werd gemaakt — de vijf van
+Dependabot met vier minuten marge — en geen ervan zat erin.
+
+Achteraf bleek geen van de zeven een security-fix in uitgeleverde code, dus deze
+keer kostte het niets. Dat was geluk, geen proces: bij #33 (CORS op de Public
+API) was dat anders afgelopen.
+
+**Vertrouw daarbij niet op het `build(deps)`-label van Dependabot.** Dat zegt
+alleen dat het pakket in `dependencies` staat in plaats van `devDependencies` —
+niet dat het wordt uitgeleverd. #36 bumpte `nanoid` (drie CVE's, severity high),
+maar dat zit onder `css-loader` -> `postcss` en draait dus alleen tijdens de
+build. Meet het in plaats van het te lezen:
+
+```bash
+npm ls <pakket>                                  # waar hangt het onder?
+grep -c '<pakket>' js/*.js                       # zit het in een bundle?
+tar -tzf roomvox-X.Y.Z.tar.gz | grep -c '<pakket>'   # zit het in de tarball?
+```
+
+Drie keer 0 betekent: build-only, geen spoedrelease.
+
+- [ ] Kijk een dag na de release opnieuw naar de PR-lijst (zelfde commando's als
+      Sectie 0a) en bepaal wat er ná de tag is binnengekomen.
+- [ ] Alleen een **security-fix in code die daadwerkelijk wordt uitgeleverd**
+      rechtvaardigt een snelle patch-release — geverifieerd met de drie
+      commando's hierboven, niet op het label af. Build-only bumps en features
+      wachten op de volgende geplande release; zet ze in `[Unreleased]` in de
+      CHANGELOG, dan raak je ze niet kwijt.
+- [ ] Moet er tóch meteen een patch-release komen: nieuw versienummer, geen
+      hertag. Zie Sectie 9.
+
 ---
 
 ## 9. Rollback Plan
@@ -494,6 +582,9 @@ en bezit alleen `metavox`. De rechtencheck komt vóór de signature-check, dus e
 ## Quick Release Flow
 
 ```bash
+# 0. Open PR's langs (Sectie 0a) — security/deps eerst, en op BEIDE remotes
+gh pr list --repo nextcloud/RoomVox --state open
+
 # 1. Build
 npm run build
 
