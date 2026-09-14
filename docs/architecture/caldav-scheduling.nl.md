@@ -71,9 +71,9 @@ De [Engelse versie van deze pagina](caldav-scheduling.md) bevat de volledige flo
 
 ## Zie ook
 
-- [Architectuuroverzicht](overview.nl.md) — systeemcontext
-- [Backend-architectuur](backend-architecture.nl.md) — servicelaag en opslag
-- [Exchange-integratie](exchange-integration.nl.md) — hoe gesynchroniseerde boekingen hierop ingrijpen
+- [Architectuuroverzicht](overview.md) — systeemcontext
+- [Backend-architectuur](backend-architecture.md) — servicelaag en opslag
+- [Exchange-integratie](exchange-integration.md) — hoe gesynchroniseerde boekingen hierop ingrijpen
 - [E-mailnotificaties](../features/email-notifications.md) — de mails die de plugin verstuurt
 - [Beschikbaarheidsregels](../features/availability-rules.md) — semantiek van de regels
 - [Goedkeuringsworkflow](../features/approval-workflow.md) — tentatieve boekingen en managers

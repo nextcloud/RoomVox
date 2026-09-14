@@ -74,6 +74,6 @@ Wil je weten waar RoomVox vandaag staat, lees dan de nieuwere audit: **[NC35-com
 ## Zie ook
 
 - [NC35-compatibiliteitsaudit](nc35-compatibility.md) — de actuele audit, Engelstalig
-- [Backend-architectuur](backend-architecture.nl.md) — servicelaag en opslag
-- [CalDAV-scheduling](caldav-scheduling.nl.md) — waarom prioriteit 99 ons afschermt van upstream-wijzigingen
-- [Architectuuroverzicht](overview.nl.md) — systeemcontext
+- [Backend-architectuur](backend-architecture.md) — servicelaag en opslag
+- [CalDAV-scheduling](caldav-scheduling.md) — waarom prioriteit 99 ons afschermt van upstream-wijzigingen
+- [Architectuuroverzicht](overview.md) — systeemcontext

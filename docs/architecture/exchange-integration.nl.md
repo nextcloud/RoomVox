@@ -6,7 +6,7 @@
 
 Veel organisaties draaien Nextcloud naast een bestaande Microsoft 365-omgeving. De vergaderruimtes staan daar al als *room mailbox* in Exchange, en collega's boeken ze via Outlook. RoomVox kan die ruimtes overnemen zonder dat je ze uit Exchange hoeft te halen: de boekingen worden via de **Microsoft Graph**-API opgehaald en als gewone CalDAV-events in Nextcloud gezet.
 
-Deze pagina is bedoeld voor ontwikkelaars en voor beheerders die willen begrijpen wat er onder de motorkap gebeurt. Zoek je de schermen en velden waarmee je de koppeling instelt, kijk dan bij [Instellingen → Exchange Sync](../admin/settings.md#exchange-sync-optional).
+Deze pagina is bedoeld voor ontwikkelaars en voor beheerders die willen begrijpen wat er onder de motorkap gebeurt. Zoek je de schermen en velden waarmee je de koppeling instelt, kijk dan bij [Instellingen → Exchange Sync](../admin/settings.md#exchange-sync-optioneel).
 
 ## De componenten
 
@@ -67,7 +67,7 @@ De [Engelse versie van deze pagina](exchange-integration.md) bevat het complete 
 
 ## Zie ook
 
-- [Backend-architectuur](backend-architecture.nl.md) — overzicht van de servicelaag
-- [CalDAV-scheduling](caldav-scheduling.nl.md) — hoe gesynchroniseerde boekingen op de plugin ingrijpen
-- [Beheerinstellingen → Exchange Sync](../admin/settings.md#exchange-sync-optional) — de configuratie-interface
+- [Backend-architectuur](backend-architecture.md) — overzicht van de servicelaag
+- [CalDAV-scheduling](caldav-scheduling.md) — hoe gesynchroniseerde boekingen op de plugin ingrijpen
+- [Beheerinstellingen → Exchange Sync](../admin/settings.md#exchange-sync-optioneel) — de configuratie-interface
 - [Problemen oplossen](../admin/troubleshooting.md) — synchronisatieproblemen
