@@ -14,6 +14,7 @@ use OCA\RoomVox\Service\RoomService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\DataDownloadResponse;
 use OCP\AppFramework\Http\JSONResponse;
+use OCP\AppFramework\Http\Response;
 use OCP\AppFramework\Http\Attribute\BruteForceProtection;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
@@ -34,6 +35,20 @@ class PublicApiController extends Controller {
         private LoggerInterface $logger,
     ) {
         parent::__construct($appName, $request);
+    }
+
+    /**
+     * Answer browser preflight requests before Bearer authentication.
+     */
+    #[NoAdminRequired]
+    #[NoCSRFRequired]
+    #[PublicPage]
+    public function preflight(): Response {
+        return new Response(204, [
+            'Access-Control-Allow-Origin' => '*',
+            'Access-Control-Allow-Methods' => 'GET, POST, DELETE, OPTIONS',
+            'Access-Control-Allow-Headers' => 'Authorization, Content-Type',
+        ]);
     }
 
     // ── Room Status ──────────────────────────────────────────────────

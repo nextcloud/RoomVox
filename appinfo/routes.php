@@ -83,6 +83,7 @@ return [
         ['name' => 'license#sendTelemetry', 'url' => '/api/license/telemetry', 'verb' => 'POST'],
 
         // Public API v1 (Bearer token authenticated)
+        ['name' => 'public_api#preflight', 'url' => '/api/v1/{path}', 'verb' => 'OPTIONS', 'requirements' => ['path' => '.+']],
         ['name' => 'public_api#room_status', 'url' => '/api/v1/rooms/{id}/status', 'verb' => 'GET'],
         ['name' => 'public_api#room_availability', 'url' => '/api/v1/rooms/{id}/availability', 'verb' => 'GET'],
         ['name' => 'public_api#calendar_feed', 'url' => '/api/v1/rooms/{id}/calendar.ics', 'verb' => 'GET'],
