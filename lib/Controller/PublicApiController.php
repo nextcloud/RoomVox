@@ -73,12 +73,11 @@ class PublicApiController extends Controller {
 
         // Check availability rules
         if (!empty($room['availabilityRules']['enabled'])) {
-            $dayOfWeek = strtolower($now->format('D')); // mon, tue, etc.
             $currentTime = $now->format('H:i');
             $isWithinRules = false;
 
             foreach ($room['availabilityRules']['rules'] ?? [] as $rule) {
-                if (in_array($dayOfWeek, $rule['days'] ?? []) &&
+                if ($this->matchesRuleDay($now, $rule['days'] ?? []) &&
                     $currentTime >= ($rule['startTime'] ?? '00:00') &&
                     $currentTime <= ($rule['endTime'] ?? '23:59')) {
                     $isWithinRules = true;
@@ -187,9 +186,8 @@ class PublicApiController extends Controller {
         $dayEnd = '23:59';
 
         if (!empty($room['availabilityRules']['enabled'])) {
-            $dayOfWeek = strtolower($rangeStart->format('D'));
             foreach ($room['availabilityRules']['rules'] ?? [] as $rule) {
-                if (in_array($dayOfWeek, $rule['days'] ?? [])) {
+                if ($this->matchesRuleDay($rangeStart, $rule['days'] ?? [])) {
                     $dayStart = $rule['startTime'] ?? '08:00';
                     $dayEnd = $rule['endTime'] ?? '18:00';
                     $availabilityRules = [
@@ -394,13 +392,12 @@ class PublicApiController extends Controller {
 
         // Check availability rules
         if (!empty($room['availabilityRules']['enabled'])) {
-            $dayOfWeek = strtolower($startDt->format('D'));
             $startTime = $startDt->format('H:i');
             $endTime = $endDt->format('H:i');
 
             $withinRules = false;
             foreach ($room['availabilityRules']['rules'] ?? [] as $rule) {
-                if (in_array($dayOfWeek, $rule['days'] ?? []) &&
+                if ($this->matchesRuleDay($startDt, $rule['days'] ?? []) &&
                     $startTime >= ($rule['startTime'] ?? '00:00') &&
                     $endTime <= ($rule['endTime'] ?? '23:59')) {
                     $withinRules = true;
@@ -826,6 +823,34 @@ class PublicApiController extends Controller {
     }
 
     // ── Helpers ───────────────────────────────────────────────────────
+
+    /**
+     * Is $moment on one of an availability rule's allowed weekdays?
+     *
+     * Days are stored as integers 0-6 with 0 = Sunday — the format the admin UI
+     * writes and the one SchedulingPlugin::bookingFitsRule() reads. This used to
+     * compare strtolower(format('D')) ("mon") against those integers, which can
+     * never match on PHP 8, so every moment fell outside every rule (issue #32).
+     *
+     * The stored values are normalised rather than compared strictly: the API
+     * accepts availabilityRules verbatim from the request, so a client can have
+     * persisted ["1","2"] as strings. Those mean the same weekday and must match.
+     *
+     * @param array<int, mixed> $allowedDays
+     */
+    private function matchesRuleDay(\DateTimeInterface $moment, array $allowedDays): bool {
+        $dayOfWeek = (int)$moment->format('w');
+
+        foreach ($allowedDays as $day) {
+            if (is_int($day) || (is_string($day) && ctype_digit($day))) {
+                if ((int)$day === $dayOfWeek) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
 
     /**
      * Validate that from/to are valid dates and span at most 365 days.

@@ -68,33 +68,6 @@ class PublicApiConflictTest extends TestCase {
     }
 
     /**
-     * Call createBooking via reflection to bypass the token middleware.
-     * Sets up the internal token state and calls the method directly.
-     */
-    private function callCreateBooking(PublicApiController $controller, array $room, array $params): \OCP\AppFramework\Http\JSONResponse {
-        // Use reflection to call the method, bypassing requireScope/getAuthorizedRoom
-        // by testing the validation logic after those guards.
-        // We'll test by directly calling the method after setting up the request mock.
-
-        $this->request->method('getParam')->willReturnCallback(function (string $key, $default = '') use ($params) {
-            return $params[$key] ?? $default;
-        });
-
-        // Override requireScope and getAuthorizedRoom via a test subclass approach
-        // Instead, we test the core logic by calling the method indirectly
-        // For PublicApiController, the simplest approach is testing at integration level.
-
-        // Since we can't easily bypass the middleware, let's test the validation methods
-        // that are shared between the internal and public API.
-
-        // Alternative: test the same logic via BookingApiController which we already test,
-        // and use this test to validate the PublicApiController-specific logic like
-        // availability rules and horizon checks using reflection.
-
-        return new \OCP\AppFramework\Http\JSONResponse([], 200);
-    }
-
-    /**
      * Since PublicApiController uses requireScope() which depends on middleware,
      * we test the booking validation logic that is unique to this controller
      * (availability rules, horizon checks) using reflection or by verifying
@@ -111,94 +84,50 @@ class PublicApiConflictTest extends TestCase {
         $this->assertInstanceOf(PublicApiController::class, $controller);
     }
 
+    /**
+     * Availability rules, exercised through the controller's own matcher.
+     *
+     * These three tests previously re-implemented the comparison inline using
+     * STRING weekdays ("mon") and asserted that it matched. That encoded issue
+     * #32 rather than catching it: days are stored as integers 0-6 (0 = Sunday),
+     * so the production comparison could never match and the public API reported
+     * every room as unavailable around the clock. They now call the real
+     * matchesRuleDay() with the canonical integer format.
+     */
     public function testAvailabilityRuleCheckLogicMonFri(): void {
-        // Test the availability rule logic that PublicApiController uses inline
-        // This matches the exact code at PublicApiController lines 393-411
+        $controller = $this->createController();
+        $matches = new \ReflectionMethod(PublicApiController::class, 'matchesRuleDay');
 
-        $room = array_merge($this->testRoom, [
-            'availabilityRules' => [
-                'enabled' => true,
-                'rules' => [
-                    ['days' => ['mon', 'tue', 'wed', 'thu', 'fri'], 'startTime' => '08:00', 'endTime' => '18:00'],
-                ],
-            ],
-        ]);
-
-        // Monday 10:00-11:00 — should be within rules
+        $rule = ['days' => [1, 2, 3, 4, 5], 'startTime' => '08:00', 'endTime' => '18:00'];
         $startDt = new \DateTime('2026-02-16 10:00:00'); // Monday
-        $dayOfWeek = strtolower($startDt->format('D'));
-        $startTime = $startDt->format('H:i');
-        $endTime = '11:00';
 
-        $withinRules = false;
-        foreach ($room['availabilityRules']['rules'] as $rule) {
-            if (in_array($dayOfWeek, $rule['days'] ?? []) &&
-                $startTime >= ($rule['startTime'] ?? '00:00') &&
-                $endTime <= ($rule['endTime'] ?? '23:59')) {
-                $withinRules = true;
-                break;
-            }
-        }
-
-        $this->assertTrue($withinRules);
+        $this->assertTrue(
+            $matches->invoke($controller, $startDt, $rule['days'])
+                && $startDt->format('H:i') >= $rule['startTime']
+                && '11:00' <= $rule['endTime'],
+        );
     }
 
     public function testAvailabilityRuleCheckLogicWeekendRejected(): void {
-        $room = array_merge($this->testRoom, [
-            'availabilityRules' => [
-                'enabled' => true,
-                'rules' => [
-                    ['days' => ['mon', 'tue', 'wed', 'thu', 'fri'], 'startTime' => '08:00', 'endTime' => '18:00'],
-                ],
-            ],
-        ]);
+        $controller = $this->createController();
+        $matches = new \ReflectionMethod(PublicApiController::class, 'matchesRuleDay');
 
-        // Saturday 10:00-11:00 — outside Mon-Fri rules
+        $rule = ['days' => [1, 2, 3, 4, 5], 'startTime' => '08:00', 'endTime' => '18:00'];
         $startDt = new \DateTime('2026-02-21 10:00:00'); // Saturday
-        $dayOfWeek = strtolower($startDt->format('D'));
-        $startTime = $startDt->format('H:i');
-        $endTime = '11:00';
 
-        $withinRules = false;
-        foreach ($room['availabilityRules']['rules'] as $rule) {
-            if (in_array($dayOfWeek, $rule['days'] ?? []) &&
-                $startTime >= ($rule['startTime'] ?? '00:00') &&
-                $endTime <= ($rule['endTime'] ?? '23:59')) {
-                $withinRules = true;
-                break;
-            }
-        }
-
-        $this->assertFalse($withinRules);
+        $this->assertFalse($matches->invoke($controller, $startDt, $rule['days']));
     }
 
     public function testAvailabilityRuleCheckLogicOutsideHours(): void {
-        $room = array_merge($this->testRoom, [
-            'availabilityRules' => [
-                'enabled' => true,
-                'rules' => [
-                    ['days' => ['mon', 'tue', 'wed', 'thu', 'fri'], 'startTime' => '08:00', 'endTime' => '18:00'],
-                ],
-            ],
-        ]);
+        $controller = $this->createController();
+        $matches = new \ReflectionMethod(PublicApiController::class, 'matchesRuleDay');
 
-        // Monday 07:00-08:00 — before opening hours
-        $startDt = new \DateTime('2026-02-16 07:00:00'); // Monday
-        $dayOfWeek = strtolower($startDt->format('D'));
-        $startTime = $startDt->format('H:i');
-        $endTime = '08:00';
+        $rule = ['days' => [1, 2, 3, 4, 5], 'startTime' => '08:00', 'endTime' => '18:00'];
+        $startDt = new \DateTime('2026-02-16 07:00:00'); // Monday, before opening
 
-        $withinRules = false;
-        foreach ($room['availabilityRules']['rules'] as $rule) {
-            if (in_array($dayOfWeek, $rule['days'] ?? []) &&
-                $startTime >= ($rule['startTime'] ?? '00:00') &&
-                $endTime <= ($rule['endTime'] ?? '23:59')) {
-                $withinRules = true;
-                break;
-            }
-        }
-
-        $this->assertFalse($withinRules);
+        // The day matches; the time window is what rejects this booking.
+        $this->assertTrue($matches->invoke($controller, $startDt, $rule['days']));
+        $this->assertFalse($startDt->format('H:i') >= $rule['startTime']);
     }
 
     public function testHorizonCheckLogicWithinLimit(): void {

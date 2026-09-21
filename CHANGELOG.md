@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **The Public API rejected every booking and reported every room as unavailable when booking hours were restricted** ([#32](https://github.com/nextcloud/RoomVox/issues/32)): availability rules store weekdays as integers `0`-`6` with `0` = Sunday — the format the admin interface writes and the one the CalDAV scheduling path reads. The Public API derived the weekday as a lowercase abbreviation (`"mon"`) instead and compared that against those integers, which cannot match on PHP 8. Any room with "Restrict booking hours" enabled was therefore treated as outside its allowed hours at every moment: `GET /api/v1/rooms/{id}/status` answered `unavailable` around the clock, the availability endpoint reported no open window, and `POST /api/v1/rooms/{id}/bookings` refused bookings that were well inside the configured hours. Bookings made through a normal calendar client were never affected, which is why this went unnoticed: that path does the comparison correctly. All three comparison sites now share a single matcher that reads the weekday as an integer. Values that a REST client stored as strings (`["1","2"]`) are accepted as the same weekdays, while non-numeric values no longer coerce to `0` and silently mean Sunday.
+
 ## [1.5.0] - 2026-09-14 - Nextcloud 35 support, LDAP group search & buildable from a clean clone
 
 ### Added
