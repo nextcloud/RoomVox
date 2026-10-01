@@ -106,8 +106,8 @@ None of these are blockers; all are upstream improvements that may benefit RoomV
      and stable34).
    ```
 
-4. **Live verification on a `nc-34-dev` container** before release: provision a
-   fresh Hetzner container with NC34 GA, deploy RoomVox 1.2.0 via `docker cp`,
+4. **Live verification on an NC34 test container** before release: provision a
+   fresh container with NC34 GA, deploy RoomVox 1.2.0 via `docker cp`,
    then smoke-test the full booking flow and tail `nextcloud.log` for any
    `Call to undefined method` errors. See [Admin: Installation](../deployment/installation.md)
    for deploy steps.
@@ -129,15 +129,15 @@ None of these are blockers; all are upstream improvements that may benefit RoomV
 ### Local (unchanged)
 
 ```bash
-cd /Users/rikdekker/Documents/Development/RoomVox
+# from your RoomVox checkout
 vendor/bin/phpunit --testsuite unit
 # Expected: identical baseline (no NC34 regression)
 ```
 
-### nc-34-dev (Hetzner)
+### NC34 test instance
 
 ```bash
-ssh hetzner-ax42 'docker exec nc-34-dev tail -f /var/www/html/data/nextcloud.log | grep -i roomvox'
+docker exec <container> tail -f /var/www/html/data/nextcloud.log | grep -i roomvox
 # Expected: no "Call to undefined method" for \OC::$server->getXxx()
 ```
 

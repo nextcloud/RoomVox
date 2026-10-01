@@ -62,11 +62,11 @@ class RoomMetadataTest extends TestCase {
 
     public static function addressProvider(): array {
         return [
-            'complete' => ['Poppodium, Kerkstraat 10, 1098 XG, Amsterdam', 'Poppodium, Kerkstraat 10, 1098 XG, Amsterdam'],
+            'complete' => ['Poppodium, Kerkstraat 10, 1000 AA, Amsterdam', 'Poppodium, Kerkstraat 10, 1000 AA, Amsterdam'],
             // Imported without a building name
-            'empty building' => [', Science Park 140, 1098 XG, Amsterdam', 'Science Park 140, 1098 XG, Amsterdam'],
+            'empty building' => [', Example Street 1, 1000 AA, Amsterdam', 'Example Street 1, 1000 AA, Amsterdam'],
             // Imported without a building name and without a street
-            'empty building and street' => [', , 1098 XG, Amsterdam', '1098 XG, Amsterdam'],
+            'empty building and street' => [', , 1000 AA, Amsterdam', '1000 AA, Amsterdam'],
             'trailing separators' => ['Poppodium, Kerkstraat 10, , ', 'Poppodium, Kerkstraat 10'],
             'only separators' => [', , , ', null],
             'empty' => ['', null],
@@ -85,11 +85,11 @@ class RoomMetadataTest extends TestCase {
 
     public static function buildingNameProvider(): array {
         return [
-            'complete' => ['Poppodium, Kerkstraat 10, 1098 XG, Amsterdam', 'Poppodium'],
+            'complete' => ['Poppodium, Kerkstraat 10, 1000 AA, Amsterdam', 'Poppodium'],
             // An empty building column means the room has no building name.
             // The street must not stand in for one.
-            'empty building' => [', Science Park 140, 1098 XG, Amsterdam', null],
-            'empty building and street' => [', , 1098 XG, Amsterdam', null],
+            'empty building' => [', Example Street 1, 1000 AA, Amsterdam', null],
+            'empty building and street' => [', , 1000 AA, Amsterdam', null],
             'only a building' => ['Poppodium', 'Poppodium'],
             'empty' => ['', null],
             'not set' => [null, null],
@@ -97,11 +97,11 @@ class RoomMetadataTest extends TestCase {
     }
 
     public function testKeepsTheNormalizedAddressOutOfTheDescription(): void {
-        $room = $this->makeRoom(address: ', , 1098 XG, Amsterdam', roomNumber: '2.10', capacity: 20);
+        $room = $this->makeRoom(address: ', , 1000 AA, Amsterdam', roomNumber: '2.10', capacity: 20);
 
         $description = $room->getMetadataForKey(self::DESCRIPTION);
 
-        $this->assertStringContainsString('Address: 1098 XG, Amsterdam', $description);
+        $this->assertStringContainsString('Address: 1000 AA, Amsterdam', $description);
         $this->assertStringNotContainsString('Address: , ,', $description);
     }
 

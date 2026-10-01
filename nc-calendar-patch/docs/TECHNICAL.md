@@ -41,7 +41,7 @@ const roomFeatures = (dav.roomFeatures ?? '').toString().trim() || null
 
 **Building address cleaning:**
 ```js
-// Strip leading/trailing commas: ", Science Park 140, 1098 XG, Amsterdam" → "Science Park 140, 1098 XG, Amsterdam"
+// Strip leading/trailing commas: ", Example Street 1, 1000 AA, Amsterdam" → "Example Street 1, 1000 AA, Amsterdam"
 const roomBuildingAddress = rawBuildingAddress
   ? rawBuildingAddress.replace(/^[\s,]+|[\s,]+$/g, '').trim() || null
   : null
@@ -49,7 +49,7 @@ const roomBuildingAddress = rawBuildingAddress
 
 **Building name derivation:**
 ```js
-// First segment before comma: "SURF Amsterdam, Science Park 140, ..." → "SURF Amsterdam"
+// First segment before comma: "Main Building, Example Street 1, ..." → "Main Building"
 const roomBuildingName = roomBuildingAddress
   ? roomBuildingAddress.split(',')[0].trim()
   : null

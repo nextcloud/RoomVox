@@ -20,7 +20,7 @@ Reference: [Maintenance and Release Schedule](https://github.com/nextcloud/serve
 
 ## How this was verified
 
-Unlike the NC34 audit, which was a source-level review, this audit was performed **against a live instance** — the `nc-next` container on Hetzner AX42, running 35.0.0 RC3. Static review alone cannot catch the failure mode that matters most: when an OCP interface gains a method, the class implementing it silently becomes abstract and fatals on load. That is what a running instance surfaces and a grep does not.
+Unlike the NC34 audit, which was a source-level review, this audit was performed **against a live instance** — a Nextcloud test instance running 35.0.0 RC3. Static review alone cannot catch the failure mode that matters most: when an OCP interface gains a method, the class implementing it silently becomes abstract and fatals on load. That is what a running instance surfaces and a grep does not.
 
 | Check | Result |
 |---|---|

@@ -107,9 +107,9 @@ function mapDavToPrincipal(dav) {
 	const roomType = (dav.roomType ?? '').toString().trim() || null
 	const roomFeatures = (dav.roomFeatures ?? '').toString().trim() || null
 	const rawBuildingAddress = dav.roomBuildingAddress ?? null
-	// Strip leading/trailing commas and whitespace (e.g. ", Science Park 140, 1098 XG, Amsterdam")
+	// Strip leading/trailing commas and whitespace (e.g. ", Example Street 1, 1000 AA, Amsterdam")
 	const roomBuildingAddress = rawBuildingAddress ? rawBuildingAddress.replace(/^[\s,]+|[\s,]+$/g, '').trim() || null : null
-	// Derive building name from address (everything before first comma): "SURF Amsterdam, Science Park 140, ..." → "SURF Amsterdam"
+	// Derive building name from address (everything before first comma): "Main Building, Example Street 1, ..." → "Main Building"
 	const roomBuildingName = roomBuildingAddress ? roomBuildingAddress.split(',')[0].trim() : null
 	// Room number (floor.room format, e.g. "2.17") is stored in room-building-room-number
 	const roomNumber = (dav.roomBuildingRoomNumber ?? '').toString().trim() || null

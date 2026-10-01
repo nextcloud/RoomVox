@@ -9,8 +9,12 @@ docs/internal/
 tasks/
 CLAUDE.md
 RELEASE_CHECKLIST.md
-# The test report names the servers the integration tests ran on.
+# Reports never go to GitHub; they name servers, accounts and customers.
 tests/TESTVERSLAG.md
+
+# CI runs on Forgejo; the workflows carry internal URLs and dispatch
+# endpoints. GitHub runs .github/workflows/ and has no use for these.
+.forgejo/
 
 # Deploy and maintenance scripts — these carry server names and assume our
 # infrastructure. deploy.conf itself is gitignored outright and never reaches
