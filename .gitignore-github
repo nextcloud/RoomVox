@@ -9,6 +9,8 @@ docs/internal/
 tasks/
 CLAUDE.md
 RELEASE_CHECKLIST.md
+# The test report names the servers the integration tests ran on.
+tests/TESTVERSLAG.md
 
 # Deploy and maintenance scripts — these carry server names and assume our
 # infrastructure. deploy.conf itself is gitignored outright and never reaches
