@@ -11,8 +11,8 @@ use OCP\IConfig;
 use Psr\Log\LoggerInterface;
 
 /**
- * Background job that periodically sends anonymous telemetry data.
- * This is opt-out and runs when telemetry is enabled (default).
+ * Background job that sends the usage statistics report.
+ * Sends nothing until an administrator switched usage statistics on.
  * Runs every 24 hours with random jitter to spread load.
  */
 class TelemetryJob extends TimedJob {

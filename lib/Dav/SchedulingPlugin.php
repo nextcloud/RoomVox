@@ -31,6 +31,9 @@ use Sabre\VObject\ITip;
  * - Returns false to stop Sabre from attempting (and failing) delivery
  */
 class SchedulingPlugin extends ServerPlugin {
+    /** Upper bound on future occurrences checked per booking */
+    private const MAX_CHECKED_OCCURRENCES = 1000;
+
     private ?Server $server = null;
 
     /** @var array<string, string> room email → PARTSTAT set during this request */
@@ -103,8 +106,8 @@ class SchedulingPlugin extends ServerPlugin {
         }
 
         $room = $this->roomService->getRoom($roomId);
-        if ($room === null || !($room['active'] ?? true)) {
-            $this->logger->debug("RoomVox: Ignoring request for inactive/missing room {$roomId}");
+        if ($room === null) {
+            $this->logger->debug("RoomVox: Ignoring request for missing room {$roomId}");
             return null;
         }
 
@@ -148,6 +151,16 @@ class SchedulingPlugin extends ServerPlugin {
     private function handleRequest(ITip\Message $message, array $room): void {
         $senderId = $this->extractUserId($message->sender);
         $roomId = $room['id'];
+
+        // 0. An inactive room takes no bookings. It used to be passed on to
+        // Sabre's own delivery; now that inactive rooms stay known to
+        // Nextcloud (so their calendars survive), RoomVox refuses them here.
+        if (!($room['active'] ?? true)) {
+            $this->logger->info("RoomVox: Booking declined for inactive room {$roomId}");
+            $message->scheduleStatus = '3.7'; // Delivery refused
+            $this->setPartstat($message, 'DECLINED');
+            return;
+        }
 
         // 1. Permission check
         $perms = $this->permissionService->getEffectivePermissions($roomId);
@@ -204,13 +217,34 @@ class SchedulingPlugin extends ServerPlugin {
             $uid = (string)($vEvent->UID ?? '');
         }
 
+        // 2b. A room without a calendar cannot take the booking (issue #44).
+        // Decline here rather than at the conflict check, whose mail would
+        // tell the organizer the room is already booked.
+        if ($this->calDAVService->getRoomCalendarId($room['userId']) === null) {
+            $this->logger->error("RoomVox: room {$roomId} has no calendar; declining booking {$uid}");
+            $message->scheduleStatus = '5.3'; // Temporary failure
+            $this->setPartstat($message, 'DECLINED');
+            return;
+        }
+
+        // Every occurrence of a recurring booking has to pass the checks below,
+        // not just the first one: later dates could otherwise be double-booked
+        // or fall outside the booking hours unnoticed (issue #46).
+        $occurrences = ($vEvent !== null && $message->message !== null && $dtStart !== null && $dtEnd !== null)
+            ? $this->occurrencesOf($message->message, $vEvent, $room)
+            : [];
+
         // 3. Availability check
-        if ($dtStart !== null && $dtEnd !== null && !$this->isWithinAvailability($room, $dtStart, $dtEnd)) {
-            $this->logger->info("RoomVox: Booking outside availability hours for room {$roomId}");
+        $outsideHours = array_values(array_filter(
+            $occurrences,
+            fn (array $o) => !$this->isWithinAvailability($room, $o[0], $o[1]),
+        ));
+        if ($outsideHours !== []) {
+            $this->logger->info("RoomVox: Booking outside availability hours for room {$roomId} (" . count($outsideHours) . ' of ' . count($occurrences) . ' occurrences)');
             $message->scheduleStatus = '3.7';
             $this->setPartstat($message, 'DECLINED');
             try {
-                $this->mailService->sendAvailabilityViolation($room, $message);
+                $this->mailService->sendAvailabilityViolation($room, $message, $this->listedDates($outsideHours, $vEvent));
             } catch (\Throwable $e) {
                 $this->logger->error("RoomVox: Failed to send availability decline email: " . $e->getMessage());
             }
@@ -230,22 +264,22 @@ class SchedulingPlugin extends ServerPlugin {
             return;
         }
 
-        // 4. Conflict check
-        if ($vEvent !== null) {
-            if ($dtStart !== null && $dtEnd !== null) {
-                if ($this->calDAVService->hasConflict($room['userId'], $dtStart, $dtEnd, $uid, $room)) {
-                    $this->logger->info("RoomVox: Booking conflict for room {$roomId} (uid={$uid})");
-                    $message->scheduleStatus = '3.0'; // Delivery failed (conflict)
-                    $this->setPartstat($message, 'DECLINED');
+        // 4. Conflict check. A series with a conflict on any date is declined
+        // as a whole; the mail lists the dates so the organizer can add
+        // exceptions and book again. Approving a series that silently
+        // double-books some of its dates is worse.
+        $conflicts = $this->calDAVService->findConflicts($room['userId'], $occurrences, $uid, $room);
+        if ($conflicts !== []) {
+            $this->logger->info("RoomVox: Booking conflict for room {$roomId} (uid={$uid}, " . count($conflicts) . ' of ' . count($occurrences) . ' occurrences)');
+            $message->scheduleStatus = '3.0'; // Delivery failed (conflict)
+            $this->setPartstat($message, 'DECLINED');
 
-                    try {
-                        $this->mailService->sendConflict($room, $message);
-                    } catch (\Throwable $e) {
-                        $this->logger->error("RoomVox: Failed to send conflict email: " . $e->getMessage());
-                    }
-                    return;
-                }
+            try {
+                $this->mailService->sendConflict($room, $message, $this->listedDates($conflicts, $vEvent));
+            } catch (\Throwable $e) {
+                $this->logger->error("RoomVox: Failed to send conflict email: " . $e->getMessage());
             }
+            return;
         }
 
         // 5. Determine PARTSTAT based on auto-accept setting. A manager of the
@@ -670,8 +704,13 @@ class SchedulingPlugin extends ServerPlugin {
             $dtEnd = $vEvent->DTEND ? $vEvent->DTEND->getDateTime() : null;
             $uid = (string)($vEvent->UID ?? '');
 
+            if ($this->calDAVService->getRoomCalendarId($room['userId']) === null) {
+                $this->logger->error("RoomVox: room {$roomId} has no calendar; ignoring LOCATION booking {$uid}");
+                return;
+            }
+
             if ($dtStart !== null && $dtEnd !== null) {
-                if ($this->calDAVService->hasConflict($room['userId'], $dtStart, $dtEnd, $uid, $room)) {
+                if ($this->calDAVService->findConflicts($room['userId'], $this->occurrencesOf($vObject, $vEvent, $room), $uid, $room) !== []) {
                     $this->logger->info("RoomVox: Conflict detected for room {$roomId} (LOCATION booking)");
                     return;
                 }
@@ -729,14 +768,7 @@ class SchedulingPlugin extends ServerPlugin {
         }
 
         // Recurring event: check UNTIL or calculate from COUNT
-        $rruleStr = (string)$rrule;
-        $parts = [];
-        foreach (explode(';', $rruleStr) as $part) {
-            $kv = explode('=', $part, 2);
-            if (count($kv) === 2) {
-                $parts[strtoupper($kv[0])] = $kv[1];
-            }
-        }
+        $parts = self::rruleParts($vEvent);
 
         // If UNTIL is set, check it directly
         if (!empty($parts['UNTIL'])) {
@@ -779,6 +811,97 @@ class SchedulingPlugin extends ServerPlugin {
         // RRULE with neither UNTIL nor COUNT = infinite recurrence → always exceeds horizon
         $this->logger->info("RoomVox: Recurring event without UNTIL or COUNT — exceeds horizon");
         return false;
+    }
+
+    /**
+     * The occurrences of an incoming event that still lie ahead, as
+     * [start, end] pairs.
+     *
+     * A single event is one occurrence. A recurring one is expanded with
+     * Sabre's EventIterator over the whole calendar object, the same way
+     * CalDAVService::hasConflict() expands existing series, so EXDATE and
+     * RECURRENCE-ID overrides count (issue #46). Occurrences that have ended
+     * are skipped: editing a series that began long ago must neither use up
+     * the limits below on past dates nor be refused for them. A series with
+     * an end is checked up to that end; one without is checked up to the
+     * room's booking horizon, or a year ahead when there is none.
+     *
+     * @return list<array{0: \DateTimeInterface, 1: \DateTimeInterface}>
+     */
+    private function occurrencesOf(\Sabre\VObject\Document $vCalendar, \Sabre\VObject\Component\VEvent $vEvent, array $room): array {
+        $start = $vEvent->DTSTART ? $vEvent->DTSTART->getDateTime() : null;
+        $end = $vEvent->DTEND ? $vEvent->DTEND->getDateTime() : null;
+        if ($start === null || $end === null) {
+            return [];
+        }
+        if (!isset($vEvent->RRULE)) {
+            return [[$start, $end]];
+        }
+
+        $now = new \DateTimeImmutable();
+        $parts = self::rruleParts($vEvent);
+        $horizonDays = (int)($room['maxBookingHorizon'] ?? 0);
+        $limit = null;
+        if ($horizonDays > 0) {
+            $limit = $now->modify('+' . $horizonDays . ' days');
+        } elseif (empty($parts['UNTIL']) && empty($parts['COUNT'])) {
+            $limit = $now->modify('+1 year');
+        }
+
+        $occurrences = [];
+        try {
+            $iter = new \Sabre\VObject\Recur\EventIterator($vCalendar, (string)($vEvent->UID ?? ''));
+            // Straight to the first occurrence that has not ended, so past
+            // dates cannot use up the cap below.
+            $iter->fastForward($now);
+            while ($iter->valid()) {
+                $occStart = $iter->getDtStart();
+                if ($limit !== null && $occStart > $limit) {
+                    break;
+                }
+                $occurrences[] = [$occStart, $iter->getDtEnd() ?? $occStart];
+                if (count($occurrences) >= self::MAX_CHECKED_OCCURRENCES) {
+                    $this->logger->warning('RoomVox: recurring booking ' . ($vEvent->UID ?? '') . ' checked for its next ' . self::MAX_CHECKED_OCCURRENCES . ' occurrences only');
+                    break;
+                }
+                $iter->next();
+            }
+        } catch (\Throwable $e) {
+            $this->logger->warning('RoomVox: could not expand recurring booking ' . ($vEvent->UID ?? '') . ': ' . $e->getMessage());
+            return [[$start, $end]];
+        }
+
+        // Empty when the whole series lies in the past: nothing ahead to check.
+        return $occurrences;
+    }
+
+    /**
+     * The parts of an event's RRULE, upper-cased keys.
+     *
+     * @return array<string, string>
+     */
+    private static function rruleParts(\Sabre\VObject\Component\VEvent $vEvent): array {
+        $parts = [];
+        foreach (explode(';', (string)($vEvent->RRULE ?? '')) as $part) {
+            $kv = explode('=', $part, 2);
+            if (count($kv) === 2) {
+                $parts[strtoupper($kv[0])] = $kv[1];
+            }
+        }
+        return $parts;
+    }
+
+    /**
+     * The dates to name in a decline mail: none for a single event, whose
+     * date the mail shows already, otherwise the offending occurrences. A
+     * series counts as one even with a single date left ahead; the mail's
+     * own date is then the series' first, which may lie in the past.
+     *
+     * @param list<array{0: \DateTimeInterface, 1: \DateTimeInterface}> $offending
+     * @return list<\DateTimeInterface>
+     */
+    private function listedDates(array $offending, \Sabre\VObject\Component\VEvent $vEvent): array {
+        return isset($vEvent->RRULE) ? array_map(fn (array $o) => $o[0], $offending) : [];
     }
 
     /**

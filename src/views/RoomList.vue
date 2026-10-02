@@ -66,7 +66,7 @@
                     <NcCounterBubble v-if="filteredGroupRooms(group.id).length > 0" class="room-group__count" :count="filteredGroupRooms(group.id).length" />
                     <span class="room-group__spacer" />
                     <div class="room-group__actions" @click.stop>
-                        <NcActions>
+                        <NcActions :aria-label="t('roomvox', 'Actions for group {name}', { name: group.name }, asText)">
                             <NcActionButton @click="$emit('edit-group', group)">
                                 <template #icon>
                                     <Pencil :size="20" />
@@ -161,7 +161,7 @@
                                             no-close />
                                     </td>
                                     <td class="td-actions" @click.stop>
-                                        <NcActions>
+                                        <NcActions :aria-label="t('roomvox', 'Actions for room {name}', { name: room.name }, asText)">
                                             <NcActionButton @click="$emit('select', room)">
                                                 <template #icon>
                                                     <Pencil :size="20" />
@@ -285,7 +285,7 @@
                                             no-close />
                                     </td>
                                     <td class="td-actions" @click.stop>
-                                        <NcActions>
+                                        <NcActions :aria-label="t('roomvox', 'Actions for room {name}', { name: room.name }, asText)">
                                             <NcActionButton @click="$emit('select', room)">
                                                 <template #icon>
                                                     <Pencil :size="20" />
@@ -336,7 +336,13 @@ import ChevronDown from 'vue-material-design-icons/ChevronDown.vue'
 import ChevronRight from 'vue-material-design-icons/ChevronRight.vue'
 import FolderMove from 'vue-material-design-icons/FolderMove.vue'
 import Check from 'vue-material-design-icons/Check.vue'
-const t = (app, text, vars = {}) => translate(app, text, vars)
+// translate() HTML-escapes placeholder values and runs the result through
+// DOMPurify by default, both for v-html. Vue escapes again when it renders
+// text or binds an attribute, so user data such as a room name would show as
+// "&amp;" or lose anything that looks like a tag. Text uses asText instead;
+// nothing in the app renders translations with v-html.
+const asText = { escape: false, sanitize: false }
+const t = (app, text, vars = {}, options = undefined) => translate(app, text, vars, undefined, options)
 
 const props = defineProps({
     rooms: { type: Array, default: () => [] },
@@ -591,16 +597,42 @@ const handleMoveToGroup = (room, groupId) => {
 .room-list__table col.col-capacity { width: 9%; }
 .room-list__table col.col-auto { width: 10%; }
 .room-list__table col.col-status { width: 9%; }
-.room-list__table col.col-actions { width: 6%; }
+.room-list__table col.col-actions {
+    /* The action menu's button plus the cell padding; a percentage made the
+       column narrower than the button, and the cell's ellipsis showed "…"
+       beside it. */
+    width: calc(var(--default-clickable-area) + 4 * var(--default-grid-baseline));
+}
+
+/* Below roughly a tablet the eight percentage columns squeeze the room name
+   into a few dozen pixels — measured at 390px wide: 78px of space for 300px of
+   name. Give the table a floor width and let it scroll inside its own card
+   instead, so the columns stay readable and the page itself never moves
+   sideways. */
+@media (max-width: 1024px) {
+    .room-list__card {
+        overflow-x: auto;
+    }
+
+    .room-list__table {
+        min-width: 900px;
+    }
+}
 
 .room-list__table th {
-    text-align: left;
+    text-align: start;
     padding: 12px;
     background: var(--color-background-dark);
-    font-weight: 600;
+    font-weight: var(--font-weight-element);
     color: var(--color-text-maxcontrast);
-    font-size: 13px;
+    font-size: var(--font-size-small);
     border-bottom: 1px solid var(--color-border);
+    /* With table-layout: fixed a heading gets its column's width and no more;
+       it wraps inside it instead of running into the next one (measured in
+       Dutch: "Auto-accepteren" over "Status"). */
+    white-space: normal;
+    overflow-wrap: anywhere;
+    hyphens: manual;
 }
 
 .room-list__table th:has(.th-sortable) {
@@ -609,7 +641,8 @@ const handleMoveToGroup = (room, groupId) => {
 }
 
 .th-sortable {
-    display: inline-flex;
+    display: flex;
+    min-width: 0;
     align-items: center;
     gap: 4px;
 }
@@ -646,6 +679,8 @@ const handleMoveToGroup = (room, groupId) => {
 
 .td-actions {
     text-align: center;
+    padding-inline: calc(2 * var(--default-grid-baseline)) !important;
+    text-overflow: clip !important;
 }
 
 .room-name {

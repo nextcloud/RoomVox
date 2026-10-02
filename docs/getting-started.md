@@ -23,7 +23,7 @@ Before creating rooms, review the app settings:
 2. Set **Default auto-accept** — toggle whether new rooms auto-accept bookings by default
 3. Enable **Email notifications** — turn on booking confirmation and approval emails
 4. Configure **Room types** — add or modify room types (meeting room, studio, lecture hall, etc.)
-5. Review **Telemetry** — anonymous usage data is enabled by default ([details](admin/telemetry.md))
+5. Decide on **usage statistics** — off until an administrator agrees; you are asked in the notification bell ([details](admin/telemetry.md))
 
 ![Settings — general options and room types](../screenshots/settings.png)
 

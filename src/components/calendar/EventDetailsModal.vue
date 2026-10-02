@@ -242,7 +242,7 @@ async function executeDelete(mode) {
     loading.value = true
     try {
         await deleteBooking(props.booking.roomId, props.booking.uid, recurrenceId)
-        showSuccess(mode === 'occurrence' ? t('roomvox', 'Occurrence cancelled') : t('roomvox', 'Booking cancelled'))
+        showSuccess(mode === 'occurrence' ? t('roomvox', 'Occurrence canceled') : t('roomvox', 'Booking canceled'))
         showDeleteDialog.value = false
         emit('deleted')
     } catch (e) {
@@ -281,19 +281,22 @@ async function executeDelete(mode) {
     text-transform: uppercase;
 }
 
+/* --color-success / --color-warning are already the light badge backgrounds in
+   Nextcloud's palette, paired with the -text variant for the foreground. Both
+   flip with the theme, so no dark-mode override is needed. */
 .status-accepted {
-    background: rgba(70, 186, 97, 0.15);
-    color: #2d7b43;
+    background: var(--color-success);
+    color: var(--color-success-text);
 }
 
 .status-pending {
-    background: rgba(255, 193, 7, 0.15);
-    color: #8a6d3b;
+    background: var(--color-warning);
+    color: var(--color-warning-text);
 }
 
 .status-declined {
-    background: rgba(200, 200, 200, 0.3);
-    color: #666;
+    background: var(--color-background-dark);
+    color: var(--color-text-maxcontrast);
 }
 
 .event-info {
@@ -343,16 +346,8 @@ async function executeDelete(mode) {
     flex: 1;
 }
 
-/* Dark theme support */
-[data-themes*="dark"] .status-accepted,
-.theme--dark .status-accepted {
-    color: #6dd38d;
-}
-
-[data-themes*="dark"] .status-pending,
-.theme--dark .status-pending {
-    color: #ffd54f;
-}
+/* No dark-theme overrides needed: the status colours above are Nextcloud
+   theme tokens, which already carry the right value per theme. */
 
 /* Cancel-booking dialog: allow action buttons to wrap on narrow widths or
    long translations (e.g. NL/DE/FR labels) instead of being truncated. */

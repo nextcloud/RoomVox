@@ -6,6 +6,7 @@ namespace OCA\RoomVox\Middleware;
 
 use OCA\RoomVox\Service\ApiTokenService;
 use OCP\AppFramework\Http\JSONResponse;
+use OCP\AppFramework\Http\Response;
 use OCP\AppFramework\Middleware;
 use OCP\IRequest;
 
@@ -31,6 +32,11 @@ class ApiTokenMiddleware extends Middleware {
     public function beforeController(mixed $controller, string $methodName): void {
         // Only apply to PublicApiController
         if (!($controller instanceof \OCA\RoomVox\Controller\PublicApiController)) {
+            return;
+        }
+
+        // Browsers send preflight requests without a Bearer token.
+        if ($methodName === 'preflight' && $this->request->getMethod() === 'OPTIONS') {
             return;
         }
 
@@ -60,11 +66,22 @@ class ApiTokenMiddleware extends Middleware {
         $this->validatedToken = $token;
     }
 
+    public function afterController(mixed $controller, string $methodName, Response $response): Response {
+        if ($controller instanceof \OCA\RoomVox\Controller\PublicApiController) {
+            $response->addHeader('Access-Control-Allow-Origin', '*');
+        }
+
+        return $response;
+    }
+
     public function afterException(mixed $controller, string $methodName, \Exception $exception): JSONResponse {
         if ($exception instanceof ApiTokenException) {
             return new JSONResponse(
                 ['error' => $exception->getMessage()],
-                $exception->getHttpCode()
+                $exception->getHttpCode(),
+                $controller instanceof \OCA\RoomVox\Controller\PublicApiController
+                    ? ['Access-Control-Allow-Origin' => '*']
+                    : []
             );
         }
 

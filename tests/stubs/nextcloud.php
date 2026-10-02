@@ -14,6 +14,11 @@ if (!class_exists(\OCP\AppFramework\Controller::class)) {
         public function __construct(string $appName, \OCP\IRequest $request) {
             $this->request = $request;
         }
+
+        // Called by OCP's OCSController constructor; output formats are not
+        // exercised by the unit suite.
+        protected function registerResponder(string $format, \Closure $responder): void {
+        }
     }
 }
 
@@ -23,10 +28,12 @@ if (!class_exists(\OCP\AppFramework\Http\JSONResponse::class)) {
     class JSONResponse {
         private mixed $data;
         private int $status;
+        private array $headers;
 
-        public function __construct(mixed $data = [], int $status = 200) {
+        public function __construct(mixed $data = [], int $status = 200, array $headers = []) {
             $this->data = $data;
             $this->status = $status;
+            $this->headers = $headers;
         }
 
         public function getData(): mixed {
@@ -35,6 +42,10 @@ if (!class_exists(\OCP\AppFramework\Http\JSONResponse::class)) {
 
         public function getStatus(): int {
             return $this->status;
+        }
+
+        public function getHeaders(): array {
+            return $this->headers;
         }
     }
 }

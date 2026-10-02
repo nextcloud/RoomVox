@@ -124,7 +124,7 @@ class MailServiceBodiesTest extends TestCase {
         $room = ['name' => 'Room A'];
         $body = $this->callBody('buildRespondCancelledBody', $room, $this->sampleEvent(), null);
 
-        $this->assertStringContainsString('Your booking has been cancelled', $body);
+        $this->assertStringContainsString('Your booking has been canceled', $body);
         $this->assertStringContainsString('Room A', $body);
         $this->assertStringContainsString('Weekly standup', $body);
         $this->assertStringNotContainsString('single occurrence', $body);
@@ -144,5 +144,55 @@ class MailServiceBodiesTest extends TestCase {
         $this->assertStringContainsString('Monday, June 10, 2026 09:00', $body);
         $this->assertStringContainsString('series continues', $body);
         $this->assertStringContainsString('Room A', $body);
+    }
+
+    // ── Recurring bookings (issue #46) ─────────────────────────────
+
+    public function testSeriesConflictListsTheConflictingDates(): void {
+        $body = $this->callBody('buildConflictBody', ['name' => 'Room 1'], $this->sampleEvent(), [
+            new \DateTimeImmutable('2026-10-19T08:00:00Z'),
+            new \DateTimeImmutable('2026-11-02T09:00:00Z'),
+        ]);
+
+        $this->assertStringContainsString("Conflicting dates:\n- Monday, October 19, 2026 08:00 (UTC)\n- Monday, November 2, 2026 09:00 (UTC)\n", $body);
+        $this->assertStringContainsString('the whole series was declined', $body);
+    }
+
+    public function testLongListsAreCutOffWithACount(): void {
+        $dates = [];
+        for ($week = 0; $week < 13; $week++) {
+            $dates[] = new \DateTimeImmutable('2026-10-05T08:00:00Z +' . $week . ' weeks');
+        }
+
+        $body = $this->callBody('buildConflictBody', ['name' => 'Room 1'], $this->sampleEvent(), $dates);
+
+        $this->assertSame(10, substr_count($body, "\n- "));
+        $this->assertStringContainsString('and 3 more dates', $body);
+    }
+
+    /** An all-day series is listed as dates, not shifted to 02:00 or the day before. */
+    public function testAllDaySeriesDatesAreListedAsDates(): void {
+        $event = $this->sampleEvent() + ['allDay' => true, 'wallClock' => true];
+
+        $body = $this->callBody('buildConflictBody', ['name' => 'Room 1'], $event, [
+            new \DateTimeImmutable('2026-10-19T00:00:00Z'),
+        ]);
+
+        $this->assertStringContainsString("- Monday, October 19, 2026\n", $body);
+    }
+
+    public function testSingleConflictKeepsTheOriginalWording(): void {
+        $body = $this->callBody('buildConflictBody', ['name' => 'Room 1'], $this->sampleEvent());
+
+        $this->assertStringContainsString('The room is already booked for this time slot.', $body);
+        $this->assertStringNotContainsString('Conflicting dates', $body);
+    }
+
+    public function testAvailabilityViolationListsTheDatesOutsideTheHours(): void {
+        $body = $this->callBody('buildAvailabilityViolationBody', ['name' => 'Room 1'], $this->sampleEvent(), [
+            new \DateTimeImmutable('2026-10-17T08:00:00Z'),
+        ]);
+
+        $this->assertStringContainsString("Dates outside the availability hours:\n- Saturday, October 17, 2026 08:00 (UTC)\n", $body);
     }
 }

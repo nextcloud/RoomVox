@@ -44,5 +44,5 @@ export function subscriptionNudge(stats) {
 		return null
 	}
 
-	return t('roomvox', 'RoomVox is running for {count} users here and keeps working in full without a subscription. If your organisation gets value from it, a subscription is much appreciated — it funds the maintenance. Sold through Nextcloud: contact your account manager or sales@nextcloud.com.', { count: users })
+	return t('roomvox', 'RoomVox is running for {count} users here and keeps working in full without a subscription. If your organization gets value from it, a subscription is much appreciated — it funds the maintenance. Sold through Nextcloud: contact your account manager or sales@nextcloud.com.', { count: users })
 }

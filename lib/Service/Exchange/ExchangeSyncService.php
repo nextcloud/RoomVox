@@ -478,8 +478,29 @@ class ExchangeSyncService {
         \DateTimeInterface $end,
         ?string $excludeUid = null,
     ): bool {
+        // Fail open: an unreachable Exchange must not block local bookings.
+        return ($this->exchangeBusyIntervals($room, $start, $end, $excludeUid) ?? []) !== [];
+    }
+
+    /**
+     * The blocking Exchange events of a room between $start and $end, as
+     * [start, end] pairs, leaving out the event being updated.
+     *
+     * One calendarView query, paged, so a recurring booking can be checked
+     * against all of its dates at once rather than with one Graph call per
+     * date (issue #46). Free and cancelled events do not block.
+     *
+     * @return list<array{0: \DateTimeImmutable, 1: \DateTimeImmutable}>|null
+     *         null when Exchange could not be asked
+     */
+    public function exchangeBusyIntervals(
+        array $room,
+        \DateTimeInterface $start,
+        \DateTimeInterface $end,
+        ?string $excludeUid = null,
+    ): ?array {
         if (!$this->isExchangeRoom($room)) {
-            return false;
+            return [];
         }
 
         $resourceEmail = $room['exchangeConfig']['resourceEmail'];
@@ -492,56 +513,79 @@ class ExchangeSyncService {
             $excludeExchangeId = $this->getExchangeEventId($room, $excludeUid);
         }
 
+        $utc = new \DateTimeZone('UTC');
+        $busy = [];
+
         try {
-            $result = $this->graphClient->get(
+            $response = $this->graphClient->get(
                 '/users/' . urlencode($resourceEmail) . '/calendarView',
                 [
-                    'startDateTime' => $start->format('Y-m-d\TH:i:s\Z'),
-                    'endDateTime' => $end->format('Y-m-d\TH:i:s\Z'),
+                    'startDateTime' => \DateTimeImmutable::createFromInterface($start)->setTimezone($utc)->format('Y-m-d\TH:i:s\Z'),
+                    'endDateTime' => \DateTimeImmutable::createFromInterface($end)->setTimezone($utc)->format('Y-m-d\TH:i:s\Z'),
                     '$select' => 'id,subject,start,end,isCancelled,showAs,singleValueExtendedProperties',
                     '$expand' => 'singleValueExtendedProperties($filter=id eq \'' . GraphApiClient::ROOMVOX_UID_PROP . '\')',
                     '$top' => '50',
                 ]
             );
 
-            $events = $result['value'] ?? [];
-            foreach ($events as $event) {
-                if ($event['isCancelled'] ?? false) {
-                    continue;
-                }
-
-                // Skip events that don't block the calendar
-                $showAs = $event['showAs'] ?? 'busy';
-                if ($showAs === 'free') {
-                    continue;
-                }
-
-                // Skip the event being updated — match by RoomVox UID extended property
-                if ($excludeUid !== null) {
-                    $props = $event['singleValueExtendedProperties'] ?? [];
-                    foreach ($props as $prop) {
-                        if ($prop['id'] === GraphApiClient::ROOMVOX_UID_PROP && $prop['value'] === $excludeUid) {
-                            continue 2;
-                        }
-                    }
-                }
-
-                // Also skip by Exchange event ID (for events where the extended
-                // property wasn't set, e.g. auto-accepted by Exchange)
-                if ($excludeExchangeId !== null) {
-                    $eventId = $event['id'] ?? '';
-                    if ($eventId === $excludeExchangeId) {
+            while (true) {
+                foreach ($response['value'] ?? [] as $event) {
+                    if ($event['isCancelled'] ?? false) {
                         continue;
                     }
+
+                    // Skip events that don't block the calendar
+                    if (($event['showAs'] ?? 'busy') === 'free') {
+                        continue;
+                    }
+
+                    // Skip the event being updated — match by RoomVox UID extended property
+                    if ($excludeUid !== null) {
+                        foreach ($event['singleValueExtendedProperties'] ?? [] as $prop) {
+                            if ($prop['id'] === GraphApiClient::ROOMVOX_UID_PROP && $prop['value'] === $excludeUid) {
+                                continue 2;
+                            }
+                        }
+                    }
+
+                    // Also skip by Exchange event ID (for events where the extended
+                    // property wasn't set, e.g. auto-accepted by Exchange)
+                    if ($excludeExchangeId !== null && ($event['id'] ?? '') === $excludeExchangeId) {
+                        continue;
+                    }
+
+                    $busy[] = [
+                        $this->graphTime($event['start'] ?? null) ?? \DateTimeImmutable::createFromInterface($start),
+                        $this->graphTime($event['end'] ?? null) ?? \DateTimeImmutable::createFromInterface($end),
+                    ];
                 }
 
-                return true; // Found a conflicting event
+                $next = $response['@odata.nextLink'] ?? null;
+                if ($next === null) {
+                    break;
+                }
+                $response = $this->graphClient->getUrl($next);
             }
 
-            return false;
+            return $busy;
         } catch (ExchangeApiException $e) {
             $this->logger->warning("ExchangeSync: Conflict check failed for room {$room['id']}, falling back to local-only: " . $e->getMessage());
-            return false; // Fail open: don't block booking if Exchange is unreachable
+            return null;
+        }
+    }
+
+    /**
+     * A Graph dateTimeTimeZone value, which is UTC unless a Prefer header
+     * asked otherwise.
+     */
+    private function graphTime(?array $value): ?\DateTimeImmutable {
+        if (empty($value['dateTime'])) {
+            return null;
+        }
+        try {
+            return new \DateTimeImmutable($value['dateTime'], new \DateTimeZone($value['timeZone'] ?? 'UTC'));
+        } catch (\Exception $e) {
+            return null;
         }
     }
 

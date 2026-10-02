@@ -503,13 +503,13 @@ watch(() => props.rooms, () => {
 }
 
 :deep(.event-accepted) {
-    background: rgba(70, 186, 97, 0.9) !important;
-    color: white;
+    background: var(--color-success) !important;
+    color: var(--color-success-text);
 }
 
 :deep(.event-pending) {
-    background: rgba(255, 193, 7, 0.9) !important;
-    color: #333;
+    background: var(--color-warning) !important;
+    color: var(--color-warning-text);
 }
 
 :deep(.event-declined) {
@@ -532,17 +532,8 @@ watch(() => props.rooms, () => {
     border-color: var(--color-error);
 }
 
-/* Dark theme support */
-[data-themes*="dark"] :deep(.event-accepted),
-.theme--dark :deep(.event-accepted) {
-    background: rgba(70, 186, 97, 0.8) !important;
-}
-
-[data-themes*="dark"] :deep(.event-pending),
-.theme--dark :deep(.event-pending) {
-    background: rgba(255, 193, 7, 0.8) !important;
-    color: white;
-}
+/* No dark-theme overrides needed: the status colours above are Nextcloud
+   theme tokens, which already carry the right value per theme. */
 
 /* Responsive */
 @media (max-width: 768px) {

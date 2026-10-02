@@ -9,8 +9,10 @@ use OCA\RoomVox\Middleware\ApiTokenMiddleware;
 use OCA\RoomVox\Service\ApiTokenService;
 use OCA\RoomVox\Service\CalDAVService;
 use OCA\RoomVox\Service\Exchange\ExchangeSyncService;
+use OCA\RoomVox\Service\InstanceTimezone;
 use OCA\RoomVox\Service\MailService;
 use OCA\RoomVox\Service\RoomService;
+use OCP\IConfig;
 use OCP\IRequest;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -64,6 +66,7 @@ class PublicApiConflictTest extends TestCase {
             $tokenMiddleware,
             $tokenService,
             $logger,
+            new InstanceTimezone($this->createMock(IConfig::class)),
         );
     }
 

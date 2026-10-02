@@ -29,21 +29,25 @@ No separate booking portal needed. Rooms appear directly in the calendar app you
 * Mozilla Thunderbird
 * eM Client
     ]]></description>
-    <version>1.5.0</version>
+    <version>1.6.0</version>
     <licence>agpl</licence>
     <author mail="info@voxcloud.nl" homepage="https://voxcloud.nl">VoxCloud</author>
     <namespace>RoomVox</namespace>
-    <category>organization</category>
-    <category>office</category>
-    <bugs>https://github.com/nextcloud/roomvox/issues</bugs>
-    <repository type="git">https://github.com/nextcloud/roomvox.git</repository>
-    <discussion>https://github.com/nextcloud/roomvox/discussions</discussion>
-    <website>https://voxcloud.nl</website>
+    <types>
+        <authentication/>
+        <dav/>
+    </types>
     <documentation>
-        <admin>https://github.com/nextcloud/roomvox/blob/main/docs/admin/guide.md</admin>
         <user>https://github.com/nextcloud/roomvox/blob/main/docs/user/overview.md</user>
+        <admin>https://github.com/nextcloud/roomvox/blob/main/docs/admin/guide.md</admin>
         <developer>https://github.com/nextcloud/roomvox/blob/main/docs/architecture/overview.md</developer>
     </documentation>
+    <category>organization</category>
+    <category>office</category>
+    <website>https://voxcloud.nl</website>
+    <discussion>https://github.com/nextcloud/roomvox/discussions</discussion>
+    <bugs>https://github.com/nextcloud/roomvox/issues</bugs>
+    <repository type="git">https://github.com/nextcloud/roomvox.git</repository>
     <screenshot>https://raw.githubusercontent.com/nextcloud/roomvox/main/screenshots/rooms-overview.png</screenshot>
     <screenshot>https://raw.githubusercontent.com/nextcloud/roomvox/main/screenshots/bookroom-filter.png</screenshot>
     <screenshot>https://raw.githubusercontent.com/nextcloud/roomvox/main/screenshots/bookings-overview-list.png</screenshot>
@@ -51,19 +55,9 @@ No separate booking portal needed. Rooms appear directly in the calendar app you
     <screenshot>https://raw.githubusercontent.com/nextcloud/roomvox/main/screenshots/import-rooms.png</screenshot>
     <screenshot>https://raw.githubusercontent.com/nextcloud/roomvox/main/screenshots/confirmation-email.png</screenshot>
     <dependencies>
-        <nextcloud min-version="32" max-version="35"/>
         <php min-version="8.2"/>
+        <nextcloud min-version="32" max-version="35"/>
     </dependencies>
-    <types>
-        <dav/>
-        <authentication/>
-    </types>
-    <settings>
-        <admin>OCA\RoomVox\Settings\AdminSettings</admin>
-        <admin-section>OCA\RoomVox\Settings\AdminSection</admin-section>
-        <personal>OCA\RoomVox\Settings\PersonalSettings</personal>
-        <personal-section>OCA\RoomVox\Settings\PersonalSection</personal-section>
-    </settings>
     <background-jobs>
         <job>OCA\RoomVox\BackgroundJob\LicenseUsageJob</job>
         <job>OCA\RoomVox\BackgroundJob\TelemetryJob</job>
@@ -71,4 +65,19 @@ No separate booking portal needed. Rooms appear directly in the calendar app you
         <job>OCA\RoomVox\BackgroundJob\WebhookRenewalJob</job>
         <job>OCA\RoomVox\BackgroundJob\InitialExchangeSyncJob</job>
     </background-jobs>
+    <repair-steps>
+        <post-migration>
+            <step>OCA\RoomVox\Migration\MoveBookingsToRoomCalendars</step>
+            <step>OCA\RoomVox\Migration\QueueTelemetryConsent</step>
+        </post-migration>
+        <install>
+            <step>OCA\RoomVox\Migration\QueueTelemetryConsent</step>
+        </install>
+    </repair-steps>
+    <settings>
+        <admin>OCA\RoomVox\Settings\AdminSettings</admin>
+        <admin-section>OCA\RoomVox\Settings\AdminSection</admin-section>
+        <personal>OCA\RoomVox\Settings\PersonalSettings</personal>
+        <personal-section>OCA\RoomVox\Settings\PersonalSection</personal-section>
+    </settings>
 </info>

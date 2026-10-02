@@ -6,13 +6,18 @@ namespace OCA\RoomVox\Service;
 
 use OCA\DAV\CalDAV\CalDavBackend;
 use OCA\RoomVox\Service\Exchange\ExchangeSyncService;
+use OCP\Calendar\Room\IManager as IRoomManager;
 use OCP\IUserManager;
 use Psr\Log\LoggerInterface;
 use Sabre\VObject\Reader;
 
 class CalDAVService {
+    /** The uri of the calendar Nextcloud creates for a room resource */
+    public const ROOM_CALENDAR_URI = 'calendar';
+
     private ?ExchangeSyncService $exchangeSyncService = null;
     private ?RoomService $roomService = null;
+    private ?IRoomManager $roomManager = null;
 
     /** @var array<string, string> Cached roomUserId → lowercase room email */
     private array $roomEmailByUserId = [];
@@ -30,6 +35,14 @@ class CalDAVService {
      */
     public function setExchangeSyncService(ExchangeSyncService $service): void {
         $this->exchangeSyncService = $service;
+    }
+
+    /**
+     * Set Nextcloud's room manager, which creates room calendars.
+     * Called via late injection from Application::boot().
+     */
+    public function setRoomManager(IRoomManager $roomManager): void {
+        $this->roomManager = $roomManager;
     }
 
     /**
@@ -108,45 +121,143 @@ class CalDAVService {
     }
 
     /**
-     * Create a calendar for a room service account
+     * Give a newly created room its calendar, and return the calendar's uri.
+     *
+     * A room's bookings live in the calendar Nextcloud keeps for the room
+     * resource, principals/calendar-rooms/roomvox-<id>. Nextcloud creates it
+     * when it syncs the room backends, and that sync stops with an error when
+     * a calendar with that uri already exists, so RoomVox asks for the sync
+     * instead of creating the calendar itself. RoomVox used to provision a
+     * calendar of its own under principals/users/rb_<id> as well; bookings
+     * landed there until Nextcloud's appeared and were invisible from then on.
+     *
+     * The room is new, so a calendar that is already there belongs to an
+     * earlier room with the same id whose removal never reached Nextcloud.
+     * It is emptied rather than deleted: Nextcloud still knows the id, so it
+     * would not create the calendar again.
+     *
+     * @throws \RuntimeException When there is no calendar afterwards
      */
-    public function provisionCalendar(string $roomUserId, string $roomName): string {
-        $principalUri = 'principals/users/' . $roomUserId;
-        $calendarUri = 'room-' . $roomUserId;
+    public function provisionCalendar(string $roomUserId): string {
+        $calendarId = $this->getRoomCalendarId($roomUserId);
 
-        try {
-            $this->calDavBackend->createCalendar(
-                $principalUri,
-                $calendarUri,
-                [
-                    '{DAV:}displayname' => $roomName,
-                    '{http://apple.com/ns/ical/}calendar-color' => '#2E86C1',
-                    '{urn:ietf:params:xml:ns:caldav}schedule-calendar-transp'
-                        => new \Sabre\CalDAV\Xml\Property\ScheduleCalendarTransp('opaque'),
-                ]
-            );
-
-            $this->logger->info("Calendar provisioned for room: {$roomUserId} (uri: {$calendarUri})");
-        } catch (\Exception $e) {
-            $this->logger->error("Failed to provision calendar for {$roomUserId}: " . $e->getMessage());
-            throw $e;
+        if ($calendarId !== null) {
+            $leftover = $this->calDavBackend->getCalendarObjects($calendarId);
+            if ($leftover !== []) {
+                $this->logger->warning('RoomVox: new room ' . $roomUserId . ' inherited a calendar with ' . count($leftover) . ' objects; removing them');
+                foreach ($leftover as $object) {
+                    $this->calDavBackend->deleteCalendarObject($calendarId, $object['uri'], CalDavBackend::CALENDAR_TYPE_CALENDAR, true);
+                }
+            }
+        } else {
+            if ($this->roomManager === null) {
+                throw new \RuntimeException('Cannot provision a calendar for room ' . $roomUserId . ': the room manager is not available');
+            }
+            $this->roomManager->update();
+            $calendarId = $this->getRoomCalendarId($roomUserId);
         }
 
-        return $calendarUri;
+        if ($calendarId === null) {
+            throw new \RuntimeException('Nextcloud did not create a calendar for room ' . $roomUserId);
+        }
+
+        $this->logger->info("Calendar ready for room: {$roomUserId}");
+        return self::ROOM_CALENDAR_URI;
     }
 
     /**
-     * Delete the calendar for a room
+     * Move bookings out of the calendar RoomVox used to provision itself.
+     *
+     * Rooms created before RoomVox relied on Nextcloud's room calendar alone
+     * can have bookings in principals/users/rb_<id>, made before Nextcloud's
+     * calendar existed; RoomVox has not read that calendar since. They are
+     * copied into the room calendar, unless an event with the same UID is
+     * already there, and each original is deleted only once its copy exists.
+     * A booking that cannot be moved stays where it is and keeps the old
+     * calendar from being deleted, so nothing is lost and a later run can
+     * retry. Safe to run more than once.
+     *
+     * UIDs are compared as Nextcloud parsed and stored them, not read from
+     * the iCalendar text, where long ones are folded over several lines.
+     *
+     * @return array{moved: int, skipped: int, failed: int} skipped = UID already present
+     */
+    public function moveLegacyBookings(string $roomUserId): array {
+        $result = ['moved' => 0, 'skipped' => 0, 'failed' => 0];
+
+        $legacyId = $this->getCalendarId($roomUserId);
+        $roomCalendarId = $this->getRoomCalendarId($roomUserId);
+        if ($legacyId === null || $roomCalendarId === null || $legacyId === $roomCalendarId) {
+            return $result;
+        }
+
+        $presentUids = [];
+        foreach ($this->calDavBackend->getCalendarObjects($roomCalendarId) as $object) {
+            $uid = $this->calDavBackend->getCalendarObject($roomCalendarId, $object['uri'])['uid'] ?? null;
+            if ($uid !== null && $uid !== '') {
+                $presentUids[$uid] = true;
+            }
+        }
+
+        foreach ($this->calDavBackend->getCalendarObjects($legacyId) as $object) {
+            try {
+                $full = $this->calDavBackend->getCalendarObject($legacyId, $object['uri']);
+                if ($full === null) {
+                    continue;
+                }
+                $uid = $full['uid'] ?? null;
+
+                if ($uid !== null && $uid !== '' && isset($presentUids[$uid])) {
+                    $this->logger->warning("RoomVox: booking {$uid} of {$roomUserId} exists in both calendars; keeping the room calendar's copy");
+                    $result['skipped']++;
+                } else {
+                    $this->calDavBackend->createCalendarObject($roomCalendarId, $object['uri'], $full['calendardata'] ?? '');
+                    $result['moved']++;
+                }
+                $this->calDavBackend->deleteCalendarObject($legacyId, $object['uri'], CalDavBackend::CALENDAR_TYPE_CALENDAR, true);
+            } catch (\Throwable $e) {
+                $this->logger->error("RoomVox: could not move booking {$object['uri']} of {$roomUserId}; it stays in the old calendar: " . $e->getMessage());
+                $result['failed']++;
+            }
+        }
+
+        if ($result['failed'] === 0) {
+            $this->calDavBackend->deleteCalendar($legacyId, true);
+        }
+        if ($result['moved'] > 0 || $result['skipped'] > 0 || $result['failed'] > 0) {
+            $this->logger->info("RoomVox: {$roomUserId}: moved {$result['moved']} bookings into the room calendar, {$result['skipped']} already there, {$result['failed']} failed");
+        }
+
+        return $result;
+    }
+
+    /**
+     * Remove a deleted room's bookings and calendars.
+     *
+     * The calendar RoomVox used to provision under the room's user principal
+     * is deleted permanently: a soft delete would keep its slot and block a
+     * room recreated with the same id (issue #44). Nextcloud's room calendar
+     * is only emptied. Nextcloud deletes it itself once the room has left the
+     * backend, and if RoomVox deleted it first and the same id came back
+     * before Nextcloud synced, Nextcloud would not create it again.
      */
     public function deleteCalendar(string $roomUserId): void {
-        $calendarId = $this->getCalendarId($roomUserId);
-        if ($calendarId === null) {
+        $legacyId = $this->getCalendarId($roomUserId);
+        $roomCalendarId = $this->getRoomCalendarId($roomUserId);
+        if ($legacyId === null && $roomCalendarId === null) {
             $this->logger->warning("No calendar found for room: {$roomUserId}");
             return;
         }
 
         try {
-            $this->calDavBackend->deleteCalendar($calendarId);
+            if ($roomCalendarId !== null) {
+                foreach ($this->calDavBackend->getCalendarObjects($roomCalendarId) as $object) {
+                    $this->calDavBackend->deleteCalendarObject($roomCalendarId, $object['uri'], CalDavBackend::CALENDAR_TYPE_CALENDAR, true);
+                }
+            }
+            if ($legacyId !== null) {
+                $this->calDavBackend->deleteCalendar($legacyId, true);
+            }
             $this->logger->info("Calendar deleted for room: {$roomUserId}");
         } catch (\Exception $e) {
             $this->logger->error("Failed to delete calendar for {$roomUserId}: " . $e->getMessage());
@@ -160,6 +271,10 @@ class CalDAVService {
     public function getBookings(string $roomUserId, ?string $from = null, ?string $to = null): array {
         $calendarId = $this->getRoomCalendarId($roomUserId);
         if ($calendarId === null) {
+            // Nothing can be stored in a room without a calendar, so for a
+            // list "no bookings" is true. Callers that would turn an empty list
+            // into "free" check getRoomCalendarId() themselves (issue #44).
+            $this->logger->warning("RoomVox: room {$roomUserId} has no calendar; reporting no bookings");
             return [];
         }
 
@@ -244,6 +359,7 @@ class CalDAVService {
                 $location = (string)($masterEvent->LOCATION ?? '');
 
                 $isAllDay = $this->isAllDayEvent($masterEvent);
+                $isWallClock = self::isWallClock($masterEvent->DTSTART);
 
                 foreach ($vEvents as $evt) {
                     $dtStart = $evt->DTSTART ? $evt->DTSTART->getDateTime() : null;
@@ -273,6 +389,7 @@ class CalDAVService {
                         'dtstart' => $this->formatEventDate($dtStart, $isAllDay),
                         'dtend' => $this->formatEventDate($dtEnd, $isAllDay),
                         'allDay' => $isAllDay,
+                        'wallClock' => $isWallClock,
                         'organizer' => $organizer,
                         'organizerName' => $organizerName,
                         'partstat' => $partstat,
@@ -287,9 +404,11 @@ class CalDAVService {
             }
         }
 
-        // Sort by start date
+        // Sort by start time. Comparing the serialised strings is not
+        // chronological once offsets differ: API bookings are stored in UTC
+        // and come back as +00:00, CalDAV ones keep their own zone (+02:00).
         usort($bookings, function ($a, $b) {
-            return ($a['dtstart'] ?? '') <=> ($b['dtstart'] ?? '');
+            return (int)strtotime($a['dtstart'] ?? '') <=> (int)strtotime($b['dtstart'] ?? '');
         });
 
         return $bookings;
@@ -309,7 +428,16 @@ class CalDAVService {
             return false;
         }
 
-        $dtStart = $vEvent->DTSTART;
+        return self::isDateOnly($vEvent->DTSTART);
+    }
+
+    /**
+     * Is this DTSTART a DATE rather than a DATE-TIME, i.e. an all-day event?
+     */
+    public static function isDateOnly(?\Sabre\VObject\Property $dtStart): bool {
+        if ($dtStart === null) {
+            return false;
+        }
 
         // Preferred: ask the property itself (Sabre\VObject\Property\ICalendar\DateTime).
         if (method_exists($dtStart, 'hasTime')) {
@@ -319,6 +447,24 @@ class CalDAVService {
         // Fallback: the explicit VALUE=DATE parameter.
         $valueType = isset($dtStart['VALUE']) ? strtoupper((string)$dtStart['VALUE']) : '';
         return $valueType === 'DATE';
+    }
+
+    /**
+     * Does this DTSTART hold a wall-clock value rather than an instant?
+     *
+     * True for all-day dates and for floating times (no TZID, no `Z`). Sabre
+     * hands both back as a DateTime in PHP's zone, which under Nextcloud is
+     * UTC, so converting them to another zone would invent a shift: an
+     * all-day booking would start at 02:00 or on the previous day (#27).
+     * Anything that renders these for people has to print them as stored.
+     */
+    public static function isWallClock(?\Sabre\VObject\Property $dtStart): bool {
+        if ($dtStart === null) {
+            return false;
+        }
+
+        return self::isDateOnly($dtStart)
+            || (method_exists($dtStart, 'isFloating') && $dtStart->isFloating());
     }
 
     /**
@@ -512,6 +658,8 @@ class CalDAVService {
                     'organizerName' => $orgName,
                     'dtstart' => $dtStart ? $dtStart->format('c') : null,
                     'dtend' => $dtEnd ? $dtEnd->format('c') : null,
+                    'wallClock' => self::isWallClock($vEvent->DTSTART),
+                    'allDay' => self::isDateOnly($vEvent->DTSTART),
                     'roomEmail' => $roomEmail,
                 ];
             } catch (\Exception $e) {
@@ -943,7 +1091,11 @@ class CalDAVService {
     public function hasConflict(string $roomUserId, \DateTimeInterface $start, \DateTimeInterface $end, ?string $excludeUid = null, ?array $room = null): bool {
         $calendarId = $this->getRoomCalendarId($roomUserId);
         if ($calendarId === null) {
-            return false;
+            // Fail closed: when we cannot look, "no conflict" would let every
+            // booking path through for a room that cannot store a booking at
+            // all (issue #44).
+            $this->logger->warning("RoomVox: room {$roomUserId} has no calendar; treating every slot as taken");
+            return true;
         }
 
         // Use calendarQuery() with time-range filter: DB-level filtering on
@@ -1051,6 +1203,63 @@ class CalDAVService {
     }
 
     /**
+     * The occurrences of a booking that conflict with what is in the room.
+     *
+     * The local calendar is asked per occurrence, which is a database query
+     * each. Exchange is asked once for the whole span of the booking, since a
+     * Graph call per date would take a daily series to hundreds of calls while
+     * the calendar client waits (issue #46). As in hasConflict(), an
+     * unreachable Exchange does not block the booking.
+     *
+     * @param list<array{0: \DateTimeInterface, 1: \DateTimeInterface}> $occurrences
+     * @return list<array{0: \DateTimeInterface, 1: \DateTimeInterface}>
+     */
+    public function findConflicts(string $roomUserId, array $occurrences, ?string $excludeUid = null, ?array $room = null): array {
+        if ($occurrences === []) {
+            return [];
+        }
+
+        $exchangeBusy = [];
+        if ($room !== null && $this->exchangeSyncService !== null) {
+            $first = \DateTimeImmutable::createFromInterface(min(array_map(fn (array $o) => $o[0], $occurrences)));
+            $last = \DateTimeImmutable::createFromInterface(max(array_map(fn (array $o) => $o[1], $occurrences)));
+            // Graph allows a calendarView window of five years at most, and
+            // long windows time out; a failed window would drop the Exchange
+            // check for the whole series. Ask a year at a time.
+            for ($from = $first; $from < $last; $from = $to) {
+                $to = min($from->modify('+1 year'), $last);
+                try {
+                    $busy = $this->exchangeSyncService->exchangeBusyIntervals($room, $from, $to, $excludeUid);
+                } catch (\Throwable $e) {
+                    $busy = null;
+                }
+                if ($busy === null) {
+                    $this->logger->warning("Exchange conflict check failed for {$from->format('c')} – {$to->format('c')} (falling back to local-only)");
+                    continue;
+                }
+                array_push($exchangeBusy, ...$busy);
+            }
+        }
+
+        $conflicts = [];
+        foreach ($occurrences as $occurrence) {
+            [$start, $end] = $occurrence;
+            $clashesOnExchange = false;
+            foreach ($exchangeBusy as [$busyStart, $busyEnd]) {
+                if ($start < $busyEnd && $end > $busyStart) {
+                    $clashesOnExchange = true;
+                    break;
+                }
+            }
+            if ($clashesOnExchange || $this->hasConflict($roomUserId, $start, $end, $excludeUid)) {
+                $conflicts[] = $occurrence;
+            }
+        }
+
+        return $conflicts;
+    }
+
+    /**
      * Get the internal calendar ID for a room's user principal
      * Used for provisioning only.
      */
@@ -1061,12 +1270,24 @@ class CalDAVService {
         $targetUri = 'room-' . $roomUserId;
 
         foreach ($calendars as $calendar) {
-            if (($calendar['uri'] ?? '') === $targetUri) {
+            if (($calendar['uri'] ?? '') === $targetUri && !self::isTrashed($calendar)) {
                 return (int)$calendar['id'];
             }
         }
 
         return null;
+    }
+
+    /**
+     * Is this calendar in Nextcloud's trashbin?
+     *
+     * getCalendarsForUser() returns trashed calendars as well, marked with a
+     * deleted-at property. A room whose only calendar is in the trashbin has
+     * no calendar: counting it made such a room look healthy, and could serve
+     * bookings of the room that was deleted before it (issue #44).
+     */
+    private static function isTrashed(array $calendar): bool {
+        return !empty($calendar['{http://nextcloud.com/ns}deleted-at']);
     }
 
     /**
@@ -1082,12 +1303,16 @@ class CalDAVService {
         $calendars = $this->calDavBackend->getCalendarsForUser($principalUri);
 
         foreach ($calendars as $calendar) {
+            if (self::isTrashed($calendar)) {
+                continue;
+            }
             return (int)$calendar['id'];
         }
 
-        // Fallback: try the user principal calendar
-        $this->logger->debug("No calendar-rooms calendar found for {$roomUserId}, falling back to user principal");
-        return $this->getCalendarId($roomUserId);
+        // No fallback to the calendar RoomVox used to provision under the
+        // room's user principal: reading one calendar and then another split
+        // a room's bookings between them (see provisionCalendar()).
+        return null;
     }
 
     /**
@@ -1262,6 +1487,14 @@ class CalDAVService {
         $roomEmail = $data['roomEmail'] ?? '';
         $autoAccept = $data['autoAccept'] ?? false;
 
+        // The `Z` suffix declares UTC, so the instant has to be converted
+        // first: a request for 09:00+02:00 was written as 09:00Z, i.e. two
+        // hours late (issue #45). Converting copies keeps the caller's
+        // DateTime untouched, since the controller still echoes it back.
+        $utc = new \DateTimeZone('UTC');
+        $startUtc = \DateTimeImmutable::createFromInterface($start)->setTimezone($utc);
+        $endUtc = \DateTimeImmutable::createFromInterface($end)->setTimezone($utc);
+
         // Build iCalendar data
         $icsLines = [
             'BEGIN:VCALENDAR',
@@ -1270,8 +1503,8 @@ class CalDAVService {
             'BEGIN:VEVENT',
             'UID:' . $uid,
             'DTSTAMP:' . gmdate('Ymd\THis\Z'),
-            'DTSTART:' . $start->format('Ymd\THis\Z'),
-            'DTEND:' . $end->format('Ymd\THis\Z'),
+            'DTSTART:' . $startUtc->format('Ymd\THis\Z'),
+            'DTEND:' . $endUtc->format('Ymd\THis\Z'),
             'SUMMARY:' . $this->escapeIcsText($summary),
         ];
 
@@ -1419,6 +1652,8 @@ class CalDAVService {
                 'description' => (string)($vEvent->DESCRIPTION ?? ''),
                 'dtstart' => $vEvent->DTSTART ? $vEvent->DTSTART->getDateTime()->format('c') : null,
                 'dtend' => $vEvent->DTEND ? $vEvent->DTEND->getDateTime()->format('c') : null,
+                'wallClock' => self::isWallClock($vEvent->DTSTART),
+                'allDay' => self::isDateOnly($vEvent->DTSTART),
                 'organizer' => $organizer,
                 'organizerEmail' => $organizerEmail,
                 'organizerName' => $organizerName,

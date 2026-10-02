@@ -101,8 +101,11 @@
                         maxlength="255" />
                 </div>
 
-                <div class="form-field">
-                    <label>{{ t('roomvox', 'Facilities') }}</label>
+                <!-- A bare <label> above a group of switches is announced for
+                     none of them. fieldset/legend is the grouping semantic, so
+                     a screen reader names "Facilities" at every switch. -->
+                <fieldset class="form-field facilities-fieldset">
+                    <legend>{{ t('roomvox', 'Facilities') }}</legend>
                     <div class="facilities-grid">
                         <NcCheckboxRadioSwitch
                             v-for="facility in availableFacilities"
@@ -112,7 +115,7 @@
                             {{ facility.label }}
                         </NcCheckboxRadioSwitch>
                     </div>
-                </div>
+                </fieldset>
 
                 <div class="form-field">
                     <NcCheckboxRadioSwitch :model-value="form.autoAccept" @update:model-value="form.autoAccept = $event">
@@ -978,6 +981,22 @@ const save = () => {
 
 .form-field label {
     display: block;
+    font-weight: 500;
+    margin-bottom: 4px;
+    font-size: 14px;
+}
+
+/* A fieldset carries a browser border and padding of its own; strip them so the
+   grouping is semantic only and the legend reads exactly like the labels above. */
+.facilities-fieldset {
+    border: none;
+    padding: 0;
+    margin-inline: 0;
+    min-inline-size: 0;
+}
+
+.facilities-fieldset legend {
+    padding: 0;
     font-weight: 500;
     margin-bottom: 4px;
     font-size: 14px;

@@ -54,7 +54,7 @@ The `/login` check is deliberate: a broken app can leave `/status.php` answering
 |---|---|---|
 | `ISecureRandom::generate` | `@deprecated 35.0.0` → `Randomizer::getBytesFromString()` | `ApiTokenService`, `RoomService` (4 call sites) |
 | `ICountUsersBackend` | `@deprecated 31.0.0` → `ILimitAwareCountUsersBackend` | [`RoomUserBackend.php`](../../lib/UserBackend/RoomUserBackend.php) |
-| `IConfig::getAppValue` / `setAppValue` / `deleteAppValue` | `@deprecated 29.0.0` → `IAppConfig` | `LicenseService`, `TelemetryService`, `SettingsController` |
+| `IConfig::getAppValue` / `setAppValue` / `deleteAppValue` | `@deprecated 29.0.0` → `IAppConfig` | `LicenseService`, `SettingsController` |
 | `Calendar\Room\IManager::getBackends` | `@deprecated 24.0.0` | One call site |
 
 These are cleanup candidates for a later release, not blockers. All four still function in NC35.

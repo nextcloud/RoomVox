@@ -19,6 +19,9 @@ use Symfony\Component\Mailer\Transport\Smtp\EsmtpTransport;
 use Symfony\Component\Mime\Email;
 
 class MailService {
+    /** Dates named in a decline mail for a series; the rest are counted */
+    private const MAX_LISTED_DATES = 10;
+
     /** @var array<string, IL10N> language code → translator */
     private array $l10nCache = [];
 
@@ -31,6 +34,7 @@ class MailService {
         private IURLGenerator $urlGenerator,
         private LoggerInterface $logger,
         private ?IFactory $l10nFactory = null,
+        private ?InstanceTimezone $instanceTimezone = null,
     ) {
     }
 
@@ -193,7 +197,10 @@ class MailService {
      * Send a decline email when the booking falls outside the room's
      * configured availability hours (issue #7).
      */
-    public function sendAvailabilityViolation(array $room, ITip\Message $message): void {
+    /**
+     * @param list<\DateTimeInterface> $dates For a series: the occurrences outside the hours
+     */
+    public function sendAvailabilityViolation(array $room, ITip\Message $message, array $dates = []): void {
         $eventInfo = $this->extractEventInfo($message);
         if ($eventInfo === null) {
             return;
@@ -201,7 +208,7 @@ class MailService {
 
         $l = $this->getL10nForEmail($eventInfo['organizerEmail']);
         $subject = $l->t('Booking declined: %s — outside availability hours', [$room['name']]);
-        $body = $this->buildAvailabilityViolationBody($l, $room, $eventInfo);
+        $body = $this->buildAvailabilityViolationBody($l, $room, $eventInfo, $dates);
 
         $this->sendMail(
             $room,
@@ -236,7 +243,10 @@ class MailService {
     /**
      * Send conflict notification to the organizer
      */
-    public function sendConflict(array $room, ITip\Message $message): void {
+    /**
+     * @param list<\DateTimeInterface> $dates For a series: the occurrences that conflict
+     */
+    public function sendConflict(array $room, ITip\Message $message, array $dates = []): void {
         $eventInfo = $this->extractEventInfo($message);
         if ($eventInfo === null) {
             return;
@@ -244,7 +254,7 @@ class MailService {
 
         $l = $this->getL10nForEmail($eventInfo['organizerEmail']);
         $subject = $l->t('Booking conflict: %1$s — %2$s', [$room['name'], $eventInfo['summary']]);
-        $body = $this->buildConflictBody($l, $room, $eventInfo);
+        $body = $this->buildConflictBody($l, $room, $eventInfo, $dates);
 
         $this->sendMail(
             $room,
@@ -320,7 +330,7 @@ class MailService {
         $this->sendMail(
             $room,
             $eventInfo['organizerEmail'],
-            $organizerL10n->t('Booking cancelled: %1$s — %2$s', [$room['name'], $eventInfo['summary']]),
+            $organizerL10n->t('Booking canceled: %1$s — %2$s', [$room['name'], $eventInfo['summary']]),
             $this->buildCancelledBody($organizerL10n, $room, $eventInfo),
         );
 
@@ -339,7 +349,7 @@ class MailService {
                 $this->sendMail(
                     $room,
                     $email,
-                    $l->t('Booking cancelled: %1$s — %2$s', [$room['name'], $eventInfo['summary']]),
+                    $l->t('Booking canceled: %1$s — %2$s', [$room['name'], $eventInfo['summary']]),
                     $this->buildCancelledBody($l, $room, $eventInfo),
                 );
             }
@@ -383,22 +393,39 @@ class MailService {
     public function sendRespondCancelled(array $room, array $bookingData, ?string $recurrenceId = null): void {
         $eventInfo = $this->bookingDataToEventInfo($bookingData);
 
-        $occurrenceFormatted = null;
-        if ($recurrenceId !== null) {
-            try {
-                $occurrenceFormatted = (new \DateTimeImmutable($recurrenceId))->format('l, F j, Y H:i');
-            } catch (\Throwable $e) {
-                $occurrenceFormatted = $recurrenceId;
-            }
-        }
+        $occurrenceFormatted = $recurrenceId !== null
+            ? $this->formatOccurrence($recurrenceId, $bookingData)
+            : null;
 
         $l = $this->getL10nForEmail($eventInfo['organizerEmail']);
         $subject = $occurrenceFormatted !== null
-            ? $l->t('Booking cancelled: %1$s — %2$s (single occurrence)', [$room['name'], $eventInfo['summary']])
-            : $l->t('Booking cancelled: %1$s — %2$s', [$room['name'], $eventInfo['summary']]);
+            ? $l->t('Booking canceled: %1$s — %2$s (single occurrence)', [$room['name'], $eventInfo['summary']])
+            : $l->t('Booking canceled: %1$s — %2$s', [$room['name'], $eventInfo['summary']]);
         $body = $this->buildRespondCancelledBody($l, $room, $eventInfo, $occurrenceFormatted);
 
         $this->sendMail($room, $eventInfo['organizerEmail'], $subject, $body);
+    }
+
+    /**
+     * Render one occurrence of a series by its recurrence id.
+     *
+     * The id cannot say what kind of value it is: getBookings() serialises it
+     * with format('c'), so an all-day or floating occurrence arrives with a
+     * `+00:00` like any instant. RFC 5545 requires RECURRENCE-ID to have the
+     * value type of the series' DTSTART, so the series' own flags decide.
+     */
+    private function formatOccurrence(string $recurrenceId, array $bookingData): string {
+        try {
+            [$formatted] = $this->formatEventTimes(
+                new \DateTimeImmutable($recurrenceId),
+                null,
+                !empty($bookingData['wallClock']),
+                !empty($bookingData['allDay']),
+            );
+            return $formatted;
+        } catch (\Throwable $e) {
+            return $recurrenceId;
+        }
     }
 
     /**
@@ -408,6 +435,12 @@ class MailService {
     private function bookingDataToEventInfo(array $data): array {
         $dtStart = !empty($data['dtstart']) ? new \DateTimeImmutable($data['dtstart']) : null;
         $dtEnd = !empty($data['dtend']) ? new \DateTimeImmutable($data['dtend']) : null;
+        [$startFormatted, $endFormatted] = $this->formatEventTimes(
+            $dtStart,
+            $dtEnd,
+            !empty($data['wallClock']),
+            !empty($data['allDay']),
+        );
 
         return [
             'uid' => $data['uid'] ?? '',
@@ -416,9 +449,66 @@ class MailService {
             'organizerName' => $data['organizerName'] ?: ($data['organizerEmail'] ?? ''),
             'dtstart' => $dtStart,
             'dtend' => $dtEnd,
-            'dtstartFormatted' => $dtStart ? $dtStart->format('l, F j, Y H:i') : 'Unknown',
-            'dtendFormatted' => $dtEnd ? $dtEnd->format('H:i') : 'Unknown',
+            'dtstartFormatted' => $startFormatted,
+            'dtendFormatted' => $endFormatted,
         ];
+    }
+
+    /**
+     * Render an event's start and end for a mail.
+     *
+     * Timed events are instants and are shown in the instance timezone, with
+     * its name, because the stored zone says nothing about the reader: an
+     * event stored in UTC used to be mailed as UTC, two hours off for a
+     * booking in Vienna (issue #49). Wall-clock values (all-day, floating;
+     * see CalDAVService::isWallClock()) are printed as stored.
+     *
+     * All-day events have no time worth showing, so they are rendered as
+     * dates. DTEND of an all-day event is exclusive (the day after), so the
+     * last day shown is the one before it. A single day has no end: the
+     * caller prints the start alone.
+     *
+     * @return array{0: string, 1: ?string} start, and end (null for a single all-day date)
+     */
+    private function formatEventTimes(?\DateTimeInterface $start, ?\DateTimeInterface $end, bool $wallClock, bool $allDay = false): array {
+        if ($allDay && $start !== null) {
+            $first = \DateTimeImmutable::createFromInterface($start);
+            $last = $end !== null ? \DateTimeImmutable::createFromInterface($end)->modify('-1 day') : $first;
+
+            return [
+                $first->format('l, F j, Y'),
+                $last->format('Y-m-d') > $first->format('Y-m-d') ? $last->format('l, F j, Y') : null,
+            ];
+        }
+
+        $zone = null;
+        if (!$wallClock) {
+            $zone = $this->instanceTimezone?->get() ?? new \DateTimeZone('UTC');
+        }
+
+        $render = function (?\DateTimeInterface $moment, string $format) use ($zone): string {
+            if ($moment === null) {
+                return 'Unknown';
+            }
+            if ($zone !== null) {
+                $moment = \DateTimeImmutable::createFromInterface($moment)->setTimezone($zone);
+            }
+            return $moment->format($format);
+        };
+
+        $startFormatted = $render($start, 'l, F j, Y H:i');
+        $endFormatted = $render($end, 'H:i');
+
+        if ($zone !== null) {
+            $suffix = ' (' . $zone->getName() . ')';
+            if ($end !== null) {
+                $endFormatted .= $suffix;
+            } elseif ($start !== null) {
+                $startFormatted .= $suffix;
+            }
+        }
+
+        return [$startFormatted, $endFormatted];
     }
 
     /**
@@ -577,6 +667,9 @@ class MailService {
 
         $dtStart = $vEvent->DTSTART ? $vEvent->DTSTART->getDateTime() : null;
         $dtEnd = $vEvent->DTEND ? $vEvent->DTEND->getDateTime() : null;
+        $wallClock = CalDAVService::isWallClock($vEvent->DTSTART);
+        $allDay = CalDAVService::isDateOnly($vEvent->DTSTART);
+        [$startFormatted, $endFormatted] = $this->formatEventTimes($dtStart, $dtEnd, $wallClock, $allDay);
 
         return [
             'uid' => (string)($vEvent->UID ?? ''),
@@ -584,8 +677,10 @@ class MailService {
             'description' => (string)($vEvent->DESCRIPTION ?? ''),
             'dtstart' => $dtStart,
             'dtend' => $dtEnd,
-            'dtstartFormatted' => $dtStart ? $dtStart->format('l, F j, Y H:i') : 'Unknown',
-            'dtendFormatted' => $dtEnd ? $dtEnd->format('H:i') : 'Unknown',
+            'dtstartFormatted' => $startFormatted,
+            'dtendFormatted' => $endFormatted,
+            'wallClock' => $wallClock,
+            'allDay' => $allDay,
             'organizer' => $organizer,
             'organizerEmail' => $organizerEmail,
             'organizerName' => $organizerName,
@@ -597,9 +692,13 @@ class MailService {
      * separate translatable string; the values are never translated.
      */
     private function buildEventBlock(IL10N $l, array $room, array $event): string {
+        $date = $event['dtendFormatted'] === null
+            ? $l->t('Date: %s', [$event['dtstartFormatted']])
+            : $l->t('Date: %1$s – %2$s', [$event['dtstartFormatted'], $event['dtendFormatted']]);
+
         return $l->t('Room: %s', [$room['name']]) . "\n"
             . $l->t('Event: %s', [$event['summary']]) . "\n"
-            . $l->t('Date: %1$s – %2$s', [$event['dtstartFormatted'], $event['dtendFormatted']]) . "\n";
+            . $date . "\n";
     }
 
     private function buildAcceptedBody(IL10N $l, array $room, array $event): string {
@@ -638,7 +737,7 @@ class MailService {
             . $l->t('Please choose a different date or contact the room manager.');
     }
 
-    private function buildAvailabilityViolationBody(IL10N $l, array $room, array $event): string {
+    private function buildAvailabilityViolationBody(IL10N $l, array $room, array $event, array $dates = []): string {
         $rulesSummary = $this->formatAvailabilityRules($l, $room);
         $rulesBlock = $rulesSummary !== ''
             ? $l->t('This room is available during:') . "\n{$rulesSummary}\n\n"
@@ -646,6 +745,7 @@ class MailService {
 
         return $l->t('Your booking request could not be processed because it falls outside the room\'s availability hours.') . "\n\n"
             . $this->buildEventBlock($l, $room, $event) . "\n"
+            . $this->buildDateList($l, $l->t('Dates outside the availability hours:'), $dates, $event)
             . $rulesBlock
             . $l->t('Please choose a time within the room\'s availability or contact the room manager.');
     }
@@ -687,10 +787,45 @@ class MailService {
         return implode("\n", $lines);
     }
 
-    private function buildConflictBody(IL10N $l, array $room, array $event): string {
+    private function buildConflictBody(IL10N $l, array $room, array $event, array $dates = []): string {
+        if ($dates === []) {
+            return $l->t('Your booking could not be processed due to a scheduling conflict.') . "\n\n"
+                . $this->buildEventBlock($l, $room, $event) . "\n"
+                . $l->t('The room is already booked for this time slot. Please choose a different time.');
+        }
+
         return $l->t('Your booking could not be processed due to a scheduling conflict.') . "\n\n"
             . $this->buildEventBlock($l, $room, $event) . "\n"
-            . $l->t('The room is already booked for this time slot. Please choose a different time.');
+            . $this->buildDateList($l, $l->t('Conflicting dates:'), $dates, $event)
+            . $l->t('The room is already booked on these dates, so the whole series was declined. Exclude these dates from the series, or choose a different time, and book again.');
+    }
+
+    /**
+     * A titled list of occurrence dates for a recurring booking, at most
+     * MAX_LISTED_DATES of them. Empty for a single booking, whose date is
+     * in the event block already.
+     *
+     * The dates are rendered like the event itself: an all-day series as
+     * dates, a floating one as stored, a timed one in the instance timezone.
+     *
+     * @param list<\DateTimeInterface> $dates
+     */
+    private function buildDateList(IL10N $l, string $title, array $dates, array $event): string {
+        if ($dates === []) {
+            return '';
+        }
+
+        $lines = [];
+        foreach (array_slice($dates, 0, self::MAX_LISTED_DATES) as $date) {
+            [$formatted] = $this->formatEventTimes($date, null, !empty($event['wallClock']), !empty($event['allDay']));
+            $lines[] = '- ' . $formatted;
+        }
+        $more = count($dates) - self::MAX_LISTED_DATES;
+        if ($more > 0) {
+            $lines[] = $l->n('and %n more date', 'and %n more dates', $more);
+        }
+
+        return $title . "\n" . implode("\n", $lines) . "\n\n";
     }
 
     private function buildApprovalRequestBody(IL10N $l, array $room, array $event): string {
@@ -704,23 +839,23 @@ class MailService {
     }
 
     private function buildCancelledBody(IL10N $l, array $room, array $event): string {
-        return $l->t('A booking has been cancelled.') . "\n\n"
+        return $l->t('A booking has been canceled.') . "\n\n"
             . $this->buildEventBlock($l, $room, $event)
-            . $l->t('Cancelled by: %s', [$event['organizerName']]) . "\n\n"
+            . $l->t('Canceled by: %s', [$event['organizerName']]) . "\n\n"
             . $l->t('The room is now available for this time slot.');
     }
 
     private function buildRespondCancelledBody(IL10N $l, array $room, array $event, ?string $occurrenceFormatted = null): string {
         if ($occurrenceFormatted !== null) {
-            return $l->t('A single occurrence of your recurring booking has been cancelled by a room manager.') . "\n\n"
+            return $l->t('A single occurrence of your recurring booking has been canceled by a room manager.') . "\n\n"
                 . $l->t('Room: %s', [$room['name']]) . "\n"
                 . $l->t('Event: %s', [$event['summary']]) . "\n"
-                . $l->t('Cancelled occurrence: %s', [$occurrenceFormatted]) . "\n\n"
+                . $l->t('Canceled occurrence: %s', [$occurrenceFormatted]) . "\n\n"
                 . $l->t('The recurring series continues as scheduled; only this one occurrence has been removed.') . "\n"
-                . $l->t('If you still need this room for the cancelled time, please make a new booking or contact the room manager.');
+                . $l->t('If you still need this room for the canceled time, please make a new booking or contact the room manager.');
         }
 
-        return $l->t('Your booking has been cancelled by a room manager.') . "\n\n"
+        return $l->t('Your booking has been canceled by a room manager.') . "\n\n"
             . $this->buildEventBlock($l, $room, $event) . "\n"
             . $l->t('The room has been released and is no longer reserved for your event.') . "\n"
             . $l->t('If you still need this room, please make a new booking or contact the room manager.');

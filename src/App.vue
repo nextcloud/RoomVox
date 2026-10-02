@@ -3,58 +3,19 @@
         <!-- Sits above the tabs so it is visible on every tab, not only on
              Support. Deliberately not dismissible: it states a fact about this
              installation rather than interrupting a task, and a dismissal we
-             did not remember would be worse than none at all. The button is
-             hidden on Support itself, where it would scroll to what is already
-             on screen. -->
-        <NcNoteCard v-if="subscriptionBanner" type="info" class="subscription-banner">
+             did not remember would be worse than none at all. Left out on
+             Support itself, which shows the same notice in its own pane. -->
+        <NcNoteCard v-if="subscriptionBanner && currentView !== 'support'" type="info" class="subscription-banner">
             {{ subscriptionBanner }}
-            <NcButton v-if="currentView !== 'support'"
-                type="tertiary"
+            <NcButton variant="tertiary"
                 @click="onTabClick('support')">
                 {{ t('roomvox', 'Learn more') }}
             </NcButton>
         </NcNoteCard>
 
-        <!-- Tab Navigation - IntraVox/FormVox style -->
-        <nav class="tab-navigation">
-            <button
-                :class="['tab-button', { active: isTabActive('rooms') }]"
-                @click="onTabClick('rooms')">
-                <DoorOpen :size="16" />
-                {{ t('roomvox', 'Rooms') }}
-                <NcCounterBubble v-if="rooms.length > 0" :count="rooms.length" />
-            </button>
-            <button
-                :class="['tab-button', { active: isTabActive('bookings') }]"
-                @click="onTabClick('bookings')">
-                <CalendarCheck :size="16" />
-                {{ t('roomvox', 'Bookings') }}
-            </button>
-            <button
-                :class="['tab-button', { active: isTabActive('import-export') }]"
-                @click="onTabClick('import-export')">
-                <SwapHorizontal :size="16" />
-                {{ t('roomvox', 'Import / export') }}
-            </button>
-            <button
-                :class="['tab-button', { active: isTabActive('settings') }]"
-                @click="onTabClick('settings')">
-                <Cog :size="16" />
-                {{ t('roomvox', 'Settings') }}
-            </button>
-            <button
-                :class="['tab-button', { active: isTabActive('statistics') }]"
-                @click="onTabClick('statistics')">
-                <ChartBox :size="16" />
-                {{ t('roomvox', 'Statistics') }}
-            </button>
-            <button
-                :class="['tab-button', { active: isTabActive('support') }]"
-                @click="onTabClick('support')">
-                <Heart :size="16" />
-                {{ t('roomvox', 'Support') }}
-            </button>
-        </nav>
+        <PaneSwitcher v-model="activeTab"
+            :label="t('roomvox', 'RoomVox administration')"
+            :panes="tabs" />
 
         <!-- Content -->
         <div class="roomvox-content">
@@ -111,304 +72,234 @@
 
             <!-- Import / Export -->
             <div v-if="currentView === 'import-export'" class="tab-content">
-                <div class="import-export-tab">
-                    <div class="settings-section">
-                        <h2>{{ t('roomvox', 'Export rooms') }}</h2>
-                        <p class="settings-section-desc">{{ t('roomvox', 'Download all rooms as a CSV file. This file can be imported into another RoomVox instance or edited in Excel/LibreOffice.') }}</p>
-                        <NcButton type="secondary" @click="handleExport">
-                            <template #icon>
-                                <Download :size="20" />
-                            </template>
-                            {{ t('roomvox', 'Export CSV') }}
-                        </NcButton>
-                    </div>
+                <NcSettingsSection :name="t('roomvox', 'Export rooms')"
+                    :description="t('roomvox', 'Download all rooms as a CSV file. This file can be imported into another RoomVox instance or edited in Excel/LibreOffice.')">
+                    <NcButton variant="secondary" @click="handleExport">
+                        <template #icon>
+                            <Download :size="20" />
+                        </template>
+                        {{ t('roomvox', 'Export CSV') }}
+                    </NcButton>
+                </NcSettingsSection>
 
-                    <div class="settings-section">
-                        <h2>{{ t('roomvox', 'Import rooms') }}</h2>
-                        <p class="settings-section-desc">{{ t('roomvox', 'Upload a CSV file to import rooms. RoomVox and MS365 formats are supported.') }}</p>
-
-                        <!-- Upload area (step 1) -->
-                        <div v-if="importStep === 'upload'" class="import-inline">
-                            <div class="upload-area"
-                                 :class="{ 'upload-area--drag': isDraggingImport }"
-                                 @dragover.prevent="isDraggingImport = true"
-                                 @dragleave="isDraggingImport = false"
-                                 @drop.prevent="handleImportDrop">
-                                <Upload :size="48" class="upload-icon" />
-                                <p>{{ t('roomvox', 'Drag and drop a CSV file here') }}</p>
-                                <p class="upload-or">{{ t('roomvox', 'or') }}</p>
-                                <NcButton type="secondary" @click="$refs.importFileInput.click()">
-                                    {{ t('roomvox', 'Choose file') }}
-                                </NcButton>
-                                <input
-                                    ref="importFileInput"
-                                    type="file"
-                                    accept=".csv,text/csv"
-                                    class="hidden-input"
-                                    @change="handleImportFileSelect" />
-                            </div>
-
-                            <div v-if="importError" class="import-error">
-                                <AlertCircle :size="16" />
-                                {{ importError }}
-                            </div>
-
-                            <div class="import-help">
-                                <h3>{{ t('roomvox', 'Supported formats') }}</h3>
-                                <ul>
-                                    <li><strong>RoomVox CSV</strong> — {{ t('roomvox', 'Exported from another RoomVox installation') }}</li>
-                                    <li><strong>Microsoft 365 / Exchange</strong> — {{ t('roomvox', 'Exported via PowerShell (Get-EXOMailbox | Get-Place | Export-Csv)') }}</li>
-                                </ul>
-                                <p class="import-help-note">{{ t('roomvox', 'Column names are automatically detected and mapped.') }}</p>
-                                <div class="sample-download">
-                                    <NcButton type="tertiary" @click="handleDownloadSample">
-                                        <template #icon>
-                                            <Download :size="20" />
-                                        </template>
-                                        {{ t('roomvox', 'Download sample CSV') }}
-                                    </NcButton>
-                                    <span class="sample-desc">{{ t('roomvox', 'Download an example file with headers and a sample row') }}</span>
-                                </div>
-                            </div>
+                <NcSettingsSection :name="t('roomvox', 'Import rooms')"
+                    :description="t('roomvox', 'Upload a CSV file to import rooms. RoomVox and MS365 formats are supported.')">
+                    <!-- Upload area (step 1) -->
+                    <div v-if="importStep === 'upload'" class="import-inline">
+                        <div class="upload-area"
+                             :class="{ 'upload-area--drag': isDraggingImport }"
+                             @dragover.prevent="isDraggingImport = true"
+                             @dragleave="isDraggingImport = false"
+                             @drop.prevent="handleImportDrop">
+                            <Upload :size="48" class="upload-icon" />
+                            <p>{{ t('roomvox', 'Drag and drop a CSV file here') }}</p>
+                            <p class="upload-or">{{ t('roomvox', 'or') }}</p>
+                            <NcButton variant="secondary" @click="$refs.importFileInput.click()">
+                                {{ t('roomvox', 'Choose file') }}
+                            </NcButton>
+                            <!-- Driven by the button above, so off the tab path
+                                 but still named (design guidelines §8). -->
+                            <input
+                                ref="importFileInput"
+                                type="file"
+                                accept=".csv,text/csv"
+                                class="hidden-input"
+                                tabindex="-1"
+                                :aria-label="t('roomvox', 'Choose a CSV file to import')"
+                                @change="handleImportFileSelect" />
                         </div>
 
-                        <!-- Preview (step 2) -->
-                        <div v-if="importStep === 'preview'" class="import-inline">
-                            <div class="preview-info">
-                                <p>
-                                    {{ t('roomvox', 'Detected format:') }}
-                                    <strong>{{ importFormatLabel }}</strong>
-                                </p>
-                                <p>
-                                    {{ t('roomvox', '{count} rooms found', { count: importPreviewData.rows.length }) }}
-                                    —
-                                    {{ t('roomvox', '{create} new, {update} existing, {errors} errors', {
-                                        create: importCreateCount,
-                                        update: importUpdateCount,
-                                        errors: importErrorCount
-                                    }) }}
-                                </p>
-                            </div>
+                        <NcNoteCard v-if="importError" type="error">
+                            {{ importError }}
+                        </NcNoteCard>
 
-                            <div class="preview-table-wrap">
-                                <table class="preview-table">
-                                    <thead>
-                                        <tr>
-                                            <th>{{ t('roomvox', 'Action') }}</th>
-                                            <th>{{ t('roomvox', 'Name') }}</th>
-                                            <th>{{ t('roomvox', 'Email') }}</th>
-                                            <th>{{ t('roomvox', 'Capacity') }}</th>
-                                            <th>{{ t('roomvox', 'Building') }}</th>
-                                            <th>{{ t('roomvox', 'Facilities') }}</th>
-                                            <th>{{ t('roomvox', 'Issues') }}</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr v-for="row in importPreviewData.rows"
-                                            :key="row.line"
-                                            :class="{ 'row-error': row.errors.length > 0 }">
-                                            <td>
-                                                <NcChip
-                                                    :text="importActionLabel(row)"
-                                                    :variant="importActionVariant(row)"
-                                                    no-close />
-                                            </td>
-                                            <td>{{ row.data.name || '—' }}</td>
-                                            <td>{{ row.data.email || '—' }}</td>
-                                            <td>{{ row.data.capacity || '—' }}</td>
-                                            <td>{{ row.data.building || '—' }}</td>
-                                            <td>{{ row.data.facilities || '—' }}</td>
-                                            <td>
-                                                <span v-if="row.errors.length > 0" class="error-text">
-                                                    {{ row.errors.join(', ') }}
-                                                </span>
-                                                <span v-else-if="row.action === 'update'" class="match-text">
-                                                    {{ t('roomvox', 'Matches: {name}', { name: row.matchedName }) }}
-                                                </span>
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-
-                            <div class="import-mode">
-                                <label>{{ t('roomvox', 'Import mode:') }}</label>
-                                <div class="mode-options">
-                                    <NcCheckboxRadioSwitch
-                                        v-model="importMode"
-                                        value="create"
-                                        name="import-mode"
-                                        type="radio">
-                                        {{ t('roomvox', 'Only create new rooms (skip existing)') }}
-                                    </NcCheckboxRadioSwitch>
-                                    <NcCheckboxRadioSwitch
-                                        v-model="importMode"
-                                        value="update"
-                                        name="import-mode"
-                                        type="radio">
-                                        {{ t('roomvox', 'Create new + update existing rooms') }}
-                                    </NcCheckboxRadioSwitch>
-                                </div>
-                            </div>
-
-                            <div v-if="importPreviewData.detected_format === 'ms365' && importHasEmails" class="import-mode">
-                                <NcCheckboxRadioSwitch
-                                    :model-value="importEnableExchangeSync"
-                                    @update:model-value="importEnableExchangeSync = $event">
-                                    {{ t('roomvox', 'Enable Exchange calendar sync for imported rooms') }}
-                                </NcCheckboxRadioSwitch>
-                                <p class="import-help-note">
-                                    {{ t('roomvox', 'Links each room to its MS365 mailbox for bidirectional calendar sync. Requires Exchange sync to be configured in settings.') }}
-                                </p>
-                            </div>
-
-                            <div class="import-actions">
-                                <NcButton type="tertiary" @click="resetImport">
-                                    {{ t('roomvox', 'Back') }}
-                                </NcButton>
-                                <NcButton type="primary"
-                                          :disabled="importErrorCount === importPreviewData.rows.length || importing"
-                                          @click="executeImport">
-                                    <template v-if="importing" #icon>
-                                        <NcLoadingIcon :size="20" />
-                                    </template>
-                                    {{ importing ? t('roomvox', 'Importing …') : t('roomvox', 'Import') }}
-                                </NcButton>
-                            </div>
-                        </div>
-
-                        <!-- Result (step 3) -->
-                        <div v-if="importStep === 'result'" class="import-inline">
-                            <div class="result-summary">
-                                <div class="result-stat result-stat--success">
-                                    <span class="result-stat__number">{{ importResult.created }}</span>
-                                    <span class="result-stat__label">{{ t('roomvox', 'Created') }}</span>
-                                </div>
-                                <div class="result-stat result-stat--info">
-                                    <span class="result-stat__number">{{ importResult.updated }}</span>
-                                    <span class="result-stat__label">{{ t('roomvox', 'Updated') }}</span>
-                                </div>
-                                <div class="result-stat result-stat--warning">
-                                    <span class="result-stat__number">{{ importResult.skipped }}</span>
-                                    <span class="result-stat__label">{{ t('roomvox', 'Skipped') }}</span>
-                                </div>
-                                <div v-if="importResult.errors.length > 0" class="result-stat result-stat--error">
-                                    <span class="result-stat__number">{{ importResult.errors.length }}</span>
-                                    <span class="result-stat__label">{{ t('roomvox', 'Errors') }}</span>
-                                </div>
-                            </div>
-
-                            <div v-if="importResult.errors.length > 0" class="result-errors">
-                                <h3>{{ t('roomvox', 'Errors') }}</h3>
-                                <ul>
-                                    <li v-for="(err, idx) in importResult.errors" :key="idx">
-                                        <strong>{{ t('roomvox', 'Line {line}', { line: err.line }) }}:</strong>
-                                        {{ err.name }} — {{ err.errors.join(', ') }}
-                                    </li>
-                                </ul>
-                            </div>
-
-                            <div class="import-actions">
-                                <NcButton type="primary" @click="resetImport(); loadRooms()">
-                                    {{ t('roomvox', 'Done') }}
-                                </NcButton>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Statistics -->
-            <div v-if="currentView === 'statistics'" class="tab-content">
-                <div class="settings-section">
-                    <h2>{{ t('roomvox', 'Room statistics') }}</h2>
-                    <p class="settings-section-desc">{{ t('roomvox', 'Overview of rooms and bookings in your RoomVox installation.') }}</p>
-
-                    <div class="stats-overview">
-                        <div class="stat-row">
-                            <div class="stat-info">
-                                <span class="stat-icon">🚪</span>
-                                <span class="stat-label">{{ t('roomvox', 'Total rooms') }}</span>
-                            </div>
-                            <span class="stat-value">{{ rooms.length }}</span>
-                        </div>
-                        <div class="stat-row">
-                            <div class="stat-info">
-                                <span class="stat-icon">✅</span>
-                                <span class="stat-label">{{ t('roomvox', 'Active rooms') }}</span>
-                            </div>
-                            <span class="stat-value">{{ rooms.filter(r => r.active !== false).length }}</span>
-                        </div>
-                        <div class="stat-row">
-                            <div class="stat-info">
-                                <span class="stat-icon">📁</span>
-                                <span class="stat-label">{{ t('roomvox', 'Room groups') }}</span>
-                            </div>
-                            <span class="stat-value">{{ roomGroups.length }}</span>
-                        </div>
-                    </div>
-
-                    <div class="about-info">
-                        <h4>{{ t('roomvox', 'About RoomVox') }}</h4>
-                        <p>{{ t('roomvox', 'RoomVox is open source room booking software for Nextcloud. RoomVox is free for small installations. Larger organisations may require a license in the future.') }}</p>
-                        <p>{{ t('roomvox', 'Anonymous usage statistics help us understand how RoomVox is used and guide future development.') }}</p>
-                    </div>
-                </div>
-
-                <div class="settings-section">
-                    <h2>{{ t('roomvox', 'Anonymous usage statistics') }}</h2>
-                    <p class="settings-section-desc">{{ t('roomvox', 'Help improve RoomVox by sharing anonymous usage statistics.') }}</p>
-
-                    <div class="telemetry-settings">
-                        <div class="engagement-option">
-                            <NcCheckboxRadioSwitch
-                                type="switch"
-                                :model-value="telemetryEnabled"
-                                @update:model-value="toggleTelemetry($event)">
-                                <div class="option-info">
-                                    <span class="option-label">{{ t('roomvox', 'Share anonymous usage statistics') }}</span>
-                                    <span class="option-desc">{{ t('roomvox', 'We collect: room counts, booking counts, version info (RoomVox, Nextcloud, PHP), whether your Nextcloud has an Extended Support / Enterprise subscription (a single yes/no, sourced from Nextcloud\'s public API), and whether the Microsoft Exchange sync is switched on plus how many rooms use it. No personal data, booking details or Exchange credentials are shared — the tenant ID, client ID and client secret never leave your server.') }}</span>
-                                </div>
-                            </NcCheckboxRadioSwitch>
-                        </div>
-
-                        <div v-if="telemetryEnabled" class="telemetry-info">
-                            <NcNoteCard type="success">
-                                <p>{{ t('roomvox', 'Thank you for helping improve RoomVox!') }}</p>
-                                <p v-if="telemetryLastReport">{{ t('roomvox', 'Last report sent:') }} {{ telemetryLastReport }}</p>
-                            </NcNoteCard>
-                        </div>
-
-                        <div class="telemetry-details">
-                            <h4>{{ t('roomvox', 'What we collect:') }}</h4>
+                        <div class="import-help">
+                            <h3>{{ t('roomvox', 'Supported formats') }}</h3>
                             <ul>
-                                <li>{{ t('roomvox', 'Number of rooms and room groups') }}</li>
-                                <li>{{ t('roomvox', 'Number of bookings') }}</li>
-                                <li>{{ t('roomvox', 'RoomVox, Nextcloud, and PHP version numbers') }}</li>
-                                <li>{{ t('roomvox', 'A unique hash of your instance URL (privacy-friendly identifier)') }}</li>
+                                <li><strong>RoomVox CSV</strong> — {{ t('roomvox', 'Exported from another RoomVox installation') }}</li>
+                                <li><strong>Microsoft 365 / Exchange</strong> — {{ t('roomvox', 'Exported via PowerShell (Get-EXOMailbox | Get-Place | Export-Csv)') }}</li>
                             </ul>
-                            <h4>{{ t('roomvox', 'What we never collect:') }}</h4>
-                            <ul class="not-collected">
-                                <li>{{ t('roomvox', 'Room names or descriptions') }}</li>
-                                <li>{{ t('roomvox', 'Booking details or attendees') }}</li>
-                                <li>{{ t('roomvox', 'User names or email addresses') }}</li>
-                                <li>{{ t('roomvox', 'Your actual server URL') }}</li>
-                            </ul>
+                            <p class="import-help-note">{{ t('roomvox', 'Column names are automatically detected and mapped.') }}</p>
+                            <div class="sample-download">
+                                <NcButton variant="tertiary" @click="handleDownloadSample">
+                                    <template #icon>
+                                        <Download :size="20" />
+                                    </template>
+                                    {{ t('roomvox', 'Download sample CSV') }}
+                                </NcButton>
+                                <span class="sample-desc">{{ t('roomvox', 'Download an example file with headers and a sample row') }}</span>
+                            </div>
                         </div>
                     </div>
-                </div>
+
+                    <!-- Preview (step 2) -->
+                    <div v-if="importStep === 'preview'" class="import-inline">
+                        <div class="preview-info">
+                            <p>
+                                {{ t('roomvox', 'Detected format:') }}
+                                <strong>{{ importFormatLabel }}</strong>
+                            </p>
+                            <p>
+                                {{ t('roomvox', '{count} rooms found', { count: importPreviewData.rows.length }) }}
+                                —
+                                {{ t('roomvox', '{create} new, {update} existing, {errors} errors', {
+                                    create: importCreateCount,
+                                    update: importUpdateCount,
+                                    errors: importErrorCount
+                                }) }}
+                            </p>
+                        </div>
+
+                        <div class="preview-table-wrap">
+                            <table class="preview-table">
+                                <thead>
+                                    <tr>
+                                        <th>{{ t('roomvox', 'Action') }}</th>
+                                        <th>{{ t('roomvox', 'Name') }}</th>
+                                        <th>{{ t('roomvox', 'Email') }}</th>
+                                        <th>{{ t('roomvox', 'Capacity') }}</th>
+                                        <th>{{ t('roomvox', 'Building') }}</th>
+                                        <th>{{ t('roomvox', 'Facilities') }}</th>
+                                        <th>{{ t('roomvox', 'Issues') }}</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr v-for="row in importPreviewData.rows"
+                                        :key="row.line"
+                                        :class="{ 'row-error': row.errors.length > 0 }">
+                                        <td>
+                                            <NcChip
+                                                :text="importActionLabel(row)"
+                                                :variant="importActionVariant(row)"
+                                                no-close />
+                                        </td>
+                                        <td>{{ row.data.name || '—' }}</td>
+                                        <td>{{ row.data.email || '—' }}</td>
+                                        <td>{{ row.data.capacity || '—' }}</td>
+                                        <td>{{ row.data.building || '—' }}</td>
+                                        <td>{{ row.data.facilities || '—' }}</td>
+                                        <td>
+                                            <span v-if="row.errors.length > 0" class="error-text">
+                                                {{ row.errors.join(', ') }}
+                                            </span>
+                                            <span v-else-if="row.action === 'update'" class="match-text">
+                                                {{ t('roomvox', 'Matches: {name}', { name: row.matchedName }, asText) }}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- A bare <label> names neither radio; a legend names both. -->
+                        <fieldset class="import-mode">
+                            <legend>{{ t('roomvox', 'Import mode:') }}</legend>
+                            <div class="mode-options">
+                                <NcCheckboxRadioSwitch
+                                    v-model="importMode"
+                                    value="create"
+                                    name="import-mode"
+                                    type="radio">
+                                    {{ t('roomvox', 'Only create new rooms (skip existing)') }}
+                                </NcCheckboxRadioSwitch>
+                                <NcCheckboxRadioSwitch
+                                    v-model="importMode"
+                                    value="update"
+                                    name="import-mode"
+                                    type="radio">
+                                    {{ t('roomvox', 'Create new + update existing rooms') }}
+                                </NcCheckboxRadioSwitch>
+                            </div>
+                        </fieldset>
+
+                        <div v-if="importPreviewData.detected_format === 'ms365' && importHasEmails" class="import-mode">
+                            <NcCheckboxRadioSwitch
+                                :model-value="importEnableExchangeSync"
+                                @update:model-value="importEnableExchangeSync = $event">
+                                {{ t('roomvox', 'Enable Exchange calendar sync for imported rooms') }}
+                            </NcCheckboxRadioSwitch>
+                            <p class="import-help-note">
+                                {{ t('roomvox', 'Links each room to its MS365 mailbox for bidirectional calendar sync. Requires Exchange sync to be configured in settings.') }}
+                            </p>
+                        </div>
+
+                        <div class="import-actions">
+                            <NcButton variant="tertiary" @click="resetImport">
+                                {{ t('roomvox', 'Back') }}
+                            </NcButton>
+                            <NcButton variant="primary"
+                                      :disabled="importErrorCount === importPreviewData.rows.length || importing"
+                                      @click="executeImport">
+                                <template v-if="importing" #icon>
+                                    <NcLoadingIcon :size="20" />
+                                </template>
+                                {{ importing ? t('roomvox', 'Importing …') : t('roomvox', 'Import') }}
+                            </NcButton>
+                        </div>
+                    </div>
+
+                    <!-- Result (step 3) -->
+                    <div v-if="importStep === 'result'" class="import-inline">
+                        <div class="result-summary">
+                            <div class="result-stat result-stat--success">
+                                <span class="result-stat__number">{{ importResult.created }}</span>
+                                <span class="result-stat__label">{{ t('roomvox', 'Created') }}</span>
+                            </div>
+                            <div class="result-stat result-stat--info">
+                                <span class="result-stat__number">{{ importResult.updated }}</span>
+                                <span class="result-stat__label">{{ t('roomvox', 'Updated') }}</span>
+                            </div>
+                            <div class="result-stat result-stat--warning">
+                                <span class="result-stat__number">{{ importResult.skipped }}</span>
+                                <span class="result-stat__label">{{ t('roomvox', 'Skipped') }}</span>
+                            </div>
+                            <div v-if="importResult.errors.length > 0" class="result-stat result-stat--error">
+                                <span class="result-stat__number">{{ importResult.errors.length }}</span>
+                                <span class="result-stat__label">{{ t('roomvox', 'Errors') }}</span>
+                            </div>
+                        </div>
+
+                        <div v-if="importResult.errors.length > 0" class="result-errors">
+                            <h3>{{ t('roomvox', 'Errors') }}</h3>
+                            <ul>
+                                <li v-for="(err, idx) in importResult.errors" :key="idx">
+                                    <strong>{{ t('roomvox', 'Line {line}', { line: err.line }) }}:</strong>
+                                    {{ err.name }} — {{ err.errors.join(', ') }}
+                                </li>
+                            </ul>
+                        </div>
+
+                        <div class="import-actions">
+                            <NcButton variant="primary" @click="resetImport(); loadRooms()">
+                                {{ t('roomvox', 'Done') }}
+                            </NcButton>
+                        </div>
+                    </div>
+                </NcSettingsSection>
             </div>
+
+            <!-- Statistics: local figures only, read-only. Nothing about the
+                 subscription or usage statistics here; those are on Support
+                 (design guidelines §7, "The Statistics and Support panes"). -->
+            <NcSettingsSection v-if="currentView === 'statistics'"
+                :name="t('roomvox', 'Room statistics')"
+                :description="t('roomvox', 'Rooms and room groups in this RoomVox installation.')">
+                <ul class="stat-tiles">
+                    <li v-for="tile in statTiles" :key="tile.id" class="stat-tile">
+                        <component :is="tile.icon" :size="20" class="stat-tile__icon" aria-hidden="true" />
+                        <span class="stat-tile__value">{{ tile.value }}</span>
+                        <span class="stat-tile__label">{{ tile.label }}</span>
+                    </li>
+                </ul>
+            </NcSettingsSection>
 
             <!-- Support -->
             <SupportSettings v-if="currentView === 'support'" />
 
             <!-- Settings -->
             <div v-if="currentView === 'settings'" class="roomvox-settings">
-                <NcSettingsSection :name="t('roomvox', 'API tokens')">
-                    <p class="section-description">
-                        {{ t('roomvox', 'Manage API tokens for external integrations. Tokens allow external systems to access the RoomVox API.') }}
-                    </p>
-
+                <NcSettingsSection :name="t('roomvox', 'API tokens')"
+                    :description="t('roomvox', 'Manage API tokens for external integrations. Tokens allow external systems to access the RoomVox API.')">
                     <!-- Token list -->
                     <div v-if="apiTokens.length > 0" class="token-list">
                         <table class="token-table">
@@ -432,7 +323,7 @@
                                     <td>{{ formatDate(tok.createdAt) }}</td>
                                     <td>{{ tok.lastUsedAt ? formatDate(tok.lastUsedAt) : '—' }}</td>
                                     <td>
-                                        <NcButton type="tertiary-no-background"
+                                        <NcButton variant="tertiary-no-background"
                                                   :aria-label="t('roomvox', 'Delete')"
                                                   @click="onDeleteToken(tok.id)">
                                             <template #icon>
@@ -447,60 +338,58 @@
 
                     <p v-else class="no-tokens">{{ t('roomvox', 'No API tokens created yet.') }}</p>
 
-                    <!-- New token created banner -->
-                    <div v-if="newlyCreatedToken" class="new-token-banner">
-                        <AlertCircle :size="20" />
-                        <div class="new-token-info">
-                            <strong>{{ t('roomvox', 'Token created! Copy it now — it will not be shown again.') }}</strong>
-                            <div class="new-token-value">
-                                <code>{{ newlyCreatedToken }}</code>
-                                <NcButton type="tertiary" @click="copyToken">
-                                    <template #icon>
-                                        <ContentCopy :size="20" />
-                                    </template>
-                                    {{ tokenCopied ? t('roomvox', 'Copied!') : t('roomvox', 'Copy') }}
-                                </NcButton>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Create token form -->
-                    <div class="create-token-form">
-                        <div class="token-form-row">
-                            <input
-                                v-model="newTokenName"
-                                type="text"
-                                class="room-type-input"
-                                :placeholder="t('roomvox', 'Token name (e.g. Lobby Display)')" />
-                            <select v-model="newTokenScope" class="token-scope-select">
-                                <option value="read">read</option>
-                                <option value="book">book</option>
-                                <option value="admin">admin</option>
-                            </select>
-                            <NcButton type="secondary"
-                                      :disabled="!newTokenName.trim() || creatingToken"
-                                      @click="onCreateToken">
-                                <template v-if="creatingToken" #icon>
-                                    <NcLoadingIcon :size="20" />
+                    <!-- New token created: shown once, so it stays until the next one -->
+                    <NcNoteCard v-if="newlyCreatedToken"
+                        type="warning"
+                        :heading="t('roomvox', 'Token created! Copy it now — it will not be shown again.')">
+                        <div class="new-token-value">
+                            <code>{{ newlyCreatedToken }}</code>
+                            <NcButton variant="tertiary" @click="copyToken">
+                                <template #icon>
+                                    <ContentCopy :size="20" />
                                 </template>
-                                {{ t('roomvox', 'Create token') }}
+                                {{ tokenCopied ? t('roomvox', 'Copied!') : t('roomvox', 'Copy') }}
                             </NcButton>
                         </div>
+                    </NcNoteCard>
+
+                    <!-- Create token form -->
+                    <div class="token-form-row">
+                        <NcTextField v-model="newTokenName"
+                            class="token-form-row__name"
+                            :label="t('roomvox', 'Token name')"
+                            :placeholder="t('roomvox', 'e.g. Lobby Display')" />
+                        <!-- Plain string options: the select emits the string itself -->
+                        <NcSelect v-model="newTokenScope"
+                            class="token-form-row__scope"
+                            input-id="roomvox-token-scope"
+                            :input-label="t('roomvox', 'Scope')"
+                            :options="TOKEN_SCOPES"
+                            :clearable="false"
+                            :searchable="false" />
+                        <NcButton variant="secondary"
+                                  :disabled="!newTokenName.trim() || creatingToken"
+                                  @click="onCreateToken">
+                            <template v-if="creatingToken" #icon>
+                                <NcLoadingIcon :size="20" />
+                            </template>
+                            {{ t('roomvox', 'Create token') }}
+                        </NcButton>
                     </div>
 
                     <div class="token-help">
-                        <h4>{{ t('roomvox', 'Scopes') }}</h4>
+                        <h3>{{ t('roomvox', 'Scopes') }}</h3>
                         <ul>
                             <li><strong>read</strong> — {{ t('roomvox', 'View rooms, availability, and calendar feed') }}</li>
                             <li><strong>book</strong> — {{ t('roomvox', 'Everything in read + create and cancel bookings') }}</li>
                             <li><strong>admin</strong> — {{ t('roomvox', 'Everything in book + manage rooms and view statistics') }}</li>
                         </ul>
-                        <h4>{{ t('roomvox', 'Usage') }}</h4>
+                        <h3>{{ t('roomvox', 'Usage') }}</h3>
                         <code class="token-example">curl -H "Authorization: Bearer rvx_..." {{ apiBaseUrl }}/api/v1/rooms</code>
                     </div>
                 </NcSettingsSection>
 
-                <NcSettingsSection :name="'General'">
+                <NcSettingsSection :name="t('roomvox', 'General')">
                     <NcCheckboxRadioSwitch
                         :model-value="settings.defaultAutoAccept"
                         @update:model-value="settings.defaultAutoAccept = $event; saveGlobalSettings()">
@@ -518,96 +407,69 @@
                     </NcCheckboxRadioSwitch>
                 </NcSettingsSection>
 
-                <NcSettingsSection :name="t('roomvox', 'Microsoft Exchange sync')">
-                    <p class="section-description">
-                        {{ t('roomvox', 'Connect RoomVox to Microsoft 365 Exchange to sync room calendars. Requires an Azure AD app registration with Calendars.ReadWrite and User.Read.All application permissions.') }}
-                    </p>
+                <NcSettingsSection :name="t('roomvox', 'Microsoft Exchange sync')"
+                    :description="t('roomvox', 'Connect RoomVox to Microsoft 365 Exchange to sync room calendars. Requires an Azure AD app registration with Calendars.ReadWrite and User.Read.All application permissions.')">
+                    <NcCheckboxRadioSwitch
+                        :model-value="exchangeEnabled"
+                        @update:model-value="exchangeEnabled = $event; saveExchangeSettings()">
+                        {{ t('roomvox', 'Enable Exchange calendar sync') }}
+                    </NcCheckboxRadioSwitch>
 
-                    <div class="exchange-settings">
-                        <div class="form-field">
-                            <NcCheckboxRadioSwitch
-                                :model-value="exchangeEnabled"
-                                @update:model-value="exchangeEnabled = $event; saveExchangeSettings()">
-                                {{ t('roomvox', 'Enable Exchange calendar sync') }}
-                            </NcCheckboxRadioSwitch>
+                    <div v-if="exchangeEnabled" class="exchange-fields">
+                        <!-- Each field saves on change, as the raw inputs did -->
+                        <div class="exchange-grid">
+                            <NcTextField v-model="exchangeTenantId"
+                                :label="t('roomvox', 'Azure AD Tenant ID')"
+                                :placeholder="t('roomvox', 'e.g. 12345678-abcd-…')"
+                                @change="saveExchangeSettings" />
+                            <NcTextField v-model="exchangeClientId"
+                                :label="t('roomvox', 'Client ID')"
+                                :placeholder="t('roomvox', 'App registration client ID')"
+                                @change="saveExchangeSettings" />
+                            <NcPasswordField v-model="exchangeClientSecret"
+                                :label="t('roomvox', 'Client secret')"
+                                :placeholder="exchangeClientSecret === '***' ? t('roomvox', '(saved — enter new value to change)') : t('roomvox', 'App registration client secret')"
+                                @change="saveExchangeSettings" />
+                            <!-- Bound as text and cast back like v-model.number did,
+                                 so an emptied field still saves '' rather than NaN -->
+                            <NcTextField :model-value="String(exchangeWebhookMaxInlineSync)"
+                                type="number"
+                                min="0"
+                                max="10"
+                                :label="t('roomvox', 'Max inline sync per request')"
+                                :placeholder="t('roomvox', 'Rooms per request (default: 1)')"
+                                @update:model-value="exchangeWebhookMaxInlineSync = looseToNumber($event)"
+                                @change="saveExchangeSettings" />
+                            <NcTextField :model-value="String(exchangeWebhookRateLimit)"
+                                type="number"
+                                min="0"
+                                max="100"
+                                :label="t('roomvox', 'Rate limit (per 10 sec)')"
+                                :placeholder="t('roomvox', 'Max inline syncs per 10 sec (default: 5)')"
+                                @update:model-value="exchangeWebhookRateLimit = looseToNumber($event)"
+                                @change="saveExchangeSettings" />
                         </div>
 
-                        <div v-if="exchangeEnabled" class="exchange-fields">
-                            <div class="exchange-grid">
-                                <div class="form-field">
-                                    <label>{{ t('roomvox', 'Azure AD Tenant ID') }}</label>
-                                    <input
-                                        v-model="exchangeTenantId"
-                                        type="text"
-                                        class="room-type-input exchange-input"
-                                        :placeholder="t('roomvox', 'e.g. 12345678-abcd-…')"
-                                        @change="saveExchangeSettings" />
-                                </div>
-                                <div class="form-field">
-                                    <label>{{ t('roomvox', 'Client ID') }}</label>
-                                    <input
-                                        v-model="exchangeClientId"
-                                        type="text"
-                                        class="room-type-input exchange-input"
-                                        :placeholder="t('roomvox', 'App registration client ID')"
-                                        @change="saveExchangeSettings" />
-                                </div>
-                                <div class="form-field">
-                                    <label>{{ t('roomvox', 'Client Secret') }}</label>
-                                    <input
-                                        v-model="exchangeClientSecret"
-                                        type="password"
-                                        class="room-type-input exchange-input"
-                                        :placeholder="exchangeClientSecret === '***' ? t('roomvox', '(saved — enter new value to change)') : t('roomvox', 'App registration client secret')"
-                                        @change="saveExchangeSettings" />
-                                </div>
-                                <div class="form-field">
-                                    <label>{{ t('roomvox', 'Max inline sync per request') }}</label>
-                                    <input
-                                        v-model.number="exchangeWebhookMaxInlineSync"
-                                        type="number"
-                                        min="0"
-                                        max="10"
-                                        class="room-type-input exchange-input"
-                                        :placeholder="t('roomvox', 'Rooms per request (default: 1)')"
-                                        @change="saveExchangeSettings" />
-                                </div>
-                                <div class="form-field">
-                                    <label>{{ t('roomvox', 'Rate limit (per 10 sec)') }}</label>
-                                    <input
-                                        v-model.number="exchangeWebhookRateLimit"
-                                        type="number"
-                                        min="0"
-                                        max="100"
-                                        class="room-type-input exchange-input"
-                                        :placeholder="t('roomvox', 'Max inline syncs per 10 sec (default: 5)')"
-                                        @change="saveExchangeSettings" />
-                                </div>
-                            </div>
+                        <div class="exchange-test">
+                            <NcButton
+                                variant="secondary"
+                                :disabled="exchangeTesting || !exchangeTenantId || !exchangeClientId"
+                                @click="testExchange">
+                                <template v-if="exchangeTesting" #icon>
+                                    <NcLoadingIcon :size="20" />
+                                </template>
+                                {{ exchangeTesting ? t('roomvox', 'Testing …') : t('roomvox', 'Test connection') }}
+                            </NcButton>
 
-                            <div class="exchange-test">
-                                <NcButton
-                                    type="secondary"
-                                    :disabled="exchangeTesting || !exchangeTenantId || !exchangeClientId"
-                                    @click="testExchange">
-                                    <template v-if="exchangeTesting" #icon>
-                                        <NcLoadingIcon :size="20" />
-                                    </template>
-                                    {{ exchangeTesting ? t('roomvox', 'Testing …') : t('roomvox', 'Test connection') }}
-                                </NcButton>
-
-                                <NcNoteCard v-if="exchangeTestResult" :type="exchangeTestResult.success ? 'success' : 'error'">
-                                    {{ exchangeTestResult.message }}
-                                </NcNoteCard>
-                            </div>
+                            <NcNoteCard v-if="exchangeTestResult" :type="exchangeTestResult.success ? 'success' : 'error'">
+                                {{ exchangeTestResult.message }}
+                            </NcNoteCard>
                         </div>
                     </div>
                 </NcSettingsSection>
 
-                <NcSettingsSection :name="'Room types'">
-                    <p class="section-description">
-                        {{ t('roomvox', 'Configure the available room types. Types that are in use cannot be deleted.') }}
-                    </p>
+                <NcSettingsSection :name="t('roomvox', 'Room types')"
+                    :description="t('roomvox', 'Configure the available room types. Types that are in use cannot be deleted.')">
                     <ul class="room-type-list">
                         <li v-for="(type, index) in settings.roomTypes"
                             :key="type.id"
@@ -619,14 +481,15 @@
                             <span class="room-type-handle">
                                 <DragHorizontalVariant :size="20" />
                             </span>
-                            <input
-                                type="text"
-                                :value="type.label"
-                                class="room-type-input"
+                            <!-- One-way: the label is stored on change, as before -->
+                            <NcTextField :model-value="type.label"
+                                class="room-type-label"
+                                label-outside
+                                :aria-label="t('roomvox', 'Room type name')"
                                 @change="updateRoomTypeLabel(index, $event.target.value)" />
                             <span class="room-type-id">{{ type.id }}</span>
                             <NcButton
-                                type="tertiary"
+                                variant="tertiary"
                                 :aria-label="t('roomvox', 'Delete')"
                                 :disabled="isRoomTypeInUse(type.id)"
                                 @click="removeRoomType(index)">
@@ -637,14 +500,12 @@
                         </li>
                     </ul>
                     <div class="room-type-add">
-                        <input
-                            type="text"
-                            v-model="newRoomTypeLabel"
-                            class="room-type-input"
-                            :placeholder="t('roomvox', 'New room type …')"
+                        <NcTextField v-model="newRoomTypeLabel"
+                            class="room-type-label"
+                            :label="t('roomvox', 'New room type')"
                             @keyup.enter="addRoomType" />
                         <NcButton
-                            type="secondary"
+                            variant="secondary"
                             :aria-label="t('roomvox', 'Add')"
                             :disabled="!newRoomTypeLabel.trim()"
                             @click="addRoomType">
@@ -655,10 +516,8 @@
                     </div>
                 </NcSettingsSection>
 
-                <NcSettingsSection :name="'Facilities'">
-                    <p class="section-description">
-                        {{ t('roomvox', 'Configure the available facilities for rooms. Facilities that are in use cannot be deleted.') }}
-                    </p>
+                <NcSettingsSection :name="t('roomvox', 'Facilities')"
+                    :description="t('roomvox', 'Configure the available facilities for rooms. Facilities that are in use cannot be deleted.')">
                     <ul class="room-type-list">
                         <li v-for="(facility, index) in settings.facilities"
                             :key="facility.id"
@@ -670,14 +529,14 @@
                             <span class="room-type-handle">
                                 <DragHorizontalVariant :size="20" />
                             </span>
-                            <input
-                                type="text"
-                                :value="facility.label"
-                                class="room-type-input"
+                            <NcTextField :model-value="facility.label"
+                                class="room-type-label"
+                                label-outside
+                                :aria-label="t('roomvox', 'Facility name')"
                                 @change="updateFacilityLabel(index, $event.target.value)" />
                             <span class="room-type-id">{{ facility.id }}</span>
                             <NcButton
-                                type="tertiary"
+                                variant="tertiary"
                                 :aria-label="t('roomvox', 'Delete')"
                                 :disabled="isFacilityInUse(facility.id)"
                                 @click="removeFacility(index)">
@@ -688,14 +547,12 @@
                         </li>
                     </ul>
                     <div class="room-type-add">
-                        <input
-                            type="text"
-                            v-model="newFacilityLabel"
-                            class="room-type-input"
-                            :placeholder="t('roomvox', 'New facility …')"
+                        <NcTextField v-model="newFacilityLabel"
+                            class="room-type-label"
+                            :label="t('roomvox', 'New facility')"
                             @keyup.enter="addFacility" />
                         <NcButton
-                            type="secondary"
+                            variant="secondary"
                             :aria-label="t('roomvox', 'Add')"
                             :disabled="!newFacilityLabel.trim()"
                             @click="addFacility">
@@ -715,29 +572,32 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { showError, showSuccess } from '@nextcloud/dialogs'
 import { translate, getLanguage } from '@nextcloud/l10n'
 import { generateUrl } from '@nextcloud/router'
-import NcCounterBubble from '@nextcloud/vue/components/NcCounterBubble'
 import NcSettingsSection from '@nextcloud/vue/components/NcSettingsSection'
 import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwitch'
 import NcNoteCard from '@nextcloud/vue/components/NcNoteCard'
+import NcPasswordField from '@nextcloud/vue/components/NcPasswordField'
+import NcSelect from '@nextcloud/vue/components/NcSelect'
+import NcTextField from '@nextcloud/vue/components/NcTextField'
 import { subscriptionNudge as buildSubscriptionNudge } from './composables/useSubscriptionNudge.js'
 import NcButton from '@nextcloud/vue/components/NcButton'
+import Door from 'vue-material-design-icons/Door.vue'
 import DoorOpen from 'vue-material-design-icons/DoorOpen.vue'
+import FolderMultiple from 'vue-material-design-icons/FolderMultiple.vue'
 import Close from 'vue-material-design-icons/Close.vue'
 import Plus from 'vue-material-design-icons/Plus.vue'
 import DragHorizontalVariant from 'vue-material-design-icons/DragHorizontalVariant.vue'
 import CalendarCheck from 'vue-material-design-icons/CalendarCheck.vue'
 import Cog from 'vue-material-design-icons/Cog.vue'
+import FileArrowUpDownOutline from 'vue-material-design-icons/FileArrowUpDownOutline.vue'
 import ChartBox from 'vue-material-design-icons/ChartBox.vue'
-import SwapHorizontal from 'vue-material-design-icons/SwapHorizontal.vue'
 import Download from 'vue-material-design-icons/Download.vue'
 import Upload from 'vue-material-design-icons/Upload.vue'
-import AlertCircle from 'vue-material-design-icons/AlertCircle.vue'
 import ContentCopy from 'vue-material-design-icons/ContentCopy.vue'
-import Heart from 'vue-material-design-icons/Heart.vue'
+import Lifebuoy from 'vue-material-design-icons/Lifebuoy.vue'
 import NcChip from '@nextcloud/vue/components/NcChip'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 
@@ -746,6 +606,7 @@ import RoomEditor from './views/RoomEditor.vue'
 import RoomGroupEditor from './views/RoomGroupEditor.vue'
 import PermissionEditor from './views/PermissionEditor.vue'
 import BookingOverview from './views/BookingOverview.vue'
+import PaneSwitcher from './components/PaneSwitcher.vue'
 import SupportSettings from './components/SupportSettings.vue'
 
 import {
@@ -758,9 +619,19 @@ import {
     getLicenseStats,
 } from './services/api.js'
 
-const t = (app, text, vars = {}) => translate(app, text, vars)
+// translate() HTML-escapes placeholder values and runs the result through
+// DOMPurify by default, both for v-html. Vue escapes again when it renders
+// text or binds an attribute, so user data such as a room name would show as
+// "&amp;" or lose anything that looks like a tag. Text uses asText instead;
+// nothing in the app renders translations with v-html.
+const asText = { escape: false, sanitize: false }
+const t = (app, text, vars = {}, options = undefined) => translate(app, text, vars, undefined, options)
 
-const currentView = ref('rooms')
+// Anchors that open the Support pane. #support is the pane itself; the consent
+// notification links to #usage-statistics, where SupportSettings opens the
+// field list (lib/Notification/Notifier.php).
+const SUPPORT_HASHES = ['#support', '#usage-statistics']
+const currentView = ref(SUPPORT_HASHES.includes(window.location.hash) ? 'support' : 'rooms')
 const rooms = ref([])
 const roomGroups = ref([])
 const selectedRoom = ref(null)
@@ -778,17 +649,24 @@ const dragOverIndex = ref(null)
 const newFacilityLabel = ref('')
 const facilityDragIndex = ref(null)
 const facilityDragOverIndex = ref(null)
-const telemetryEnabled = ref(true)
-const telemetryLastReport = ref(null)
 
 // API Token state
 const apiTokens = ref([])
 const newTokenName = ref('')
 const newTokenScope = ref('read')
+// Identifiers the API checks, so not translated (the Scopes list explains them)
+const TOKEN_SCOPES = ['read', 'book', 'admin']
 const creatingToken = ref(false)
 const newlyCreatedToken = ref(null)
 const tokenCopied = ref(false)
 const apiBaseUrl = window.location.origin + generateUrl('/apps/roomvox')
+
+// What v-model.number did on the raw number inputs: a number when the text
+// parses as one, the text itself otherwise, so an emptied field stays ''.
+const looseToNumber = (value) => {
+    const n = parseFloat(value)
+    return isNaN(n) ? value : n
+}
 
 // Exchange sync state
 const exchangeEnabled = ref(false)
@@ -988,10 +866,28 @@ const formatDate = (isoString) => {
     return d.toLocaleDateString(ncLocale) + ' ' + d.toLocaleTimeString(ncLocale, { hour: '2-digit', minute: '2-digit' })
 }
 
-const isTabActive = (tabId) => {
-    if (tabId === 'rooms') return currentView.value === 'rooms' || currentView.value === 'permissions'
-    return currentView.value === tabId
-}
+// Icons follow what is behind each tab, as the design guidelines ask (§7)
+const tabs = [
+    { id: 'rooms', label: t('roomvox', 'Rooms'), icon: DoorOpen },
+    { id: 'bookings', label: t('roomvox', 'Bookings'), icon: CalendarCheck },
+    { id: 'import-export', label: t('roomvox', 'Import / export'), icon: FileArrowUpDownOutline },
+    { id: 'settings', label: t('roomvox', 'Settings'), icon: Cog },
+    { id: 'statistics', label: t('roomvox', 'Statistics'), icon: ChartBox },
+    { id: 'support', label: t('roomvox', 'Support'), icon: Lifebuoy },
+]
+
+// Statistics: one tile shape for every figure, all counted on this server.
+const statTiles = computed(() => [
+    { id: 'rooms', icon: Door, value: rooms.value.length, label: t('roomvox', 'Total rooms') },
+    { id: 'active', icon: DoorOpen, value: rooms.value.filter(r => r.active !== false).length, label: t('roomvox', 'Active rooms') },
+    { id: 'groups', icon: FolderMultiple, value: roomGroups.value.length, label: t('roomvox', 'Room groups') },
+])
+
+// Editing a room's permissions happens under the Rooms tab
+const activeTab = computed({
+    get: () => currentView.value === 'permissions' ? 'rooms' : currentView.value,
+    set: (tabId) => onTabClick(tabId),
+})
 
 const onTabClick = (tabId) => {
     currentView.value = tabId
@@ -1021,9 +917,6 @@ const loadSettings = async () => {
     try {
         const response = await getSettings()
         settings.value = response.data
-        if (response.data.telemetryEnabled !== undefined) {
-            telemetryEnabled.value = response.data.telemetryEnabled
-        }
         // Load Exchange settings
         if (response.data.exchangeEnabled !== undefined) {
             exchangeEnabled.value = response.data.exchangeEnabled
@@ -1067,6 +960,16 @@ const onSaveRoom = async (roomData) => {
         creatingRoom.value = false
         await loadRooms()
     } catch (e) {
+        // A taken email address is a field error, not a failed save: keep the
+        // editor open so the entered room is not lost.
+        if (e.response?.status === 409) {
+            const conflictingId = e.response?.data?.conflictingRoomId
+            const conflicting = rooms.value.find(r => r.id === conflictingId)
+            showError(t('roomvox', 'Room "{room}" already uses this email address', {
+                room: conflicting?.name || conflictingId || '?',
+            }, asText))
+            return
+        }
         showError(t('roomvox', 'Failed to save room') + ': ' + (e.response?.data?.error || e.message))
     }
 }
@@ -1311,19 +1214,6 @@ const onFacilityDragEnd = () => {
     facilityDragOverIndex.value = null
 }
 
-const toggleTelemetry = async (enabled) => {
-    try {
-        await saveSettings({ telemetryEnabled: enabled })
-        telemetryEnabled.value = enabled
-        if (enabled) {
-            showSuccess(t('roomvox', 'Thank you for helping improve RoomVox!'))
-        }
-    } catch (e) {
-        showError(t('roomvox', 'Failed to update telemetry setting'))
-        telemetryEnabled.value = !enabled
-    }
-}
-
 // Licence figures for the banner above the tabs. Failing quietly is deliberate:
 // the banner is a courtesy, so a stats call that does not come back should leave
 // the interface alone rather than show an error the administrator cannot act on.
@@ -1341,11 +1231,24 @@ async function loadLicenseStats() {
     }
 }
 
+// A notification link followed while this page is already open only changes
+// the hash, so follow it here too.
+const onHashChange = () => {
+    if (SUPPORT_HASHES.includes(window.location.hash)) {
+        onTabClick('support')
+    }
+}
+
 onMounted(() => {
+    window.addEventListener('hashchange', onHashChange)
     loadRooms()
     loadSettings()
     loadApiTokens()
     loadLicenseStats()
+})
+
+onBeforeUnmount(() => {
+    window.removeEventListener('hashchange', onHashChange)
 })
 </script>
 
@@ -1360,59 +1263,11 @@ onMounted(() => {
     margin-bottom: 12px;
 }
 
-/* Phones. The five tabs need roughly 710px laid out in a row; a phone offers
-   about 350px inside the page padding, so they wrap regardless. These rules
-   only decide how many rows that costs: trimming the page and tab padding and
-   dropping a step of type gets it to two rows instead of three, which matters
-   because every row here pushes the actual content further down. */
+/* Phones: every pixel of padding here pushes the content further down. */
 @media (max-width: 500px) {
     .roomvox-app {
         padding: 12px;
     }
-
-    .tab-button {
-        padding: 10px 12px;
-        font-size: 13px;
-    }
-}
-
-/* Tab Navigation - IntraVox/FormVox style */
-.tab-navigation {
-    border-bottom: 1px solid var(--color-border);
-    display: flex;
-    /* Wrap to a second row instead of pushing the page sideways. Five tabs do
-       not fit a phone, and without this the whole layout scrolls horizontally
-       — taking the banner and the content with it. Matches IntraVox/MetaVox. */
-    flex-wrap: wrap;
-    gap: 4px 10px;
-    margin-bottom: 20px;
-}
-
-.tab-button {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    /* Keep a label on one line: "Import / export" would otherwise break at both
-       spaces and turn one tab into three rows, dragging the row height with it. */
-    white-space: nowrap;
-    padding: 12px 20px;
-    border: none;
-    background: none;
-    cursor: pointer;
-    border-bottom: 2px solid transparent;
-    color: var(--color-text-lighter);
-    font-size: 14px;
-    transition: all 0.2s ease;
-}
-
-.tab-button:hover:not(.active) {
-    background: var(--color-background-hover);
-}
-
-.tab-button.active {
-    border-bottom-color: var(--color-primary);
-    color: var(--color-primary);
-    background: var(--color-primary-element-light);
 }
 
 .tab-content {
@@ -1428,70 +1283,52 @@ onMounted(() => {
     margin-top: 0;
 }
 
-/* Settings sections */
-.settings-section {
-    margin-bottom: 32px;
+/* Statistics tiles: icon, number, label beneath — the same shape in every
+   Vox app. Sizes and weights from the theme's tokens. */
+.stat-tiles {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(160px, 100%), 1fr));
+    gap: 16px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
 }
 
-.settings-section h2 {
-    font-size: 20px;
-    font-weight: bold;
-    margin-bottom: 8px;
-}
-
-.settings-section-desc {
-    color: var(--color-text-maxcontrast);
-    margin-bottom: 20px;
-}
-
-/* Stats overview */
-.stats-overview {
+.stat-tile {
     display: flex;
     flex-direction: column;
-    gap: 12px;
-    margin-bottom: 24px;
-}
-
-.stat-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 16px 20px;
+    align-items: flex-start;
+    gap: 4px;
+    padding: 16px;
     background: var(--color-background-hover);
     border-radius: var(--border-radius-large);
 }
 
-.stat-info {
-    display: flex;
-    align-items: center;
-    gap: 12px;
+.stat-tile__icon {
+    color: var(--color-text-maxcontrast);
 }
 
-.stat-icon {
-    font-size: 1.5em;
+/* The icon component centres itself (align-self: center), which beat the
+   tile's flex-start: icon centred, number and label left. One edge. */
+.stat-tile .stat-tile__icon {
+    align-self: flex-start;
 }
 
-.stat-label {
-    font-weight: 500;
-    color: var(--color-main-text);
+.stat-tile__value {
+    font-size: calc(var(--default-font-size) * 1.6);
+    font-weight: var(--font-weight-heading);
+    line-height: 1.2;
+    color: var(--color-primary-element);
 }
 
-.stat-value {
-    font-size: 24px;
-    font-weight: 700;
-    color: var(--color-primary);
+.stat-tile__label {
+    color: var(--color-text-maxcontrast);
 }
 
 .roomvox-settings {
     display: flex;
     flex-direction: column;
     gap: 16px;
-}
-
-.roomvox-settings .section-description {
-    color: var(--color-text-maxcontrast);
-    margin-bottom: 12px;
-    font-size: 13px;
 }
 
 .room-type-list {
@@ -1505,8 +1342,7 @@ onMounted(() => {
     align-items: center;
     gap: 8px;
     margin-bottom: 4px;
-    border-radius: var(--border-radius-large);
-    padding: 2px 0;
+    border-radius: var(--border-radius-element);
     transition: background 0.15s ease;
 }
 
@@ -1530,24 +1366,13 @@ onMounted(() => {
     cursor: grabbing;
 }
 
-.room-type-input {
+/* The field takes the room the row leaves it; the section sets the measure. */
+.room-type-label {
     flex: 1;
-    max-width: 300px;
-    padding: 8px 12px;
-    border: 2px solid var(--color-border-maxcontrast);
-    border-radius: var(--border-radius-large);
-    background: var(--color-main-background);
-    color: var(--color-main-text);
-    font-size: 14px;
-}
-
-.room-type-input:focus {
-    border-color: var(--color-primary-element);
-    outline: none;
 }
 
 .room-type-id {
-    font-size: 12px;
+    font-size: var(--font-size-small);
     color: var(--color-text-maxcontrast);
     font-family: monospace;
     min-width: 120px;
@@ -1555,130 +1380,31 @@ onMounted(() => {
 
 .room-type-add {
     display: flex;
-    align-items: center;
+    align-items: flex-end;
     gap: 8px;
     margin-top: 8px;
-}
-
-/* About info */
-.about-info {
-    margin-top: 24px;
-    padding: 20px;
-    background: var(--color-background-hover);
-    border-radius: var(--border-radius-large);
-    border-left: 4px solid var(--color-primary-element);
-}
-
-.about-info h4 {
-    margin: 0 0 12px 0;
-    font-size: 16px;
-    font-weight: 600;
-    color: var(--color-main-text);
-}
-
-.about-info p {
-    margin: 0 0 12px 0;
-    color: var(--color-main-text);
-    line-height: 1.5;
-}
-
-.about-info p:last-child {
-    margin-bottom: 0;
-}
-
-/* Telemetry section */
-.telemetry-settings {
-    margin-top: 20px;
-}
-
-.engagement-option {
-    padding: 8px 0;
-}
-
-.option-info {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-}
-
-.option-label {
-    font-weight: 500;
-    color: var(--color-main-text);
-}
-
-.option-desc {
-    font-size: 12px;
-    color: var(--color-text-maxcontrast);
-}
-
-.telemetry-info {
-    margin-top: 16px;
-}
-
-.telemetry-details {
-    margin-top: 24px;
-    padding: 16px;
-    background: var(--color-background-hover);
-    border-radius: var(--border-radius-large);
-}
-
-.telemetry-details h4 {
-    margin: 0 0 12px 0;
-    font-size: 14px;
-    font-weight: 600;
-    color: var(--color-main-text);
-}
-
-.telemetry-details h4:not(:first-child) {
-    margin-top: 20px;
-}
-
-.telemetry-details ul {
-    margin: 0;
-    padding-left: 24px;
-    color: var(--color-text-maxcontrast);
-}
-
-.telemetry-details ul li {
-    margin-bottom: 6px;
-    line-height: 1.4;
-}
-
-.telemetry-details ul.not-collected {
-    list-style: none;
-    padding-left: 0;
-}
-
-.telemetry-details ul.not-collected li {
-    display: flex;
-    align-items: flex-start;
-    gap: 8px;
-    color: var(--color-main-text);
-}
-
-.telemetry-details ul.not-collected li::before {
-    content: '✓';
-    color: var(--color-success, #2d7b43);
-    font-weight: 600;
-    flex-shrink: 0;
 }
 
 /* API Token management */
 .token-list {
     margin-bottom: 20px;
+    overflow-x: auto;
 }
 
 .token-table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 13px;
 }
 
+/* Column names read as headings by being smaller and quieter, not by weight
+   or a fill (design guidelines §6, "Tables in a settings page"). */
 .token-table th {
-    text-align: left;
+    text-align: start;
     padding: 8px 12px;
-    font-weight: 600;
-    border-bottom: 2px solid var(--color-border);
+    font-size: var(--font-size-small);
+    font-weight: var(--font-weight-element);
+    color: var(--color-text-maxcontrast);
+    border-bottom: 1px solid var(--color-border);
     white-space: nowrap;
 }
 
@@ -1688,27 +1414,12 @@ onMounted(() => {
 }
 
 .token-name {
-    font-weight: 500;
+    font-weight: var(--font-weight-element);
 }
 
 .no-tokens {
     color: var(--color-text-maxcontrast);
-    font-style: italic;
     margin-bottom: 16px;
-}
-
-.new-token-banner {
-    display: flex;
-    gap: 12px;
-    padding: 16px;
-    margin: 16px 0;
-    background: var(--color-warning-hover, #fff3e0);
-    border-radius: var(--border-radius-large);
-    border-left: 4px solid var(--color-warning, #e65100);
-}
-
-.new-token-info {
-    flex: 1;
 }
 
 .new-token-value {
@@ -1721,51 +1432,48 @@ onMounted(() => {
 .new-token-value code {
     padding: 8px 12px;
     background: var(--color-background-dark);
-    border-radius: var(--border-radius);
-    font-size: 13px;
+    border-radius: var(--border-radius-small);
     word-break: break-all;
     flex: 1;
 }
 
-.create-token-form {
+.token-form-row {
+    display: flex;
+    align-items: flex-end;
+    flex-wrap: wrap;
+    gap: 8px;
     margin: 16px 0;
 }
 
-.token-form-row {
-    display: flex;
-    align-items: center;
-    gap: 8px;
+.token-form-row__name {
+    flex: 1;
 }
 
-.token-scope-select {
-    padding: 8px 12px;
-    border: 2px solid var(--color-border-maxcontrast);
-    border-radius: var(--border-radius-large);
-    background: var(--color-main-background);
-    color: var(--color-main-text);
-    font-size: 14px;
+/* Three fixed options: the select needs no more than its own minimum. */
+.token-form-row__scope {
+    width: fit-content;
 }
 
 .token-help {
     margin-top: 20px;
     padding: 16px;
     background: var(--color-background-hover);
-    border-radius: var(--border-radius-large);
+    border-radius: var(--border-radius-element);
 }
 
-.token-help h4 {
-    margin: 0 0 8px 0;
-    font-size: 14px;
-    font-weight: 600;
+.token-help h3 {
+    margin: 0 0 8px;
+    font-size: var(--default-font-size);
+    font-weight: var(--font-weight-heading);
 }
 
-.token-help h4:not(:first-child) {
+.token-help h3:not(:first-child) {
     margin-top: 16px;
 }
 
 .token-help ul {
     margin: 0;
-    padding-left: 20px;
+    padding-inline-start: 20px;
 }
 
 .token-help ul li {
@@ -1778,16 +1486,12 @@ onMounted(() => {
     margin-top: 8px;
     padding: 8px 12px;
     background: var(--color-background-dark);
-    border-radius: var(--border-radius);
-    font-size: 12px;
+    border-radius: var(--border-radius-small);
+    font-size: var(--font-size-small);
     word-break: break-all;
 }
 
 /* Import / Export tab */
-.import-export-tab {
-    max-width: 900px;
-}
-
 .import-inline {
     margin-top: 16px;
 }
@@ -1800,13 +1504,13 @@ onMounted(() => {
     gap: 8px;
     padding: 48px 24px;
     border: 2px dashed var(--color-border);
-    border-radius: var(--border-radius-large);
+    border-radius: var(--border-radius-element);
     text-align: center;
     transition: border-color 0.2s, background-color 0.2s;
 }
 
 .upload-area--drag {
-    border-color: var(--color-primary);
+    border-color: var(--color-primary-element);
     background-color: var(--color-primary-element-light);
 }
 
@@ -1816,56 +1520,44 @@ onMounted(() => {
 
 .upload-or {
     color: var(--color-text-maxcontrast);
-    font-size: 13px;
 }
 
 .hidden-input {
     display: none;
 }
 
-.import-error {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-top: 16px;
-    padding: 12px;
-    background: var(--color-error-hover);
-    border-radius: var(--border-radius);
-    color: var(--color-error-text);
-}
-
 .import-help {
     margin-top: 24px;
     padding: 16px 20px;
     background: var(--color-background-hover);
-    border-radius: var(--border-radius-large);
+    border-radius: var(--border-radius-element);
 }
 
 .import-help h3 {
-    font-size: 15px;
-    font-weight: 600;
-    margin: 0 0 12px 0;
+    font-size: var(--default-font-size);
+    font-weight: var(--font-weight-heading);
+    margin: 0 0 12px;
 }
 
 .import-help ul {
     margin: 0;
-    padding-left: 20px;
+    padding-inline-start: 20px;
 }
 
 .import-help ul li {
-    margin-bottom: 6px;
+    margin-bottom: 4px;
     line-height: 1.5;
 }
 
 .import-help-note {
     margin-top: 12px;
-    font-size: 13px;
     color: var(--color-text-maxcontrast);
 }
 
 .sample-download {
     display: flex;
     align-items: center;
+    flex-wrap: wrap;
     gap: 12px;
     margin-top: 16px;
     padding-top: 16px;
@@ -1873,7 +1565,6 @@ onMounted(() => {
 }
 
 .sample-desc {
-    font-size: 13px;
     color: var(--color-text-maxcontrast);
 }
 
@@ -1890,23 +1581,26 @@ onMounted(() => {
     max-height: 400px;
     overflow: auto;
     border: 1px solid var(--color-border);
-    border-radius: var(--border-radius);
+    border-radius: var(--border-radius-small);
     margin-bottom: 20px;
 }
 
 .preview-table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 13px;
 }
 
+/* Sticky, so it needs the page surface behind it to hide the rows that scroll
+   under it; quieter type rather than a grey band marks it as the header. */
 .preview-table th {
     position: sticky;
     top: 0;
-    background: var(--color-background-dark);
-    text-align: left;
+    background: var(--color-main-background);
+    text-align: start;
     padding: 8px 12px;
-    font-weight: 600;
+    font-size: var(--font-size-small);
+    font-weight: var(--font-weight-element);
+    color: var(--color-text-maxcontrast);
     border-bottom: 1px solid var(--color-border);
     white-space: nowrap;
 }
@@ -1921,26 +1615,28 @@ onMounted(() => {
 }
 
 .row-error {
-    background: var(--color-error-hover);
+    background: var(--color-error);
 }
 
 .error-text {
-    color: var(--color-error);
-    font-size: 12px;
+    color: var(--color-error-text);
+    font-size: var(--font-size-small);
 }
 
 .match-text {
     color: var(--color-text-maxcontrast);
-    font-size: 12px;
+    font-size: var(--font-size-small);
 }
 
 .import-mode {
-    margin-bottom: 20px;
+    margin: 0 0 20px;
+    padding: 0;
+    border: 0;
 }
 
-.import-mode label {
-    display: block;
-    font-weight: 600;
+.import-mode legend {
+    padding: 0;
+    font-weight: var(--font-weight-heading);
     margin-bottom: 8px;
 }
 
@@ -1963,39 +1659,44 @@ onMounted(() => {
     flex-wrap: wrap;
 }
 
+/* Soft background with its matching text token, per tier (design guidelines §5) */
 .result-stat {
     display: flex;
     flex-direction: column;
     align-items: center;
     padding: 16px 24px;
-    border-radius: var(--border-radius-large);
+    border-radius: var(--border-radius-element);
     min-width: 100px;
 }
 
 .result-stat--success {
-    background: var(--color-success-hover, #e8f5e9);
+    background: var(--color-success);
+    color: var(--color-success-text);
 }
 
 .result-stat--info {
-    background: var(--color-info-hover, #e3f2fd);
+    background: var(--color-info);
+    color: var(--color-info-text);
 }
 
 .result-stat--warning {
-    background: var(--color-warning-hover, #fff3e0);
+    background: var(--color-warning);
+    color: var(--color-warning-text);
 }
 
 .result-stat--error {
-    background: var(--color-error-hover, #fce4ec);
+    background: var(--color-error);
+    color: var(--color-error-text);
 }
 
 .result-stat__number {
-    font-size: 28px;
-    font-weight: 700;
+    font-size: calc(var(--default-font-size) * 1.6);
+    font-weight: var(--font-weight-heading);
+    line-height: 1.2;
 }
 
 .result-stat__label {
-    font-size: 13px;
-    color: var(--color-text-maxcontrast);
+    font-size: var(--font-size-small);
     margin-top: 4px;
 }
 
@@ -2004,8 +1705,8 @@ onMounted(() => {
 }
 
 .result-errors h3 {
-    font-size: 15px;
-    font-weight: 600;
+    font-size: var(--default-font-size);
+    font-weight: var(--font-weight-heading);
     margin-bottom: 8px;
 }
 
@@ -2015,23 +1716,11 @@ onMounted(() => {
 }
 
 .result-errors li {
-    padding: 6px 0;
+    padding: 8px 0;
     border-bottom: 1px solid var(--color-border);
-    font-size: 13px;
 }
 
 /* Exchange settings */
-.exchange-settings .form-field {
-    margin-bottom: 12px;
-}
-
-.exchange-settings .form-field label {
-    display: block;
-    font-weight: 500;
-    margin-bottom: 4px;
-    font-size: 14px;
-}
-
 .exchange-fields {
     margin-top: 16px;
 }
@@ -2041,11 +1730,6 @@ onMounted(() => {
     grid-template-columns: 1fr 1fr;
     gap: 16px;
     margin-bottom: 16px;
-}
-
-.exchange-input {
-    width: 100%;
-    max-width: none;
 }
 
 .exchange-test {

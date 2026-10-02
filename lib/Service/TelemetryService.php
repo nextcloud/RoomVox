@@ -6,55 +6,164 @@ namespace OCA\RoomVox\Service;
 
 use OCA\RoomVox\AppInfo\Application;
 use OCP\Http\Client\IClientService;
+use OCP\IAppConfig;
 use OCP\IConfig;
+use OCP\IL10N;
 use OCP\IUserManager;
 use OCP\Support\Subscription\IRegistry;
 use Psr\Log\LoggerInterface;
 
 /**
- * Service for anonymous telemetry data collection and reporting.
- * This is an opt-out feature that helps improve RoomVox.
+ * Usage statistics about this installation, sent to licenses.voxcloud.nl
+ * once a day -- and only after an administrator agreed.
+ *
+ * Bound by the VoxCloud telemetry rules (design TELEMETRY.md 1.1.0). The
+ * field list lives in exactly one place, getFieldDefinitions(): collectData()
+ * sends those keys and nothing else, and the admin pane shows the same list
+ * with the purpose of each field. A field added later raises SCHEMA and is
+ * withheld until the administrator agrees to the longer list.
  */
 class TelemetryService {
+    /** The field-list version this app version sends. */
+    public const SCHEMA = 1;
+
     private const TELEMETRY_URL = 'https://licenses.voxcloud.nl/api/telemetry/roomvox';
+
+    /** The endpoint accepts one report per hour; do not send sooner. */
+    private const MIN_SECONDS_BETWEEN_REPORTS = 3600;
 
     public function __construct(
         private IClientService $httpClient,
         private IConfig $config,
+        private IAppConfig $appConfig,
+        private IL10N $l,
         private LoggerInterface $logger,
         private IUserManager $userManager,
         private RoomService $roomService,
         private RoomGroupService $roomGroupService,
         private LicenseService $licenseService,
+        private TelemetryConsentService $consent,
         private ?IRegistry $subscriptionRegistry = null,
     ) {
     }
 
     /**
-     * Check if telemetry is enabled.
-     * Default is true (opt-out).
+     * The fields each schema added, with a label and the purpose of each.
+     *
+     * The purposes follow the "why" column of TELEMETRY.md §3. They say plainly
+     * that user counts are used to size a licence; do not soften that.
+     *
+     * The highest key here must equal SCHEMA. Protected only so a test can
+     * add a later schema and check that its fields are withheld.
+     *
+     * @return array<int, array<string, array{label: string, purpose: string}>>
      */
-    public function isEnabled(): bool {
-        return $this->config->getAppValue(Application::APP_ID, 'telemetry_enabled', 'true') === 'true';
+    protected function fieldsBySchema(IL10N $l): array {
+        $appUsage = $l->t('Shows how RoomVox features are used, to decide what to develop and maintain.');
+        $licence = $l->t('Used to size a license and to find installations that may need one.');
+
+        return [
+            1 => [
+                'instanceHash' => [
+                    'label' => $l->t('Installation identifier'),
+                    'purpose' => $l->t('A SHA-256 hash of this server\'s address, needed to tell installations apart and to join the reports of the VoxCloud apps on one server with its license records. The address itself is not sent.'),
+                ],
+                'telemetrySchema' => [
+                    'label' => $l->t('Field-list version'),
+                    'purpose' => $l->t('Which version of this list the report follows, so that fields added later are only sent after you agree to them.'),
+                ],
+                'appVersion' => [
+                    'label' => $l->t('RoomVox version'),
+                    'purpose' => $l->t('Shows which RoomVox releases are still in use.'),
+                ],
+                'nextcloudVersion' => [
+                    'label' => $l->t('Nextcloud version'),
+                    'purpose' => $l->t('Shows which Nextcloud versions RoomVox must keep supporting.'),
+                ],
+                'phpVersion' => [
+                    'label' => $l->t('PHP version'),
+                    'purpose' => $l->t('Shows which PHP versions RoomVox must keep supporting. Only the major and minor version, such as 8.3.'),
+                ],
+                'totalUsers' => [
+                    'label' => $l->t('Number of user accounts'),
+                    'purpose' => $licence,
+                ],
+                'hasValidSubscription' => [
+                    'label' => $l->t('Nextcloud subscription (yes or no)'),
+                    'purpose' => $l->t('Shows whether this server has a Nextcloud Enterprise subscription. Such servers are listed as Enterprise customers and are not approached about a license.'),
+                ],
+                'activeUsers30d' => [
+                    'label' => $l->t('Users active in the last 30 days'),
+                    'purpose' => $licence,
+                ],
+                'disabledUsers' => [
+                    'label' => $l->t('Number of disabled accounts'),
+                    'purpose' => $licence,
+                ],
+                'countryCode' => [
+                    'label' => $l->t('Country'),
+                    'purpose' => $l->t('Shown on a world map of installations. Taken from the default phone region, or worked out on this server from the default time zone. The time zone itself is not sent.'),
+                ],
+                'totalRooms' => [
+                    'label' => $l->t('Number of rooms'),
+                    'purpose' => $appUsage,
+                ],
+                'totalRoomGroups' => [
+                    'label' => $l->t('Number of room groups'),
+                    'purpose' => $appUsage,
+                ],
+                'autoAcceptCount' => [
+                    'label' => $l->t('Rooms that accept bookings automatically'),
+                    'purpose' => $appUsage,
+                ],
+                'roomsWithSmtp' => [
+                    'label' => $l->t('Rooms with their own mail server'),
+                    'purpose' => $appUsage,
+                ],
+                'exchangeSyncEnabled' => [
+                    'label' => $l->t('Microsoft Exchange sync switched on (yes or no)'),
+                    'purpose' => $l->t('Shows whether the Exchange integration is used. The tenant ID, client ID and client secret are never sent.'),
+                ],
+                'roomsWithExchange' => [
+                    'label' => $l->t('Rooms synced with Microsoft Exchange'),
+                    'purpose' => $appUsage,
+                ],
+            ],
+        ];
     }
 
     /**
-     * Enable or disable telemetry.
+     * Every field up to and including $schema (all fields when null), in the
+     * order they are sent.
+     *
+     * @return array<string, array{label: string, purpose: string, schema: int}>
      */
-    public function setEnabled(bool $enabled): void {
-        $this->config->setAppValue(Application::APP_ID, 'telemetry_enabled', $enabled ? 'true' : 'false');
-        $this->logger->info('TelemetryService: Telemetry ' . ($enabled ? 'enabled' : 'disabled'));
+    public function getFieldDefinitions(?IL10N $l = null, ?int $schema = null): array {
+        $fields = [];
+        foreach ($this->fieldsBySchema($l ?? $this->l) as $since => $definitions) {
+            if ($schema !== null && $since > $schema) {
+                continue;
+            }
+            foreach ($definitions as $key => $definition) {
+                $fields[$key] = $definition + ['schema' => $since];
+            }
+        }
+        return $fields;
+    }
+
+    /**
+     * Whether an administrator agreed to send usage statistics.
+     * A missing value means no.
+     */
+    public function isEnabled(): bool {
+        return $this->consent->isEnabled();
     }
 
     /**
      * Get the telemetry server URL.
      */
     public function getTelemetryUrl(): string {
-        return $this->config->getAppValue(
-            Application::APP_ID,
-            'telemetry_url',
-            self::TELEMETRY_URL
-        );
+        return $this->appConfig->getValueString(Application::APP_ID, 'telemetry_url', self::TELEMETRY_URL);
     }
 
     /**
@@ -67,12 +176,22 @@ class TelemetryService {
 
     /**
      * Send telemetry report with detailed result for UI feedback.
+     *
+     * Refuses while telemetry is off, and never switches it on for the send.
+     * A report within the last hour is answered with 'recently_sent' -- the
+     * endpoint would refuse it with HTTP 429 anyway.
+     *
      * @return array{success: bool, reason?: string, message?: string}
      */
     public function sendReportWithDetails(): array {
         if (!$this->isEnabled()) {
             $this->logger->debug('TelemetryService: Telemetry is disabled, skipping report');
             return ['success' => false, 'reason' => 'disabled'];
+        }
+
+        $lastReport = $this->getLastReportTime();
+        if ($lastReport !== null && (time() - $lastReport) < self::MIN_SECONDS_BETWEEN_REPORTS) {
+            return ['success' => false, 'reason' => 'recently_sent'];
         }
 
         try {
@@ -91,18 +210,13 @@ class TelemetryService {
             $statusCode = $response->getStatusCode();
 
             if ($statusCode >= 200 && $statusCode < 300) {
-                $this->logger->info('TelemetryService: Report sent successfully', [
-                    'totalRooms' => $data['totalRooms'],
-                    'totalRoomGroups' => $data['totalRoomGroups']
-                ]);
-
-                $this->config->setAppValue(
-                    Application::APP_ID,
-                    'telemetry_last_report',
-                    (string)time()
-                );
-
+                $this->logger->info('TelemetryService: Report sent successfully');
+                $this->appConfig->setValueString(Application::APP_ID, 'telemetry_last_report', (string)time());
                 return ['success' => true];
+            }
+
+            if ($statusCode === 429) {
+                return ['success' => false, 'reason' => 'recently_sent'];
             }
 
             return ['success' => false, 'reason' => 'server_error', 'message' => 'HTTP ' . $statusCode];
@@ -111,7 +225,11 @@ class TelemetryService {
 
             // Extract server error message from Guzzle response
             if (method_exists($e, 'getResponse') && $e->getResponse() !== null) {
-                $body = (string) $e->getResponse()->getBody();
+                $errorResponse = $e->getResponse();
+                if ($errorResponse->getStatusCode() === 429) {
+                    return ['success' => false, 'reason' => 'recently_sent'];
+                }
+                $body = (string) $errorResponse->getBody();
                 $json = json_decode($body, true);
                 if (isset($json['error'])) {
                     $message = $json['error'];
@@ -126,58 +244,44 @@ class TelemetryService {
     }
 
     /**
-     * Collect telemetry data from RoomVox configuration.
+     * The report: exactly the fields of the schema the administrator agreed
+     * to, in definition order. A field added by a later schema is withheld
+     * until the administrator agrees to the longer list.
      */
     public function collectData(): array {
+        $schema = $this->consent->getConsentedSchema();
         $rooms = $this->roomService->getAllRooms();
         $roomStats = $this->calculateRoomStats($rooms);
-        $groups = $this->roomGroupService->getAllGroups();
 
-        return [
+        $values = [
             'instanceHash' => $this->getInstanceHash(),
-            'version' => $this->getAppVersion(),
+            'telemetrySchema' => $schema,
+            'appVersion' => $this->getAppVersion(),
+            'nextcloudVersion' => $this->getNextcloudVersion(),
+            'phpVersion' => PHP_MAJOR_VERSION . '.' . PHP_MINOR_VERSION,
+            'totalUsers' => $this->getUserCount(),
+            'hasValidSubscription' => $this->hasValidSubscription(),
+            'activeUsers30d' => $this->getActiveUserCount(30),
+            'disabledUsers' => $this->getDisabledUserCount(),
+            'countryCode' => $this->getCountryCode(),
             'totalRooms' => count($rooms),
-            'totalRoomGroups' => count($groups),
-            'totalBookings' => 0, // Skipped — CalDAV queries are too expensive for telemetry
-            'roomTypeCounts' => $roomStats['roomTypeCounts'],
-            'avgCapacity' => $roomStats['avgCapacity'],
-            'facilitiesCounts' => $roomStats['facilitiesCounts'],
+            'totalRoomGroups' => count($this->roomGroupService->getAllGroups()),
             'autoAcceptCount' => $roomStats['autoAcceptCount'],
             'roomsWithSmtp' => $roomStats['roomsWithSmtp'],
-            'availabilityRulesEnabled' => $roomStats['availabilityRulesEnabled'],
             // Whether the Microsoft Exchange integration is switched on, plus how
             // many rooms are actually wired to a resource mailbox. Deliberately
             // only the on/off flag and a count: the tenant id, client id and
             // client secret sitting next to it in appconfig are never reported.
-            // A tenant id would identify the organisation outright and break the
-            // anonymity the rest of this payload is built on.
+            // A tenant id would name the organisation outright.
             'exchangeSyncEnabled' => $this->isExchangeSyncEnabled(),
             'roomsWithExchange' => $roomStats['roomsWithExchange'],
-            'totalUsers' => $this->getUserCount(),
-            'activeUsers30d' => $this->getActiveUserCount(30),
-            'disabledUsers' => $this->getDisabledUserCount(),
-            'nextcloudVersion' => $this->getNextcloudVersion(),
-            'phpVersion' => PHP_VERSION,
-            'countryCode' => $this->getCountryCode(),
-            'databaseType' => $this->config->getSystemValue('dbtype', 'sqlite'),
-            'defaultLanguage' => $this->config->getSystemValue('default_language', 'en'),
-            'defaultTimezone' => $this->getDefaultTimezone(),
-            'osFamily' => PHP_OS_FAMILY,
-            'webServer' => $this->getWebServer(),
-            'isDocker' => $this->isDocker(),
-            // The Enterprise signal. hasExtendedSupport is the narrower add-on
-            // and is kept alongside it: servers that predate hasValidSubscription
-            // still read that key, and it stays useful on its own.
-            'hasValidSubscription' => $this->hasValidSubscription(),
-            'hasExtendedSupport' => $this->hasExtendedSupport(),
-            // Sent so the license server can verify hasExtendedSupport claims —
-            // the boolean alone is unauthenticated and could be spoofed by anyone
-            // posting to /api/telemetry/report. The server only honors the claim
-            // when this key + the instance hash match an active license_usage row.
-            // Empty string for community instances (no license) — server treats
-            // those as 'never Enterprise' which is correct.
-            'licenseKey' => $this->licenseService->getLicenseKey() ?: '',
         ];
+
+        $data = [];
+        foreach (array_keys($this->getFieldDefinitions(null, $schema)) as $key) {
+            $data[$key] = $values[$key];
+        }
+        return $data;
     }
 
     /**
@@ -212,76 +316,39 @@ class TelemetryService {
     }
 
     /**
-     * Whether that subscription also carries the Extended Support add-on.
-     *
-     * Reported separately so the two signals stay distinguishable: this is a
-     * strict subset of hasValidSubscription() and is not a substitute for it.
-     */
-    private function hasExtendedSupport(): bool {
-        try {
-            return $this->subscriptionRegistry?->delegateHasExtendedSupport() ?? false;
-        } catch (\Throwable $e) {
-            $this->logger->debug('TelemetryService: delegateHasExtendedSupport() check failed', [
-                'error' => $e->getMessage()
-            ]);
-        }
-        return false;
-    }
-
-    /**
-     * Calculate aggregate statistics from room data.
-     */
-    /**
      * Whether the admin switched the Microsoft Exchange integration on.
      *
      * Reads the single `exchange_enabled` flag and nothing else. The
      * neighbouring `exchange_tenant_id`, `exchange_client_id` and
      * `exchange_client_secret` keys stay out of telemetry by design -- a
-     * tenant id is directly traceable to an organisation, so reporting it
-     * would undo the anonymity of the instance hash. Hashing it would not
-     * help: the set of tenant ids is small enough to enumerate.
+     * tenant id is directly traceable to an organisation. Hashing it would
+     * not help: the set of tenant ids is small enough to enumerate.
      *
      * Says "switched on", not "working": an instance whose client secret has
      * expired still reports true while nothing actually syncs. That is what
      * roomsWithExchange is for.
      */
     private function isExchangeSyncEnabled(): bool {
-        return $this->config->getAppValue(Application::APP_ID, 'exchange_enabled', 'false') === 'true';
+        return $this->appConfig->getValueString(Application::APP_ID, 'exchange_enabled', 'false') === 'true';
     }
 
+    /**
+     * Aggregate counts over the rooms. Counts only: nothing keyed by room.
+     *
+     * @return array{autoAcceptCount: int, roomsWithSmtp: int, roomsWithExchange: int}
+     */
     private function calculateRoomStats(array $rooms): array {
-        $roomTypeCounts = [];
-        $facilitiesCounts = [];
         $autoAcceptCount = 0;
         $roomsWithSmtp = 0;
-        $availabilityRulesEnabled = 0;
         $roomsWithExchange = 0;
-        $totalCapacity = 0;
-        $capacityCount = 0;
 
         foreach ($rooms as $room) {
-            // Room type counts
-            $type = $room['roomType'] ?? 'other';
-            $roomTypeCounts[$type] = ($roomTypeCounts[$type] ?? 0) + 1;
-
-            // Facilities counts
-            foreach ($room['facilities'] ?? [] as $facility) {
-                $facilitiesCounts[$facility] = ($facilitiesCounts[$facility] ?? 0) + 1;
-            }
-
-            // Auto-accept
             if (!empty($room['autoAccept'])) {
                 $autoAcceptCount++;
             }
 
-            // SMTP configured
             if (!empty($room['smtpConfig']['host'])) {
                 $roomsWithSmtp++;
-            }
-
-            // Availability rules
-            if (!empty($room['availabilityRules']['enabled'])) {
-                $availabilityRulesEnabled++;
             }
 
             // Rooms actually wired to an Exchange resource. Mirrors
@@ -295,31 +362,20 @@ class TelemetryService {
                 && !empty($exchangeConfig['syncEnabled'])) {
                 $roomsWithExchange++;
             }
-
-            // Capacity for average
-            $capacity = $room['capacity'] ?? 0;
-            if ($capacity > 0) {
-                $totalCapacity += $capacity;
-                $capacityCount++;
-            }
         }
 
         return [
-            'roomTypeCounts' => $roomTypeCounts,
-            'facilitiesCounts' => $facilitiesCounts,
             'autoAcceptCount' => $autoAcceptCount,
             'roomsWithSmtp' => $roomsWithSmtp,
-            'availabilityRulesEnabled' => $availabilityRulesEnabled,
             'roomsWithExchange' => $roomsWithExchange,
-            'avgCapacity' => $capacityCount > 0 ? round($totalCapacity / $capacityCount, 2) : 0,
         ];
     }
 
     /**
-     * Get SHA-256 hash of instance URL for privacy.
+     * Get SHA-256 hash of instance URL.
      * Delegates to LicenseService so the telemetry instanceHash is byte-for-byte
-     * identical to license_usage.instance_url_hash — required for the license
-     * server's enterprise-claim validation join.
+     * identical to license_usage.instance_url_hash -- the platform verifies an
+     * Enterprise claim by joining on it.
      */
     private function getInstanceHash(): string {
         return $this->licenseService->getInstanceUrlHash();
@@ -329,19 +385,34 @@ class TelemetryService {
      * Get the RoomVox app version.
      */
     private function getAppVersion(): string {
-        return $this->config->getAppValue(Application::APP_ID, 'installed_version', 'unknown');
+        return $this->appConfig->getValueString(Application::APP_ID, 'installed_version', 'unknown');
     }
 
     /**
      * Get the Nextcloud version.
      */
     private function getNextcloudVersion(): string {
-        return $this->config->getSystemValue('version', 'unknown');
+        return (string)$this->config->getSystemValue('version', 'unknown');
     }
 
     /**
-     * Get total user count.
+     * Every account on the server, disabled ones included.
+     *
+     * Null when the count failed: the platform must store "unknown", not a
+     * made-up figure (TELEMETRY.md §8, "missing is not zero").
      */
+    private function getUserCount(): ?int {
+        try {
+            $count = 0;
+            $this->userManager->callForAllUsers(function ($user) use (&$count) {
+                $count++;
+            });
+            return $count;
+        } catch (\Exception $e) {
+            return null;
+        }
+    }
+
     /**
      * Accounts that exist but are disabled.
      *
@@ -369,22 +440,11 @@ class TelemetryService {
         }
     }
 
-    private function getUserCount(): int {
-        try {
-            $count = 0;
-            $this->userManager->callForAllUsers(function ($user) use (&$count) {
-                $count++;
-            });
-            return max(1, $count);
-        } catch (\Exception $e) {
-            return 1;
-        }
-    }
-
     /**
-     * Get active user count for the last N days.
+     * Accounts that logged in during the last N days. Null when the count
+     * failed, for the same reason as the other user counts.
      */
-    private function getActiveUserCount(int $days): int {
+    private function getActiveUserCount(int $days): ?int {
         try {
             $cutoffTime = time() - ($days * 24 * 60 * 60);
             $count = 0;
@@ -397,75 +457,42 @@ class TelemetryService {
 
             return $count;
         } catch (\Exception $e) {
-            return 0;
-        }
-    }
-
-    /**
-     * Get ISO 3166-1 alpha-2 country code from default_phone_region setting.
-     * Returns null if not configured — server derives country from timezone.
-     */
-    private function getCountryCode(): ?string {
-        $region = $this->config->getSystemValue('default_phone_region', '');
-        if (!empty($region) && preg_match('/^[A-Z]{2}$/', strtoupper($region))) {
-            return strtoupper($region);
-        }
-        return null;
-    }
-
-    /**
-     * Get the default timezone setting.
-     */
-    private function getDefaultTimezone(): string {
-        $tz = $this->config->getSystemValue('default_timezone', '');
-        if (!empty($tz) && $tz !== 'UTC') {
-            return $tz;
-        }
-        $phpTz = date_default_timezone_get();
-        if (!empty($phpTz) && $phpTz !== 'UTC') {
-            return $phpTz;
-        }
-        return 'UTC';
-    }
-
-    /**
-     * Detect web server from SERVER_SOFTWARE header.
-     */
-    private function getWebServer(): ?string {
-        $software = $_SERVER['SERVER_SOFTWARE'] ?? null;
-        if ($software === null) {
             return null;
         }
-        if (stripos($software, 'apache') !== false) {
-            return 'Apache';
-        }
-        if (stripos($software, 'nginx') !== false) {
-            return 'nginx';
-        }
-        return explode('/', $software)[0];
     }
 
     /**
-     * Detect if running inside a Docker container.
+     * ISO 3166-1 alpha-2 country of this installation, worked out here.
+     *
+     * The administrator's default_phone_region comes first. Without it, the
+     * country of default_timezone is looked up locally by PHP; only the
+     * two-letter code is sent, never the time zone. UTC, the Etc/* zones and
+     * an invalid zone have no country and give null.
      */
-    private function isDocker(): bool {
-        if (file_exists('/.dockerenv')) {
-            return true;
+    private function getCountryCode(): ?string {
+        $region = strtoupper(trim((string)$this->config->getSystemValue('default_phone_region', '')));
+        if (preg_match('/^[A-Z]{2}$/', $region)) {
+            return $region;
         }
-        if (file_exists('/proc/1/cgroup')) {
-            $cgroup = @file_get_contents('/proc/1/cgroup');
-            if ($cgroup !== false && str_contains($cgroup, 'docker')) {
-                return true;
-            }
+
+        $timezone = trim((string)$this->config->getSystemValue('default_timezone', ''));
+        if ($timezone === '') {
+            return null;
         }
-        return false;
+        try {
+            $location = (new \DateTimeZone($timezone))->getLocation();
+        } catch (\Exception $e) {
+            return null;
+        }
+        $code = is_array($location) ? ($location['country_code'] ?? '??') : '??';
+        return preg_match('/^[A-Z]{2}$/', $code) ? $code : null;
     }
 
     /**
      * Get the last report timestamp.
      */
     public function getLastReportTime(): ?int {
-        $time = $this->config->getAppValue(Application::APP_ID, 'telemetry_last_report', '');
+        $time = $this->appConfig->getValueString(Application::APP_ID, 'telemetry_last_report', '');
         return empty($time) ? null : (int)$time;
     }
 
@@ -486,13 +513,32 @@ class TelemetryService {
     }
 
     /**
-     * Get telemetry status for admin panel.
+     * Telemetry state for the admin pane, including the field list with the
+     * purpose of each field -- from the same definition collectData() uses.
+     *
+     * A field is marked 'withheld' while telemetry is on for an older field
+     * list that did not include it.
      */
     public function getStatus(): array {
+        $enabled = $this->isEnabled();
+        $consented = $this->consent->getConsentedSchema();
+
+        $fields = [];
+        foreach ($this->getFieldDefinitions() as $key => $definition) {
+            $fields[] = [
+                'key' => $key,
+                'label' => $definition['label'],
+                'purpose' => $definition['purpose'],
+                'withheld' => $enabled && $definition['schema'] > $consented,
+            ];
+        }
+
         return [
-            'enabled' => $this->isEnabled(),
+            'enabled' => $enabled,
             'lastReport' => $this->getLastReportTime(),
-            'telemetryUrl' => $this->getTelemetryUrl()
+            'schema' => self::SCHEMA,
+            'consentedSchema' => $enabled ? $consented : null,
+            'fields' => $fields,
         ];
     }
 }

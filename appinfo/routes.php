@@ -81,8 +81,10 @@ return [
         ['name' => 'license#validate', 'url' => '/api/license/validate', 'verb' => 'POST'],
         ['name' => 'license#updateUsage', 'url' => '/api/license/update-usage', 'verb' => 'POST'],
         ['name' => 'license#sendTelemetry', 'url' => '/api/license/telemetry', 'verb' => 'POST'],
+        ['name' => 'license#setTelemetry', 'url' => '/api/license/telemetry', 'verb' => 'PUT'],
 
         // Public API v1 (Bearer token authenticated)
+        ['name' => 'public_api#preflight', 'url' => '/api/v1/{path}', 'verb' => 'OPTIONS', 'requirements' => ['path' => '.+']],
         ['name' => 'public_api#room_status', 'url' => '/api/v1/rooms/{id}/status', 'verb' => 'GET'],
         ['name' => 'public_api#room_availability', 'url' => '/api/v1/rooms/{id}/availability', 'verb' => 'GET'],
         ['name' => 'public_api#calendar_feed', 'url' => '/api/v1/rooms/{id}/calendar.ics', 'verb' => 'GET'],
@@ -94,5 +96,11 @@ return [
         ['name' => 'public_api#create_booking', 'url' => '/api/v1/rooms/{id}/bookings', 'verb' => 'POST'],
         ['name' => 'public_api#delete_booking', 'url' => '/api/v1/rooms/{id}/bookings/{uid}', 'verb' => 'DELETE'],
         ['name' => 'public_api#statistics', 'url' => '/api/v1/statistics', 'verb' => 'GET'],
+    ],
+    'ocs' => [
+        // Actions of the usage-statistics notification (admin only)
+        ['name' => 'telemetry_consent#share', 'url' => '/api/telemetry/consent/share', 'verb' => 'POST'],
+        ['name' => 'telemetry_consent#postpone', 'url' => '/api/telemetry/consent/postpone', 'verb' => 'POST'],
+        ['name' => 'telemetry_consent#never_ask', 'url' => '/api/telemetry/consent/never-ask', 'verb' => 'POST'],
     ],
 ];

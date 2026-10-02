@@ -9,11 +9,13 @@ use OCA\RoomVox\Middleware\ApiTokenException;
 use OCA\RoomVox\Service\ApiTokenService;
 use OCA\RoomVox\Service\CalDAVService;
 use OCA\RoomVox\Service\Exchange\ExchangeSyncService;
+use OCA\RoomVox\Service\InstanceTimezone;
 use OCA\RoomVox\Service\MailService;
 use OCA\RoomVox\Service\RoomService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\DataDownloadResponse;
 use OCP\AppFramework\Http\JSONResponse;
+use OCP\AppFramework\Http\Response;
 use OCP\AppFramework\Http\Attribute\BruteForceProtection;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
@@ -32,8 +34,23 @@ class PublicApiController extends Controller {
         private ApiTokenMiddleware $tokenMiddleware,
         private ApiTokenService $tokenService,
         private LoggerInterface $logger,
+        private InstanceTimezone $instanceTimezone,
     ) {
         parent::__construct($appName, $request);
+    }
+
+    /**
+     * Answer browser preflight requests before Bearer authentication.
+     */
+    #[NoAdminRequired]
+    #[NoCSRFRequired]
+    #[PublicPage]
+    public function preflight(): Response {
+        return new Response(204, [
+            'Access-Control-Allow-Origin' => '*',
+            'Access-Control-Allow-Methods' => 'GET, POST, DELETE, OPTIONS',
+            'Access-Control-Allow-Headers' => 'Authorization, Content-Type',
+        ]);
     }
 
     // ── Room Status ──────────────────────────────────────────────────
@@ -51,7 +68,35 @@ class PublicApiController extends Controller {
             return $room;
         }
 
-        $now = new \DateTimeImmutable();
+        if (!($room['active'] ?? true)) {
+            return new JSONResponse([
+                'room' => $this->formatRoom($room),
+                'status' => 'unavailable',
+                'reason' => 'inactive',
+                'currentBooking' => null,
+                'nextBooking' => null,
+                'freeUntil' => null,
+                'todayBookings' => [],
+            ]);
+        }
+
+        // A room without a calendar cannot hold a booking, and its empty
+        // booking list would otherwise be served as 'free' (issue #44).
+        if (!$this->hasCalendar($room)) {
+            return new JSONResponse([
+                'room' => $this->formatRoom($room),
+                'status' => 'unavailable',
+                'reason' => 'no_calendar',
+                'currentBooking' => null,
+                'nextBooking' => null,
+                'freeUntil' => null,
+                'todayBookings' => [],
+            ]);
+        }
+
+        // Local wall-clock "now": booking hours and "today" are instance-local,
+        // while PHP itself runs in UTC under Nextcloud (issue #45).
+        $now = new \DateTimeImmutable('now', $this->instanceTimezone->get());
         $todayStart = $now->setTime(0, 0);
         $todayEnd = $now->setTime(23, 59, 59);
 
@@ -129,6 +174,7 @@ class PublicApiController extends Controller {
         return new JSONResponse([
             'room' => $this->formatRoom($room),
             'status' => $status,
+            'reason' => $status === 'unavailable' ? 'outside_booking_hours' : null,
             'currentBooking' => $currentBooking,
             'nextBooking' => $nextBooking,
             'freeUntil' => $freeUntil,
@@ -149,7 +195,12 @@ class PublicApiController extends Controller {
             return $room;
         }
 
-        $date = $this->request->getParam('date', date('Y-m-d'));
+        // Slots and booking hours are local wall-clock times, so the day, the
+        // rules and every booking are read in the instance timezone. Bookings
+        // are stored in UTC (issue #45); reading them in PHP's UTC put them
+        // hours off the rules createBooking() checks against.
+        $tz = $this->instanceTimezone->get();
+        $date = $this->request->getParam('date', (new \DateTimeImmutable('now', $tz))->format('Y-m-d'));
         $from = $this->request->getParam('from');
         $to = $this->request->getParam('to');
 
@@ -160,14 +211,26 @@ class PublicApiController extends Controller {
                 if ($rangeError !== null) {
                     return $rangeError;
                 }
-                $rangeStart = new \DateTimeImmutable($from);
-                $rangeEnd = new \DateTimeImmutable($to);
+                $rangeStart = (new \DateTimeImmutable($from, $tz))->setTimezone($tz);
+                $rangeEnd = (new \DateTimeImmutable($to, $tz))->setTimezone($tz);
             } else {
-                $rangeStart = new \DateTimeImmutable($date . 'T00:00:00');
-                $rangeEnd = new \DateTimeImmutable($date . 'T23:59:59');
+                $rangeStart = new \DateTimeImmutable($date . 'T00:00:00', $tz);
+                $rangeEnd = new \DateTimeImmutable($date . 'T23:59:59', $tz);
             }
         } catch (\Exception $e) {
             return new JSONResponse(['error' => 'Invalid date format'], 400);
+        }
+
+        // No calendar, nothing bookable: an empty list here would come out as
+        // one free slot spanning the whole day (issue #44).
+        if (!$this->hasCalendar($room)) {
+            return new JSONResponse([
+                'room' => ['id' => $room['id'], 'name' => $room['name']],
+                'date' => $date,
+                'availabilityRules' => null,
+                'slots' => [],
+                'reason' => 'no_calendar',
+            ]);
         }
 
         $bookings = $this->calDAVService->getBookings(
@@ -202,12 +265,28 @@ class PublicApiController extends Controller {
 
         // Build slots
         $slots = [];
-        $cursor = new \DateTimeImmutable($date . 'T' . $dayStart);
-        $end = new \DateTimeImmutable($date . 'T' . $dayEnd);
+        $cursor = new \DateTimeImmutable($date . 'T' . $dayStart, $tz);
+        $end = new \DateTimeImmutable($date . 'T' . $dayEnd, $tz);
 
-        foreach ($busy as $booking) {
-            $bStart = new \DateTimeImmutable($booking['dtstart']);
-            $bEnd = new \DateTimeImmutable($booking['dtend']);
+        // The walk below assumes start order, and that order only exists
+        // once every booking is read as a local moment: getBookings() sorts
+        // floating and all-day values as if their +00:00 were real.
+        $intervals = array_map(function (array $booking) use ($tz): array {
+            $wallClock = !empty($booking['wallClock']);
+            return [
+                $this->localMoment($booking['dtstart'], $tz, $wallClock),
+                $this->localMoment($booking['dtend'], $tz, $wallClock),
+                $booking['summary'],
+            ];
+        }, $busy);
+        usort($intervals, fn(array $a, array $b) => $a[0] <=> $b[0]);
+
+        foreach ($intervals as [$bStart, $bEnd, $title]) {
+            // Outside the window altogether: clamping would turn it into an
+            // inverted slot and move the cursor backwards.
+            if ($bEnd <= $cursor || $bStart >= $end) {
+                continue;
+            }
 
             // Clamp to day range
             if ($bStart < $cursor) {
@@ -229,7 +308,7 @@ class PublicApiController extends Controller {
                 'start' => $bStart->format('H:i'),
                 'end' => $bEnd->format('H:i'),
                 'status' => 'busy',
-                'title' => $booking['summary'],
+                'title' => $title,
             ];
 
             $cursor = $bEnd;
@@ -385,19 +464,35 @@ class PublicApiController extends Controller {
             return new JSONResponse(['error' => 'End time must be after start time'], 400);
         }
 
+        if (!($room['active'] ?? true)) {
+            return new JSONResponse(['error' => 'Room is not active and cannot be booked'], 422);
+        }
+
+        // Without a calendar the booking cannot be stored; say so rather than
+        // let the fail-closed conflict check report a booking that is not there.
+        if (!$this->hasCalendar($room)) {
+            return new JSONResponse(['error' => 'Room has no calendar and cannot be booked'], 422);
+        }
+
         // Check for conflicts (local + Exchange)
         if ($this->calDAVService->hasConflict($room['userId'], $startDt, $endDt, null, $room)) {
             return new JSONResponse(['error' => 'Room is already booked during this time'], 409);
         }
 
-        // Check availability rules
+        // Check availability rules. They are local wall-clock hours, so read the
+        // booking in the instance timezone rather than in whatever offset the
+        // client sent: 09:00 local sent as 07:00Z must still pass a 08:00 rule
+        // (issue #45).
         if (!empty($room['availabilityRules']['enabled'])) {
-            $startTime = $startDt->format('H:i');
-            $endTime = $endDt->format('H:i');
+            $tz = $this->instanceTimezone->get();
+            $localStart = \DateTimeImmutable::createFromInterface($startDt)->setTimezone($tz);
+            $localEnd = \DateTimeImmutable::createFromInterface($endDt)->setTimezone($tz);
+            $startTime = $localStart->format('H:i');
+            $endTime = $localEnd->format('H:i');
 
             $withinRules = false;
             foreach ($room['availabilityRules']['rules'] ?? [] as $rule) {
-                if ($this->matchesRuleDay($startDt, $rule['days'] ?? []) &&
+                if ($this->matchesRuleDay($localStart, $rule['days'] ?? []) &&
                     $startTime >= ($rule['startTime'] ?? '00:00') &&
                     $endTime <= ($rule['endTime'] ?? '23:59')) {
                     $withinRules = true;
@@ -823,6 +918,30 @@ class PublicApiController extends Controller {
     }
 
     // ── Helpers ───────────────────────────────────────────────────────
+
+    private function hasCalendar(array $room): bool {
+        $hasCalendar = $this->calDAVService->getRoomCalendarId($room['userId']) !== null;
+        if (!$hasCalendar) {
+            $this->logger->warning("RoomVox: room {$room['id']} has no calendar (issue #44)");
+        }
+        return $hasCalendar;
+    }
+
+    /**
+     * Read a booking boundary from getBookings() as a local moment.
+     *
+     * A timed booking carries its offset and is converted. All-day dates and
+     * floating times are wall-clock values: an all-day date arrives bare, but
+     * a floating time arrives with the +00:00 of PHP's UTC, which says nothing
+     * about when it is, so its clock time is read as local instead.
+     */
+    private function localMoment(string $value, \DateTimeZone $tz, bool $wallClock): \DateTimeImmutable {
+        $moment = new \DateTimeImmutable($value, $tz);
+
+        return $wallClock
+            ? new \DateTimeImmutable($moment->format('Y-m-d H:i:s'), $tz)
+            : $moment->setTimezone($tz);
+    }
 
     /**
      * Is $moment on one of an availability rule's allowed weekdays?

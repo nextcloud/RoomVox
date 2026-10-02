@@ -29,7 +29,7 @@ lib/
 │   ├── PermissionService.php       ← Role-based access (Viewer/Booker/Manager)
 │   ├── RoomGroupService.php        ← Room group CRUD
 │   ├── RoomService.php             ← Room CRUD, virtual user lifecycle
-│   ├── TelemetryService.php        ← Anonymous usage stats
+│   ├── TelemetryService.php        ← Usage statistics (opt-in)
 │   └── Exchange/                   ← Microsoft Graph integration (see exchange-integration.md)
 │       ├── ExchangeSyncService.php
 │       ├── GraphApiClient.php
@@ -37,7 +37,7 @@ lib/
 ├── BackgroundJob/
 │   ├── ExchangeSyncJob.php         ← TimedJob (15 min) — delta sync per Exchange-linked room
 │   ├── InitialExchangeSyncJob.php  ← QueuedJob — one-shot full sync on first link
-│   ├── TelemetryJob.php            ← TimedJob (24 h) — anonymous usage report
+│   ├── TelemetryJob.php            ← TimedJob (24 h) — usage statistics report
 │   ├── WebhookRenewalJob.php       ← TimedJob (12 h) — renew Graph subscriptions
 │   └── WebhookSyncJob.php          ← QueuedJob — sync triggered by webhook
 ├── Connector/Room/
@@ -73,7 +73,7 @@ RoomVox uses **no custom database tables**. All data lives in Nextcloud's `oc_ap
 | `defaultAutoAccept` | `'true'` / `'false'` |
 | `emailEnabled` | `'true'` / `'false'` |
 | `showWeekendsInCalendar` | `'true'` / `'false'` |
-| `telemetry_enabled` | `'true'` / `'false'` |
+| `telemetry_enabled` | `'true'` / `'false'`; absent means off |
 | `api_tokens` | JSON array of `{prefix, hashedToken, name, scope, roomIds, expiresAt}` |
 | Exchange settings | `exchange_tenantId`, `exchange_clientId`, `exchange_clientSecret`, `exchangeGloballyEnabled`, `exchangeWebhookInlineSync`, etc. |
 
@@ -157,7 +157,7 @@ Controllers depend on services. Services depend on each other. Key services:
 | `MailService` | Per-room SMTP or IMailer fallback, ICrypto-encrypted passwords |
 | `ImportExportService` | CSV parsing (RoomVox + MS365 formats), duplicate detection |
 | `ApiTokenService` | Bearer token CRUD, hashing, scope checks |
-| `TelemetryService` | Aggregates and ships anonymous usage data |
+| `TelemetryService` | Builds and sends the usage statistics report, once an administrator agreed |
 | `LicenseService` | Validates VoxCloud subscription keys |
 | `Exchange/ExchangeSyncService` | Microsoft Graph sync (see [Exchange Integration](exchange-integration.md)) |
 | `Exchange/GraphApiClient` | OAuth2 + Graph HTTP client |
@@ -241,7 +241,7 @@ Effective permissions are the **union** of room-level + group-level entries. Nex
 
 ## Telemetry
 
-The `TelemetryService` collects anonymous usage data and the `TelemetryJob` (TimedJob, 24-hour interval with stable per-instance jitter up to 2 hours) ships it. See [Telemetry](../admin/telemetry.md) for the complete data inventory.
+The `TelemetryService` builds the usage statistics report and the `TelemetryJob` (TimedJob, 24-hour interval with stable per-instance jitter up to 2 hours) sends it, but only after an administrator agreed: a missing `telemetry_enabled` reads as off. The field list lives in one definition, `TelemetryService::getFieldDefinitions()`, read by both `collectData()` and the Support pane; `TelemetryService::SCHEMA` is raised whenever a field is added, and added fields are withheld until the administrator agrees again. `TelemetryConsentService` holds the choice, the `QueueTelemetryConsent` repair step asks administrators through the notification bell once per app version, and `Notification\Notifier` with the OCS `TelemetryConsentController` handles the three answers. See [Usage statistics](../admin/telemetry.md) for what is sent and why.
 
 Data is sent to the VoxCloud telemetry server; 15-second timeout per request; failed reports silently retry on the next interval.
 

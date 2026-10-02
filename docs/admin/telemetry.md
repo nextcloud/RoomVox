@@ -1,79 +1,61 @@
-# Telemetry
+# Usage statistics
 
-RoomVox collects anonymous usage data to help improve the app. This is an **opt-out** feature — it is enabled by default and can be disabled at any time.
+With an administrator's permission, RoomVox sends usage statistics about the installation to `licenses.voxcloud.nl`, run by VoxCloud, once a day. **Nothing is sent until an administrator switches this on.** No personal data, content or names are sent.
 
-## What Data Is Collected
+The rules RoomVox follows are the VoxCloud telemetry rules (design `TELEMETRY.md` 1.1.0).
 
-RoomVox sends the following anonymous data once every 24 hours:
+## How you are asked
 
-| Data | Description |
-|------|-------------|
-| Instance hash | SHA-256 hash of your Nextcloud URL (not the URL itself) |
-| App version | Installed RoomVox version |
-| Total rooms | Number of rooms configured |
-| Total room groups | Number of room groups |
-| Room type counts | How many rooms per type (e.g., 3 meeting rooms, 2 studios) |
-| Average capacity | Average room capacity |
-| Facilities counts | How many rooms have each facility (projector, whiteboard, etc.) |
-| Auto-accept count | How many rooms use auto-accept |
-| Rooms with SMTP | How many rooms have per-room SMTP configured |
-| Availability rules | How many rooms have availability rules enabled |
-| Total users | Total Nextcloud user count |
-| Active users (30d) | Users active in the last 30 days |
-| Nextcloud version | Installed Nextcloud version |
-| PHP version | Server PHP version |
-| Country code | From Nextcloud's `default_phone_region` setting |
-| Database type | MySQL, PostgreSQL, or SQLite |
-| Default language | Nextcloud default language |
-| Default timezone | Server timezone |
-| OS family | Linux, Windows, or macOS |
-| Web server | Apache or nginx |
-| Docker | Whether the server runs in a Docker container |
-| Extended Support / Enterprise | Boolean indicating whether the host Nextcloud has an Extended Support / Enterprise subscription. Sourced from Nextcloud's public API (`OCP\Util::hasExtendedSupport`). Falls back to `false` if the host is Community |
-| Subscription key | Your RoomVox subscription key (when one is configured). Sent so the license server can authenticate the Enterprise claim above — the boolean alone could be spoofed by anyone posting to the telemetry endpoint. Empty string for community instances |
+After RoomVox is installed or upgraded, every Nextcloud administrator gets a notification in the bell with three answers:
 
-## What Is NOT Collected
+| Answer | Effect |
+|---|---|
+| **Share usage statistics** | Usage statistics are switched on |
+| **Not now** | They stay off; you are asked again with the next RoomVox version |
+| **Never ask again** | They stay off; you are not asked again |
 
-- No usernames, email addresses, or personal data
-- No booking content, event titles, or descriptions
-- No IP addresses or hostnames
-- No room names or addresses
-- No passwords or API tokens
+Regular users are never asked. Installations upgraded from a version before 1.6.0 that never made a choice are switched off by the upgrade; an explicit "on" is kept.
 
-## Where Data Is Sent
+## What is sent
 
-Telemetry data is sent to the RoomVox telemetry server.
+The Support tab of the RoomVox admin settings lists every field with what it is used for. That list is generated from the same definition the report is built from, so it is always exactly what is sent:
 
-## How to Disable Telemetry
+| Field | Used for |
+|---|---|
+| Installation identifier | A SHA-256 hash of the server's address, to tell installations apart and join the reports of the VoxCloud apps on one server with its licence records. The address itself is not sent |
+| Field-list version | Which version of this list the report follows; fields added later are only sent after you agree to them |
+| RoomVox, Nextcloud and PHP version | Which versions are still in use and must be supported. PHP as `major.minor` only |
+| Number of user accounts, users active in the last 30 days, disabled accounts | To size a licence and to find installations that may need one |
+| Nextcloud subscription (yes or no) | Servers with a Nextcloud Enterprise subscription are listed as Enterprise customers and not approached about a licence |
+| Country | A world map of installations. From `default_phone_region`, or worked out on the server from `default_timezone`; the time zone itself is not sent |
+| Rooms, room groups, rooms that accept bookings automatically, rooms with their own mail server, rooms synced with Microsoft Exchange, Exchange sync on (yes or no) | How RoomVox features are used. Exchange tenant ID, client ID and secret are never sent |
 
-### Via Admin Panel
+Nothing about individual users, rooms or bookings is sent: no names, email addresses, room names, booking content or credentials.
+
+## The licence-usage report is separate
+
+While a subscription key is entered, RoomVox also reports the key, the installation identifier and the number of rooms, room groups, user accounts and disabled accounts to `licenses.voxcloud.nl`, so the subscription can be checked and seats counted. That report is part of the subscription, not of this choice, and stops when the key is removed.
+
+## Changing your mind
+
+### Via the admin panel
 
 1. Go to **Settings > Administration > RoomVox**
 2. Click the **Support** tab
-3. Disable the **Send anonymous usage statistics** toggle
+3. Switch **Share usage statistics** on or off
 
-### Via Command Line
+### Via the command line
 
 ```bash
 sudo -u www-data php occ config:app:set roomvox telemetry_enabled --value false
 ```
 
-## Manual Report
+## Manual report
 
-You can send a telemetry report immediately from the Support tab:
+While usage statistics are on, **Send report now** on the Support tab sends a report immediately. It refuses while they are off, and shows "Already sent recently" when a report went out within the last hour.
 
-1. Go to **Settings > Administration > RoomVox**
-2. Click the **Support** tab
-3. Click **Send report now**
+## Technical details
 
-The button shows clear feedback:
-- **Success**: confirms the report was sent and updates the timestamp
-- **Error**: shows the specific server error message (e.g., rate limit, connectivity issue)
-
-## Technical Details
-
-- Telemetry runs as a Nextcloud background job (`TelemetryJob`)
-- Reports are sent every 24 hours with a random jitter of up to 2 hours to spread load
-- The jitter is stable per installation (based on instance ID hash)
-- Failed reports are silently retried on the next interval
-- Timeout: 15 seconds per request
+- Reports are sent by a Nextcloud background job (`TelemetryJob`) every 24 hours, with a jitter of up to 2 hours that is stable per installation
+- Failed reports are retried on the next interval; timeout 15 seconds
+- The choice is stored in the app config: `telemetry_enabled`, `telemetry_consent_schema`, `telemetry_asked_version` and `telemetry_never_ask`

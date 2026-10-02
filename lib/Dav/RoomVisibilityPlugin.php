@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace OCA\RoomVox\Dav;
 
 use OCA\RoomVox\Service\PermissionService;
+use OCA\RoomVox\Service\RoomService;
 use OCP\IGroupManager;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
@@ -41,8 +42,12 @@ class RoomVisibilityPlugin extends ServerPlugin {
 
     private ?string $cachedUserId = null;
 
+    /** @var array<string, true>|null ids of inactive rooms */
+    private ?array $cachedInactive = null;
+
     public function __construct(
         private PermissionService $permissionService,
+        private RoomService $roomService,
         private IUserSession $userSession,
         private IGroupManager $groupManager,
         private LoggerInterface $logger,
@@ -84,6 +89,13 @@ class RoomVisibilityPlugin extends ServerPlugin {
             $roomId = $this->extractRoomId($principalName);
             if ($roomId === null) {
                 return true; // Not a RoomVox principal (other backends share this collection)
+            }
+
+            // Inactive rooms stay known to Nextcloud, which would otherwise
+            // delete their calendars, but cannot be booked, so nobody gets
+            // to pick them.
+            if (isset($this->inactiveRooms()[$roomId])) {
+                return false;
             }
 
             $user = $this->userSession->getUser();
@@ -128,6 +140,19 @@ class RoomVisibilityPlugin extends ServerPlugin {
         }
 
         return null;
+    }
+
+    /** @return array<string, true> */
+    private function inactiveRooms(): array {
+        if ($this->cachedInactive === null) {
+            $this->cachedInactive = [];
+            foreach ($this->roomService->getAllRooms() as $room) {
+                if (!($room['active'] ?? true)) {
+                    $this->cachedInactive[$room['id']] = true;
+                }
+            }
+        }
+        return $this->cachedInactive;
     }
 
     private function ensureCacheFor(string $userId): void {

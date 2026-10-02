@@ -40,11 +40,15 @@ class BookingApiConflictTest extends TestCase {
         'active' => true,
     ];
 
+    /** The room's calendar id as CalDAVService reports it; null = no calendar */
+    private ?int $calendarId = 1;
+
     protected function setUp(): void {
         $this->request = $this->createMock(IRequest::class);
         $this->roomService = $this->createMock(RoomService::class);
         $this->permissionService = $this->createMock(PermissionService::class);
         $this->calDAVService = $this->createMock(CalDAVService::class);
+        $this->calDAVService->method('getRoomCalendarId')->willReturnCallback(fn() => $this->calendarId);
         $this->mailService = $this->createMock(MailService::class);
         $this->exchangeSyncService = $this->createMock(ExchangeSyncService::class);
         $this->userSession = $this->createMock(IUserSession::class);
@@ -112,6 +116,50 @@ class BookingApiConflictTest extends TestCase {
         $response = $this->controller->create('room1');
 
         $this->assertSame(409, $response->getStatus());
+    }
+
+    /**
+     * A room without a calendar is refused with a reason that matches the
+     * cause, not with the 409 "conflicts with existing booking" the
+     * fail-closed conflict check would produce (issue #44).
+     */
+    public function testCreateBookingInRoomWithoutCalendarIsRefusedClearly(): void {
+        $this->calendarId = null;
+        $this->roomService->method('getRoom')->willReturn($this->testRoom);
+        $this->calDAVService->method('hasConflict')->willReturn(true);
+        $this->calDAVService->expects($this->never())->method('createBooking');
+
+        $this->request->method('getParam')->willReturnCallback(function (string $key, $default = '') {
+            return match ($key) {
+                'summary' => 'Team Meeting',
+                'start' => '2026-02-20T10:00:00',
+                'end' => '2026-02-20T11:00:00',
+                default => $default,
+            };
+        });
+
+        $response = $this->controller->create('room1');
+
+        $this->assertSame(422, $response->getStatus());
+        $this->assertStringContainsString('no calendar', $response->getData()['error']);
+    }
+
+    public function testCreateBookingInInactiveRoomIsRefused(): void {
+        $this->roomService->method('getRoom')->willReturn(array_merge($this->testRoom, ['active' => false]));
+        $this->calDAVService->expects($this->never())->method('createBooking');
+        $this->request->method('getParam')->willReturnCallback(function (string $key, $default = '') {
+            return match ($key) {
+                'summary' => 'Team Meeting',
+                'start' => '2026-02-20T10:00:00',
+                'end' => '2026-02-20T11:00:00',
+                default => $default,
+            };
+        });
+
+        $response = $this->controller->create('room1');
+
+        $this->assertSame(422, $response->getStatus());
+        $this->assertStringContainsString('not active', $response->getData()['error']);
     }
 
     public function testCreateBookingNoPermission(): void {

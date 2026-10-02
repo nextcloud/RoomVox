@@ -239,6 +239,101 @@ class PermissionService {
         return $this->resolveUserIds($permissions['managers']);
     }
 
+    // ── Cleanup on deleted principals ────────────────────────────
+
+    /**
+     * Drop every permission entry referring to a deleted user or group.
+     *
+     * Permissions store bare ids, so a deleted principal leaves an entry behind
+     * that can never match again: it grants nothing, but it stays visible in the
+     * permission editor and, for a group, silently stops resolving to the
+     * managers who were supposed to receive approval requests.
+     *
+     * Both room-level and room-group-level permissions are swept.
+     *
+     * @param 'user'|'group' $type
+     * @return int The number of entries removed
+     */
+    public function removeEntriesFor(string $type, string $id): int {
+        $removed = 0;
+        /** @var array<string, array<string, true>> prefix → ids that lost a manager */
+        $lostManager = [self::PERM_PREFIX => [], self::GROUP_PERM_PREFIX => []];
+
+        foreach ([self::PERM_PREFIX, self::GROUP_PERM_PREFIX] as $prefix) {
+            foreach ($this->appConfig->getAllValues(Application::APP_ID, $prefix) as $key => $value) {
+                $permissions = $this->decodePermissions((string)$value);
+                $changed = false;
+
+                foreach (['viewers', 'bookers', 'managers'] as $role) {
+                    $kept = array_values(array_filter(
+                        $permissions[$role],
+                        static fn ($entry) => ($entry['type'] ?? '') !== $type || ($entry['id'] ?? '') !== $id
+                    ));
+
+                    $dropped = \count($permissions[$role]) - \count($kept);
+                    if ($dropped > 0) {
+                        if ($role === 'managers') {
+                            $lostManager[$prefix][substr($key, \strlen($prefix))] = true;
+                        }
+
+                        $permissions[$role] = $kept;
+                        $removed += $dropped;
+                        $changed = true;
+                    }
+                }
+
+                if ($changed) {
+                    $this->savePermissions($key, $permissions);
+                }
+            }
+        }
+
+        $this->warnAboutRoomsWithoutManagers(
+            $lostManager[self::PERM_PREFIX],
+            $lostManager[self::GROUP_PERM_PREFIX],
+            $type,
+            $id,
+        );
+
+        if ($removed > 0) {
+            $this->logger->info(
+                'RoomVox: removed ' . $removed . ' permission entr' . ($removed === 1 ? 'y' : 'ies')
+                . ' for deleted ' . $type . ' "' . $id . '"'
+            );
+        }
+
+        return $removed;
+    }
+
+    /**
+     * Log every affected room that is left with nobody to approve its requests.
+     *
+     * That is a legitimate outcome of deleting the account or group, but it must
+     * not happen silently. Whether anyone is left depends on the room's
+     * effective managers, its own plus its room group's, so an empty entry on
+     * one level is not enough: a room whose group still has a manager is fine,
+     * and emptying a group's managers matters only for rooms without their own.
+     *
+     * @param array<string, true> $rooms Rooms whose own entry lost a manager
+     * @param array<string, true> $groups Room groups whose entry lost a manager
+     */
+    private function warnAboutRoomsWithoutManagers(array $rooms, array $groups, string $type, string $id): void {
+        if ($rooms === [] && $groups === []) {
+            return;
+        }
+
+        $effective = $this->getAllEffectivePermissions();
+        foreach ($this->roomService?->getAllRooms() ?? [] as $room) {
+            $affected = isset($rooms[$room['id']]) || isset($groups[$room['groupId'] ?? '']);
+            if ($affected && ($effective[$room['id']]['managers'] ?? []) === []) {
+                $this->logger->warning(
+                    'RoomVox: room "' . $room['id'] . '" has no managers left after removing deleted '
+                    . $type . ' "' . $id . '"'
+                );
+            }
+        }
+    }
+
     // ── Private helpers ──────────────────────────────────────────
 
     private function loadPermissions(string $key): array {

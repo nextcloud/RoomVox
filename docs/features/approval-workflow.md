@@ -77,7 +77,7 @@ This is distinct from the user cancelling their own booking — see [Managing Bo
 
 ### Recurring Events
 
-The approval is **per-series**, not per-occurrence. Approving a recurring booking confirms the entire series. To handle individual occurrences differently, the manager would need to cancel a single instance afterwards — see [FAQ](../user/faq.md#can-i-cancel-just-one-occurrence-of-a-recurring-booking).
+The approval is **per-series**, not per-occurrence. Approving a recurring booking confirms the entire series. A series only reaches the approval queue when none of its dates conflicts with an existing booking or falls outside the booking hours, so approving it cannot double-book the room. To handle individual occurrences differently, the manager would need to cancel a single instance afterwards — see [FAQ](../user/faq.md#can-i-cancel-just-one-occurrence-of-a-recurring-booking).
 
 ### API-Created Bookings (v1.1.1+)
 

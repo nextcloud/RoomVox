@@ -509,7 +509,7 @@ const executeDelete = async (mode = 'series') => {
     const recurrenceId = mode === 'occurrence' ? deleteTarget.value.recurrenceId : null
     try {
         await deleteBooking(deleteTarget.value.roomId, deleteTarget.value.uid, recurrenceId)
-        showSuccess(mode === 'occurrence' ? t('roomvox', 'Occurrence cancelled') : t('roomvox', 'Booking cancelled'))
+        showSuccess(mode === 'occurrence' ? t('roomvox', 'Occurrence canceled') : t('roomvox', 'Booking canceled'))
         deleteTarget.value = null
         await loadBookings()
     } catch (e) {
@@ -678,7 +678,7 @@ onMounted(() => {
 }
 
 .booking-table th {
-    text-align: left;
+    text-align: start;
     padding: 12px;
     background: var(--color-background-dark);
     font-weight: 600;
@@ -700,7 +700,7 @@ onMounted(() => {
 
 .sort-icon {
     font-size: 10px;
-    margin-left: 4px;
+    margin-inline-start: 4px;
     color: var(--color-primary-element);
 }
 

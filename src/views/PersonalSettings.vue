@@ -1,28 +1,8 @@
 <template>
     <div class="roomvox-personal">
-        <nav class="tab-navigation">
-            <button
-                :class="['tab-button', { active: currentTab === 'rooms' }]"
-                @click="currentTab = 'rooms'">
-                <DoorOpen :size="16" />
-                {{ t('roomvox', 'My rooms') }}
-                <NcCounterBubble v-if="rooms.length > 0" :count="rooms.length" />
-            </button>
-            <button
-                :class="['tab-button', { active: currentTab === 'approvals' }]"
-                @click="currentTab = 'approvals'">
-                <CheckDecagram :size="16" />
-                {{ t('roomvox', 'Approvals') }}
-                <NcCounterBubble v-if="approvals.length > 0" type="highlighted" :count="approvals.length" />
-            </button>
-            <button
-                v-if="managedRooms.length > 0"
-                :class="['tab-button', { active: currentTab === 'bookings' }]"
-                @click="currentTab = 'bookings'">
-                <CalendarCheck :size="16" />
-                {{ t('roomvox', 'Bookings') }}
-            </button>
-        </nav>
+        <PaneSwitcher v-model="currentTab"
+            :label="t('roomvox', 'Room booking')"
+            :panes="tabs" />
 
         <div class="tab-content">
             <!-- My Rooms Tab -->
@@ -140,13 +120,13 @@ import { translate, getLanguage } from '@nextcloud/l10n'
 import { showError, showSuccess } from '@nextcloud/dialogs'
 
 import NcButton from '@nextcloud/vue/components/NcButton'
-import NcCounterBubble from '@nextcloud/vue/components/NcCounterBubble'
 import NcEmptyContent from '@nextcloud/vue/components/NcEmptyContent'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import NcChip from '@nextcloud/vue/components/NcChip'
 import DoorOpen from 'vue-material-design-icons/DoorOpen.vue'
 import CheckDecagram from 'vue-material-design-icons/CheckDecagram.vue'
 import CalendarCheck from 'vue-material-design-icons/CalendarCheck.vue'
+import PaneSwitcher from '../components/PaneSwitcher.vue'
 import Check from 'vue-material-design-icons/Check.vue'
 import Close from 'vue-material-design-icons/Close.vue'
 
@@ -167,6 +147,20 @@ const responding = ref(null)
 const managedRooms = computed(() =>
     rooms.value.filter(r => r.role === 'manager' || r.role === 'admin'),
 )
+
+// Icons follow what is behind each tab, as the design guidelines ask (§7).
+// Waiting approvals stay visible in the label: they ask this user to act.
+const tabs = computed(() => [
+    { id: 'rooms', label: t('roomvox', 'My rooms'), icon: DoorOpen },
+    {
+        id: 'approvals',
+        label: approvals.value.length > 0
+            ? t('roomvox', 'Approvals ({count})', { count: approvals.value.length })
+            : t('roomvox', 'Approvals'),
+        icon: CheckDecagram,
+    },
+    ...(managedRooms.value.length > 0 ? [{ id: 'bookings', label: t('roomvox', 'Bookings'), icon: CalendarCheck }] : []),
+])
 
 const getRoleLabel = (role) => {
     switch (role) {
@@ -260,37 +254,6 @@ onMounted(() => {
     padding: 20px;
 }
 
-.tab-navigation {
-    border-bottom: 1px solid var(--color-border);
-    display: flex;
-    gap: 10px;
-    margin-bottom: 20px;
-}
-
-.tab-button {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 12px 20px;
-    border: none;
-    background: none;
-    cursor: pointer;
-    border-bottom: 2px solid transparent;
-    color: var(--color-text-lighter);
-    font-size: 14px;
-    transition: all 0.2s ease;
-}
-
-.tab-button:hover:not(.active) {
-    background: var(--color-background-hover);
-}
-
-.tab-button.active {
-    border-bottom-color: var(--color-primary);
-    color: var(--color-primary);
-    background: var(--color-primary-element-light);
-}
-
 .tab-content {
     animation: fadeIn 0.2s ease;
 }
@@ -315,7 +278,7 @@ onMounted(() => {
 
 .rooms-table th,
 .approvals-table th {
-    text-align: left;
+    text-align: start;
     padding: 10px 12px;
     font-weight: 600;
     border-bottom: 2px solid var(--color-border);

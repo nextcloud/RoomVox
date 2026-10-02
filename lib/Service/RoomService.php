@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace OCA\RoomVox\Service;
 
 use OCA\RoomVox\AppInfo\Application;
+use OCA\RoomVox\Exception\EmailAlreadyUsedException;
 use OCP\IAppConfig;
 use OCP\Security\ICrypto;
 use OCP\Security\ISecureRandom;
@@ -109,17 +110,74 @@ class RoomService {
     }
 
     /**
+     * Find the room that holds an email address, if any.
+     *
+     * Addresses are compared case-insensitively and with any "mailto:" prefix
+     * stripped, because that is how they reach us from CalDAV and from CSV
+     * imports. Passing $ignoreRoomId skips one room, so a room keeping its own
+     * address on update does not conflict with itself.
+     *
+     * @return array|null The conflicting room, or null when the address is free
+     */
+    public function findRoomByEmail(string $email, ?string $ignoreRoomId = null): ?array {
+        $needle = self::normaliseEmail($email);
+        if ($needle === '') {
+            return null;
+        }
+
+        foreach ($this->getAllRooms() as $room) {
+            if ($ignoreRoomId !== null && $room['id'] === $ignoreRoomId) {
+                continue;
+            }
+
+            $candidate = self::normaliseEmail((string)($room['email'] ?? ''));
+            if ($candidate !== '' && $candidate === $needle) {
+                return $room;
+            }
+        }
+
+        return null;
+    }
+
+    private static function normaliseEmail(string $email): string {
+        return mb_strtolower(trim(self::stripMailto($email)));
+    }
+
+    /**
+     * Refuse an email address that another room already uses.
+     *
+     * @throws EmailAlreadyUsedException
+     */
+    private function assertEmailIsFree(string $email, ?string $ignoreRoomId = null): void {
+        $conflict = $this->findRoomByEmail($email, $ignoreRoomId);
+        if ($conflict !== null) {
+            throw new EmailAlreadyUsedException($email, $conflict['id']);
+        }
+    }
+
+    /**
      * Create a new room
+     *
+     * @throws EmailAlreadyUsedException When another room already uses the address
      */
     public function createRoom(array $data): array {
+        // Reject a taken address before allocating an id, so a refused create
+        // leaves nothing behind.
+        if (!empty($data['email'])) {
+            $this->assertEmailIsFree((string)$data['email']);
+        }
+
         $roomId = self::generateSlug($data['name']);
         $userId = self::USER_PREFIX . $roomId;
 
-        // Ensure unique ID
+        // Ensure unique ID. Without an address of its own the room gets
+        // {id}@roomvox.local, which another room may already hold by hand, so
+        // the id has to leave that address free as well.
         $existingIds = $this->getRoomIds();
         $baseId = $roomId;
         $counter = 1;
-        while (in_array($roomId, $existingIds)) {
+        while (in_array($roomId, $existingIds)
+            || (empty($data['email']) && $this->findRoomByEmail($roomId . '@roomvox.local') !== null)) {
             $roomId = $baseId . '-' . $counter;
             $userId = self::USER_PREFIX . $roomId;
             $counter++;
@@ -166,12 +224,49 @@ class RoomService {
     }
 
     /**
+     * Create a room together with its calendar, or neither.
+     *
+     * The room lives in app config and its calendar in CalDAV, with no
+     * transaction spanning both. A room whose calendar could not be created is
+     * permanently unbookable, and the public API used to report it as free
+     * (issue #44), so a failed provisioning removes the room again.
+     *
+     * @throws EmailAlreadyUsedException When another room already uses the address
+     * @throws \Throwable When the calendar cannot be created; the room is gone again
+     */
+    public function createRoomWithCalendar(array $data, CalDAVService $calDAVService): array {
+        $room = $this->createRoom($data);
+
+        try {
+            $calendarUri = $calDAVService->provisionCalendar($room['userId']);
+        } catch (\Throwable $e) {
+            $this->deleteRoom($room['id']);
+            throw $e;
+        }
+
+        $this->setCalendarUri($room['id'], $calendarUri);
+        $room['calendarUri'] = $calendarUri;
+
+        return $room;
+    }
+
+    /**
      * Update an existing room
+     *
+     * @throws EmailAlreadyUsedException When another room already uses the address
      */
     public function updateRoom(string $roomId, array $data): ?array {
         $room = $this->getRoom($roomId);
         if ($room === null) {
             return null;
+        }
+
+        // Only a changed address is checked. The editor always sends the
+        // whole form, so checking an unchanged one would lock every edit of
+        // rooms that already shared an address before this check existed.
+        if (!empty($data['email'])
+            && self::normaliseEmail((string)$data['email']) !== self::normaliseEmail((string)($room['email'] ?? ''))) {
+            $this->assertEmailIsFree((string)$data['email'], $roomId);
         }
 
         $updatableFields = ['name', 'email', 'description', 'responsibleContact', 'capacity', 'roomNumber', 'floor', 'roomType', 'address', 'facilities', 'autoAccept', 'active', 'groupId', 'availabilityRules', 'maxBookingHorizon'];

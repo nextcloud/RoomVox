@@ -35,6 +35,18 @@ Scopes are hierarchical: a `book` token can do everything a `read` token can.
 
 Tokens can optionally be restricted to specific rooms. If no room restriction is set, the token has access to all rooms.
 
+### Calling from a browser (CORS)
+
+The v1 API can be called from web pages on another origin, such as a room display or a dashboard. Browsers first send a preflight request, `OPTIONS /api/v1/...`, which needs no token and answers `204` with:
+
+```
+Access-Control-Allow-Origin: *
+Access-Control-Allow-Methods: GET, POST, DELETE, OPTIONS
+Access-Control-Allow-Headers: Authorization, Content-Type
+```
+
+Every v1 response, including a rejected token (`401`), carries `Access-Control-Allow-Origin: *`. Any origin is allowed because the API authenticates with Bearer tokens only, never with cookies. A page that holds a token can use it from anywhere, so treat a token in browser code as public and give it the narrowest scope and room restriction that works. The internal API (`/api/...`) sends no CORS headers.
+
 ### Room Status
 
 #### Get Current Room Status
@@ -63,6 +75,7 @@ Returns the real-time status of a room: free, busy, or unavailable (outside avai
     "active": true
   },
   "status": "busy",
+  "reason": null,
   "currentBooking": {
     "title": "Team standup",
     "organizer": "Jan de Vries",
@@ -94,7 +107,15 @@ Returns the real-time status of a room: free, busy, or unavailable (outside avai
 |--------|---------|
 | `free` | Room is available now |
 | `busy` | Room is currently occupied |
-| `unavailable` | Outside configured availability hours |
+| `unavailable` | Not bookable now; `reason` says why |
+
+`reason` is `null` unless `status` is `unavailable`:
+
+| Reason | Meaning |
+|--------|---------|
+| `outside_booking_hours` | Outside the room's configured booking hours |
+| `inactive` | The room is deactivated and takes no bookings |
+| `no_calendar` | The room has no calendar, so nothing can be booked in it. An administrator has to recreate the room. |
 
 When `status` is `free` and there is a next booking, `freeUntil` contains the start time of the next booking.
 
@@ -107,6 +128,10 @@ GET /api/v1/rooms/{id}/availability
 **Scope:** `read`
 
 Returns time slots for a given date showing which periods are free or busy.
+
+Slot times, `date` and its default (today) are in the instance timezone (`default_timezone` in `config.php`), the same zone the booking hours are checked in when you create a booking.
+
+A room without a calendar returns `"slots": []` with `"reason": "no_calendar"` rather than one free slot for the whole day.
 
 **Query parameters:**
 
@@ -246,6 +271,8 @@ POST /api/v1/rooms/{id}/bookings
 
 `title`, `start`, and `end` are required. `organizer` and `description` are optional.
 
+`start` and `end` are ISO 8601 with an offset (`+01:00`) or `Z`; both express the same instant and are stored in UTC. Booking hours are checked in the instance timezone (`default_timezone` in `config.php`), so `09:00+02:00` and `07:00Z` are treated identically. A time without an offset is read as UTC.
+
 **Response (201):**
 ```json
 {
@@ -270,6 +297,8 @@ The `status` depends on the room's auto-accept setting: `accepted` if auto-accep
 | 409 | `{"error": "Room is already booked during this time"}` | Scheduling conflict |
 | 422 | `{"error": "Booking is outside available hours"}` | Outside availability rules |
 | 422 | `{"error": "Booking exceeds maximum booking horizon"}` | Too far in advance |
+| 422 | `{"error": "Room has no calendar and cannot be booked"}` | The room has no calendar |
+| 422 | `{"error": "Room is not active and cannot be booked"}` | The room is deactivated |
 
 #### Cancel Booking
 
@@ -544,7 +573,7 @@ GET /api/rooms/export
 
 **Required:** Admin
 
-A non-admin caller does not get a `403` here: the response is an empty CSV named `error.csv` with HTTP 200. Check the filename, not the status code.
+A non-admin caller gets `403 Forbidden` from Nextcloud before RoomVox runs, with Nextcloud's own body: `{"message": "Logged in account must be an admin"}` (translated to the account's language).
 
 Downloads all rooms as a CSV file with the following columns:
 
@@ -766,6 +795,7 @@ POST /api/rooms
   "responsibleContact": "Anne Janssen (anne@voxcloud.nl)",
   "facilities": ["projector", "whiteboard", "videoconf"],
   "autoAccept": true,
+  "groupId": "building-a",
   "floor": "2",
   "email": "room1@company.com",
   "availabilityRules": {
@@ -789,7 +819,7 @@ Only `name` is required. All other fields are optional. The `address` field uses
 
 **Response:** `201 Created` with the created room object.
 
-> **`groupId` is ignored on create.** The controller does not read it, so a new room is always created without a room group regardless of what is sent. Assign the group with `PUT /api/rooms/{id}` right after creating, which does honour it.
+`groupId` places the new room in a room group. Leave it out, or send `null`, for a room without a group. The id is stored as sent and not checked against the existing room groups, the same as on `PUT /api/rooms/{id}`.
 
 ### Get Room
 
@@ -1374,7 +1404,6 @@ GET /api/settings
 {
   "defaultAutoAccept": false,
   "emailEnabled": true,
-  "telemetryEnabled": true,
   "showWeekends": true,
   "roomTypes": [
     { "id": "meeting-room", "label": "Meeting Room" },
@@ -1453,7 +1482,22 @@ GET /api/license/stats
 
 **Required:** Admin
 
-Returns license status, usage statistics, and telemetry state.
+Returns license status, usage statistics, and the usage-statistics state as `stats.telemetry`: `enabled`, `lastReport`, `schema`, `consentedSchema` and `fields` (each with `key`, `label`, `purpose` and `withheld`), from the definition the report is built from.
+
+### Switch Usage Statistics
+
+```
+PUT /api/license/telemetry
+```
+
+**Required:** Admin
+
+**Body:**
+```json
+{ "enabled": true }
+```
+
+The only switch for usage statistics. `true` records consent to the current field list and dismisses the pending notification for all administrators; anything else switches them off. Returns `{"success": true, "telemetry": {...}}`.
 
 ### Save License Key
 
@@ -1496,7 +1540,7 @@ POST /api/license/telemetry
 
 **Required:** Admin
 
-Immediately sends anonymous usage statistics to the telemetry server.
+Immediately sends the usage statistics report. Refuses with `reason: "disabled"` while usage statistics are off, and answers `reason: "recently_sent"` when a report went out within the last hour.
 
 **Response:**
 ```json

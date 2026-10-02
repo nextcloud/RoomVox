@@ -172,6 +172,7 @@ class ImportExportService {
 
         $rows = [];
         $seenNames = [];
+        $seenEmails = [];
         foreach ($lines as $lineNum => $line) {
             $line = trim($line);
             if ($line === '') {
@@ -199,6 +200,16 @@ class ImportExportService {
                 $errors[] = 'Duplicate name in CSV';
             }
             $seenNames[$nameLower] = true;
+
+            // Two rows sharing one address would produce two rooms with the same
+            // scheduling identity, so the second row is refused rather than
+            // silently creating an ambiguous pair.
+            $emailLower = strtolower(trim($row['email'] ?? ''));
+            if ($emailLower !== '' && isset($seenEmails[$emailLower])) {
+                $errors[] = 'Duplicate email in CSV (line ' . $seenEmails[$emailLower] . ')';
+            } elseif ($emailLower !== '') {
+                $seenEmails[$emailLower] = $lineNum + 2;
+            }
 
             // Determine action: match by email, name, or generated slug ID
             $action = 'create';
@@ -284,11 +295,8 @@ class ImportExportService {
             } elseif ($row['action'] === 'create') {
                 // Create new room
                 try {
-                    $room = $this->roomService->createRoom($roomData);
-
-                    // Provision CalDAV calendar
-                    $calendarUri = $calDAVService->provisionCalendar($room['userId'], $room['name']);
-                    $this->roomService->setCalendarUri($room['id'], $calendarUri);
+                    // Room and CalDAV calendar together, or neither
+                    $room = $this->roomService->createRoomWithCalendar($roomData, $calDAVService);
 
                     // Initialize empty permissions
                     $permissionService->setPermissions($room['id'], [

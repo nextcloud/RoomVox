@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace OCA\RoomVox\Controller;
 
 use OCA\RoomVox\BackgroundJob\InitialExchangeSyncJob;
+use OCA\RoomVox\Exception\EmailAlreadyUsedException;
 use OCA\RoomVox\Service\CalDAVService;
 use OCA\RoomVox\Service\ImportExportService;
 use OCA\RoomVox\Service\MailService;
@@ -234,6 +235,7 @@ class RoomApiController extends Controller {
             'address' => $this->request->getParam('address', ''),
             'facilities' => $this->request->getParam('facilities', []),
             'autoAccept' => $this->request->getParam('autoAccept', false),
+            'groupId' => $this->request->getParam('groupId', null),
             'smtpConfig' => $this->request->getParam('smtpConfig', null),
             'availabilityRules' => $this->request->getParam('availabilityRules', null),
             'maxBookingHorizon' => $this->request->getParam('maxBookingHorizon', 0),
@@ -244,13 +246,8 @@ class RoomApiController extends Controller {
         }
 
         try {
-            // 1. Create room in config
-            $room = $this->roomService->createRoom($data);
-
-            // 2. Provision CalDAV calendar
-            $calendarUri = $this->calDAVService->provisionCalendar($room['userId'], $room['name']);
-            $this->roomService->setCalendarUri($room['id'], $calendarUri);
-            $room['calendarUri'] = $calendarUri;
+            // 1+2. Create the room and its CalDAV calendar, or neither
+            $room = $this->roomService->createRoomWithCalendar($data, $this->calDAVService);
 
             // 3. Initialize empty permissions
             $this->permissionService->setPermissions($room['id'], [
@@ -272,6 +269,13 @@ class RoomApiController extends Controller {
             }
 
             return new JSONResponse($room, 201);
+        } catch (EmailAlreadyUsedException $e) {
+            // 409 rather than 500: the request is well formed, the address is
+            // simply taken. The frontend turns this into a field-level error.
+            return new JSONResponse([
+                'error' => 'Email address already in use',
+                'conflictingRoomId' => $e->getConflictingRoomId(),
+            ], 409);
         } catch (\Exception $e) {
             $this->logger->error("Failed to create room: " . $e->getMessage());
             return new JSONResponse(['error' => 'Failed to create room: ' . $e->getMessage()], 500);
@@ -340,6 +344,11 @@ class RoomApiController extends Controller {
             }
 
             return new JSONResponse($room);
+        } catch (EmailAlreadyUsedException $e) {
+            return new JSONResponse([
+                'error' => 'Email address already in use',
+                'conflictingRoomId' => $e->getConflictingRoomId(),
+            ], 409);
         } catch (\Exception $e) {
             $this->logger->error("Failed to update room {$id}: " . $e->getMessage());
             return new JSONResponse(['error' => 'Failed to update room'], 500);
@@ -536,10 +545,10 @@ class RoomApiController extends Controller {
      * Export all rooms as CSV
      */
     #[NoCSRFRequired]
-    public function exportRooms(): DataDownloadResponse {
+    public function exportRooms(): DataDownloadResponse|JSONResponse {
         $userId = $this->getCurrentUserId();
         if ($userId === null || !$this->groupManager->isAdmin($userId)) {
-            return new DataDownloadResponse('', 'error.csv', 'text/csv');
+            return new JSONResponse(['error' => 'Admin access required'], 403);
         }
 
         $csv = $this->importExportService->exportCsv();

@@ -96,6 +96,16 @@ class BookingApiController extends Controller {
             $startDt = new \DateTime($start);
             $endDt = new \DateTime($end);
 
+            if (!($room['active'] ?? true)) {
+                return new JSONResponse(['error' => 'Room is not active and cannot be booked'], 422);
+            }
+
+            // Without a calendar nothing can be stored; say so rather than let
+            // the fail-closed conflict check report a booking (issue #44).
+            if ($this->calDAVService->getRoomCalendarId($room['userId']) === null) {
+                return new JSONResponse(['error' => 'Room has no calendar and cannot be booked'], 422);
+            }
+
             // Check for conflicts (local + Exchange)
             if ($this->calDAVService->hasConflict($room['userId'], $startDt, $endDt, null, $room)) {
                 return new JSONResponse(['error' => 'Time slot conflicts with existing booking'], 409);
@@ -188,6 +198,14 @@ class BookingApiController extends Controller {
                 // Check permission for new room (need at least book permission)
                 if (!$isAdmin && !$this->permissionService->canBook($userId, $newRoomId)) {
                     return new JSONResponse(['error' => 'No permission to move to target room'], 403);
+                }
+
+                if (!($newRoom['active'] ?? true)) {
+                    return new JSONResponse(['error' => 'Target room is not active and cannot be booked'], 422);
+                }
+
+                if ($this->calDAVService->getRoomCalendarId($newRoom['userId']) === null) {
+                    return new JSONResponse(['error' => 'Target room has no calendar and cannot be booked'], 422);
                 }
 
                 // Check for conflicts in new room (local + Exchange)

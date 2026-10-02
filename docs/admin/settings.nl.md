@@ -115,10 +115,10 @@ Configureer je VoxCloud-abonnementssleutel voor Enterprise-activatie. De gratis 
 
 | Schakelaar | Effect |
 |---|---|
-| Anonieme gebruiksstatistieken versturen | Schakelt dagelijkse telemetrie in/uit |
+| Gebruiksstatistieken delen | Zet de dagelijkse gebruiksstatistieken aan of uit (uit tot een beheerder instemt) |
 | Nu rapport versturen | Verstuur handmatig een rapport |
 
-Zie [Telemetrie](telemetry.md) voor de volledige data-inventarisatie en instructies om het uit te schakelen.
+Dit is de enige schakelaar voor gebruiksstatistieken. Zie [Gebruiksstatistieken](telemetry.md) voor wat er verstuurd wordt en waarom.
 
 ## Per ruimte versus app-breed
 
@@ -153,4 +153,4 @@ Zie [Backend-architectuur](../architecture/backend-architecture.md) voor het vol
 - [Beheerdersgids](guide.md) — dagelijks beheer
 - [Ruimtes beheren](room-management.md) — configuratie per ruimte
 - [Public API](../features/public-api.md) — gebruik van API-tokens
-- [Telemetrie](telemetry.md) — verzamelde data
+- [Gebruiksstatistieken](telemetry.md) — wat er verstuurd wordt en waarom

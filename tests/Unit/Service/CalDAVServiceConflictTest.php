@@ -316,6 +316,11 @@ class CalDAVServiceConflictTest extends TestCase {
         $this->assertFalse($result);
     }
 
+    /**
+     * Without a calendar there is no way to look, so the check fails closed.
+     * This used to assert false, which let every booking path through for a
+     * room that cannot store a booking at all (issue #44).
+     */
     public function testConflictNoCalendar(): void {
         // No calendars for this user
         $this->calDavBackend->method('getCalendarsForUser')
@@ -327,7 +332,7 @@ class CalDAVServiceConflictTest extends TestCase {
             new \DateTime('2026-02-20 11:00'),
         );
 
-        $this->assertFalse($result);
+        $this->assertTrue($result);
     }
 
     // ── Recurring events (issue #8) ────────────────────────────────

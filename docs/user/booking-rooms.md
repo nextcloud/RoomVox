@@ -136,6 +136,6 @@ RoomVox automatically checks for scheduling conflicts:
 RoomVox supports recurring events with some considerations:
 
 - **Availability rules** apply to every occurrence
+- **Conflicts** are checked for every occurrence, including exceptions you moved to another time. If any date collides with an existing booking, the whole series is declined and the email lists the conflicting dates, so you can exclude those dates and book again
 - **Booking horizon** is checked against the furthest occurrence (based on RRULE UNTIL or COUNT)
-- **Infinite recurring events** (no UNTIL or COUNT) are always declined when a booking horizon is set
-- **Conflict checking** applies to the initial booking; individual occurrence conflicts may need to be resolved manually
+- **Infinite recurring events** (no UNTIL or COUNT) are always declined when a booking horizon is set; without a horizon, their occurrences are checked one year ahead

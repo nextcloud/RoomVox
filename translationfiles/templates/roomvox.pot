@@ -4,9 +4,9 @@
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: RoomVox 1.3.0\n"
+"Project-Id-Version: RoomVox 1.6.0\n"
 "Report-Msgid-Bugs-To: translations@nextcloud.com\n"
-"POT-Creation-Date: 2026-08-30 19:25+0000\n"
+"POT-Creation-Date: 2026-10-02 14:55+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -27,19 +27,19 @@ msgstr ""
 msgid "+ Add rule"
 msgstr ""
 
-msgid "A booking has been cancelled."
+msgid "A booking has been canceled."
 msgstr ""
 
 msgid "A new booking request requires your approval."
 msgstr ""
 
-msgid "A single occurrence of your recurring booking has been cancelled by a room manager."
+msgid "A SHA-256 hash of this server's address, needed to tell installations apart and to join the reports of the VoxCloud apps on one server with its license records. The address itself is not sent."
+msgstr ""
+
+msgid "A single occurrence of your recurring booking has been canceled by a room manager."
 msgstr ""
 
 msgid "A unique email is auto-generated for CalDAV scheduling. Only change this if you need a specific address."
-msgstr ""
-
-msgid "A unique hash of your instance URL (privacy-friendly identifier)"
 msgstr ""
 
 msgid "About RoomVox"
@@ -57,6 +57,12 @@ msgstr ""
 msgid "Actions"
 msgstr ""
 
+msgid "Actions for group {name}"
+msgstr ""
+
+msgid "Actions for room {name}"
+msgstr ""
+
 msgid "Active"
 msgstr ""
 
@@ -69,10 +75,16 @@ msgstr ""
 msgid "Add"
 msgstr ""
 
+msgid "Added since you agreed: %s. These figures stay on this server until you agree. Everything you agreed to before is still sent to licenses.voxcloud.nl, run by VoxCloud. No personal data, content or names are sent."
+msgstr ""
+
 msgid "Address"
 msgstr ""
 
 msgid "Admin"
+msgstr ""
+
+msgid "Agree to the added fields"
 msgstr ""
 
 msgid "All"
@@ -90,10 +102,7 @@ msgstr ""
 msgid "All rooms"
 msgstr ""
 
-msgid "Anonymous usage statistics"
-msgstr ""
-
-msgid "Anonymous usage statistics help us understand how RoomVox is used and guide future development."
+msgid "Already sent recently"
 msgstr ""
 
 msgid "Anyone with this URL can see the titles and organizers of all bookings for this room. Only share it with people or systems you trust. If a URL leaks, regenerate it below."
@@ -115,6 +124,9 @@ msgid "App registration client secret"
 msgstr ""
 
 msgid "Approvals"
+msgstr ""
+
+msgid "Approvals ({count})"
 msgstr ""
 
 msgid "Are you sure you want to cancel this booking? The booker will be notified by email."
@@ -153,13 +165,13 @@ msgstr ""
 msgid "Booking accepted"
 msgstr ""
 
-msgid "Booking cancelled"
+msgid "Booking canceled"
 msgstr ""
 
-msgid "Booking cancelled: %1$s — %2$s"
+msgid "Booking canceled: %1$s — %2$s"
 msgstr ""
 
-msgid "Booking cancelled: %1$s — %2$s (single occurrence)"
+msgid "Booking canceled: %1$s — %2$s (single occurrence)"
 msgstr ""
 
 msgid "Booking confirmed: %1$s — %2$s"
@@ -184,9 +196,6 @@ msgid "Booking declined: %s — outside availability hours"
 msgstr ""
 
 msgid "Booking details"
-msgstr ""
-
-msgid "Booking details or attendees"
 msgstr ""
 
 msgid "Booking not permitted: %1$s — %2$s"
@@ -222,10 +231,10 @@ msgstr ""
 msgid "Cancel booking"
 msgstr ""
 
-msgid "Cancelled by: %s"
+msgid "Canceled by: %s"
 msgstr ""
 
-msgid "Cancelled occurrence: %s"
+msgid "Canceled occurrence: %s"
 msgstr ""
 
 msgid "Cannot delete: this facility is in use"
@@ -240,6 +249,9 @@ msgstr ""
 msgid "Capacity cannot be negative"
 msgstr ""
 
+msgid "Choose a CSV file to import"
+msgstr ""
+
 msgid "Choose file"
 msgstr ""
 
@@ -249,7 +261,7 @@ msgstr ""
 msgid "Client ID"
 msgstr ""
 
-msgid "Client Secret"
+msgid "Client secret"
 msgstr ""
 
 msgid "Close"
@@ -262,6 +274,9 @@ msgid "Configure the available facilities for rooms. Facilities that are in use 
 msgstr ""
 
 msgid "Configure the available room types. Types that are in use cannot be deleted."
+msgstr ""
+
+msgid "Conflicting dates:"
 msgstr ""
 
 msgid "Connect RoomVox to Microsoft 365 Exchange to sync room calendars. Requires an Azure AD app registration with Calendars.ReadWrite and User.Read.All application permissions."
@@ -285,7 +300,13 @@ msgstr ""
 msgid "Could not copy to clipboard"
 msgstr ""
 
-msgid "Could not reach the telemetry server. Please try again later."
+msgid "Could not reach the statistics server. Please try again later."
+msgstr ""
+
+msgid "Could not save the setting. Please try again."
+msgstr ""
+
+msgid "Country"
 msgstr ""
 
 msgid "Create booking"
@@ -316,6 +337,12 @@ msgid "Date"
 msgstr ""
 
 msgid "Date: %1$s – %2$s"
+msgstr ""
+
+msgid "Date: %s"
+msgstr ""
+
+msgid "Dates outside the availability hours:"
 msgstr ""
 
 msgid "Day"
@@ -352,6 +379,9 @@ msgid "Detected format:"
 msgstr ""
 
 msgid "Direct support from the developers"
+msgstr ""
+
+msgid "Documentation"
 msgstr ""
 
 msgid "Done"
@@ -397,6 +427,9 @@ msgid "e.g. Floor 3"
 msgstr ""
 
 msgid "e.g. Heidelberglaan 8"
+msgstr ""
+
+msgid "e.g. Lobby Display"
 msgstr ""
 
 msgid "e.g. Meeting Room 1"
@@ -510,6 +543,9 @@ msgstr ""
 msgid "Facilities"
 msgstr ""
 
+msgid "Facility name"
+msgstr ""
+
 msgid "Failed to cancel booking"
 msgstr ""
 
@@ -591,10 +627,10 @@ msgstr ""
 msgid "Failed to update feed"
 msgstr ""
 
-msgid "Failed to update telemetry setting"
+msgid "Feed URL"
 msgstr ""
 
-msgid "Feed URL"
+msgid "Field-list version"
 msgstr ""
 
 msgid "Floor"
@@ -627,7 +663,7 @@ msgstr ""
 msgid "Guaranteed compatibility"
 msgstr ""
 
-msgid "Help improve RoomVox by sharing anonymous usage statistics."
+msgid "Help"
 msgstr ""
 
 msgid "Hide email settings"
@@ -639,7 +675,7 @@ msgstr ""
 msgid "If you receive this, the SMTP configuration is working correctly."
 msgstr ""
 
-msgid "If you still need this room for the cancelled time, please make a new booking or contact the room manager."
+msgid "If you still need this room for the canceled time, please make a new booking or contact the room manager."
 msgstr ""
 
 msgid "If you still need this room, please make a new booking or contact the room manager."
@@ -675,6 +711,9 @@ msgstr ""
 msgid "Initial sync failed:"
 msgstr ""
 
+msgid "Installation identifier"
+msgstr ""
+
 msgid "Invalid date/time selection"
 msgstr ""
 
@@ -690,10 +729,7 @@ msgstr ""
 msgid "Last error:"
 msgstr ""
 
-msgid "Last report"
-msgstr ""
-
-msgid "Last report sent:"
+msgid "Last report: {date}"
 msgstr ""
 
 msgid "Last synced:"
@@ -703,9 +739,6 @@ msgid "Last used"
 msgstr ""
 
 msgid "Learn more"
-msgstr ""
-
-msgid "Learn more about RoomVox"
 msgstr ""
 
 msgid "Leave empty for auto-generated address"
@@ -765,6 +798,9 @@ msgstr ""
 msgid "Microsoft Exchange sync"
 msgstr ""
 
+msgid "Microsoft Exchange sync switched on (yes or no)"
+msgstr ""
+
 msgid "Mon"
 msgstr ""
 
@@ -777,10 +813,10 @@ msgstr ""
 msgid "Name"
 msgstr ""
 
-msgid "Named users"
+msgid "Needs action"
 msgstr ""
 
-msgid "Needs action"
+msgid "Never ask again"
 msgstr ""
 
 msgid "New"
@@ -789,7 +825,7 @@ msgstr ""
 msgid "New booking"
 msgstr ""
 
-msgid "New facility …"
+msgid "New facility"
 msgstr ""
 
 msgid "New features and improvements"
@@ -804,10 +840,16 @@ msgstr ""
 msgid "New room group"
 msgstr ""
 
-msgid "New room type …"
+msgid "New room type"
 msgstr ""
 
 msgid "Nextcloud Enterprise subscription detected on this instance. RoomVox subscriptions are sold through Nextcloud — contact your Nextcloud account manager or sales@nextcloud.com."
+msgstr ""
+
+msgid "Nextcloud subscription (yes or no)"
+msgstr ""
+
+msgid "Nextcloud version"
 msgstr ""
 
 msgid "No"
@@ -861,16 +903,31 @@ msgstr ""
 msgid "None"
 msgstr ""
 
-msgid "Number of bookings"
+msgid "Not now"
 msgstr ""
 
-msgid "Number of rooms and room groups"
+msgid "Not sent until you agree to it"
+msgstr ""
+
+msgid "Number of disabled accounts"
+msgstr ""
+
+msgid "Number of room groups"
+msgstr ""
+
+msgid "Number of rooms"
 msgstr ""
 
 msgid "Number of seats"
 msgstr ""
 
-msgid "Occurrence cancelled"
+msgid "Number of user accounts"
+msgstr ""
+
+msgid "Occurrence canceled"
+msgstr ""
+
+msgid "Once a day, RoomVox would send these figures about this server to licenses.voxcloud.nl, run by VoxCloud: %s. No personal data, content or names are sent. The RoomVox admin settings say what each figure is used for."
 msgstr ""
 
 msgid "Only create new rooms (skip existing)"
@@ -897,7 +954,7 @@ msgstr ""
 msgid "Organizer: %s"
 msgstr ""
 
-msgid "Overview of rooms and bookings in your RoomVox installation."
+msgid "Other Vox apps"
 msgstr ""
 
 msgid "Password"
@@ -913,6 +970,9 @@ msgid "Permissions"
 msgstr ""
 
 msgid "Permissions saved"
+msgstr ""
+
+msgid "PHP version"
 msgstr ""
 
 msgid "Please choose a different date or contact the room manager."
@@ -942,9 +1002,6 @@ msgstr ""
 msgid "Presets:"
 msgstr ""
 
-msgid "Pricing details"
-msgstr ""
-
 msgid "Priority bug fixes"
 msgstr ""
 
@@ -952,9 +1009,6 @@ msgid "Publish this room's bookings as an iCal feed that external calendar apps 
 msgstr ""
 
 msgid "Questions or feedback?"
-msgstr ""
-
-msgid "Questions?"
 msgstr ""
 
 msgid "Rate limit (per 10 sec)"
@@ -969,7 +1023,10 @@ msgstr ""
 msgid "Remove subscription key"
 msgstr ""
 
-msgid "Report sent successfully"
+msgid "Report an issue"
+msgstr ""
+
+msgid "Report sent"
 msgstr ""
 
 msgid "Requested by"
@@ -1008,6 +1065,12 @@ msgstr ""
 msgid "Room"
 msgstr ""
 
+msgid "Room \"{room}\" already uses this email address"
+msgstr ""
+
+msgid "Room booking"
+msgstr ""
+
 msgid "Room created"
 msgstr ""
 
@@ -1041,9 +1104,6 @@ msgstr ""
 msgid "Room name is required"
 msgstr ""
 
-msgid "Room names or descriptions"
-msgstr ""
-
 msgid "Room nr."
 msgstr ""
 
@@ -1059,6 +1119,12 @@ msgstr ""
 msgid "Room type"
 msgstr ""
 
+msgid "Room type name"
+msgstr ""
+
+msgid "Room types"
+msgstr ""
+
 msgid "Room updated"
 msgstr ""
 
@@ -1068,7 +1134,19 @@ msgstr ""
 msgid "Rooms"
 msgstr ""
 
+msgid "Rooms and room groups in this RoomVox installation."
+msgstr ""
+
 msgid "Rooms per request (default: 1)"
+msgstr ""
+
+msgid "Rooms synced with Microsoft Exchange"
+msgstr ""
+
+msgid "Rooms that accept bookings automatically"
+msgstr ""
+
+msgid "Rooms with their own mail server"
 msgstr ""
 
 msgid "roomvox"
@@ -1077,16 +1155,19 @@ msgstr ""
 msgid "RoomVox"
 msgstr ""
 
+msgid "RoomVox administration"
+msgstr ""
+
 msgid "RoomVox is free and open source (AGPL-3.0). You can use all features without a subscription — no limits, no restrictions, no catch."
 msgstr ""
 
-msgid "RoomVox is open source room booking software for Nextcloud. RoomVox is free for small installations. Larger organisations may require a license in the future."
+msgid "RoomVox is running for {count} users here and keeps working in full without a subscription. If your organization gets value from it, a subscription is much appreciated — it funds the maintenance. Sold through Nextcloud: contact your account manager or sales@nextcloud.com."
 msgstr ""
 
-msgid "RoomVox is running for {count} users here and keeps working in full without a subscription. If your organisation gets value from it, a subscription is much appreciated — it funds the maintenance. Sold through Nextcloud: contact your account manager or sales@nextcloud.com."
+msgid "RoomVox version"
 msgstr ""
 
-msgid "RoomVox, Nextcloud, and PHP version numbers"
+msgid "RoomVox would like to send more usage statistics"
 msgstr ""
 
 msgid "Rule"
@@ -1125,13 +1206,13 @@ msgstr ""
 msgid "Select date"
 msgstr ""
 
-msgid "Send anonymous usage statistics to help improve RoomVox"
-msgstr ""
-
 msgid "Send report now"
 msgstr ""
 
-msgid "Sending …"
+msgid "Sending …"
+msgstr ""
+
+msgid "Separate from this switch: while a subscription key is entered, RoomVox also reports the key, the installation identifier and the number of rooms, room groups, user accounts and disabled accounts to licenses.voxcloud.nl, so the subscription can be checked and seats counted. That report is part of the subscription and stops when the key is removed."
 msgstr ""
 
 msgid "Settings"
@@ -1140,10 +1221,34 @@ msgstr ""
 msgid "Settings saved"
 msgstr ""
 
-msgid "Share anonymous usage statistics"
+msgid "Share RoomVox usage statistics with VoxCloud?"
+msgstr ""
+
+msgid "Share usage statistics"
 msgstr ""
 
 msgid "Show weekends in calendar"
+msgstr ""
+
+msgid "Shown on a world map of installations. Taken from the default phone region, or worked out on this server from the default time zone. The time zone itself is not sent."
+msgstr ""
+
+msgid "Shows how RoomVox features are used, to decide what to develop and maintain."
+msgstr ""
+
+msgid "Shows whether the Exchange integration is used. The tenant ID, client ID and client secret are never sent."
+msgstr ""
+
+msgid "Shows whether this server has a Nextcloud Enterprise subscription. Such servers are listed as Enterprise customers and are not approached about a license."
+msgstr ""
+
+msgid "Shows which Nextcloud versions RoomVox must keep supporting."
+msgstr ""
+
+msgid "Shows which PHP versions RoomVox must keep supporting. Only the major and minor version, such as 8.3."
+msgstr ""
+
+msgid "Shows which RoomVox releases are still in use."
 msgstr ""
 
 msgid "Skipped"
@@ -1173,6 +1278,9 @@ msgstr ""
 msgid "Street and number"
 msgstr ""
 
+msgid "Subscription"
+msgstr ""
+
 msgid "Subscription activated!"
 msgstr ""
 
@@ -1191,13 +1299,13 @@ msgstr ""
 msgid "Subscription key saved but validation failed."
 msgstr ""
 
+msgid "Subscriptions are sold through Nextcloud. Contact your Nextcloud account manager, or"
+msgstr ""
+
 msgid "Sun"
 msgstr ""
 
 msgid "Support"
-msgstr ""
-
-msgid "Support RoomVox"
 msgstr ""
 
 msgid "Supported formats"
@@ -1218,9 +1326,6 @@ msgstr ""
 msgid "Testing …"
 msgstr ""
 
-msgid "Thank you for helping improve RoomVox!"
-msgstr ""
-
 msgid "The booker will be notified by email."
 msgstr ""
 
@@ -1236,10 +1341,13 @@ msgstr ""
 msgid "The room is already booked for this time slot. Please choose a different time."
 msgstr ""
 
+msgid "The room is already booked on these dates, so the whole series was declined. Exclude these dates from the series, or choose a different time, and book again."
+msgstr ""
+
 msgid "The room is now available for this time slot."
 msgstr ""
 
-msgid "The telemetry server returned an error:"
+msgid "The statistics server returned an error: {message}"
 msgstr ""
 
 msgid "These permissions apply to all rooms in this group. Individual rooms can have additional permissions on top of these."
@@ -1287,7 +1395,7 @@ msgstr ""
 msgid "Token created! Copy it now — it will not be shown again."
 msgstr ""
 
-msgid "Token name (e.g. Lobby Display)"
+msgid "Token name"
 msgstr ""
 
 msgid "Tomorrow"
@@ -1332,10 +1440,19 @@ msgstr ""
 msgid "Usage"
 msgstr ""
 
-msgid "User names or email addresses"
+msgid "Usage statistics"
+msgstr ""
+
+msgid "Usage statistics are switched off, so no report was sent."
+msgstr ""
+
+msgid "Used to size a license and to find installations that may need one."
 msgstr ""
 
 msgid "Username"
+msgstr ""
+
+msgid "Users active in the last 30 days"
 msgstr ""
 
 msgid "Validate"
@@ -1353,9 +1470,6 @@ msgstr ""
 msgid "Viewers"
 msgstr ""
 
-msgid "We collect: room counts, booking counts, version info (RoomVox, Nextcloud, PHP), whether your Nextcloud has an Extended Support / Enterprise subscription (a single yes/no, sourced from Nextcloud's public API), and whether the Microsoft Exchange sync is switched on plus how many rooms use it. No personal data, booking details or Exchange credentials are shared — the tenant ID, client ID and client secret never leave your server."
-msgstr ""
-
 msgid "Wed"
 msgstr ""
 
@@ -1371,13 +1485,13 @@ msgstr ""
 msgid "What a subscription includes"
 msgstr ""
 
-msgid "What we collect:"
-msgstr ""
-
-msgid "What we never collect:"
-msgstr ""
-
 msgid "When"
+msgstr ""
+
+msgid "Which version of this list the report follows, so that fields added later are only sent after you agree to them."
+msgstr ""
+
+msgid "With your permission, RoomVox sends usage statistics about this installation to licenses.voxcloud.nl, run by VoxCloud, once a day. No personal data, content or names are sent. Nothing is sent until you switch this on."
 msgstr ""
 
 msgid "Yes"
@@ -1386,13 +1500,10 @@ msgstr ""
 msgid "You don't have access to any rooms yet. Ask an administrator to grant you access."
 msgstr ""
 
-msgid "Your actual server URL"
-msgstr ""
-
 msgid "Your booking could not be processed due to a scheduling conflict."
 msgstr ""
 
-msgid "Your booking has been cancelled by a room manager."
+msgid "Your booking has been canceled by a room manager."
 msgstr ""
 
 msgid "Your booking has been confirmed."
@@ -1413,13 +1524,25 @@ msgstr ""
 msgid "Your booking request was automatically declined because you do not have permission to book this room."
 msgstr ""
 
-msgid "Your installation"
-msgstr ""
-
 msgid "Your issues get priority attention"
 msgstr ""
 
+msgid "%n named user on this server"
+msgid_plural "%n named users on this server"
+msgstr[0] ""
+msgstr[1] ""
+
+msgid "and %n more date"
+msgid_plural "and %n more dates"
+msgstr[0] ""
+msgstr[1] ""
+
 msgid "This room has a maximum booking horizon of %n day."
 msgid_plural "This room has a maximum booking horizon of %n days."
+msgstr[0] ""
+msgstr[1] ""
+
+msgid "What is sent, and what it is used for (%n field)"
+msgid_plural "What is sent, and what it is used for (%n fields)"
 msgstr[0] ""
 msgstr[1] ""

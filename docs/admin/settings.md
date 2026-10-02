@@ -115,10 +115,10 @@ Configure your VoxCloud subscription key for Enterprise activation. Free tier is
 
 | Toggle | Effect |
 |---|---|
-| Send anonymous usage statistics | Enables/disables daily telemetry |
+| Share usage statistics | Switches the daily usage statistics on or off (off until an administrator agrees) |
 | Send report now | Manually trigger a report |
 
-See [Telemetry](telemetry.md) for the full data inventory and disable instructions.
+This is the only switch for usage statistics. See [Usage statistics](telemetry.md) for what is sent and why.
 
 ## Per-Room vs. App-Wide
 
@@ -153,4 +153,4 @@ See [Backend Architecture](../architecture/backend-architecture.md) for the full
 - [Admin Guide](guide.md) — day-to-day administration
 - [Managing Rooms](room-management.md) — per-room configuration
 - [Public API](../features/public-api.md) — API token usage
-- [Telemetry](telemetry.md) — data collected
+- [Usage statistics](telemetry.md) — what is sent and why

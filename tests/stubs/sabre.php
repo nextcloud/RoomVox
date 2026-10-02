@@ -223,6 +223,13 @@ if (!class_exists(\Sabre\VObject\Recur\EventIterator::class)) {
         public function next(): void {
             $this->index++;
         }
+
+        /** As Sabre's: skip occurrences that end at or before $dateTime */
+        public function fastForward(\DateTimeInterface $dateTime): void {
+            while ($this->valid() && $this->getDtEnd() <= $dateTime) {
+                $this->next();
+            }
+        }
     }
 }
 
@@ -260,6 +267,7 @@ namespace OCA\DAV\CalDAV;
 
 if (!class_exists(\OCA\DAV\CalDAV\CalDavBackend::class)) {
     class CalDavBackend {
+        public const CALENDAR_TYPE_CALENDAR = 0;
         public function getCalendarsForUser(string $principalUri): array { return []; }
         public function getCalendarObjects(int $calendarId): array { return []; }
         public function getCalendarObject(int $calendarId, string $objectUri): ?array { return null; }
@@ -267,7 +275,12 @@ if (!class_exists(\OCA\DAV\CalDAV\CalDavBackend::class)) {
         public function updateCalendarObject(int $calendarId, string $objectUri, string $data): void {}
         public function deleteCalendarObject(int $calendarId, string $objectUri, int $type = 0, bool $permanent = false): void {}
         public function createCalendar(string $principalUri, string $calendarUri, array $properties): void {}
-        public function deleteCalendar(int $calendarId): void {}
+        public function getCalendarByUri($principal, $uri) { return null; }
+        // Nextcloud soft-deletes into the calendar trashbin unless
+        // $forceDeletePermanently is set; the row then keeps its
+        // UNIQUE(principaluri, uri) slot. Signature is identical on
+        // stable32 and stable35.
+        public function deleteCalendar(int $calendarId, bool $forceDeletePermanently = false): void {}
         public function getMultipleCalendarObjects(int $calendarId, array $uris, int $calendarType = 0): array { return []; }
         public function calendarQuery(int $calendarId, array $filters, int $calendarType = 0): array { return []; }
     }

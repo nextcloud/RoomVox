@@ -31,7 +31,7 @@ Installation, configuration, room management, and operations.
 - [Permissions](admin/permissions.md) — Viewer / Booker / Manager roles, room group inheritance
 - [Email Configuration](admin/email-configuration.md) — Nextcloud SMTP, per-room SMTP, encryption
 - [Import / Export](admin/import-export.md) — CSV import/export, MS365/Exchange migration
-- [Telemetry](admin/telemetry.md) — Anonymous usage data (opt-out)
+- [Usage statistics](admin/telemetry.md) — Off until an administrator agrees (opt-in)
 - [Best Practices](admin/best-practices.md) — Permission strategy, group hierarchy, maintenance
 - [Troubleshooting](admin/troubleshooting.md) — Email problems, calendar patch issues, debug endpoints
 - [FAQ](admin/faq.md) — Common admin questions

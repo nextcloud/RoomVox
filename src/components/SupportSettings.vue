@@ -1,211 +1,238 @@
 <template>
+	<!-- Four sections in the fixed order of the design guidelines (§7, "The
+	     Statistics and Support panes"): About, Subscription, Usage statistics,
+	     Help. Installation figures other than named users live on Statistics. -->
 	<div class="support-settings">
-		<!-- Section 1: About RoomVox -->
-		<div class="settings-section">
-			<h2>{{ t('roomvox', 'Support RoomVox') }}</h2>
-			<p class="settings-section-desc">
-				{{ t('roomvox', 'RoomVox is free and open source (AGPL-3.0). You can use all features without a subscription — no limits, no restrictions, no catch.') }}
+		<NcSettingsSection :name="t('roomvox', 'About RoomVox')"
+			:description="t('roomvox', 'RoomVox is free and open source (AGPL-3.0). You can use all features without a subscription — no limits, no restrictions, no catch.')" />
+
+		<NcSettingsSection :name="t('roomvox', 'Subscription')"
+			:description="t('roomvox', 'If RoomVox is valuable to your organization, consider subscribing. Your subscription funds active development, guaranteed Nextcloud compatibility, and email support.')">
+			<h3 class="support-heading">
+				{{ t('roomvox', 'What a subscription includes') }}
+			</h3>
+			<ul class="includes-list">
+				<li v-for="item in includes" :key="item.label" class="includes-item">
+					<component :is="item.icon" :size="20" class="includes-icon" aria-hidden="true" />
+					<div class="includes-text">
+						<span class="includes-label">{{ item.label }}</span>
+						<span class="includes-desc">{{ item.description }}</span>
+					</div>
+				</li>
+			</ul>
+
+			<p class="support-line">
+				{{ t('roomvox', 'Subscriptions are sold through Nextcloud. Contact your Nextcloud account manager, or') }}
+				<a href="mailto:sales@nextcloud.com">sales@nextcloud.com</a>
 			</p>
-			<p class="settings-section-desc">
-				{{ t('roomvox', 'If RoomVox is valuable to your organization, consider subscribing. Your subscription funds active development, guaranteed Nextcloud compatibility, and email support.') }}
+
+			<!-- Every account on the server, disabled ones included: nothing is
+			     gated, so RoomVox runs in full for all of them. The one figure a
+			     licence is measured by; the other counts are on Statistics. -->
+			<p v-if="licenseStats" class="support-line">
+				{{ n('roomvox', '%n named user on this server', '%n named users on this server', licenseStats.totalUsers || 0) }}
 			</p>
-		</div>
 
-		<!-- Section 2: What's included -->
-		<div class="settings-section">
-			<h2>{{ t('roomvox', 'What a subscription includes') }}</h2>
+			<!-- The same notice as the banner above the tabs, which App.vue hides
+			     on this pane: on screen once (design guidelines §7). -->
+			<NcNoteCard v-if="subscriptionNudge" type="info">
+				{{ subscriptionNudge }}
+			</NcNoteCard>
 
-			<div class="includes-list">
-				<div class="includes-item">
-					<span class="includes-check">&#x2705;</span>
-					<div class="includes-text">
-						<span class="includes-label">{{ t('roomvox', 'Guaranteed compatibility') }}</span>
-						<span class="includes-desc">{{ t('roomvox', 'Tested with every new Nextcloud release') }}</span>
-					</div>
-				</div>
-				<div class="includes-item">
-					<span class="includes-check">&#x2705;</span>
-					<div class="includes-text">
-						<span class="includes-label">{{ t('roomvox', 'Email support') }}</span>
-						<span class="includes-desc">{{ t('roomvox', 'Direct support from the developers') }}</span>
-					</div>
-				</div>
-				<div class="includes-item">
-					<span class="includes-check">&#x2705;</span>
-					<div class="includes-text">
-						<span class="includes-label">{{ t('roomvox', 'Priority bug fixes') }}</span>
-						<span class="includes-desc">{{ t('roomvox', 'Your issues get priority attention') }}</span>
-					</div>
-				</div>
-				<div class="includes-item">
-					<span class="includes-check">&#x2705;</span>
-					<div class="includes-text">
-						<span class="includes-label">{{ t('roomvox', 'Active development') }}</span>
-						<span class="includes-desc">{{ t('roomvox', 'New features and improvements') }}</span>
-					</div>
-				</div>
-			</div>
-		</div>
-
-		<!-- Section 3: Where subscriptions come from -->
-		<div class="settings-section">
-			<div class="cta-block">
-				<p class="cta-sales">
-					{{ t('roomvox', 'Subscriptions are sold through Nextcloud. Contact your Nextcloud account manager, or') }}
-					<a href="mailto:sales@nextcloud.com">sales@nextcloud.com</a>
-				</p>
-				<p class="cta-contact">
-					{{ t('roomvox', 'Questions about the app itself?') }}
-					<a href="mailto:info@voxcloud.nl">info@voxcloud.nl</a>
-				</p>
-			</div>
-		</div>
-
-		<!-- Section 4: Your installation -->
-		<div class="settings-section">
-			<h2>{{ t('roomvox', 'Your installation') }}</h2>
-
-			<div v-if="licenseStats" class="stats-overview">
-				<div class="stat-row">
-					<div class="stat-info">
-						<span class="stat-icon">🚪</span>
-						<span class="stat-label">{{ t('roomvox', 'Rooms') }}</span>
-					</div>
-					<span class="stat-value">{{ licenseStats.totalRooms }}</span>
-				</div>
-				<div class="stat-row">
-					<div class="stat-info">
-						<span class="stat-icon">📁</span>
-						<span class="stat-label">{{ t('roomvox', 'Room groups') }}</span>
-					</div>
-					<span class="stat-value">{{ licenseStats.totalRoomGroups }}</span>
-				</div>
-				<div class="stat-row">
-					<div class="stat-info">
-						<span class="stat-icon">👥</span>
-						<span class="stat-label">{{ t('roomvox', 'Named users') }}</span>
-					</div>
-					<!-- Every account on the server, disabled ones included: nothing
-					     is gated, so RoomVox runs in full for all of them. -->
-					<span class="stat-value">{{ licenseStats.totalUsers || 0 }}</span>
+			<div class="license-key">
+				<NcTextField v-model="licenseKey"
+					:label="t('roomvox', 'Subscription key')"
+					:placeholder="t('roomvox', 'e.g. RVOX-XXXX-XXXX-XXXX-XXXX')"
+					:error="!!licenseKeyError"
+					:helper-text="licenseKeyError"
+					@update:model-value="onLicenseKeyInput" />
+				<div class="license-key-actions">
+					<NcButton variant="primary"
+						:disabled="savingLicense"
+						@click="saveLicenseKey">
+						{{ savingLicense ? t('roomvox', 'Saving …') : t('roomvox', 'Save & activate') }}
+					</NcButton>
+					<NcButton v-if="licenseStats && licenseStats.hasLicense"
+						variant="tertiary"
+						:disabled="savingLicense"
+						@click="removeLicenseKey">
+						{{ t('roomvox', 'Remove subscription key') }}
+					</NcButton>
 				</div>
 			</div>
 
 			<NcNoteCard v-if="licenseStats && licenseStats.hasLicense && licenseStats.licenseValid" type="success">
 				{{ t('roomvox', 'Subscription active — thank you for supporting RoomVox!') }}
 			</NcNoteCard>
-
 			<NcNoteCard v-if="licenseStats && licenseStats.hasLicense && !licenseStats.licenseValid" type="warning">
 				{{ t('roomvox', 'Subscription key is invalid or expired.') }}
 			</NcNoteCard>
+		</NcSettingsSection>
 
-			<!-- One card at most. An Enterprise instance with 400 users matches both
-			     conditions, and two cards both asking to get in touch reads as nagging. -->
-			<NcNoteCard v-if="subscriptionNudge" type="info">
-				{{ subscriptionNudge }}
+		<!-- The one switch for usage statistics, next to the subscription key
+		     (TELEMETRY.md §6). The field list and each field's purpose come from
+		     the server, from the definition the report itself is built from. -->
+		<NcSettingsSection :name="t('roomvox', 'Usage statistics')"
+			:description="t('roomvox', 'With your permission, RoomVox sends usage statistics about this installation to licenses.voxcloud.nl, run by VoxCloud, once a day. No personal data, content or names are sent. Nothing is sent until you switch this on.')">
+			<NcCheckboxRadioSwitch type="switch"
+				:model-value="telemetryEnabled"
+				:loading="savingTelemetry"
+				:disabled="!telemetry"
+				@update:model-value="toggleTelemetry">
+				{{ t('roomvox', 'Share usage statistics') }}
+			</NcCheckboxRadioSwitch>
+
+			<template v-if="telemetry">
+				<!-- Closed on load; opened by the consent notification's link
+				     (#usage-statistics). The count stays visible while closed. -->
+				<!-- Closed on load (design guidelines §7), except when a later
+				     version added fields that wait for agreement: the button
+				     below asks about them, so they are shown. -->
+				<details id="usage-statistics"
+					ref="fieldList"
+					class="telemetry-disclosure"
+					:open="telemetryHasWithheld || undefined">
+					<summary>
+						<ChevronRight :size="20" class="disclosure__chevron" aria-hidden="true" />
+						{{ n('roomvox', 'What is sent, and what it is used for (%n field)', 'What is sent, and what it is used for (%n fields)', telemetry.fields.length) }}
+					</summary>
+					<dl class="telemetry-fields">
+						<div v-for="field in telemetry.fields" :key="field.key" class="telemetry-field">
+							<dt>
+								{{ field.label }}
+								<span v-if="field.withheld" class="telemetry-withheld">
+									{{ t('roomvox', 'Not sent until you agree to it') }}
+								</span>
+							</dt>
+							<dd>{{ field.purpose }}</dd>
+						</div>
+					</dl>
+				</details>
+				<!-- Only when a later version added fields to an existing yes:
+				     those stay on this server until agreed to (TELEMETRY.md §2). -->
+				<NcButton v-if="telemetryHasWithheld"
+					variant="secondary"
+					:disabled="savingTelemetry"
+					@click="toggleTelemetry(true)">
+					{{ t('roomvox', 'Agree to the added fields') }}
+				</NcButton>
+			</template>
+
+			<div v-if="telemetryEnabled" class="telemetry-actions">
+				<NcButton variant="secondary"
+					:disabled="sendingTelemetry"
+					@click="sendTelemetryNow">
+					{{ sendingTelemetry ? t('roomvox', 'Sending …') : t('roomvox', 'Send report now') }}
+				</NcButton>
+				<span v-if="telemetryLastReport" class="telemetry-last-report">
+					{{ t('roomvox', 'Last report: {date}', { date: formatDate(telemetryLastReport) }) }}
+				</span>
+				<span v-else class="telemetry-last-report">
+					{{ t('roomvox', 'No report sent yet') }}
+				</span>
+			</div>
+
+			<NcNoteCard v-if="telemetryMessage" :type="telemetryMessageType">
+				{{ telemetryMessage }}
 			</NcNoteCard>
 
-			<div class="telemetry-section">
-				<NcCheckboxRadioSwitch
-					:model-value="telemetryEnabled"
-					@update:model-value="toggleTelemetry">
-					{{ t('roomvox', 'Send anonymous usage statistics to help improve RoomVox') }}
-				</NcCheckboxRadioSwitch>
+			<!-- The licence-usage report is not governed by this switch; it is
+			     named here so it does not come as a surprise (TELEMETRY.md §7). -->
+			<NcNoteCard type="info">
+				{{ t('roomvox', 'Separate from this switch: while a subscription key is entered, RoomVox also reports the key, the installation identifier and the number of rooms, room groups, user accounts and disabled accounts to licenses.voxcloud.nl, so the subscription can be checked and seats counted. That report is part of the subscription and stops when the key is removed.') }}
+			</NcNoteCard>
+		</NcSettingsSection>
 
-				<div v-if="telemetryEnabled" class="telemetry-actions">
-					<NcButton type="secondary"
-						:disabled="sendingTelemetry"
-						@click="sendTelemetryNow">
-						{{ sendingTelemetry ? t('roomvox', 'Sending …') : t('roomvox', 'Send report now') }}
-					</NcButton>
-					<span v-if="telemetryLastReport" class="telemetry-last-report">
-						{{ t('roomvox', 'Last report') }}: {{ formatDate(telemetryLastReport) }}
-					</span>
-					<span v-else class="telemetry-last-report">
-						{{ t('roomvox', 'No report sent yet') }}
-					</span>
-				</div>
-
-				<NcNoteCard v-if="telemetryMessage" :type="telemetryMessageType" class="telemetry-feedback">
-					{{ telemetryMessage }}
-				</NcNoteCard>
-			</div>
-		</div>
-
-		<!-- Section 6: Subscription key -->
-		<div class="settings-section">
-			<h2>{{ t('roomvox', 'Subscription key') }}</h2>
-
-			<div class="field-row">
-				<input id="license-key"
-					v-model="licenseKey"
-					type="text"
-					:placeholder="t('roomvox', 'e.g. RVOX-XXXX-XXXX-XXXX-XXXX')"
-					class="contact-input"
-					@input="_userEditedLicenseKey = true">
-			</div>
-			<div class="license-key-actions">
-				<NcButton type="primary"
-					:disabled="savingLicense"
-					@click="saveLicenseKey">
-					{{ savingLicense ? t('roomvox', 'Saving …') : t('roomvox', 'Save & activate') }}
+		<NcSettingsSection :name="t('roomvox', 'Help')">
+			<p class="support-line">
+				{{ t('roomvox', 'Questions or feedback?') }}
+				<a href="mailto:info@voxcloud.nl">info@voxcloud.nl</a>
+			</p>
+			<div class="help-links">
+				<NcButton variant="secondary"
+					:href="docsUrl"
+					target="_blank">
+					<template #icon>
+						<BookOpenVariant :size="20" />
+					</template>
+					{{ t('roomvox', 'Documentation') }}
 				</NcButton>
-				<NcButton v-if="licenseStats && licenseStats.hasLicense"
-					type="tertiary"
-					:disabled="savingLicense"
-					@click="removeLicenseKey">
-					{{ t('roomvox', 'Remove subscription key') }}
+				<NcButton variant="secondary"
+					href="https://github.com/nextcloud/RoomVox/issues"
+					target="_blank">
+					<template #icon>
+						<BugOutline :size="20" />
+					</template>
+					{{ t('roomvox', 'Report an issue') }}
+				</NcButton>
+				<NcButton variant="secondary"
+					href="https://voxcloud.nl"
+					target="_blank">
+					<template #icon>
+						<Apps :size="20" />
+					</template>
+					{{ t('roomvox', 'Other Vox apps') }}
 				</NcButton>
 			</div>
-		</div>
-
-		<!-- Section 7: Contact -->
-		<div class="settings-section">
-			<div class="contact-info-block">
-				<p>
-					{{ t('roomvox', 'Questions or feedback?') }}
-					<a href="mailto:info@voxcloud.nl">info@voxcloud.nl</a>
-				</p>
-			</div>
-		</div>
-
-		<div v-if="message" :class="['message', messageType]">
-			{{ message }}
-		</div>
+		</NcSettingsSection>
 	</div>
 </template>
 
 <script>
-import { NcButton, NcCheckboxRadioSwitch, NcNoteCard } from '@nextcloud/vue'
+import NcButton from '@nextcloud/vue/components/NcButton'
+import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwitch'
+import NcNoteCard from '@nextcloud/vue/components/NcNoteCard'
+import NcSettingsSection from '@nextcloud/vue/components/NcSettingsSection'
+import NcTextField from '@nextcloud/vue/components/NcTextField'
+import Apps from 'vue-material-design-icons/Apps.vue'
+import BookOpenVariant from 'vue-material-design-icons/BookOpenVariant.vue'
+import BugOutline from 'vue-material-design-icons/BugOutline.vue'
+import ChevronRight from 'vue-material-design-icons/ChevronRight.vue'
+import EmailOutline from 'vue-material-design-icons/EmailOutline.vue'
+import RocketLaunchOutline from 'vue-material-design-icons/RocketLaunchOutline.vue'
+import ShieldCheckOutline from 'vue-material-design-icons/ShieldCheckOutline.vue'
 import { subscriptionNudge as buildSubscriptionNudge } from '../composables/useSubscriptionNudge.js'
 import axios from '@nextcloud/axios'
+import { showError, showSuccess } from '@nextcloud/dialogs'
 import { generateUrl } from '@nextcloud/router'
-import { getLanguage, translate } from '@nextcloud/l10n'
+import { getLanguage, translate, translatePlural } from '@nextcloud/l10n'
 
 const t = (app, text, vars = {}) => translate(app, text, vars)
+const n = (app, singular, plural, count, vars = {}) => translatePlural(app, singular, plural, count, vars)
+
+// The anchor the consent notification links to (lib/Notification/Notifier.php).
+const FIELD_LIST_HASH = '#usage-statistics'
 
 export default {
 	name: 'SupportSettings',
 
 	components: {
+		Apps,
+		BookOpenVariant,
+		BugOutline,
+		ChevronRight,
 		NcButton,
 		NcCheckboxRadioSwitch,
 		NcNoteCard,
+		NcSettingsSection,
+		NcTextField,
 	},
 
 	data() {
 		return {
 			licenseStats: null,
 			licenseKey: '',
+			licenseKeyError: '',
 			savingLicense: false,
-			_userEditedLicenseKey: false,
-			telemetryEnabled: true,
-			telemetryLastReport: null,
+			// Once the administrator types, a reload of the stats must not put
+			// the masked key back over their input.
+			userEditedLicenseKey: false,
+			// Off until the server says otherwise: a missing answer is a no.
+			telemetry: null,
+			savingTelemetry: false,
 			sendingTelemetry: false,
 			telemetryMessage: '',
 			telemetryMessageType: 'success',
-			message: '',
-			messageType: 'success',
 		}
 	},
 
@@ -218,26 +245,82 @@ export default {
 			return buildSubscriptionNudge(this.licenseStats)
 		},
 
+		includes() {
+			return [
+				{ icon: ShieldCheckOutline, label: t('roomvox', 'Guaranteed compatibility'), description: t('roomvox', 'Tested with every new Nextcloud release') },
+				{ icon: EmailOutline, label: t('roomvox', 'Email support'), description: t('roomvox', 'Direct support from the developers') },
+				{ icon: BugOutline, label: t('roomvox', 'Priority bug fixes'), description: t('roomvox', 'Your issues get priority attention') },
+				{ icon: RocketLaunchOutline, label: t('roomvox', 'Active development'), description: t('roomvox', 'New features and improvements') },
+			]
+		},
+
+		// The site publishes Dutch at /docs/roomvox/ and English at /docs/en/roomvox/.
+		docsUrl() {
+			return getLanguage().startsWith('nl')
+				? 'https://voxcloud.nl/docs/roomvox/'
+				: 'https://voxcloud.nl/docs/en/roomvox/'
+		},
+
+		telemetryEnabled() {
+			return this.telemetry?.enabled ?? false
+		},
+
+		telemetryLastReport() {
+			return this.telemetry?.lastReport ?? null
+		},
+
+		telemetryHasWithheld() {
+			return (this.telemetry?.fields ?? []).some(field => field.withheld)
+		},
 	},
 
-	mounted() {
-		this.loadLicenseStats()
+	async mounted() {
+		window.addEventListener('hashchange', this.openFieldListFromHash)
+		await this.loadLicenseStats()
+		this.openFieldListFromHash()
+	},
+
+	beforeUnmount() {
+		window.removeEventListener('hashchange', this.openFieldListFromHash)
 	},
 
 	methods: {
-		// Exposed so the template can use the same t('roomvox', …) form the
-		// Nextcloud translation bot extracts.
+		// Exposed so the template can use the same t('roomvox', …) and
+		// n('roomvox', …) forms the Nextcloud translation bot extracts.
 		t,
+		n,
+
+		/**
+		 * An administrator who followed "what is sent" from the notification
+		 * sees the list without a second click (design guidelines §7).
+		 */
+		openFieldListFromHash() {
+			if (window.location.hash !== FIELD_LIST_HASH) {
+				return
+			}
+			this.$nextTick(() => {
+				const list = this.$refs.fieldList
+				if (!list) {
+					return
+				}
+				list.open = true
+				list.scrollIntoView({ block: 'start' })
+			})
+		},
+
+		onLicenseKeyInput() {
+			this.userEditedLicenseKey = true
+			this.licenseKeyError = ''
+		},
 
 		async loadLicenseStats() {
 			try {
 				const response = await axios.get(generateUrl('/apps/roomvox/api/license/stats'))
 				if (response.data.success) {
 					this.licenseStats = response.data.stats
-					this.telemetryEnabled = response.data.stats.telemetryEnabled ?? true
-					this.telemetryLastReport = response.data.stats.telemetryLastReport ?? null
+					this.telemetry = response.data.stats.telemetry ?? null
 					// Show masked key only on initial load, never overwrite user input
-					if (this.licenseStats.hasLicense && !this._userEditedLicenseKey) {
+					if (this.licenseStats.hasLicense && !this.userEditedLicenseKey) {
 						this.licenseKey = this.licenseStats.licenseKeyMasked || ''
 					}
 				}
@@ -249,17 +332,16 @@ export default {
 		async saveLicenseKey() {
 			const key = this.licenseKey.trim()
 			if (!key) {
-				this.showMessage(t('roomvox', 'Please enter a subscription key'), 'error')
+				this.licenseKeyError = t('roomvox', 'Please enter a subscription key')
 				return
 			}
 			this.savingLicense = true
 			try {
-				// Save the key
 				const saveRes = await axios.post(generateUrl('/apps/roomvox/api/settings/license'), {
 					licenseKey: key,
 				})
 				if (!saveRes.data.success) {
-					this.showMessage(t('roomvox', 'Failed to save subscription key'), 'error')
+					showError(t('roomvox', 'Failed to save subscription key'))
 					return
 				}
 
@@ -268,15 +350,15 @@ export default {
 				if (valRes.data.success && valRes.data.validation?.valid) {
 					// Report usage to bind instance to license
 					await axios.post(generateUrl('/apps/roomvox/api/license/update-usage'))
-					this.showMessage(t('roomvox', 'Subscription activated!'), 'success')
+					showSuccess(t('roomvox', 'Subscription activated!'))
 				} else {
-					this.showMessage(t('roomvox', 'Subscription key saved but validation failed.'), 'error')
+					showError(t('roomvox', 'Subscription key saved but validation failed.'))
 				}
 
 				await this.loadLicenseStats()
 			} catch (error) {
 				console.error('Failed to save/validate license key:', error)
-				this.showMessage(t('roomvox', 'Failed to save subscription key'), 'error')
+				showError(t('roomvox', 'Failed to save subscription key'))
 			} finally {
 				this.savingLicense = false
 			}
@@ -289,24 +371,33 @@ export default {
 					licenseKey: '',
 				})
 				this.licenseKey = ''
-				this._userEditedLicenseKey = false
+				this.licenseKeyError = ''
+				this.userEditedLicenseKey = false
 				await this.loadLicenseStats()
-				this.showMessage(t('roomvox', 'Subscription key removed.'), 'success')
+				showSuccess(t('roomvox', 'Subscription key removed.'))
 			} catch (error) {
-				this.showMessage(t('roomvox', 'Failed to remove subscription key'), 'error')
+				showError(t('roomvox', 'Failed to remove subscription key'))
 			} finally {
 				this.savingLicense = false
 			}
 		},
 
 		async toggleTelemetry(enabled) {
-			this.telemetryEnabled = enabled
+			this.savingTelemetry = true
+			this.telemetryMessage = ''
 			try {
-				await axios.put(generateUrl('/apps/roomvox/api/settings'), {
-					telemetryEnabled: enabled,
+				const response = await axios.put(generateUrl('/apps/roomvox/api/license/telemetry'), {
+					enabled: enabled === true,
 				})
+				if (response.data.success) {
+					this.telemetry = response.data.telemetry
+				}
 			} catch (error) {
-				console.error('Failed to save telemetry setting:', error)
+				console.error('Failed to save usage statistics setting:', error)
+				this.telemetryMessage = t('roomvox', 'Could not save the setting. Please try again.')
+				this.telemetryMessageType = 'error'
+			} finally {
+				this.savingTelemetry = false
 			}
 		},
 
@@ -316,19 +407,28 @@ export default {
 			try {
 				const response = await axios.post(generateUrl('/apps/roomvox/api/license/telemetry'))
 				if (response.data.success) {
-					this.telemetryLastReport = response.data.lastReport
-					this.telemetryMessage = t('roomvox', 'Report sent successfully')
+					if (this.telemetry) {
+						this.telemetry.lastReport = response.data.lastReport
+					}
+					this.telemetryMessage = t('roomvox', 'Report sent')
 					this.telemetryMessageType = 'success'
+				} else if (response.data.reason === 'recently_sent') {
+					// The server accepts one report per hour. Not an error.
+					this.telemetryMessage = t('roomvox', 'Already sent recently')
+					this.telemetryMessageType = 'info'
+				} else if (response.data.reason === 'disabled') {
+					this.telemetryMessage = t('roomvox', 'Usage statistics are switched off, so no report was sent.')
+					this.telemetryMessageType = 'info'
 				} else {
 					const serverMsg = response.data.message || ''
 					this.telemetryMessage = serverMsg
-						? t('roomvox', 'The telemetry server returned an error:') + ' ' + serverMsg
+						? t('roomvox', 'The statistics server returned an error: {message}', { message: serverMsg })
 						: t('roomvox', 'Failed to send report')
 					this.telemetryMessageType = 'warning'
 				}
 			} catch (error) {
-				console.error('Failed to send telemetry:', error)
-				this.telemetryMessage = t('roomvox', 'Could not reach the telemetry server. Please try again later.')
+				console.error('Failed to send usage statistics:', error)
+				this.telemetryMessage = t('roomvox', 'Could not reach the statistics server. Please try again later.')
 				this.telemetryMessageType = 'warning'
 			} finally {
 				this.sendingTelemetry = false
@@ -339,244 +439,186 @@ export default {
 			if (!timestamp) return ''
 			return new Date(timestamp * 1000).toLocaleString(getLanguage().replace('_', '-'))
 		},
-
-		showMessage(text, type) {
-			this.message = text
-			this.messageType = type
-			setTimeout(() => {
-				this.message = ''
-			}, 5000)
-		},
 	},
 }
 </script>
 
 <style lang="scss" scoped>
-.support-settings {
-	max-width: 800px;
+.support-heading {
+	font-size: var(--default-font-size);
+	font-weight: var(--font-weight-heading);
+	margin: 0 0 8px;
 }
 
-/* Settings sections */
-.settings-section {
-	margin-bottom: 32px;
+/* Contact routing is content: body size in the main text colour (§7). */
+.support-line {
+	margin: 0 0 12px;
+	color: var(--color-main-text);
+
+	a {
+		color: var(--color-primary-element);
+		text-decoration: underline;
+	}
 }
 
-.settings-section h2 {
-	font-size: 20px;
-	font-weight: bold;
-	margin-bottom: 8px;
-}
-
-.settings-section-desc {
-	color: var(--color-text-maxcontrast);
-	margin-bottom: 20px;
-}
-
-/* What's included list */
+/* What a subscription includes */
 .includes-list {
 	display: flex;
 	flex-direction: column;
 	gap: 12px;
-	margin-bottom: 24px;
+	margin: 0 0 16px;
+	padding: 0;
+	list-style: none;
 }
 
 .includes-item {
 	display: flex;
 	align-items: flex-start;
 	gap: 12px;
-	padding: 12px 20px;
-	background: var(--color-background-hover);
-	border-radius: var(--border-radius-large);
 }
 
-.includes-check {
-	font-size: 1.2em;
+.includes-icon {
 	flex-shrink: 0;
+	color: var(--color-primary-element);
 }
 
 .includes-text {
 	display: flex;
 	flex-direction: column;
-	gap: 2px;
+	gap: 4px;
 }
 
 .includes-label {
-	font-weight: 600;
+	font-weight: var(--font-weight-element);
 	color: var(--color-main-text);
 }
 
 .includes-desc {
-	font-size: 13px;
 	color: var(--color-text-maxcontrast);
 }
 
-/* CTA block: where subscriptions come from, then app contact.
-   Stacked rather than a row — both lines are prose now that the pricing
-   button is gone, and the sales line leads. */
-.cta-block {
+/* Subscription key */
+.license-key {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	margin-block: 16px;
+}
+
+.license-key-actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+}
+
+/* Usage statistics: the field list behind a disclosure. A flex <summary>
+   loses its native marker, so it carries its own rotating chevron
+   (design guidelines §7, "A disclosure needs a marker"). */
+.telemetry-disclosure {
+	margin-block: 12px;
+
+	summary {
+		display: flex;
+		align-items: center;
+		gap: 4px;
+		min-height: var(--default-clickable-area);
+		padding-inline-end: 8px;
+		border-radius: var(--border-radius-element);
+		cursor: pointer;
+		list-style: none;
+		font-weight: var(--font-weight-element);
+
+		&::-webkit-details-marker {
+			display: none;
+		}
+
+		&:hover {
+			background-color: var(--color-background-hover);
+		}
+
+		&:focus-visible {
+			outline: 2px solid var(--color-primary-element);
+			outline-offset: -2px;
+		}
+	}
+}
+
+.disclosure__chevron {
+	flex-shrink: 0;
+	color: var(--color-text-maxcontrast);
+	transition: transform var(--animation-quick) ease-in-out;
+}
+
+.telemetry-disclosure[open] .disclosure__chevron {
+	transform: rotate(90deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.disclosure__chevron {
+		transition: none;
+	}
+}
+
+.telemetry-fields {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	margin: 8px 0 0;
+	padding-inline-start: 24px;
+}
+
+.telemetry-field {
 	display: flex;
 	flex-direction: column;
 	gap: 4px;
 }
 
-.cta-sales {
+/* Nextcloud core styles every dt/dd globally (server.css): inline-block,
+   12px padding, and a dt of 130px that does not wrap and right-aligns.
+   Long labels then ran over their purpose and short ones looked indented.
+   Reset all of it: label above its purpose, both from the left edge
+   (design guidelines §6, detail lists). */
+.telemetry-field dt,
+.telemetry-field dd {
+	display: block;
+	width: auto;
 	margin: 0;
+	padding: 0;
+	white-space: normal;
+	text-align: start;
 }
 
-.cta-contact {
+.telemetry-field dt {
+	font-weight: var(--font-weight-element);
+	color: var(--color-main-text);
+}
+
+.telemetry-field dd {
 	color: var(--color-text-maxcontrast);
-	font-size: 14px;
-	margin: 0;
 }
 
-.cta-sales a,
-.cta-contact a {
-	color: var(--color-primary);
-	text-decoration: none;
-}
-
-.cta-sales a:hover,
-.cta-contact a:hover {
-	text-decoration: underline;
-}
-
-/* Telemetry section */
-.telemetry-section {
-	margin-top: 24px;
+.telemetry-withheld {
+	font-weight: var(--font-weight-default);
+	color: var(--color-text-maxcontrast);
+	margin-inline-start: 8px;
 }
 
 .telemetry-actions {
 	display: flex;
+	flex-wrap: wrap;
 	align-items: center;
 	gap: 12px;
-	margin-top: 12px;
+	margin-block: 12px;
 }
 
 .telemetry-last-report {
-	font-size: 13px;
 	color: var(--color-text-maxcontrast);
 }
 
-.telemetry-feedback {
-	margin-top: 12px;
-}
-
-/* Stats overview */
-.stats-overview {
+/* Help */
+.help-links {
 	display: flex;
-	flex-direction: column;
-	gap: 12px;
-	margin-bottom: 24px;
-}
-
-.stat-row {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	padding: 16px 20px;
-	background: var(--color-background-hover);
-	border-radius: var(--border-radius-large);
-}
-
-.stat-info {
-	display: flex;
-	align-items: center;
-	gap: 12px;
-}
-
-.stat-icon {
-	font-size: 1.5em;
-}
-
-.stat-label {
-	font-weight: 500;
-	color: var(--color-main-text);
-}
-
-.stat-value {
-	font-size: 24px;
-	font-weight: 700;
-	color: var(--color-primary);
-}
-
-/* Contact info block */
-.contact-info-block {
-	margin-bottom: 20px;
-	padding: 16px 20px;
-	background: var(--color-background-hover);
-	border-radius: var(--border-radius-large);
-
-	p {
-		margin: 0 0 8px 0;
-		line-height: 1.5;
-
-		&:last-child {
-			margin-bottom: 0;
-		}
-	}
-
-	a {
-		color: var(--color-primary-element);
-		font-weight: 500;
-		text-decoration: none;
-
-		&:hover {
-			text-decoration: underline;
-		}
-	}
-}
-
-.field-row {
-	display: flex;
-	flex-direction: column;
-	gap: 4px;
-	margin-bottom: 12px;
-
-	label {
-		font-weight: 500;
-		font-size: 14px;
-	}
-}
-
-.contact-input {
-	width: 100%;
-	max-width: 400px;
-	padding: 8px 12px;
-	border: 2px solid var(--color-border-dark);
-	border-radius: var(--border-radius-large);
-	background: var(--color-main-background);
-	color: var(--color-main-text);
-	font-size: 14px;
-
-	&:focus {
-		border-color: var(--color-primary-element);
-		outline: none;
-	}
-}
-
-/* License key section */
-.license-key-actions {
-	display: flex;
+	flex-wrap: wrap;
 	gap: 8px;
-	margin-top: 8px;
-}
-
-.message {
-	margin-top: 15px;
-	padding: 10px 15px;
-	border-radius: var(--border-radius);
-	font-size: 14px;
-
-	&.success {
-		background: #d4edda;
-		color: #155724;
-		border: 1px solid #c3e6cb;
-	}
-
-	&.error {
-		background: #f8d7da;
-		color: #721c24;
-		border: 1px solid var(--color-error, #f5c6cb);
-	}
 }
 </style>

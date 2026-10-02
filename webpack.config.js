@@ -1,6 +1,7 @@
 const path = require('path')
 const { VueLoaderPlugin } = require('vue-loader')
 const webpack = require('webpack')
+const packageJson = require('./package.json')
 
 const isDev = process.env.NODE_ENV !== 'production'
 
@@ -53,6 +54,8 @@ module.exports = {
             __VUE_PROD_DEVTOOLS__: JSON.stringify(isDev),
             __VUE_PROD_HYDRATION_MISMATCH_DETAILS__: JSON.stringify(false),
             appName: JSON.stringify('roomvox'),
+            // @nextcloud/vue reads it and logs an error when it is missing
+            appVersion: JSON.stringify(packageJson.version),
         }),
     ],
     resolve: {

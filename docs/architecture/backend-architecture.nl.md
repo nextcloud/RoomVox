@@ -81,7 +81,7 @@ Controllers hangen aan services, services hangen aan elkaar. De belangrijkste:
 | `MailService` | per ruimte eigen SMTP, anders Nextclouds `IMailer` |
 | `ImportExportService` | CSV in beide formaten (RoomVox en MS365), inclusief duplicaatdetectie |
 | `ApiTokenService` | tokens aanmaken, hashen en scopes controleren |
-| `TelemetryService`, `LicenseService` | anonieme gebruiksstatistieken en abonnementsvalidatie |
+| `TelemetryService`, `LicenseService` | gebruiksstatistieken (opt-in) en abonnementsvalidatie |
 | `Exchange/*` | synchronisatie met Microsoft Graph |
 
 ### De cirkel tussen PermissionService en RoomService

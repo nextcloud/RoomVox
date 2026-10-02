@@ -241,6 +241,7 @@ class PerformanceTest extends TestCase {
     private function assertExchangeConflictPerformance(int $eventCount, float $maxMs): void {
         $graphClient = $this->createMock(GraphApiClient::class);
         $calDAVService = $this->createMock(CalDAVService::class);
+        $calDAVService->method('getRoomCalendarId')->willReturn(1);
         $roomService = $this->createMock(RoomService::class);
         $logger = $this->createMock(LoggerInterface::class);
 
@@ -375,6 +376,7 @@ class PerformanceTest extends TestCase {
         $roomService = $this->createMock(RoomService::class);
         $permissionService = $this->createMock(PermissionService::class);
         $calDAVService = $this->createMock(CalDAVService::class);
+        $calDAVService->method('getRoomCalendarId')->willReturn(1);
         $exchangeSyncService = $this->createMock(ExchangeSyncService::class);
         $userSession = $this->createMock(IUserSession::class);
         $groupManager = $this->createMock(IGroupManager::class);
@@ -443,6 +445,7 @@ class PerformanceTest extends TestCase {
         $roomService = $this->createMock(RoomService::class);
         $permissionService = $this->createMock(PermissionService::class);
         $calDAVService = $this->createMock(CalDAVService::class);
+        $calDAVService->method('getRoomCalendarId')->willReturn(1);
         $mailService = $this->createMock(MailService::class);
         $exchangeSyncService = $this->createMock(ExchangeSyncService::class);
         $userManager = $this->createMock(IUserManager::class);
@@ -598,6 +601,7 @@ class PerformanceTest extends TestCase {
         $roomService = $this->createMock(RoomService::class);
         $permissionService = $this->createMock(PermissionService::class);
         $calDAVService = $this->createMock(CalDAVService::class);
+        $calDAVService->method('getRoomCalendarId')->willReturn(1);
         $mailService = $this->createMock(MailService::class);
         $exchangeSyncService = $this->createMock(ExchangeSyncService::class);
         $userManager = $this->createMock(IUserManager::class);
@@ -627,6 +631,7 @@ class PerformanceTest extends TestCase {
         $roomService = $this->createMock(RoomService::class);
         $permissionService = $this->createMock(PermissionService::class);
         $calDAVService = $this->createMock(CalDAVService::class);
+        $calDAVService->method('getRoomCalendarId')->willReturn(1);
         $exchangeSyncService = $this->createMock(ExchangeSyncService::class);
         $userSession = $this->createMock(IUserSession::class);
         $groupManager = $this->createMock(IGroupManager::class);

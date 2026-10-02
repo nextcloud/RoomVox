@@ -104,7 +104,7 @@ Limit how far in advance rooms can be booked:
 Rooms can be activated or deactivated:
 
 - **Active** — room appears as a CalDAV resource and can be booked
-- **Inactive** — room is hidden from calendar apps but configuration is preserved
+- **Inactive** — room is hidden from the room picker in calendar apps and refuses new bookings, through calendar apps, the RoomVox interface and the Public API. Its configuration **and its existing bookings** are kept, and come back when you activate the room again
 
 Toggle the **Active** switch in the room editor.
 

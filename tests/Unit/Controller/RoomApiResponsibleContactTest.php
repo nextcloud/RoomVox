@@ -86,7 +86,7 @@ class RoomApiResponsibleContactTest extends TestCase {
         ]);
 
         $this->roomService->expects($this->once())
-            ->method('createRoom')
+            ->method('createRoomWithCalendar')
             ->with($this->callback(
                 fn(array $data): bool => ($data['responsibleContact'] ?? null) === 'Anne Janssen (anne@voxcloud.nl)',
             ))
@@ -96,8 +96,6 @@ class RoomApiResponsibleContactTest extends TestCase {
                 'name' => 'New Room',
                 'responsibleContact' => 'Anne Janssen (anne@voxcloud.nl)',
             ]);
-
-        $this->calDAVService->method('provisionCalendar')->willReturn('rb_room1');
 
         $response = $this->controller->create();
 

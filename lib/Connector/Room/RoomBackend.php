@@ -31,18 +31,7 @@ class RoomBackend implements IBackend {
      * @return IRoom[]
      */
     public function getAllRooms(): array {
-        $rooms = $this->roomService->getAllRooms();
-        $result = [];
-
-        foreach ($rooms as $room) {
-            if (!($room['active'] ?? true)) {
-                continue;
-            }
-
-            $result[] = $this->createRoomObject($room);
-        }
-
-        return $result;
+        return array_values(array_map(fn (array $room) => $this->createRoomObject($room), $this->roomService->getAllRooms()));
     }
 
     /**
@@ -50,18 +39,12 @@ class RoomBackend implements IBackend {
      * @return string[]
      */
     public function listAllRooms(): array {
-        $rooms = $this->roomService->getAllRooms();
-        $result = [];
-
-        foreach ($rooms as $room) {
-            if (!($room['active'] ?? true)) {
-                continue;
-            }
-
-            $result[] = $room['id'];
-        }
-
-        return $result;
+        // Inactive rooms are listed too. Nextcloud treats a room that leaves
+        // this list as deleted and permanently deletes its calendar with every
+        // booking in it, so deactivating a room used to wipe its bookings.
+        // Inactive rooms are hidden from the room picker by
+        // RoomVisibilityPlugin and refused by every booking path instead.
+        return array_values(array_map(fn (array $room) => $room['id'], $this->roomService->getAllRooms()));
     }
 
     /**
@@ -69,7 +52,7 @@ class RoomBackend implements IBackend {
      */
     public function getRoom($id): ?IRoom {
         $room = $this->roomService->getRoom($id);
-        if ($room === null || !($room['active'] ?? true)) {
+        if ($room === null) {
             return null;
         }
 

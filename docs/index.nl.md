@@ -31,7 +31,7 @@ Installatie, configuratie, ruimtebeheer en operations.
 - [Permissies](admin/permissions.md) — Viewer- / Booker- / Manager-rollen, ruimtegroep-overerving
 - [E-mailconfiguratie](admin/email-configuration.md) — Nextcloud SMTP, per-ruimte SMTP, encryptie
 - [Import / Export](admin/import-export.md) — CSV-import/export, MS365/Exchange-migratie
-- [Telemetrie](admin/telemetry.md) — Anonieme gebruiksdata (opt-out)
+- [Gebruiksstatistieken](admin/telemetry.md) — Uit tot een beheerder instemt (opt-in)
 - [Best practices](admin/best-practices.md) — Permissie-strategie, groep-hiërarchie, onderhoud
 - [Problemen oplossen](admin/troubleshooting.md) — E-mailproblemen, calendar-patch-issues, debug-endpoints
 - [FAQ](admin/faq.md) — Veelgestelde beheerdersvragen

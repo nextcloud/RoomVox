@@ -1,56 +1,48 @@
-# Telemetrie
+# Gebruiksstatistieken
 
-RoomVox verzamelt anonieme gebruiksdata om de app te helpen verbeteren. Dit is een **opt-out**-feature — hij staat standaard aan en kan op elk moment uitgezet worden.
+Met toestemming van een beheerder stuurt RoomVox eens per dag gebruiksstatistieken over de installatie naar `licenses.voxcloud.nl`, beheerd door VoxCloud. **Er wordt niets verstuurd tot een beheerder dit aanzet.** Er gaan geen persoonsgegevens, inhoud of namen mee.
 
-## Welke data wordt verzameld
+RoomVox volgt de telemetrieregels van VoxCloud (design `TELEMETRY.md` 1.1.0).
 
-RoomVox stuurt de volgende anonieme data eens per 24 uur:
+## Hoe je gevraagd wordt
 
-| Data | Omschrijving |
-|------|-------------|
-| Instance hash | SHA-256-hash van je Nextcloud-URL (niet de URL zelf) |
-| App-versie | Geïnstalleerde RoomVox-versie |
-| Totaal aantal ruimtes | Aantal geconfigureerde ruimtes |
-| Totaal aantal ruimte-groepen | Aantal ruimte-groepen |
-| Aantallen per ruimte-type | Hoeveel ruimtes er per type zijn (bijv. 3 vergaderruimtes, 2 studio's) |
-| Gemiddelde capaciteit | Gemiddelde ruimte-capaciteit |
-| Aantallen faciliteiten | Hoeveel ruimtes elke faciliteit hebben (beamer, whiteboard, etc.) |
-| Aantal met auto-accept | Hoeveel ruimtes auto-accept gebruiken |
-| Ruimtes met SMTP | Hoeveel ruimtes een eigen SMTP geconfigureerd hebben |
-| Beschikbaarheids-regels | Hoeveel ruimtes beschikbaarheids-regels ingeschakeld hebben |
-| Totaal aantal gebruikers | Totaal aantal Nextcloud-gebruikers |
-| Actieve gebruikers (30d) | Gebruikers die de laatste 30 dagen actief waren |
-| Nextcloud-versie | Geïnstalleerde Nextcloud-versie |
-| PHP-versie | PHP-versie van de server |
-| Landcode | Uit Nextclouds instelling `default_phone_region` |
-| Database-type | MySQL, PostgreSQL of SQLite |
-| Standaardtaal | Standaardtaal van Nextcloud |
-| Standaard-tijdzone | Tijdzone van de server |
-| OS-familie | Linux, Windows of macOS |
-| Webserver | Apache of nginx |
-| Docker | Of de server in een Docker-container draait |
-| Extended Support / Enterprise | Boolean die aangeeft of de Nextcloud-host een Extended Support-/Enterprise-abonnement heeft. Komt uit de publieke API van Nextcloud (`OCP\Util::hasExtendedSupport`). Valt terug op `false` als de host Community is |
-| Abonnementssleutel | Je RoomVox-abonnementssleutel (wanneer er een geconfigureerd is). Wordt meegestuurd zodat de license-server de Enterprise-claim hierboven kan authenticeren — de boolean alleen zou door iedereen die naar het telemetrie-endpoint post vervalst kunnen worden. Lege string voor community-instanties |
+Na installatie of upgrade van RoomVox krijgt elke Nextcloud-beheerder een melding in de bel met drie antwoorden:
 
-## Wat NIET verzameld wordt
+| Antwoord | Effect |
+|---|---|
+| **Gebruiksstatistieken delen** | Gebruiksstatistieken gaan aan |
+| **Niet nu** | Ze blijven uit; je wordt bij de volgende RoomVox-versie opnieuw gevraagd |
+| **Nooit meer vragen** | Ze blijven uit; je wordt niet meer gevraagd |
 
-- Geen gebruikersnamen, e-mailadressen of persoonsgegevens
-- Geen boekings-inhoud, event-titels of omschrijvingen
-- Geen IP-adressen of hostnamen
-- Geen ruimte-namen of adressen
-- Geen wachtwoorden of API-tokens
+Gewone gebruikers krijgen de vraag nooit. Installaties die van een versie vóór 1.6.0 komen en nooit een keuze maakten, worden door de upgrade uitgezet; een expliciet "aan" blijft staan.
 
-## Waar de data naartoe gaat
+## Wat er verstuurd wordt
 
-Telemetrie-data wordt naar de telemetrie-server van RoomVox gestuurd.
+De tab Support in de beheerinstellingen van RoomVox toont elk veld met waarvoor het gebruikt wordt. Die lijst komt uit dezelfde definitie als het rapport zelf, dus hij klopt altijd met wat er verstuurd wordt:
 
-## Telemetrie uitschakelen
+| Veld | Gebruikt voor |
+|---|---|
+| Installatie-ID | Een SHA-256-hash van het adres van de server, om installaties uit elkaar te houden en de rapporten van de VoxCloud-apps op één server te koppelen aan de licentiegegevens. Het adres zelf gaat niet mee |
+| Versie van de veldenlijst | Welke versie van deze lijst het rapport volgt; later toegevoegde velden gaan pas mee nadat je ermee instemt |
+| Versie van RoomVox, Nextcloud en PHP | Welke versies nog in gebruik zijn en ondersteund moeten blijven. PHP alleen als `major.minor` |
+| Aantal gebruikersaccounts, gebruikers actief in de laatste 30 dagen, uitgeschakelde accounts | Om een licentie te bepalen en installaties te vinden die er mogelijk een nodig hebben |
+| Nextcloud-abonnement (ja of nee) | Servers met een Nextcloud Enterprise-abonnement worden als Enterprise-klant geteld en niet benaderd over een licentie |
+| Land | Een wereldkaart van installaties. Uit `default_phone_region`, of op de server afgeleid uit `default_timezone`; de tijdzone zelf gaat niet mee |
+| Ruimtes, ruimtegroepen, ruimtes die boekingen automatisch accepteren, ruimtes met een eigen mailserver, ruimtes gekoppeld aan Microsoft Exchange, Exchange-sync aan (ja of nee) | Hoe de functies van RoomVox gebruikt worden. Tenant-ID, client-ID en secret van Exchange gaan nooit mee |
+
+Er gaat niets mee over afzonderlijke gebruikers, ruimtes of boekingen: geen namen, e-mailadressen, ruimtenamen, boekingsinhoud of inloggegevens.
+
+## Het licentiegebruik-rapport staat hier los van
+
+Zolang er een abonnementssleutel is ingevuld, meldt RoomVox ook de sleutel, de installatie-ID en het aantal ruimtes, ruimtegroepen, gebruikersaccounts en uitgeschakelde accounts aan `licenses.voxcloud.nl`, zodat het abonnement gecontroleerd en het aantal plekken geteld kan worden. Dat rapport hoort bij het abonnement, niet bij deze keuze, en stopt als de sleutel wordt verwijderd.
+
+## Van gedachten veranderen
 
 ### Via het beheerpaneel
 
 1. Ga naar **Instellingen > Beheer > RoomVox**
 2. Klik op de tab **Support**
-3. Zet de schakelaar **Anonieme gebruiksstatistieken versturen** uit
+3. Zet **Gebruiksstatistieken delen** aan of uit
 
 ### Via de commandline
 
@@ -60,20 +52,10 @@ sudo -u www-data php occ config:app:set roomvox telemetry_enabled --value false
 
 ## Handmatig rapport
 
-Je kunt vanuit de Support-tab direct een telemetrie-rapport versturen:
-
-1. Ga naar **Instellingen > Beheer > RoomVox**
-2. Klik op de tab **Support**
-3. Klik op **Nu rapport versturen**
-
-De knop geeft duidelijke feedback:
-- **Gelukt**: bevestigt dat het rapport verstuurd is en werkt de tijdstempel bij
-- **Fout**: toont de specifieke foutmelding van de server (bijv. rate-limit, verbindingsprobleem)
+Zolang gebruiksstatistieken aan staan, verstuurt **Nu rapport versturen** op de tab Support direct een rapport. De knop weigert zolang ze uit staan, en meldt "Onlangs al verstuurd" als er in het afgelopen uur al een rapport is verstuurd.
 
 ## Technische details
 
-- Telemetrie draait als Nextcloud-achtergrondtaak (`TelemetryJob`)
-- Rapporten worden elke 24 uur verstuurd met een willekeurige jitter van maximaal 2 uur om de belasting te spreiden
-- De jitter is stabiel per installatie (gebaseerd op de hash van de instance-ID)
-- Mislukte rapporten worden stilzwijgend opnieuw geprobeerd bij het volgende interval
-- Timeout: 15 seconden per request
+- Rapporten worden verstuurd door een Nextcloud-achtergrondtaak (`TelemetryJob`), elke 24 uur, met een per installatie vaste jitter van maximaal 2 uur
+- Mislukte rapporten worden bij het volgende interval opnieuw geprobeerd; timeout 15 seconden
+- De keuze staat in de app-config: `telemetry_enabled`, `telemetry_consent_schema`, `telemetry_asked_version` en `telemetry_never_ask`

@@ -6,6 +6,7 @@ namespace OCA\RoomVox\Tests\Unit\Dav;
 
 use OCA\RoomVox\Dav\RoomVisibilityPlugin;
 use OCA\RoomVox\Service\PermissionService;
+use OCA\RoomVox\Service\RoomService;
 use OCP\IGroup;
 use OCP\IGroupManager;
 use OCP\IUser;
@@ -17,12 +18,14 @@ use Sabre\DAV\PropFind;
 
 class RoomVisibilityPluginTest extends TestCase {
     private PermissionService $permissionService;
+    private RoomService $roomService;
     private IUserSession $userSession;
     private IGroupManager $groupManager;
     private LoggerInterface $logger;
 
     protected function setUp(): void {
         $this->permissionService = $this->createMock(PermissionService::class);
+        $this->roomService = $this->createMock(RoomService::class);
         $this->userSession = $this->createMock(IUserSession::class);
         $this->groupManager = $this->createMock(IGroupManager::class);
         $this->logger = $this->createMock(LoggerInterface::class);
@@ -31,6 +34,7 @@ class RoomVisibilityPluginTest extends TestCase {
     private function makePlugin(): RoomVisibilityPlugin {
         return new RoomVisibilityPlugin(
             $this->permissionService,
+            $this->roomService,
             $this->userSession,
             $this->groupManager,
             $this->logger,
@@ -97,6 +101,24 @@ class RoomVisibilityPluginTest extends TestCase {
         $propFind = new PropFind('principals/calendar-rooms/roomvox-aula');
 
         $this->assertTrue($plugin->filterRoomPrincipal($propFind, $this->makeNode()));
+    }
+
+    /**
+     * An inactive room stays known to Nextcloud, which would otherwise delete
+     * its calendar, but nobody gets to pick it: not even an admin.
+     */
+    public function testInactiveRoomIsHiddenFromEveryone(): void {
+        $this->userSession->method('getUser')->willReturn($this->makeUser('admin'));
+        $this->groupManager->method('isAdmin')->willReturn(true);
+        $this->roomService->method('getAllRooms')->willReturn([
+            ['id' => 'aula', 'active' => false],
+            ['id' => 'library', 'active' => true],
+        ]);
+
+        $plugin = $this->makePlugin();
+
+        $this->assertFalse($plugin->filterRoomPrincipal(new PropFind('principals/calendar-rooms/roomvox-aula'), $this->makeNode()));
+        $this->assertTrue($plugin->filterRoomPrincipal(new PropFind('principals/calendar-rooms/roomvox-library'), $this->makeNode()));
     }
 
     public function testRoomWithGroupRestrictionVisibleToMember(): void {

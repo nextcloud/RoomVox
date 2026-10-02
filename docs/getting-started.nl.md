@@ -23,7 +23,7 @@ Voor je ruimtes aanmaakt, bekijk de app-instellingen:
 2. Stel **Standaard auto-accept** in — of nieuwe ruimtes standaard boekingen automatisch accepteren
 3. Schakel **E-mailnotificaties** in — booking-bevestiging en goedkeurings-e-mails
 4. Configureer **Ruimte-typen** — voeg typen toe of pas aan (vergaderkamer, studio, collegezaal, etc.)
-5. Bekijk **Telemetrie** — anonieme gebruiksdata is standaard aan ([details](admin/telemetry.md))
+5. Beslis over **gebruiksstatistieken** — uit tot een beheerder instemt; je wordt gevraagd via de meldingenbel ([details](admin/telemetry.md))
 
 ![Instellingen — algemene opties en ruimte-typen](../screenshots/settings.png)
 

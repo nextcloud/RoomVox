@@ -9,8 +9,10 @@ use OCA\RoomVox\Middleware\ApiTokenMiddleware;
 use OCA\RoomVox\Service\ApiTokenService;
 use OCA\RoomVox\Service\CalDAVService;
 use OCA\RoomVox\Service\Exchange\ExchangeSyncService;
+use OCA\RoomVox\Service\InstanceTimezone;
 use OCA\RoomVox\Service\MailService;
 use OCA\RoomVox\Service\RoomService;
+use OCP\IConfig;
 use OCP\IRequest;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -58,6 +60,7 @@ class PublicApiCreateTest extends TestCase {
         $this->request = $this->createMock(IRequest::class);
         $this->roomService = $this->createMock(RoomService::class);
         $this->calDAVService = $this->createMock(CalDAVService::class);
+        $this->calDAVService->method('getRoomCalendarId')->willReturn(7);
         $this->exchangeSyncService = $this->createMock(ExchangeSyncService::class);
         $this->mailService = $this->createMock(MailService::class);
         $this->tokenMiddleware = $this->createMock(ApiTokenMiddleware::class);
@@ -82,6 +85,7 @@ class PublicApiCreateTest extends TestCase {
             $this->tokenMiddleware,
             $this->tokenService,
             $logger,
+            new InstanceTimezone($this->createMock(IConfig::class)),
         );
     }
 
