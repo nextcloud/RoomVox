@@ -78,12 +78,14 @@ Apple Calendar (macOS and iOS) supports CalDAV resources natively.
 
 ## Booking from Microsoft Outlook
 
-Outlook supports CalDAV resources when connected via a CalDAV account.
+Outlook has no built-in CalDAV support. Connect it to Nextcloud with a CalDAV add-in such as [CalDAV Synchronizer](https://caldavsynchronizer.org/), which keeps an Outlook calendar in sync with your Nextcloud calendar.
 
-1. Create a new meeting
-2. In the scheduling assistant, add the room as an attendee
-3. The room will respond with its availability
-4. Send the meeting request
+1. Create a new meeting in the synced calendar
+2. Add the room's email address as an attendee
+3. Send the meeting request
+4. When the meeting reaches Nextcloud on the next sync, RoomVox accepts or declines it and emails you the result
+
+> **No room availability in the Scheduling Assistant.** Outlook shows free/busy only from Exchange or from an Internet Free/Busy (IFB) service. RoomVox does not provide one. Add-ins that do, such as NC Connector, look addresses up in Nextcloud's system address book, which lists users but not rooms. Colleagues therefore show their availability there, rooms do not. Check the room in Nextcloud Calendar before you send the invitation; if the room is already taken, RoomVox declines the booking and tells you why.
 
 ## Booking from Thunderbird
 

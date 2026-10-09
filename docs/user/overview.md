@@ -59,7 +59,7 @@ Managers can approve/decline pending bookings, edit room settings, and cancel an
 |---|---|
 | Nextcloud Calendar | Full support. Optional [visual room browser](../features/calendar-patch.md) |
 | Apple Calendar (macOS / iOS) | Full support. Auto-fix for `CUTYPE=INDIVIDUAL` |
-| Microsoft Outlook | Full support via CalDAV account |
+| Microsoft Outlook | Booking via a CalDAV add-in such as CalDAV Synchronizer. No room availability in the Scheduling Assistant |
 | Thunderbird | Full support via CalDAV account |
 | eM Client | Full support. Auto-detection by LOCATION |
 

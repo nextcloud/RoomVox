@@ -105,7 +105,7 @@ sudo -u www-data php /var/www/nextcloud/occ config:app:set dav sendInvitations -
 |--------|--------|-------|
 | Nextcloud Calendar | Full support | Optional visual room browser via calendar patch |
 | Apple Calendar (macOS/iOS) | Full support | Auto-fix for CUTYPE=INDIVIDUAL |
-| Microsoft Outlook | Full support | Via CalDAV account |
+| Microsoft Outlook | Booking supported | Via a CalDAV add-in such as CalDAV Synchronizer; no room availability in the Scheduling Assistant |
 | Thunderbird | Full support | Via CalDAV account |
 | eM Client | Full support | Auto-fix for LOCATION-only bookings |
 

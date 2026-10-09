@@ -83,7 +83,7 @@ The room will respond with:
 Rooms appear as CalDAV resources in any compatible calendar app:
 
 - **Apple Calendar** — rooms show in the resource picker when creating events
-- **Microsoft Outlook** — add via CalDAV account, rooms appear as resources
+- **Microsoft Outlook** — through a CalDAV add-in such as CalDAV Synchronizer; add the room's email address as an attendee
 - **Thunderbird** — rooms available through CalDAV resource support
 - **eM Client** — rooms detected automatically via LOCATION field
 

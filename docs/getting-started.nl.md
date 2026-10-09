@@ -85,7 +85,7 @@ De ruimte reageert met:
 Ruimtes verschijnen als CalDAV-resources in elke compatibele kalender-app:
 
 - **Apple Calendar** — ruimtes verschijnen in de resource-picker bij afspraken maken
-- **Microsoft Outlook** — toevoegen via CalDAV-account, ruimtes verschijnen als resources
+- **Microsoft Outlook** — via een CalDAV-invoegtoepassing zoals CalDAV Synchronizer; voeg het e-mailadres van de ruimte toe als deelnemer
 - **Thunderbird** — ruimtes beschikbaar via CalDAV resource-support
 - **eM Client** — ruimtes automatisch gedetecteerd via LOCATION-veld
 

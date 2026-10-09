@@ -59,7 +59,7 @@ Managers kunnen openstaande boekingen goedkeuren/afwijzen, ruimte-instellingen b
 |---|---|
 | Nextcloud Calendar | Volledige ondersteuning. Optionele [visuele ruimte-browser](../features/calendar-patch.md) |
 | Apple Calendar (macOS / iOS) | Volledige ondersteuning. Auto-fix voor `CUTYPE=INDIVIDUAL` |
-| Microsoft Outlook | Volledige ondersteuning via CalDAV-account |
+| Microsoft Outlook | Boeken via een CalDAV-invoegtoepassing zoals CalDAV Synchronizer. Geen beschikbaarheid van ruimtes in de planningsassistent |
 | Thunderbird | Volledige ondersteuning via CalDAV-account |
 | eM Client | Volledige ondersteuning. Auto-detectie via LOCATION |
 

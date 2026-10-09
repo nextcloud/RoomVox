@@ -101,7 +101,7 @@ Ja. eM Client voegt een ruimte soms alleen toe via `LOCATION` zonder `ATTENDEE`.
 | Nextcloud Calendar (met patch) | Beste ervaring — visuele ruimte-browser, real-time beschikbaarheid, multi-filter |
 | Nextcloud Calendar (standaard) | Werkt volledig, meer basale resource-picker |
 | Apple Calendar (macOS, iOS) | Volledige ondersteuning |
-| Outlook (CalDAV) | Volledige ondersteuning |
+| Outlook (CalDAV-invoegtoepassing) | Boeken werkt; geen beschikbaarheid van ruimtes in de planningsassistent |
 | Thunderbird | Volledige ondersteuning |
 | eM Client | Volledige ondersteuning |
 

@@ -76,6 +76,10 @@ iOS verstuurt ruimte-deelnemers met `CUTYPE=INDIVIDUAL` in plaats van `CUTYPE=RO
 
 eM Client zet soms alleen het `LOCATION`-veld zonder de ruimte als deelnemer toe te voegen. **RoomVox detecteert dit automatisch door de locatie te matchen tegen bekende ruimte-namen** en voegt de juiste CalDAV-deelnemer toe — geen actie nodig.
 
+### De planningsassistent van Outlook toont geen beschikbaarheid voor een ruimte
+
+Outlook toont vrij/bezet alleen uit Exchange of uit een Internet Free/Busy-dienst (IFB), en RoomVox levert die niet. IFB-invoegtoepassingen voor Nextcloud, zoals NC Connector, zoeken adressen op in het systeemadresboek van Nextcloud. Daar staan gebruikers in maar geen ruimtes, dus collega's tonen hun beschikbaarheid en ruimtes niet. Boeken werkt gewoon: voeg de ruimte toe als deelnemer en verstuur de uitnodiging, dan accepteert of weigert RoomVox hem. Wil je vooraf zien of een ruimte vrij is, gebruik dan Nextcloud Calendar.
+
 ## Taal-problemen
 
 ### Tour of notificaties verschijnen in de verkeerde taal

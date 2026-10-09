@@ -101,7 +101,7 @@ Yes. eM Client sometimes adds a room only via `LOCATION` without an `ATTENDEE`. 
 | Nextcloud Calendar (with patch) | Best experience — visual room browser, real-time availability, multi-filter |
 | Nextcloud Calendar (standard) | Works fully, more basic resource picker |
 | Apple Calendar (macOS, iOS) | Full support |
-| Outlook (CalDAV) | Full support |
+| Outlook (CalDAV add-in) | Booking works; no room availability in the Scheduling Assistant |
 | Thunderbird | Full support |
 | eM Client | Full support |
 

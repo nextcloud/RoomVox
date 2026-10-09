@@ -76,6 +76,10 @@ iOS sends room attendees with `CUTYPE=INDIVIDUAL` instead of `CUTYPE=ROOM`. **Ro
 
 eM Client sometimes only sets the `LOCATION` field without adding the room as an attendee. **RoomVox automatically detects this by matching the location against known room names** and adds the proper CalDAV attendee — no action needed.
 
+### Outlook's Scheduling Assistant shows no availability for a room
+
+Outlook shows free/busy only from Exchange or from an Internet Free/Busy (IFB) service, and RoomVox does not provide one. IFB add-ins for Nextcloud, such as NC Connector, look addresses up in Nextcloud's system address book. That address book lists users but not rooms, so colleagues show their availability and rooms show none. Booking is not affected: add the room as an attendee and send the invitation, and RoomVox accepts or declines it. To see beforehand whether a room is free, use Nextcloud Calendar.
+
 ## Language Issues
 
 ### Tour or notifications appear in the wrong language

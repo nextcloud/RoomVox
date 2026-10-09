@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **The documentation no longer promises room availability in Outlook's Scheduling Assistant.** It said that Outlook supports CalDAV resources through a CalDAV account and that a room "will respond with its availability" in the Scheduling Assistant. Outlook has no built-in CalDAV support and shows free/busy only from Exchange or from an Internet Free/Busy (IFB) service, which RoomVox does not provide; IFB add-ins such as NC Connector look addresses up in Nextcloud's system address book, which lists users but not rooms. The Outlook pages now describe booking through a CalDAV add-in such as CalDAV Synchronizer, and the troubleshooting page explains why the Scheduling Assistant shows no availability for rooms.
+
 ## [1.6.0] - 2026-10-02 - Opt-in usage statistics, Public API time fixes & one calendar per room
 
 > **Upgrading.** Usage statistics are now off until an administrator agrees. The upgrade switches them off on every installation that did not make a recorded choice and asks each administrator once, through the Nextcloud notification bell (see *Changed*). The upgrade also moves bookings out of the calendar RoomVox used to create for each room into the calendar Nextcloud keeps for it; nothing needs to be done by hand.
