@@ -69,9 +69,9 @@ import dayGridPlugin from '@fullcalendar/daygrid'
 import timeGridPlugin from '@fullcalendar/timegrid'
 import interactionPlugin from '@fullcalendar/interaction'
 import { showError, showSuccess } from '@nextcloud/dialogs'
-import { translate, getLanguage } from '@nextcloud/l10n'
+import { getLanguage } from '@nextcloud/l10n'
+import { t } from '../../l10n.js'
 import { escapeHtml } from '../../utils/escapeHtml.js'
-const t = (app, text, vars = {}) => translate(app, text, vars)
 const ncLocale = getLanguage().replace('_', '-')
 
 import NcButton from '@nextcloud/vue/components/NcButton'
@@ -140,9 +140,13 @@ const calendarOptions = computed(() => ({
     locale: ncLocale,
     firstDay: 1,
     buttonText: {
+        // TRANSLATORS Calendar button that jumps to today, and booking filter
         today: t('roomvox', 'Today'),
+        // TRANSLATORS Calendar view button: show one day
         day: t('roomvox', 'Day'),
+        // TRANSLATORS Calendar view button: show one week
         week: t('roomvox', 'Week'),
+        // TRANSLATORS Calendar view button: show one month
         month: t('roomvox', 'Month'),
     },
     resources: resources.value,
@@ -236,6 +240,7 @@ async function handleEventDrop(info) {
             end: event.end.toISOString(),
             roomId: newRoomId !== originalRoomId ? newRoomId : undefined,
         })
+        // TRANSLATORS Confirmation message after dragging a booking to another time
         showSuccess(t('roomvox', 'Booking rescheduled'))
         emit('reload')
     } catch (e) {
@@ -258,6 +263,7 @@ async function handleEventResize(info) {
             start: event.start.toISOString(),
             end: event.end.toISOString(),
         })
+        // TRANSLATORS Confirmation message
         showSuccess(t('roomvox', 'Booking updated'))
         emit('reload')
     } catch (e) {

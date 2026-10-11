@@ -62,6 +62,10 @@ class MailServiceL10nTest extends TestCase {
                     fn (string $text, $params = []) => '[' . ($lang ?? 'default') . '] '
                         . (is_array($params) && $params !== [] ? vsprintf($text, $params) : $text)
                 );
+                // Dates name the translator, type and width that rendered them
+                $l->method('l')->willReturnCallback(
+                    fn (string $type, $data, array $options = []) => '[' . ($lang ?? 'default') . ' ' . $type . ' ' . ($options['width'] ?? '') . ']'
+                );
                 $l->method('n')->willReturnCallback(
                     fn (string $s, string $p, int $c, array $params = []) => '[' . ($lang ?? 'default') . '] '
                         . str_replace('%n', (string)$c, $c === 1 ? $s : $p)
@@ -190,8 +194,8 @@ class MailServiceL10nTest extends TestCase {
         $method = new \ReflectionMethod($service, 'buildAcceptedBody');
         $body = $method->invoke($service, $l, ['name' => 'Room X'], [
             'summary' => 'Weekly standup',
-            'dtstartFormatted' => '2026-08-15 10:00',
-            'dtendFormatted' => '11:00',
+            'dtstart' => new \DateTimeImmutable('2026-08-15T10:00:00Z'),
+            'dtend' => new \DateTimeImmutable('2026-08-15T11:00:00Z'),
             'organizerName' => 'Pierre',
             'organizerEmail' => 'pierre@example.com',
         ]);
@@ -199,5 +203,31 @@ class MailServiceL10nTest extends TestCase {
         $this->assertStringContainsString('[fr]', $body);
         $this->assertStringContainsString('Room X', $body, 'Values stay untranslated');
         $this->assertStringContainsString('Weekly standup', $body);
+    }
+
+    /**
+     * Dates used to be rendered once, in English, before the recipient was
+     * known ("Thursday, October 1, 2026" in a French mail). They are now
+     * formatted by the recipient's translator, and an empty title becomes
+     * "Unnamed event" in their language.
+     */
+    public function testDatesAndMissingTitleFollowTheRecipientLanguage(): void {
+        $this->languageByEmail = ['pierre@example.com' => 'fr'];
+        $service = $this->makeService();
+
+        $l = $this->callGetL10nForEmail($service, 'pierre@example.com');
+        $event = (new \ReflectionMethod($service, 'bookingDataToEventInfo'))->invoke($service, [
+            'summary' => '',
+            'organizerEmail' => 'pierre@example.com',
+            'organizerName' => 'Pierre',
+            'dtstart' => '2026-10-01T11:30:00+00:00',
+            'dtend' => '2026-10-01T14:30:00+00:00',
+        ]);
+        $body = (new \ReflectionMethod($service, 'buildAcceptedBody'))->invoke($service, $l, ['name' => 'Room X'], $event);
+
+        $this->assertStringContainsString('[fr datetime full|short]', $body);
+        $this->assertStringContainsString('[fr time short]', $body);
+        $this->assertStringContainsString('[fr] Unnamed event', $body);
+        $this->assertStringNotContainsString('Thursday', $body);
     }
 }

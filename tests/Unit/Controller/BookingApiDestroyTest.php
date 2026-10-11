@@ -10,6 +10,7 @@ use OCA\RoomVox\Service\Exchange\ExchangeSyncService;
 use OCA\RoomVox\Service\MailService;
 use OCA\RoomVox\Service\PermissionService;
 use OCA\RoomVox\Service\RoomService;
+use OCA\RoomVox\Tests\Unit\Support\EnglishL10N;
 use OCP\IGroupManager;
 use OCP\IRequest;
 use OCP\IUserSession;
@@ -71,6 +72,7 @@ class BookingApiDestroyTest extends TestCase {
             $this->userSession,
             $this->groupManager,
             $logger,
+            new EnglishL10N(),
         );
     }
 
@@ -206,6 +208,7 @@ class BookingApiDestroyTest extends TestCase {
             $this->userSession,
             $this->groupManager,
             $logger,
+            new EnglishL10N(),
         );
 
         $this->calDAVService->expects($this->never())->method('deleteBooking');

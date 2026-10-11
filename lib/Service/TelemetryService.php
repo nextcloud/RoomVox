@@ -65,22 +65,28 @@ class TelemetryService {
         return [
             1 => [
                 'instanceHash' => [
+                    // TRANSLATORS Label of a usage statistics field: the anonymous ID of this server
                     'label' => $l->t('Installation identifier'),
+                    // TRANSLATORS SHA-256 is a hash algorithm; keep the name. VoxCloud is a company name
                     'purpose' => $l->t('A SHA-256 hash of this server\'s address, needed to tell installations apart and to join the reports of the VoxCloud apps on one server with its license records. The address itself is not sent.'),
                 ],
                 'telemetrySchema' => [
+                    // TRANSLATORS Label of a usage statistics field: the version of the list of fields that is sent
                     'label' => $l->t('Field-list version'),
                     'purpose' => $l->t('Which version of this list the report follows, so that fields added later are only sent after you agree to them.'),
                 ],
                 'appVersion' => [
+                    // TRANSLATORS Label of a usage statistics field; RoomVox is a product name
                     'label' => $l->t('RoomVox version'),
                     'purpose' => $l->t('Shows which RoomVox releases are still in use.'),
                 ],
                 'nextcloudVersion' => [
+                    // TRANSLATORS Label of a usage statistics field
                     'label' => $l->t('Nextcloud version'),
                     'purpose' => $l->t('Shows which Nextcloud versions RoomVox must keep supporting.'),
                 ],
                 'phpVersion' => [
+                    // TRANSLATORS Label of a usage statistics field; PHP is a programming language
                     'label' => $l->t('PHP version'),
                     'purpose' => $l->t('Shows which PHP versions RoomVox must keep supporting. Only the major and minor version, such as 8.3.'),
                 ],
@@ -90,10 +96,11 @@ class TelemetryService {
                 ],
                 'hasValidSubscription' => [
                     'label' => $l->t('Nextcloud subscription (yes or no)'),
+                    // TRANSLATORS Nextcloud Enterprise is a product name
                     'purpose' => $l->t('Shows whether this server has a Nextcloud Enterprise subscription. Such servers are listed as Enterprise customers and are not approached about a license.'),
                 ],
                 'activeUsers30d' => [
-                    'label' => $l->t('Users active in the last 30 days'),
+                    'label' => $l->t('Accounts active in the last 30 days'),
                     'purpose' => $licence,
                 ],
                 'disabledUsers' => [
@@ -101,10 +108,12 @@ class TelemetryService {
                     'purpose' => $licence,
                 ],
                 'countryCode' => [
+                    // TRANSLATORS Label of a usage statistics field
                     'label' => $l->t('Country'),
                     'purpose' => $l->t('Shown on a world map of installations. Taken from the default phone region, or worked out on this server from the default time zone. The time zone itself is not sent.'),
                 ],
                 'totalRooms' => [
+                    // TRANSLATORS Label of a usage statistics field
                     'label' => $l->t('Number of rooms'),
                     'purpose' => $appUsage,
                 ],
@@ -121,10 +130,13 @@ class TelemetryService {
                     'purpose' => $appUsage,
                 ],
                 'exchangeSyncEnabled' => [
+                    // TRANSLATORS Label of a usage statistics field; Microsoft Exchange is a product name
                     'label' => $l->t('Microsoft Exchange sync switched on (yes or no)'),
+                    // TRANSLATORS Tenant ID, client ID and client secret are Microsoft Azure terms
                     'purpose' => $l->t('Shows whether the Exchange integration is used. The tenant ID, client ID and client secret are never sent.'),
                 ],
                 'roomsWithExchange' => [
+                    // TRANSLATORS Label of a usage statistics field
                     'label' => $l->t('Rooms synced with Microsoft Exchange'),
                     'purpose' => $appUsage,
                 ],

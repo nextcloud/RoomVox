@@ -23,6 +23,9 @@ use OCP\Notification\UnknownNotificationException;
  * and offers three actions of equal weight (TELEMETRY.md §2).
  */
 class Notifier implements INotifier {
+    /** Where the statistics go; a host name, passed into the text as a parameter */
+    private const LICENSE_SERVER = 'licenses.voxcloud.nl';
+
     public function __construct(
         private IFactory $l10nFactory,
         private IURLGenerator $urlGenerator,
@@ -36,6 +39,7 @@ class Notifier implements INotifier {
     }
 
     public function getName(): string {
+        // TRANSLATORS Product name; do not translate
         return $this->l10nFactory->get(Application::APP_ID)->t('RoomVox');
     }
 
@@ -59,14 +63,17 @@ class Notifier implements INotifier {
             $added = array_filter($fields, fn (array $field) => $field['schema'] > $consented);
             $notification->setParsedSubject($l->t('RoomVox would like to send more usage statistics'));
             $notification->setParsedMessage($l->t(
-                'Added since you agreed: %s. These figures stay on this server until you agree. Everything you agreed to before is still sent to licenses.voxcloud.nl, run by VoxCloud. No personal data, content or names are sent.',
-                [implode(', ', array_column($added, 'label'))]
+                // TRANSLATORS Notification text; %1$s is a list of usage statistics fields, %2$s a host name (licenses.voxcloud.nl). VoxCloud is a company name
+                'Added since you agreed: %1$s. These figures stay on this server until you agree. Everything you agreed to before is still sent to %2$s, run by VoxCloud. No personal data, content or names are sent.',
+                [implode(', ', array_column($added, 'label')), self::LICENSE_SERVER]
             ));
         } else {
+            // TRANSLATORS Notification title. VoxCloud is the company that makes RoomVox; keep both names
             $notification->setParsedSubject($l->t('Share RoomVox usage statistics with VoxCloud?'));
             $notification->setParsedMessage($l->t(
-                'Once a day, RoomVox would send these figures about this server to licenses.voxcloud.nl, run by VoxCloud: %s. No personal data, content or names are sent. The RoomVox admin settings say what each figure is used for.',
-                [implode(', ', array_column($fields, 'label'))]
+                // TRANSLATORS Notification text; %1$s is a host name (licenses.voxcloud.nl), %2$s a list of usage statistics fields. VoxCloud is a company name
+                'Once a day, RoomVox would send these figures about this server to %1$s, run by VoxCloud: %2$s. No personal data, content or names are sent. The RoomVox administration settings say what each figure is used for.',
+                [self::LICENSE_SERVER, implode(', ', array_column($fields, 'label'))]
             ));
         }
 
@@ -77,8 +84,11 @@ class Notifier implements INotifier {
 
         // Three actions of the same weight: none is primary.
         $actions = [
+            // TRANSLATORS Button and switch label: agree to send usage statistics
             [$l->t('Share usage statistics'), 'roomvox.telemetry_consent.share', IAction::TYPE_POST],
+            // TRANSLATORS Button in a notification: ask again later
             [$l->t('Not now'), 'roomvox.telemetry_consent.postpone', IAction::TYPE_POST],
+            // TRANSLATORS Button in a notification: stop asking
             [$l->t('Never ask again'), 'roomvox.telemetry_consent.never_ask', IAction::TYPE_POST],
         ];
         foreach ($actions as [$label, $route, $method]) {

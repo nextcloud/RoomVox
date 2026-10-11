@@ -9,6 +9,7 @@ use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IGroupManager;
+use OCP\IL10N;
 use OCP\IRequest;
 use OCP\IUserSession;
 
@@ -19,6 +20,7 @@ class ApiTokenController extends Controller {
         private ApiTokenService $tokenService,
         private IUserSession $userSession,
         private IGroupManager $groupManager,
+        private IL10N $l10n,
     ) {
         parent::__construct($appName, $request);
     }
@@ -29,7 +31,8 @@ class ApiTokenController extends Controller {
     #[NoCSRFRequired]
     public function index(): JSONResponse {
         if (!$this->isAdmin()) {
-            return new JSONResponse(['error' => 'Admin access required'], 403);
+            // TRANSLATORS Error when someone who is not a Nextcloud administrator calls an administration action
+            return new JSONResponse(['error' => $this->l10n->t('Administrator privileges required')], 403);
         }
 
         return new JSONResponse($this->tokenService->getAllTokens());
@@ -40,7 +43,7 @@ class ApiTokenController extends Controller {
      */
     public function create(): JSONResponse {
         if (!$this->isAdmin()) {
-            return new JSONResponse(['error' => 'Admin access required'], 403);
+            return new JSONResponse(['error' => $this->l10n->t('Administrator privileges required')], 403);
         }
 
         $name = trim((string)$this->request->getParam('name', ''));
@@ -49,11 +52,13 @@ class ApiTokenController extends Controller {
         $expiresAt = $this->request->getParam('expiresAt', null);
 
         if (empty($name)) {
-            return new JSONResponse(['error' => 'Token name is required'], 400);
+            // TRANSLATORS Error: an API token was created without a name. An API token is a key that external systems use to access RoomVox
+            return new JSONResponse(['error' => $this->l10n->t('Token name is required')], 400);
         }
 
         if (strlen($name) > 255) {
-            return new JSONResponse(['error' => 'Token name too long (max 255 characters)'], 400);
+            // TRANSLATORS Error when creating an API token; keep the number 255
+            return new JSONResponse(['error' => $this->l10n->t('Token name too long (max 255 characters)')], 400);
         }
 
         if (!in_array($scope, ['read', 'book', 'admin'])) {
@@ -64,7 +69,7 @@ class ApiTokenController extends Controller {
             try {
                 new \DateTimeImmutable($expiresAt);
             } catch (\Exception $e) {
-                return new JSONResponse(['error' => 'Invalid expiration date format'], 400);
+                return new JSONResponse(['error' => $this->l10n->t('Invalid expiration date format')], 400);
             }
         }
 
@@ -80,11 +85,12 @@ class ApiTokenController extends Controller {
      */
     public function destroy(string $id): JSONResponse {
         if (!$this->isAdmin()) {
-            return new JSONResponse(['error' => 'Admin access required'], 403);
+            return new JSONResponse(['error' => $this->l10n->t('Administrator privileges required')], 403);
         }
 
         if (!$this->tokenService->deleteToken($id)) {
-            return new JSONResponse(['error' => 'Token not found'], 404);
+            // TRANSLATORS Error: the API token to delete no longer exists
+            return new JSONResponse(['error' => $this->l10n->t('Token not found')], 404);
         }
 
         return new JSONResponse(['status' => 'ok']);

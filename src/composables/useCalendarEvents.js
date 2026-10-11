@@ -1,4 +1,5 @@
 import { computed } from 'vue'
+import { t } from '../l10n.js'
 
 /**
  * Visible span of the resource timeline — keep in sync with ResourceCalendar.
@@ -59,7 +60,7 @@ export function useCalendarEvents(bookingsRef, roomsRef, viewRef) {
             return {
                 id: b.uid,
                 resourceId: b.roomId,
-                title: b.summary || 'Unnamed',
+                title: b.summary || t('roomvox', 'Unnamed event'),
                 start: span.start,
                 end: span.end,
                 // All-day bookings arrive as bare Y-m-d dates; telling

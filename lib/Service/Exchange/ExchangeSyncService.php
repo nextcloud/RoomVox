@@ -18,6 +18,13 @@ class ExchangeSyncService {
     private const SOURCE_EXCHANGE = 'exchange';
 
     /**
+     * Text this service writes into calendars, for events that arrive without
+     * it. Stored content, so in the fail-over language English, not
+     * translated: every reader of the calendar sees the same text.
+     */
+    private const UNTITLED = 'Unnamed event';
+
+    /**
      * In-memory sync index built once per pullExchangeChanges() call.
      * Maps: exchangeId → uid, uid → syncSource
      * @var array{byExchangeId: array<string, string>, sourceByUid: array<string, string>, exchangeOriginatedUids: array<string, true>}|null
@@ -116,7 +123,7 @@ class ExchangeSyncService {
             $end = \DateTime::createFromInterface($bookingData['end'])->setTimezone($utc);
 
             $event = [
-                'subject' => $bookingData['summary'] ?? 'Booking',
+                'subject' => $bookingData['summary'] ?? self::UNTITLED,
                 'start' => [
                     'dateTime' => $start->format('Y-m-d\TH:i:s'),
                     'timeZone' => 'UTC',
@@ -186,7 +193,7 @@ class ExchangeSyncService {
             $end = \DateTime::createFromInterface($bookingData['end'])->setTimezone($utc);
 
             $event = [
-                'subject' => $bookingData['summary'] ?? 'Booking',
+                'subject' => $bookingData['summary'] ?? self::UNTITLED,
                 'start' => [
                     'dateTime' => $start->format('Y-m-d\TH:i:s'),
                     'timeZone' => 'UTC',
@@ -692,7 +699,7 @@ class ExchangeSyncService {
         }
 
         // Extract event data
-        $subject = $event['subject'] ?? 'Exchange Booking';
+        $subject = $event['subject'] ?? 'Exchange booking';
         $startStr = $event['start']['dateTime'] ?? null;
         $endStr = $event['end']['dateTime'] ?? null;
         $description = $event['body']['content'] ?? '';

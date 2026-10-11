@@ -320,7 +320,8 @@ class SchedulingPlugin extends ServerPlugin {
         try {
             if ($dtStart !== null && $dtEnd !== null) {
                 $this->exchangeSyncService->pushBookingToExchange($room, $uid, [
-                    'summary' => (string)($vEvent->SUMMARY ?? 'Booking'),
+                    // Missing: ExchangeSyncService supplies a translated title
+                    'summary' => isset($vEvent->SUMMARY) ? (string)$vEvent->SUMMARY : null,
                     'start' => $dtStart,
                     'end' => $dtEnd,
                     'description' => (string)($vEvent->DESCRIPTION ?? ''),

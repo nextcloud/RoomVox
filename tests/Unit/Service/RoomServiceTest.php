@@ -28,7 +28,7 @@ class RoomServiceTest extends TestCase {
             $this->appConfig,
             $this->crypto,
             $this->secureRandom,
-            $this->logger,
+            $this->logger
         );
     }
 

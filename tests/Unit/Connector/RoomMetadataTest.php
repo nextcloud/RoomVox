@@ -118,4 +118,27 @@ class RoomMetadataTest extends TestCase {
         $this->assertSame('2.10', $room->getMetadataForKey(self::ROOM_NUMBER));
         $this->assertNull($this->makeRoom(roomNumber: '')->getMetadataForKey(self::ROOM_NUMBER));
     }
+
+    /**
+     * The description is cached by Nextcloud for every user. It is stored
+     * content, written in English whatever language triggered the sync, and
+     * facilities appear by name rather than by ID.
+     */
+    public function testDescriptionIsEnglishContentWithFacilityNames(): void {
+        $room = new Room(
+            backend: $this->createMock(IBackend::class),
+            id: 'room-1',
+            displayName: 'Room 1',
+            email: 'room1@example.com',
+            capacity: 1,
+            roomNumber: '2.10',
+            facilities: ['videoconf'],
+            facilityLabels: ['Video conference'],
+        );
+
+        $this->assertSame(
+            'Room 1 | Room: 2.10 | Capacity: 1 person | Facilities: Video conference',
+            $room->getMetadataForKey(self::DESCRIPTION),
+        );
+    }
 }

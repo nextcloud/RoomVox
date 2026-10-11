@@ -13,7 +13,7 @@
         "l10n:js": "node scripts/generate-l10n-js.js",
         "pot": "npm run l10n:extract && node scripts/generate-pot.js",
         "l10n:push": "npm run l10n:extract && node scripts/lint-l10n-strings.js && node scripts/generate-pot.js",
-        "test:js": "node --test 'tests-js/**/*.test.mjs'"
+        "test:js": "node --test tests-js/"
     },
     "dependencies": {
         "@fullcalendar/core": "^6.1.20",

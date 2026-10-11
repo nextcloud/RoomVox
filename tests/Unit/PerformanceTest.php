@@ -13,7 +13,9 @@ use OCA\RoomVox\Service\Exchange\GraphApiClient;
 use OCA\RoomVox\Service\ImportExportService;
 use OCA\RoomVox\Service\MailService;
 use OCA\RoomVox\Service\PermissionService;
+use OCA\RoomVox\Service\RoomCatalogService;
 use OCA\RoomVox\Service\RoomService;
+use OCA\RoomVox\Tests\Unit\Support\EnglishL10N;
 use OCP\IAppConfig;
 use OCP\IGroupManager;
 use OCP\IRequest;
@@ -211,7 +213,7 @@ class PerformanceTest extends TestCase {
         $logger = $this->createMock(LoggerInterface::class);
         $roomService->method('getAllRooms')->willReturn([]);
 
-        $service = new ImportExportService($roomService, $appConfig, $logger);
+        $service = new ImportExportService($roomService, new RoomCatalogService($appConfig), $logger, new EnglishL10N());
 
         $lines = ['name,email,capacity,roomType,facilities'];
         for ($i = 0; $i < $rowCount; $i++) {
@@ -407,6 +409,7 @@ class PerformanceTest extends TestCase {
         $controller = new BookingApiController(
             'roomvox', $request, $roomService, $permissionService,
             $calDAVService, $mailService, $exchangeSyncService, $userSession, $groupManager, $logger,
+            new EnglishL10N(),
         );
 
         $start = hrtime(true);
@@ -665,6 +668,7 @@ class PerformanceTest extends TestCase {
         return new BookingApiController(
             'roomvox', $request, $roomService, $permissionService,
             $calDAVService, $mailService, $exchangeSyncService, $userSession, $groupManager, $logger,
+            new EnglishL10N(),
         );
     }
 

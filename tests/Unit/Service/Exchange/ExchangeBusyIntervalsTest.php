@@ -38,7 +38,7 @@ class ExchangeBusyIntervalsTest extends TestCase {
             $this->graphClient,
             new CalDAVService($this->createMock(CalDavBackend::class), $this->createMock(IUserManager::class), $logger),
             $this->createMock(RoomService::class),
-            $logger,
+            $logger
         );
     }
 

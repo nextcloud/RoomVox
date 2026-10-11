@@ -9,12 +9,14 @@
             {{ subscriptionBanner }}
             <NcButton variant="tertiary"
                 @click="onTabClick('support')">
+                <!-- TRANSLATORS Link to the documentation -->
                 {{ t('roomvox', 'Learn more') }}
             </NcButton>
         </NcNoteCard>
 
         <PaneSwitcher v-model="activeTab"
-            :label="t('roomvox', 'RoomVox administration')"
+            :label="// TRANSLATORS Accessible name of the administration settings page
+                t('roomvox', 'RoomVox administration')"
             :panes="tabs" />
 
         <!-- Content -->
@@ -72,18 +74,23 @@
 
             <!-- Import / Export -->
             <div v-if="currentView === 'import-export'" class="tab-content">
-                <NcSettingsSection :name="t('roomvox', 'Export rooms')"
-                    :description="t('roomvox', 'Download all rooms as a CSV file. This file can be imported into another RoomVox instance or edited in Excel/LibreOffice.')">
+                <NcSettingsSection :name="// TRANSLATORS Section heading
+                    t('roomvox', 'Export rooms')"
+                    :description="// TRANSLATORS CSV is a file format; Excel and LibreOffice are product names
+                        t('roomvox', 'Download all rooms as a CSV file. This file can be imported into another RoomVox instance or edited in Excel/LibreOffice.')">
                     <NcButton variant="secondary" @click="handleExport">
                         <template #icon>
                             <Download :size="20" />
                         </template>
+                        <!-- TRANSLATORS Button: download the rooms as a CSV file -->
                         {{ t('roomvox', 'Export CSV') }}
                     </NcButton>
                 </NcSettingsSection>
 
-                <NcSettingsSection :name="t('roomvox', 'Import rooms')"
-                    :description="t('roomvox', 'Upload a CSV file to import rooms. RoomVox and MS365 formats are supported.')">
+                <NcSettingsSection :name="// TRANSLATORS Section heading
+                    t('roomvox', 'Import rooms')"
+                    :description="// TRANSLATORS MS365 is Microsoft 365, a product name
+                        t('roomvox', 'Upload a CSV file to import rooms. RoomVox and MS365 formats are supported.')">
                     <!-- Upload area (step 1) -->
                     <div v-if="importStep === 'upload'" class="import-inline">
                         <div class="upload-area"
@@ -92,9 +99,12 @@
                              @dragleave="isDraggingImport = false"
                              @drop.prevent="handleImportDrop">
                             <Upload :size="48" class="upload-icon" />
+                            <!-- TRANSLATORS Text in the file drop zone -->
                             <p>{{ t('roomvox', 'Drag and drop a CSV file here') }}</p>
+                            <!-- TRANSLATORS Between "Drag and drop a CSV file here" and the "Choose file" button -->
                             <p class="upload-or">{{ t('roomvox', 'or') }}</p>
                             <NcButton variant="secondary" @click="$refs.importFileInput.click()">
+                                <!-- TRANSLATORS Button that opens the file picker -->
                                 {{ t('roomvox', 'Choose file') }}
                             </NcButton>
                             <!-- Driven by the button above, so off the tab path
@@ -105,7 +115,8 @@
                                 accept=".csv,text/csv"
                                 class="hidden-input"
                                 tabindex="-1"
-                                :aria-label="t('roomvox', 'Choose a CSV file to import')"
+                                :aria-label="// TRANSLATORS Accessible name of the hidden file input; read by screen readers only
+                                    t('roomvox', 'Choose a CSV file to import')"
                                 @change="handleImportFileSelect" />
                         </div>
 
@@ -114,10 +125,12 @@
                         </NcNoteCard>
 
                         <div class="import-help">
+                            <!-- TRANSLATORS Heading above the list of CSV formats -->
                             <h3>{{ t('roomvox', 'Supported formats') }}</h3>
                             <ul>
                                 <li><strong>RoomVox CSV</strong> — {{ t('roomvox', 'Exported from another RoomVox installation') }}</li>
-                                <li><strong>Microsoft 365 / Exchange</strong> — {{ t('roomvox', 'Exported via PowerShell (Get-EXOMailbox | Get-Place | Export-Csv)') }}</li>
+                                <!-- TRANSLATORS Followed by a PowerShell command that must not be translated; PowerShell is a product name -->
+                                <li><strong>Microsoft 365 / Exchange</strong> — {{ t('roomvox', 'Exported via PowerShell:') }} <code>Get-EXOMailbox | Get-Place | Export-Csv</code></li>
                             </ul>
                             <p class="import-help-note">{{ t('roomvox', 'Column names are automatically detected and mapped.') }}</p>
                             <div class="sample-download">
@@ -125,6 +138,7 @@
                                     <template #icon>
                                         <Download :size="20" />
                                     </template>
+                                    <!-- TRANSLATORS Button: download an example CSV file -->
                                     {{ t('roomvox', 'Download sample CSV') }}
                                 </NcButton>
                                 <span class="sample-desc">{{ t('roomvox', 'Download an example file with headers and a sample row') }}</span>
@@ -136,17 +150,20 @@
                     <div v-if="importStep === 'preview'" class="import-inline">
                         <div class="preview-info">
                             <p>
+                                <!-- TRANSLATORS Label followed by the format name of the uploaded CSV file -->
                                 {{ t('roomvox', 'Detected format:') }}
                                 <strong>{{ importFormatLabel }}</strong>
                             </p>
                             <p>
-                                {{ t('roomvox', '{count} rooms found', { count: importPreviewData.rows.length }) }}
+                                <!-- TRANSLATORS Import preview; %n is the number of rooms in the uploaded file -->
+                                {{ n('roomvox', '%n room found', '%n rooms found', importPreviewData.rows.length) }}
                                 —
-                                {{ t('roomvox', '{create} new, {update} existing, {errors} errors', {
+                                <!-- TRANSLATORS Import preview summary; each placeholder is a number of rooms -->
+                                {{ t('roomvox', 'New: {create}, existing: {update}, errors: {errors}', {
                                     create: importCreateCount,
                                     update: importUpdateCount,
                                     errors: importErrorCount
-                                }) }}
+                                }, asText) }}
                             </p>
                         </div>
 
@@ -154,12 +171,19 @@
                             <table class="preview-table">
                                 <thead>
                                     <tr>
+                                        <!-- TRANSLATORS Column header in the import preview: what happens to the row -->
                                         <th>{{ t('roomvox', 'Action') }}</th>
+                                        <!-- TRANSLATORS Column header or field label -->
                                         <th>{{ t('roomvox', 'Name') }}</th>
+                                        <!-- TRANSLATORS Column header: email address -->
                                         <th>{{ t('roomvox', 'Email') }}</th>
+                                        <!-- TRANSLATORS Column header and field label: number of seats -->
                                         <th>{{ t('roomvox', 'Capacity') }}</th>
+                                        <!-- TRANSLATORS Column header and field label -->
                                         <th>{{ t('roomvox', 'Building') }}</th>
+                                        <!-- TRANSLATORS Column header, heading and field label: equipment in a room -->
                                         <th>{{ t('roomvox', 'Facilities') }}</th>
+                                        <!-- TRANSLATORS Column header in the import preview: problems found in a row -->
                                         <th>{{ t('roomvox', 'Issues') }}</th>
                                     </tr>
                                 </thead>
@@ -183,6 +207,7 @@
                                                 {{ row.errors.join(', ') }}
                                             </span>
                                             <span v-else-if="row.action === 'update'" class="match-text">
+                                                <!-- TRANSLATORS Import preview; {name} is the existing room the row will update -->
                                                 {{ t('roomvox', 'Matches: {name}', { name: row.matchedName }, asText) }}
                                             </span>
                                         </td>
@@ -193,6 +218,7 @@
 
                         <!-- A bare <label> names neither radio; a legend names both. -->
                         <fieldset class="import-mode">
+                            <!-- TRANSLATORS Label above two choices: only create, or create and update -->
                             <legend>{{ t('roomvox', 'Import mode:') }}</legend>
                             <div class="mode-options">
                                 <NcCheckboxRadioSwitch
@@ -216,15 +242,18 @@
                             <NcCheckboxRadioSwitch
                                 :model-value="importEnableExchangeSync"
                                 @update:model-value="importEnableExchangeSync = $event">
+                                <!-- TRANSLATORS Checkbox; Exchange is Microsoft Exchange -->
                                 {{ t('roomvox', 'Enable Exchange calendar sync for imported rooms') }}
                             </NcCheckboxRadioSwitch>
                             <p class="import-help-note">
+                                <!-- TRANSLATORS MS365 is Microsoft 365, a product name -->
                                 {{ t('roomvox', 'Links each room to its MS365 mailbox for bidirectional calendar sync. Requires Exchange sync to be configured in settings.') }}
                             </p>
                         </div>
 
                         <div class="import-actions">
                             <NcButton variant="tertiary" @click="resetImport">
+                                <!-- TRANSLATORS Button: go back to the previous screen -->
                                 {{ t('roomvox', 'Back') }}
                             </NcButton>
                             <NcButton variant="primary"
@@ -233,7 +262,11 @@
                                 <template v-if="importing" #icon>
                                     <NcLoadingIcon :size="20" />
                                 </template>
-                                {{ importing ? t('roomvox', 'Importing …') : t('roomvox', 'Import') }}
+                                {{ importing
+                                    // TRANSLATORS Button text while the import runs
+                                    ? t('roomvox', 'Importing …')
+                                    // TRANSLATORS Button: start the import (verb)
+                                    : t('roomvox', 'Import') }}
                             </NcButton>
                         </div>
                     </div>
@@ -243,18 +276,22 @@
                         <div class="result-summary">
                             <div class="result-stat result-stat--success">
                                 <span class="result-stat__number">{{ importResult.created }}</span>
+                                <!-- TRANSLATORS Label under a number in the import result: rooms created -->
                                 <span class="result-stat__label">{{ t('roomvox', 'Created') }}</span>
                             </div>
                             <div class="result-stat result-stat--info">
                                 <span class="result-stat__number">{{ importResult.updated }}</span>
+                                <!-- TRANSLATORS Label under a number in the import result: rooms updated -->
                                 <span class="result-stat__label">{{ t('roomvox', 'Updated') }}</span>
                             </div>
                             <div class="result-stat result-stat--warning">
                                 <span class="result-stat__number">{{ importResult.skipped }}</span>
+                                <!-- TRANSLATORS Label under a number in the import result: rows skipped -->
                                 <span class="result-stat__label">{{ t('roomvox', 'Skipped') }}</span>
                             </div>
                             <div v-if="importResult.errors.length > 0" class="result-stat result-stat--error">
                                 <span class="result-stat__number">{{ importResult.errors.length }}</span>
+                                <!-- TRANSLATORS Label under a number in the import result, and heading of the error list -->
                                 <span class="result-stat__label">{{ t('roomvox', 'Errors') }}</span>
                             </div>
                         </div>
@@ -263,7 +300,8 @@
                             <h3>{{ t('roomvox', 'Errors') }}</h3>
                             <ul>
                                 <li v-for="(err, idx) in importResult.errors" :key="idx">
-                                    <strong>{{ t('roomvox', 'Line {line}', { line: err.line }) }}:</strong>
+                                    <!-- TRANSLATORS Import result; {line} is the row number in the CSV file -->
+                                    <strong>{{ t('roomvox', 'Line {line}:', { line: err.line }, asText) }}</strong>
                                     {{ err.name }} — {{ err.errors.join(', ') }}
                                 </li>
                             </ul>
@@ -271,6 +309,7 @@
 
                         <div class="import-actions">
                             <NcButton variant="primary" @click="resetImport(); loadRooms()">
+                                <!-- TRANSLATORS Button: close the import result -->
                                 {{ t('roomvox', 'Done') }}
                             </NcButton>
                         </div>
@@ -282,7 +321,8 @@
                  subscription or usage statistics here; those are on Support
                  (design guidelines §7, "The Statistics and Support panes"). -->
             <NcSettingsSection v-if="currentView === 'statistics'"
-                :name="t('roomvox', 'Room statistics')"
+                :name="// TRANSLATORS Section heading
+                    t('roomvox', 'Room statistics')"
                 :description="t('roomvox', 'Rooms and room groups in this RoomVox installation.')">
                 <ul class="stat-tiles">
                     <li v-for="tile in statTiles" :key="tile.id" class="stat-tile">
@@ -298,17 +338,22 @@
 
             <!-- Settings -->
             <div v-if="currentView === 'settings'" class="roomvox-settings">
-                <NcSettingsSection :name="t('roomvox', 'API tokens')"
-                    :description="t('roomvox', 'Manage API tokens for external integrations. Tokens allow external systems to access the RoomVox API.')">
+                <NcSettingsSection :name="// TRANSLATORS Section heading. An API token is a key that external systems use to access RoomVox
+                    t('roomvox', 'API tokens')"
+                    :description="// TRANSLATORS API is a technical term; keep it if your language has no usual equivalent
+                        t('roomvox', 'Manage API tokens for external integrations. Tokens allow external systems to access the RoomVox API.')">
                     <!-- Token list -->
                     <div v-if="apiTokens.length > 0" class="token-list">
                         <table class="token-table">
                             <thead>
                                 <tr>
                                     <th>{{ t('roomvox', 'Name') }}</th>
+                                    <!-- TRANSLATORS Column header and field label: what an API token may do -->
                                     <th>{{ t('roomvox', 'Scope') }}</th>
                                     <th>{{ t('roomvox', 'Rooms') }}</th>
-                                    <th>{{ t('roomvox', 'Created') }}</th>
+                                    <!-- TRANSLATORS Column header in the API token table -->
+                                    <th>{{ t('roomvox', 'Creation date') }}</th>
+                                    <!-- TRANSLATORS Column header in the API token table: when the token was last used -->
                                     <th>{{ t('roomvox', 'Last used') }}</th>
                                     <th></th>
                                 </tr>
@@ -336,19 +381,25 @@
                         </table>
                     </div>
 
+                    <!-- TRANSLATORS Empty state of the API token list -->
                     <p v-else class="no-tokens">{{ t('roomvox', 'No API tokens created yet.') }}</p>
 
                     <!-- New token created: shown once, so it stays until the next one -->
                     <NcNoteCard v-if="newlyCreatedToken"
                         type="warning"
-                        :heading="t('roomvox', 'Token created! Copy it now — it will not be shown again.')">
+                        :heading="// TRANSLATORS Heading of a notice that shows the new API token once
+                            t('roomvox', 'Token created. Copy it now — it will not be shown again.')">
                         <div class="new-token-value">
                             <code>{{ newlyCreatedToken }}</code>
                             <NcButton variant="tertiary" @click="copyToken">
                                 <template #icon>
                                     <ContentCopy :size="20" />
                                 </template>
-                                {{ tokenCopied ? t('roomvox', 'Copied!') : t('roomvox', 'Copy') }}
+                                {{ tokenCopied
+                                    // TRANSLATORS Button text after copying to the clipboard
+                                    ? t('roomvox', 'Copied')
+                                    // TRANSLATORS Button: copy to the clipboard (verb)
+                                    : t('roomvox', 'Copy') }}
                             </NcButton>
                         </div>
                     </NcNoteCard>
@@ -357,8 +408,10 @@
                     <div class="token-form-row">
                         <NcTextField v-model="newTokenName"
                             class="token-form-row__name"
-                            :label="t('roomvox', 'Token name')"
-                            :placeholder="t('roomvox', 'e.g. Lobby Display')" />
+                            :label="// TRANSLATORS Field label: name of the new API token
+                                t('roomvox', 'Token name')"
+                            :placeholder="// TRANSLATORS Example name for an API token used by a display screen; may be replaced by a local example
+                                t('roomvox', 'e.g. Lobby Display')" />
                         <!-- Plain string options: the select emits the string itself -->
                         <NcSelect v-model="newTokenScope"
                             class="token-form-row__scope"
@@ -373,17 +426,23 @@
                             <template v-if="creatingToken" #icon>
                                 <NcLoadingIcon :size="20" />
                             </template>
+                            <!-- TRANSLATORS Button: create an API token -->
                             {{ t('roomvox', 'Create token') }}
                         </NcButton>
                     </div>
 
                     <div class="token-help">
+                        <!-- TRANSLATORS Heading above the explanation of the API token scopes read, book and admin -->
                         <h3>{{ t('roomvox', 'Scopes') }}</h3>
                         <ul>
+                            <!-- TRANSLATORS What the API token scope "read" allows -->
                             <li><strong>read</strong> — {{ t('roomvox', 'View rooms, availability, and calendar feed') }}</li>
-                            <li><strong>book</strong> — {{ t('roomvox', 'Everything in read + create and cancel bookings') }}</li>
-                            <li><strong>admin</strong> — {{ t('roomvox', 'Everything in book + manage rooms and view statistics') }}</li>
+                            <!-- TRANSLATORS {scope} is the name of another scope, "read"; keep it as is -->
+                            <li><strong>book</strong> — {{ t('roomvox', 'Everything in {scope} + create and cancel bookings', { scope: 'read' }, asText) }}</li>
+                            <!-- TRANSLATORS {scope} is the name of another scope, "book"; keep it as is -->
+                            <li><strong>admin</strong> — {{ t('roomvox', 'Everything in {scope} + manage rooms and view statistics', { scope: 'book' }, asText) }}</li>
                         </ul>
+                        <!-- TRANSLATORS Heading above an example command that uses an API token -->
                         <h3>{{ t('roomvox', 'Usage') }}</h3>
                         <code class="token-example">curl -H "Authorization: Bearer rvx_..." {{ apiBaseUrl }}/api/v1/rooms</code>
                     </div>
@@ -398,6 +457,7 @@
                     <NcCheckboxRadioSwitch
                         :model-value="settings.emailEnabled"
                         @update:model-value="settings.emailEnabled = $event; saveGlobalSettings()">
+                        <!-- TRANSLATORS Switch label -->
                         {{ t('roomvox', 'Enable email notifications') }}
                     </NcCheckboxRadioSwitch>
                     <NcCheckboxRadioSwitch
@@ -407,11 +467,14 @@
                     </NcCheckboxRadioSwitch>
                 </NcSettingsSection>
 
-                <NcSettingsSection :name="t('roomvox', 'Microsoft Exchange sync')"
-                    :description="t('roomvox', 'Connect RoomVox to Microsoft 365 Exchange to sync room calendars. Requires an Azure AD app registration with Calendars.ReadWrite and User.Read.All application permissions.')">
+                <NcSettingsSection :name="// TRANSLATORS Section heading; Microsoft Exchange is a product name
+                    t('roomvox', 'Microsoft Exchange sync')"
+                    :description="// TRANSLATORS {calendarPermission} and {userPermission} are Microsoft permission names such as 'Calendars.ReadWrite'; Azure AD is a product name
+                        t('roomvox', 'Connect RoomVox to Microsoft 365 Exchange to sync room calendars. Requires an Azure AD app registration with {calendarPermission} and {userPermission} application permissions.', { calendarPermission: 'Calendars.ReadWrite', userPermission: 'User.Read.All' }, asText)">
                     <NcCheckboxRadioSwitch
                         :model-value="exchangeEnabled"
                         @update:model-value="exchangeEnabled = $event; saveExchangeSettings()">
+                        <!-- TRANSLATORS Switch label; Exchange is Microsoft Exchange -->
                         {{ t('roomvox', 'Enable Exchange calendar sync') }}
                     </NcCheckboxRadioSwitch>
 
@@ -419,15 +482,19 @@
                         <!-- Each field saves on change, as the raw inputs did -->
                         <div class="exchange-grid">
                             <NcTextField v-model="exchangeTenantId"
-                                :label="t('roomvox', 'Azure AD Tenant ID')"
-                                :placeholder="t('roomvox', 'e.g. 12345678-abcd-…')"
+                                :label="// TRANSLATORS Field label. Azure AD is a Microsoft product; the tenant ID identifies an organization there
+                                    t('roomvox', 'Azure AD tenant ID')"
+                                :placeholder="// TRANSLATORS Placeholder text in an input field; {example} is a sample value such as 'smtp.company.com'
+                                    t('roomvox', 'e.g. {example}', { example: '12345678-abcd-…' }, asText)"
                                 @change="saveExchangeSettings" />
                             <NcTextField v-model="exchangeClientId"
-                                :label="t('roomvox', 'Client ID')"
+                                :label="// TRANSLATORS Field label: the ID of the app registration in Microsoft Azure
+                                    t('roomvox', 'Client ID')"
                                 :placeholder="t('roomvox', 'App registration client ID')"
                                 @change="saveExchangeSettings" />
                             <NcPasswordField v-model="exchangeClientSecret"
-                                :label="t('roomvox', 'Client secret')"
+                                :label="// TRANSLATORS Field label: the password of the app registration in Microsoft Azure
+                                    t('roomvox', 'Client secret')"
                                 :placeholder="exchangeClientSecret === '***' ? t('roomvox', '(saved — enter new value to change)') : t('roomvox', 'App registration client secret')"
                                 @change="saveExchangeSettings" />
                             <!-- Bound as text and cast back like v-model.number did,
@@ -458,7 +525,11 @@
                                 <template v-if="exchangeTesting" #icon>
                                     <NcLoadingIcon :size="20" />
                                 </template>
-                                {{ exchangeTesting ? t('roomvox', 'Testing …') : t('roomvox', 'Test connection') }}
+                                {{ exchangeTesting
+                                    // TRANSLATORS Button text while the connection test runs
+                                    ? t('roomvox', 'Testing …')
+                                    // TRANSLATORS Button (verb)
+                                    : t('roomvox', 'Test connection') }}
                             </NcButton>
 
                             <NcNoteCard v-if="exchangeTestResult" :type="exchangeTestResult.success ? 'success' : 'error'">
@@ -468,7 +539,8 @@
                     </div>
                 </NcSettingsSection>
 
-                <NcSettingsSection :name="t('roomvox', 'Room types')"
+                <NcSettingsSection :name="// TRANSLATORS Section heading
+                    t('roomvox', 'Room types')"
                     :description="t('roomvox', 'Configure the available room types. Types that are in use cannot be deleted.')">
                     <ul class="room-type-list">
                         <li v-for="(type, index) in settings.roomTypes"
@@ -485,7 +557,8 @@
                             <NcTextField :model-value="type.label"
                                 class="room-type-label"
                                 label-outside
-                                :aria-label="t('roomvox', 'Room type name')"
+                                :aria-label="// TRANSLATORS Accessible name of the input that renames a room type; read by screen readers
+                                    t('roomvox', 'Room type name')"
                                 @change="updateRoomTypeLabel(index, $event.target.value)" />
                             <span class="room-type-id">{{ type.id }}</span>
                             <NcButton
@@ -502,11 +575,13 @@
                     <div class="room-type-add">
                         <NcTextField v-model="newRoomTypeLabel"
                             class="room-type-label"
-                            :label="t('roomvox', 'New room type')"
+                            :label="// TRANSLATORS Field label for adding a room type
+                                t('roomvox', 'New room type')"
                             @keyup.enter="addRoomType" />
                         <NcButton
                             variant="secondary"
-                            :aria-label="t('roomvox', 'Add')"
+                            :aria-label="// TRANSLATORS Accessible name of an add button (icon only); read by screen readers
+                                t('roomvox', 'Add')"
                             :disabled="!newRoomTypeLabel.trim()"
                             @click="addRoomType">
                             <template #icon>
@@ -532,7 +607,8 @@
                             <NcTextField :model-value="facility.label"
                                 class="room-type-label"
                                 label-outside
-                                :aria-label="t('roomvox', 'Facility name')"
+                                :aria-label="// TRANSLATORS Accessible name of the input that renames a facility; read by screen readers
+                                    t('roomvox', 'Facility name')"
                                 @change="updateFacilityLabel(index, $event.target.value)" />
                             <span class="room-type-id">{{ facility.id }}</span>
                             <NcButton
@@ -549,7 +625,8 @@
                     <div class="room-type-add">
                         <NcTextField v-model="newFacilityLabel"
                             class="room-type-label"
-                            :label="t('roomvox', 'New facility')"
+                            :label="// TRANSLATORS Field label for adding a facility
+                                t('roomvox', 'New facility')"
                             @keyup.enter="addFacility" />
                         <NcButton
                             variant="secondary"
@@ -564,6 +641,7 @@
                 </NcSettingsSection>
 
                 <NcNoteCard v-if="settingsSaved" type="success">
+                    <!-- TRANSLATORS Confirmation message -->
                     {{ t('roomvox', 'Settings saved') }}
                 </NcNoteCard>
             </div>
@@ -574,9 +652,9 @@
 <script setup>
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { showError, showSuccess } from '@nextcloud/dialogs'
-import { translate, getLanguage } from '@nextcloud/l10n'
+import { getLanguage } from '@nextcloud/l10n'
+import { t, n, asText } from './l10n.js'
 import { generateUrl } from '@nextcloud/router'
-import { escapeHtml } from './utils/escapeHtml.js'
 import NcSettingsSection from '@nextcloud/vue/components/NcSettingsSection'
 import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwitch'
 import NcNoteCard from '@nextcloud/vue/components/NcNoteCard'
@@ -620,13 +698,9 @@ import {
     getLicenseStats,
 } from './services/api.js'
 
-// translate() HTML-escapes placeholder values and runs the result through
-// DOMPurify by default, both for v-html. Vue escapes again when it renders
-// text or binds an attribute, so user data such as a room name would show as
-// "&amp;" or lose anything that looks like a tag. Text uses asText instead;
-// nothing in the app renders translations with v-html.
-const asText = { escape: false, sanitize: false }
-const t = (app, text, vars = {}, options = undefined) => translate(app, text, vars, undefined, options)
+// A server message to append to a failure toast: the translated error the
+// API controllers send, or the transport error when there is no response.
+const serverError = (e) => e.response?.data?.error || e.message
 
 // Anchors that open the Support pane. #support is the pane itself; the consent
 // notification links to #usage-statistics, where SupportSettings opens the
@@ -694,6 +768,7 @@ const importFormatLabel = computed(() => {
     const labels = {
         roomvox: 'RoomVox CSV',
         ms365: 'Microsoft 365 / Exchange',
+        // TRANSLATORS Shown as the detected format when the CSV file is not recognized
         unknown: t('roomvox', 'Unknown format'),
     }
     return labels[importPreviewData.value.detected_format] || importPreviewData.value.detected_format
@@ -713,8 +788,13 @@ const importHasEmails = computed(() =>
 )
 
 const importActionLabel = (row) => {
+    // TRANSLATORS Status of a row in the import preview
     if (row.errors.length > 0) return t('roomvox', 'Error')
-    return row.action === 'create' ? t('roomvox', 'New') : t('roomvox', 'Update')
+    return row.action === 'create'
+        // TRANSLATORS Status of a row in the import preview: a new room will be created
+        ? t('roomvox', 'New')
+        // TRANSLATORS Status of a row in the import preview: an existing room will be updated
+        : t('roomvox', 'Update')
 }
 
 const importActionVariant = (row) => {
@@ -765,7 +845,8 @@ const uploadImportFile = async (file) => {
 
         importStep.value = 'preview'
     } catch (err) {
-        importError.value = err.response?.data?.message || t('roomvox', 'Failed to parse CSV file')
+        // The import endpoints answer { error }, already translated
+        importError.value = err.response?.data?.error || t('roomvox', 'Failed to parse CSV file')
     }
 }
 
@@ -786,7 +867,8 @@ const executeImport = async () => {
         // Refresh room list so newly imported rooms appear immediately
         await loadRooms()
     } catch (err) {
-        importError.value = err.response?.data?.message || t('roomvox', 'Import failed')
+        // TRANSLATORS Error message
+        importError.value = err.response?.data?.error || t('roomvox', 'Import failed')
         importStep.value = 'upload'
     } finally {
         importing.value = false
@@ -825,9 +907,11 @@ const onCreateToken = async () => {
         newTokenName.value = ''
         newTokenScope.value = 'read'
         await loadApiTokens()
+        // TRANSLATORS Confirmation message
         showSuccess(t('roomvox', 'API token created'))
     } catch (e) {
-        showError(t('roomvox', 'Failed to create API token') + ': ' + escapeHtml(e.response?.data?.error || e.message))
+        // TRANSLATORS Error; {error} is a message from the server
+        showError(t('roomvox', 'Failed to create API token: {error}', { error: serverError(e) }))
     } finally {
         creatingToken.value = false
     }
@@ -837,6 +921,7 @@ const onDeleteToken = async (id) => {
     try {
         await deleteApiToken(id)
         await loadApiTokens()
+        // TRANSLATORS Confirmation message
         showSuccess(t('roomvox', 'API token deleted'))
     } catch (e) {
         showError(t('roomvox', 'Failed to delete API token'))
@@ -869,18 +954,27 @@ const formatDate = (isoString) => {
 
 // Icons follow what is behind each tab, as the design guidelines ask (§7)
 const tabs = [
+    // TRANSLATORS Tab, column header and heading
     { id: 'rooms', label: t('roomvox', 'Rooms'), icon: DoorOpen },
+    // TRANSLATORS Tab and heading
     { id: 'bookings', label: t('roomvox', 'Bookings'), icon: CalendarCheck },
+    // TRANSLATORS Tab label; keep it short
     { id: 'import-export', label: t('roomvox', 'Import / export'), icon: FileArrowUpDownOutline },
+    // TRANSLATORS Tab label; keep it short
     { id: 'settings', label: t('roomvox', 'Settings'), icon: Cog },
+    // TRANSLATORS Tab label; keep it short
     { id: 'statistics', label: t('roomvox', 'Statistics'), icon: ChartBox },
+    // TRANSLATORS Tab label; keep it short
     { id: 'support', label: t('roomvox', 'Support'), icon: Lifebuoy },
 ]
 
 // Statistics: one tile shape for every figure, all counted on this server.
 const statTiles = computed(() => [
+    // TRANSLATORS Label under a number on the statistics tab
     { id: 'rooms', icon: Door, value: rooms.value.length, label: t('roomvox', 'Total rooms') },
+    // TRANSLATORS Label under a number on the statistics tab
     { id: 'active', icon: DoorOpen, value: rooms.value.filter(r => r.active !== false).length, label: t('roomvox', 'Active rooms') },
+    // TRANSLATORS Label under a number on the statistics tab, and heading
     { id: 'groups', icon: FolderMultiple, value: roomGroups.value.length, label: t('roomvox', 'Room groups') },
 ])
 
@@ -952,9 +1046,11 @@ const onSaveRoom = async (roomData) => {
     try {
         if (creatingRoom.value) {
             await createRoom(roomData)
+            // TRANSLATORS Confirmation message
             showSuccess(t('roomvox', 'Room created'))
         } else {
             await updateRoom(selectedRoom.value.id, roomData)
+            // TRANSLATORS Confirmation message
             showSuccess(t('roomvox', 'Room updated'))
         }
         selectedRoom.value = null
@@ -966,18 +1062,21 @@ const onSaveRoom = async (roomData) => {
         if (e.response?.status === 409) {
             const conflictingId = e.response?.data?.conflictingRoomId
             const conflicting = rooms.value.find(r => r.id === conflictingId)
+            // TRANSLATORS Error; {room} is the name of another room
             showError(t('roomvox', 'Room "{room}" already uses this email address', {
                 room: conflicting?.name || conflictingId || '?',
             }))
             return
         }
-        showError(t('roomvox', 'Failed to save room') + ': ' + escapeHtml(e.response?.data?.error || e.message))
+        // TRANSLATORS Error; {error} is a message from the server
+        showError(t('roomvox', 'Failed to save room: {error}', { error: serverError(e) }))
     }
 }
 
 const onDeleteRoom = async (roomId) => {
     try {
         await deleteRoom(roomId)
+        // TRANSLATORS Confirmation message
         showSuccess(t('roomvox', 'Room deleted'))
         selectedRoom.value = null
         await loadRooms()
@@ -1002,27 +1101,32 @@ const onSaveRoomGroup = async (groupData) => {
     try {
         if (creatingRoomGroup.value) {
             await createRoomGroup(groupData)
+            // TRANSLATORS Confirmation message
             showSuccess(t('roomvox', 'Room group created'))
         } else {
             await updateRoomGroup(selectedRoomGroup.value.id, groupData)
+            // TRANSLATORS Confirmation message
             showSuccess(t('roomvox', 'Room group updated'))
         }
         selectedRoomGroup.value = null
         creatingRoomGroup.value = false
         await loadRooms()
     } catch (e) {
-        showError(t('roomvox', 'Failed to save room group') + ': ' + escapeHtml(e.response?.data?.error || e.message))
+        // TRANSLATORS Error; {error} is a message from the server
+        showError(t('roomvox', 'Failed to save room group: {error}', { error: serverError(e) }))
     }
 }
 
 const onDeleteRoomGroup = async (groupId) => {
     try {
         await deleteRoomGroup(groupId)
+        // TRANSLATORS Confirmation message
         showSuccess(t('roomvox', 'Room group deleted'))
         selectedRoomGroup.value = null
         await loadRooms()
     } catch (e) {
-        showError(t('roomvox', 'Failed to delete room group') + ': ' + escapeHtml(e.response?.data?.error || e.message))
+        // TRANSLATORS Error; {error} is a message from the server
+        showError(t('roomvox', 'Failed to delete room group: {error}', { error: serverError(e) }))
     }
 }
 
@@ -1039,7 +1143,8 @@ const onMoveToGroup = async ({ room, groupId }) => {
         showSuccess(groupId ? t('roomvox', 'Room moved to group') : t('roomvox', 'Room removed from group'))
         await loadRooms()
     } catch (e) {
-        showError(t('roomvox', 'Failed to move room') + ': ' + escapeHtml(e.response?.data?.error || e.message))
+        // TRANSLATORS Error; {error} is a message from the server
+        showError(t('roomvox', 'Failed to move room: {error}', { error: serverError(e) }))
     }
 }
 
@@ -1075,8 +1180,10 @@ const testExchange = async () => {
             exchangeWebhookRateLimit: exchangeWebhookRateLimit.value,
         })
         const response = await testExchangeConnection()
+        // TRANSLATORS Result of the Exchange connection test
         exchangeTestResult.value = { success: true, message: response.data.message || t('roomvox', 'Connection successful') }
     } catch (e) {
+        // TRANSLATORS Result of the Exchange connection test
         exchangeTestResult.value = { success: false, message: e.response?.data?.error || t('roomvox', 'Connection failed') }
     } finally {
         exchangeTesting.value = false

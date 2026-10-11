@@ -8,8 +8,10 @@ use OCA\RoomVox\Controller\LicenseController;
 use OCA\RoomVox\Controller\SettingsController;
 use OCA\RoomVox\Controller\TelemetryConsentController;
 use OCA\RoomVox\Service\LicenseService;
+use OCA\RoomVox\Service\RoomCatalogService;
 use OCA\RoomVox\Service\TelemetryConsentService;
 use OCA\RoomVox\Service\TelemetryService;
+use OCA\RoomVox\Tests\Unit\Support\EnglishL10N;
 use OCA\RoomVox\Tests\Unit\Support\InMemoryAppConfig;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
@@ -188,6 +190,8 @@ class TelemetryControllersTest extends TestCase {
             $this->createMock(ICrypto::class),
             $session,
             $groups,
+            new RoomCatalogService($appConfig),
+            new EnglishL10N(),
         );
 
         $controller->save();

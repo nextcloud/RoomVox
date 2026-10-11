@@ -13,6 +13,7 @@ use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IGroupManager;
+use OCP\IL10N;
 use OCP\IRequest;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
@@ -29,6 +30,7 @@ class BookingApiController extends Controller {
         private IUserSession $userSession,
         private IGroupManager $groupManager,
         private LoggerInterface $logger,
+        private IL10N $l10n,
     ) {
         parent::__construct($appName, $request);
     }
@@ -40,16 +42,19 @@ class BookingApiController extends Controller {
     public function index(string $id): JSONResponse {
         $userId = $this->getCurrentUserId();
         if ($userId === null) {
-            return new JSONResponse(['error' => 'Not authenticated'], 401);
+            // TRANSLATORS Error: the request has no logged-in user
+            return new JSONResponse(['error' => $this->l10n->t('Not authenticated')], 401);
         }
 
         if (!$this->groupManager->isAdmin($userId) && !$this->permissionService->canManage($userId, $id)) {
-            return new JSONResponse(['error' => 'Forbidden'], 403);
+            // TRANSLATORS Error: the user may not perform this action
+            return new JSONResponse(['error' => $this->l10n->t('Forbidden')], 403);
         }
 
         $room = $this->roomService->getRoom($id);
         if ($room === null) {
-            return new JSONResponse(['error' => 'Room not found'], 404);
+            // TRANSLATORS Error: the room no longer exists
+            return new JSONResponse(['error' => $this->l10n->t('Room not found')], 404);
         }
 
         $from = $this->request->getParam('from');
@@ -67,17 +72,17 @@ class BookingApiController extends Controller {
     public function create(string $id): JSONResponse {
         $userId = $this->getCurrentUserId();
         if ($userId === null) {
-            return new JSONResponse(['error' => 'Not authenticated'], 401);
+            return new JSONResponse(['error' => $this->l10n->t('Not authenticated')], 401);
         }
 
         // Users need at least "book" permission to create bookings
         if (!$this->groupManager->isAdmin($userId) && !$this->permissionService->canBook($userId, $id)) {
-            return new JSONResponse(['error' => 'Forbidden'], 403);
+            return new JSONResponse(['error' => $this->l10n->t('Forbidden')], 403);
         }
 
         $room = $this->roomService->getRoom($id);
         if ($room === null) {
-            return new JSONResponse(['error' => 'Room not found'], 404);
+            return new JSONResponse(['error' => $this->l10n->t('Room not found')], 404);
         }
 
         $summary = $this->request->getParam('summary', '');
@@ -86,10 +91,11 @@ class BookingApiController extends Controller {
         $description = $this->request->getParam('description', '');
 
         if (empty($summary)) {
-            return new JSONResponse(['error' => 'Summary is required'], 400);
+            // TRANSLATORS Error: a booking was created without a title
+            return new JSONResponse(['error' => $this->l10n->t('Summary is required')], 400);
         }
         if (empty($start) || empty($end)) {
-            return new JSONResponse(['error' => 'Start and end times are required'], 400);
+            return new JSONResponse(['error' => $this->l10n->t('Start and end times are required')], 400);
         }
 
         try {
@@ -97,18 +103,18 @@ class BookingApiController extends Controller {
             $endDt = new \DateTime($end);
 
             if (!($room['active'] ?? true)) {
-                return new JSONResponse(['error' => 'Room is not active and cannot be booked'], 422);
+                return new JSONResponse(['error' => $this->l10n->t('Room is not active and cannot be booked')], 422);
             }
 
             // Without a calendar nothing can be stored; say so rather than let
             // the fail-closed conflict check report a booking (issue #44).
             if ($this->calDAVService->getRoomCalendarId($room['userId']) === null) {
-                return new JSONResponse(['error' => 'Room has no calendar and cannot be booked'], 422);
+                return new JSONResponse(['error' => $this->l10n->t('Room has no calendar and cannot be booked')], 422);
             }
 
             // Check for conflicts (local + Exchange)
             if ($this->calDAVService->hasConflict($room['userId'], $startDt, $endDt, null, $room)) {
-                return new JSONResponse(['error' => 'Time slot conflicts with existing booking'], 409);
+                return new JSONResponse(['error' => $this->l10n->t('Time slot conflicts with existing booking')], 409);
             }
 
             // Create the booking
@@ -142,7 +148,8 @@ class BookingApiController extends Controller {
             return new JSONResponse(['status' => 'ok', 'uid' => $uid], 201);
         } catch (\Exception $e) {
             $this->logger->error("Failed to create booking in room {$id}: " . $e->getMessage());
-            return new JSONResponse(['error' => 'Failed to create booking: ' . $e->getMessage()], 500);
+            // TRANSLATORS Error; %s is a technical message from the server, often in English
+            return new JSONResponse(['error' => $this->l10n->t('Failed to create booking: %s', [$e->getMessage()])], 500);
         }
     }
 
@@ -153,12 +160,12 @@ class BookingApiController extends Controller {
     public function update(string $id, string $uid): JSONResponse {
         $userId = $this->getCurrentUserId();
         if ($userId === null) {
-            return new JSONResponse(['error' => 'Not authenticated'], 401);
+            return new JSONResponse(['error' => $this->l10n->t('Not authenticated')], 401);
         }
 
         $room = $this->roomService->getRoom($id);
         if ($room === null) {
-            return new JSONResponse(['error' => 'Room not found'], 404);
+            return new JSONResponse(['error' => $this->l10n->t('Room not found')], 404);
         }
 
         // Check if user is admin, manager, or owns this booking
@@ -167,13 +174,14 @@ class BookingApiController extends Controller {
         $existingBooking = $this->calDAVService->getBookingByUid($room['userId'], $uid);
 
         if ($existingBooking === null) {
-            return new JSONResponse(['error' => 'Booking not found'], 404);
+            // TRANSLATORS Error: the booking no longer exists
+            return new JSONResponse(['error' => $this->l10n->t('Booking not found')], 404);
         }
 
         $isOwner = ($existingBooking['organizer'] ?? '') === $userId;
 
         if (!$isAdmin && !$canManage && !$isOwner) {
-            return new JSONResponse(['error' => 'Forbidden'], 403);
+            return new JSONResponse(['error' => $this->l10n->t('Forbidden')], 403);
         }
 
         $start = $this->request->getParam('start', '');
@@ -181,7 +189,7 @@ class BookingApiController extends Controller {
         $newRoomId = $this->request->getParam('roomId');
 
         if (empty($start) || empty($end)) {
-            return new JSONResponse(['error' => 'Start and end times are required'], 400);
+            return new JSONResponse(['error' => $this->l10n->t('Start and end times are required')], 400);
         }
 
         try {
@@ -192,31 +200,31 @@ class BookingApiController extends Controller {
             if ($newRoomId && $newRoomId !== $id) {
                 $newRoom = $this->roomService->getRoom($newRoomId);
                 if ($newRoom === null) {
-                    return new JSONResponse(['error' => 'Target room not found'], 404);
+                    return new JSONResponse(['error' => $this->l10n->t('Target room not found')], 404);
                 }
 
                 // Check permission for new room (need at least book permission)
                 if (!$isAdmin && !$this->permissionService->canBook($userId, $newRoomId)) {
-                    return new JSONResponse(['error' => 'No permission to move to target room'], 403);
+                    return new JSONResponse(['error' => $this->l10n->t('No permission to move to target room')], 403);
                 }
 
                 if (!($newRoom['active'] ?? true)) {
-                    return new JSONResponse(['error' => 'Target room is not active and cannot be booked'], 422);
+                    return new JSONResponse(['error' => $this->l10n->t('Target room is not active and cannot be booked')], 422);
                 }
 
                 if ($this->calDAVService->getRoomCalendarId($newRoom['userId']) === null) {
-                    return new JSONResponse(['error' => 'Target room has no calendar and cannot be booked'], 422);
+                    return new JSONResponse(['error' => $this->l10n->t('Target room has no calendar and cannot be booked')], 422);
                 }
 
                 // Check for conflicts in new room (local + Exchange)
                 if ($this->calDAVService->hasConflict($newRoom['userId'], $startDt, $endDt, null, $newRoom)) {
-                    return new JSONResponse(['error' => 'Time slot conflicts with existing booking in target room'], 409);
+                    return new JSONResponse(['error' => $this->l10n->t('Time slot conflicts with existing booking in target room')], 409);
                 }
 
                 // Move booking: delete from old room and create in new room
                 $existingBooking = $this->calDAVService->getBookingByUid($room['userId'], $uid);
                 if ($existingBooking === null) {
-                    return new JSONResponse(['error' => 'Booking not found'], 404);
+                    return new JSONResponse(['error' => $this->l10n->t('Booking not found')], 404);
                 }
 
                 // Delete from old room
@@ -238,7 +246,8 @@ class BookingApiController extends Controller {
                 $this->notifyManagersIfPending(
                     $newRoom,
                     $newUid,
-                    $existingBooking['summary'] ?? 'Booking',
+                    // Empty becomes 'Unnamed event' in each manager's language
+                    $existingBooking['summary'] ?? '',
                     $existingBooking['organizer'] ?? $userId,
                     $startDt,
                     $endDt,
@@ -249,14 +258,14 @@ class BookingApiController extends Controller {
 
             // Check for conflicts (excluding this booking, local + Exchange)
             if ($this->calDAVService->hasConflict($room['userId'], $startDt, $endDt, $uid, $room)) {
-                return new JSONResponse(['error' => 'Time slot conflicts with existing booking'], 409);
+                return new JSONResponse(['error' => $this->l10n->t('Time slot conflicts with existing booking')], 409);
             }
 
             // Update booking times
             $success = $this->calDAVService->updateBookingTimes($room['userId'], $uid, $startDt, $endDt);
 
             if (!$success) {
-                return new JSONResponse(['error' => 'Booking not found'], 404);
+                return new JSONResponse(['error' => $this->l10n->t('Booking not found')], 404);
             }
 
             $this->logger->info("Booking {$uid} in room {$id} rescheduled by {$userId}");
@@ -264,7 +273,8 @@ class BookingApiController extends Controller {
             // Push update to Exchange
             try {
                 $this->exchangeSyncService->updateBookingOnExchange($room, $uid, [
-                    'summary' => $existingBooking['summary'] ?? 'Booking',
+                    // Missing: ExchangeSyncService supplies a translated title
+                    'summary' => $existingBooking['summary'] ?? null,
                     'start' => $startDt,
                     'end' => $endDt,
                 ]);
@@ -275,7 +285,8 @@ class BookingApiController extends Controller {
             return new JSONResponse(['status' => 'ok']);
         } catch (\Exception $e) {
             $this->logger->error("Failed to update booking {$uid}: " . $e->getMessage());
-            return new JSONResponse(['error' => 'Failed to update booking: ' . $e->getMessage()], 500);
+            // TRANSLATORS Error; %s is a technical message from the server, often in English
+            return new JSONResponse(['error' => $this->l10n->t('Failed to update booking: %s', [$e->getMessage()])], 500);
         }
     }
 
@@ -286,16 +297,16 @@ class BookingApiController extends Controller {
     public function respond(string $id, string $uid): JSONResponse {
         $userId = $this->getCurrentUserId();
         if ($userId === null) {
-            return new JSONResponse(['error' => 'Not authenticated'], 401);
+            return new JSONResponse(['error' => $this->l10n->t('Not authenticated')], 401);
         }
 
         if (!$this->groupManager->isAdmin($userId) && !$this->permissionService->canManage($userId, $id)) {
-            return new JSONResponse(['error' => 'Forbidden'], 403);
+            return new JSONResponse(['error' => $this->l10n->t('Forbidden')], 403);
         }
 
         $room = $this->roomService->getRoom($id);
         if ($room === null) {
-            return new JSONResponse(['error' => 'Room not found'], 404);
+            return new JSONResponse(['error' => $this->l10n->t('Room not found')], 404);
         }
 
         $action = $this->request->getParam('action', '');
@@ -309,13 +320,13 @@ class BookingApiController extends Controller {
             $bookingData = $this->calDAVService->updateBookingPartstat($room['userId'], $uid, $partstat);
 
             if ($bookingData === null) {
-                return new JSONResponse(['error' => 'Booking not found'], 404);
+                return new JSONResponse(['error' => $this->l10n->t('Booking not found')], 404);
             }
 
             $this->logger->info("Booking {$uid} in room {$id} {$action}ed by {$userId}");
         } catch (\Exception $e) {
             $this->logger->error("Failed to respond to booking {$uid}: " . $e->getMessage());
-            return new JSONResponse(['error' => 'Failed to process response'], 500);
+            return new JSONResponse(['error' => $this->l10n->t('Failed to process response')], 500);
         }
 
         // Propagate PARTSTAT to organizer's calendar so their event reflects the response
@@ -355,12 +366,12 @@ class BookingApiController extends Controller {
     public function destroy(string $id, string $uid, ?string $recurrenceId = null): JSONResponse {
         $userId = $this->getCurrentUserId();
         if ($userId === null) {
-            return new JSONResponse(['error' => 'Not authenticated'], 401);
+            return new JSONResponse(['error' => $this->l10n->t('Not authenticated')], 401);
         }
 
         $room = $this->roomService->getRoom($id);
         if ($room === null) {
-            return new JSONResponse(['error' => 'Room not found'], 404);
+            return new JSONResponse(['error' => $this->l10n->t('Room not found')], 404);
         }
 
         $isAdmin = $this->groupManager->isAdmin($userId);
@@ -368,13 +379,13 @@ class BookingApiController extends Controller {
         $existingBooking = $this->calDAVService->getBookingByUid($room['userId'], $uid);
 
         if ($existingBooking === null) {
-            return new JSONResponse(['error' => 'Booking not found'], 404);
+            return new JSONResponse(['error' => $this->l10n->t('Booking not found')], 404);
         }
 
         $isOwner = ($existingBooking['organizer'] ?? '') === $userId;
 
         if (!$isAdmin && !$canManage && !$isOwner) {
-            return new JSONResponse(['error' => 'Forbidden'], 403);
+            return new JSONResponse(['error' => $this->l10n->t('Forbidden')], 403);
         }
 
         // Non-recurring booking + stray recurrenceId → fall back to series delete.
@@ -401,7 +412,7 @@ class BookingApiController extends Controller {
             }
 
             if (!$success) {
-                return new JSONResponse(['error' => 'Booking not found'], 404);
+                return new JSONResponse(['error' => $this->l10n->t('Booking not found')], 404);
             }
 
             $context = $isOccurrence ? " occurrence {$recurrenceId}" : '';
@@ -439,7 +450,7 @@ class BookingApiController extends Controller {
             return new JSONResponse(['status' => 'ok']);
         } catch (\Exception $e) {
             $this->logger->error("Failed to delete booking {$uid}: " . $e->getMessage());
-            return new JSONResponse(['error' => 'Failed to delete booking'], 500);
+            return new JSONResponse(['error' => $this->l10n->t('Failed to delete booking')], 500);
         }
     }
 

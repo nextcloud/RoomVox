@@ -18,6 +18,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const { pluralKey } = require('./extract-en-json.js');
 
 const ROOT = path.resolve(__dirname, '..');
 const POT = path.join(ROOT, 'translationfiles', 'templates', 'roomvox.pot');
@@ -76,7 +77,10 @@ for (const lang of LANGS) {
         continue;
     }
 
-    const translations = JSON.parse(fs.readFileSync(jsonPath, 'utf8')).translations || {};
+    const data = JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
+    const translations = data.translations || {};
+    // The language's own plural rule (French: n > 1), as the bundle declares it
+    const pluralForm = data.pluralForm || 'nplurals=2; plural=(n != 1);';
 
     const header = `# RoomVox ${lang} translation.
 # Carried over from the pre-Transifex l10n/${lang}.json bundle.
@@ -92,7 +96,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\\n"
 "Content-Transfer-Encoding: 8bit\\n"
 "Language: ${lang}\\n"
-"Plural-Forms: nplurals=2; plural=(n != 1);\\n"
+"Plural-Forms: ${pluralForm}\\n"
 `;
 
     const entries = [];
@@ -106,7 +110,8 @@ msgstr ""
     }
 
     for (const [msgid, msgidPlural] of [...plural.entries()].sort((a, b) => a[0].localeCompare(b[0]))) {
-        const value = translations[msgid];
+        // Plurals live under Nextcloud's runtime key, as the bot writes them
+        const value = translations[pluralKey(msgid, msgidPlural)];
         const forms = Array.isArray(value) ? value : ['', ''];
         if (forms[0]) translated++;
         entries.push(

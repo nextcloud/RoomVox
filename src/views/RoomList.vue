@@ -5,7 +5,8 @@
             <div class="header-actions">
                 <NcTextField
                     v-model="searchQuery"
-                    :placeholder="t('roomvox', 'Search rooms …')"
+                    :placeholder="// TRANSLATORS Placeholder of the room search field
+                        t('roomvox', 'Search rooms …')"
                     class="search-field"
                     trailing-button-icon="close"
                     :show-trailing-button="searchQuery !== ''"
@@ -14,6 +15,7 @@
                     <template #icon>
                         <FolderPlus :size="20" />
                     </template>
+                    <!-- TRANSLATORS Button: create a room group -->
                     {{ t('roomvox', 'New group') }}
                 </NcButton>
                 <NcButton type="primary" @click="$emit('create')">
@@ -27,7 +29,8 @@
 
         <NcEmptyContent
             v-if="!loading && rooms.length === 0"
-            :name="t('roomvox', 'No rooms configured')"
+            :name="// TRANSLATORS Empty state heading
+                t('roomvox', 'No rooms configured')"
             :description="t('roomvox', 'Create your first room to get started')">
             <template #icon>
                 <DoorOpen :size="64" />
@@ -45,7 +48,8 @@
 
         <NcEmptyContent
             v-if="!loading && rooms.length > 0 && visibleGroupCount === 0 && filteredUngroupedRooms.length === 0"
-            :name="t('roomvox', 'No matching rooms')"
+            :name="// TRANSLATORS Empty state heading after a search
+                t('roomvox', 'No matching rooms')"
             :description="t('roomvox', 'Try a different search query')">
             <template #icon>
                 <Magnify :size="64" />
@@ -66,11 +70,13 @@
                     <NcCounterBubble v-if="filteredGroupRooms(group.id).length > 0" class="room-group__count" :count="filteredGroupRooms(group.id).length" />
                     <span class="room-group__spacer" />
                     <div class="room-group__actions" @click.stop>
-                        <NcActions :aria-label="t('roomvox', 'Actions for group {name}', { name: group.name }, asText)">
+                        <NcActions :aria-label="// TRANSLATORS Accessible name of the actions menu button; {name} is a room group name; read by screen readers
+                            t('roomvox', 'Actions for group {name}', { name: group.name }, asText)">
                             <NcActionButton @click="$emit('edit-group', group)">
                                 <template #icon>
                                     <Pencil :size="20" />
                                 </template>
+                                <!-- TRANSLATORS Menu item -->
                                 {{ t('roomvox', 'Edit group') }}
                             </NcActionButton>
                         </NcActions>
@@ -116,6 +122,7 @@
                                     </th>
                                     <th @click="toggleSort('address')">
                                         <span class="th-sortable">
+                                            <!-- TRANSLATORS Column header -->
                                             {{ t('roomvox', 'Address') }}
                                             <ChevronUp v-if="sortBy === 'address' && sortDir === 'asc'" :size="14" />
                                             <ChevronDown v-else-if="sortBy === 'address' && sortDir === 'desc'" :size="14" />
@@ -128,6 +135,7 @@
                                             <ChevronDown v-else-if="sortBy === 'capacity' && sortDir === 'desc'" :size="14" />
                                         </span>
                                     </th>
+                                    <!-- TRANSLATORS Column header: bookings are accepted without approval -->
                                     <th>{{ t('roomvox', 'Auto-accept') }}</th>
                                     <th>{{ t('roomvox', 'Status') }}</th>
                                     <th class="th-actions">{{ t('roomvox', 'Actions') }}</th>
@@ -150,22 +158,32 @@
                                     <td>{{ room.capacity || '—' }}</td>
                                     <td>
                                         <NcChip
-                                            :text="room.autoAccept ? t('roomvox', 'Yes') : t('roomvox', 'No')"
+                                            :text="room.autoAccept
+                                                // TRANSLATORS Value in the Auto-accept column
+                                                ? t('roomvox', 'Yes')
+                                                // TRANSLATORS Value in the Auto-accept column
+                                                : t('roomvox', 'No')"
                                             :variant="room.autoAccept ? 'success' : 'secondary'"
                                             no-close />
                                     </td>
                                     <td>
                                         <NcChip
-                                            :text="room.active ? t('roomvox', 'Active') : t('roomvox', 'Inactive')"
+                                            :text="room.active
+                                                // TRANSLATORS Room status badge
+                                                ? t('roomvox', 'Active')
+                                                // TRANSLATORS Room status badge
+                                                : t('roomvox', 'Inactive')"
                                             :variant="room.active ? 'success' : 'warning'"
                                             no-close />
                                     </td>
                                     <td class="td-actions" @click.stop>
-                                        <NcActions :aria-label="t('roomvox', 'Actions for room {name}', { name: room.name }, asText)">
+                                        <NcActions :aria-label="// TRANSLATORS Accessible name of the actions menu button; {name} is a room name; read by screen readers
+                                            t('roomvox', 'Actions for room {name}', { name: room.name }, asText)">
                                             <NcActionButton @click="$emit('select', room)">
                                                 <template #icon>
                                                     <Pencil :size="20" />
                                                 </template>
+                                                <!-- TRANSLATORS Menu item (verb) -->
                                                 {{ t('roomvox', 'Edit') }}
                                             </NcActionButton>
                                             <NcActionButton v-for="groupOption in moveToGroupOptions(room)"
@@ -197,6 +215,7 @@
                     <ChevronRight v-if="!expandedGroups.has('__ungrouped')" :size="20" class="chevron" />
                     <ChevronDown v-else :size="20" class="chevron" />
                     <FolderMultiple :size="18" />
+                    <!-- TRANSLATORS Heading above rooms that belong to no room group -->
                     <span class="room-group__name">{{ t('roomvox', 'Ungrouped rooms') }}</span>
                     <NcCounterBubble class="room-group__count" :count="filteredUngroupedRooms.length" />
                     <span class="room-group__spacer" />
@@ -274,13 +293,21 @@
                                     <td>{{ room.capacity || '—' }}</td>
                                     <td>
                                         <NcChip
-                                            :text="room.autoAccept ? t('roomvox', 'Yes') : t('roomvox', 'No')"
+                                            :text="room.autoAccept
+                                                // TRANSLATORS Value in the Auto-accept column
+                                                ? t('roomvox', 'Yes')
+                                                // TRANSLATORS Value in the Auto-accept column
+                                                : t('roomvox', 'No')"
                                             :variant="room.autoAccept ? 'success' : 'secondary'"
                                             no-close />
                                     </td>
                                     <td>
                                         <NcChip
-                                            :text="room.active ? t('roomvox', 'Active') : t('roomvox', 'Inactive')"
+                                            :text="room.active
+                                                // TRANSLATORS Room status badge
+                                                ? t('roomvox', 'Active')
+                                                // TRANSLATORS Room status badge
+                                                : t('roomvox', 'Inactive')"
                                             :variant="room.active ? 'success' : 'warning'"
                                             no-close />
                                     </td>
@@ -316,7 +343,7 @@
 
 <script setup>
 import { ref, computed } from 'vue'
-import { translate } from '@nextcloud/l10n'
+import { t, asText } from '../l10n.js'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
 import NcEmptyContent from '@nextcloud/vue/components/NcEmptyContent'
@@ -336,14 +363,6 @@ import ChevronDown from 'vue-material-design-icons/ChevronDown.vue'
 import ChevronRight from 'vue-material-design-icons/ChevronRight.vue'
 import FolderMove from 'vue-material-design-icons/FolderMove.vue'
 import Check from 'vue-material-design-icons/Check.vue'
-// translate() HTML-escapes placeholder values and runs the result through
-// DOMPurify by default, both for v-html. Vue escapes again when it renders
-// text or binds an attribute, so user data such as a room name would show as
-// "&amp;" or lose anything that looks like a tag. Text uses asText instead;
-// nothing in the app renders translations with v-html.
-const asText = { escape: false, sanitize: false }
-const t = (app, text, vars = {}, options = undefined) => translate(app, text, vars, undefined, options)
-
 const props = defineProps({
     rooms: { type: Array, default: () => [] },
     roomGroups: { type: Array, default: () => [] },
@@ -467,7 +486,7 @@ const moveToGroupOptions = (room) => {
     // Add "No group" option
     options.push({
         id: null,
-        label: '— ' + t('roomvox', 'No group') + ' —',
+        label: t('roomvox', 'No group'),
         isCurrent: !room.groupId
     })
     return options

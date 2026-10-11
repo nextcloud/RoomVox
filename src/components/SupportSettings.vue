@@ -3,10 +3,12 @@
 	     Statistics and Support panes"): About, Subscription, Usage statistics,
 	     Help. Installation figures other than named users live on Statistics. -->
 	<div class="support-settings">
-		<NcSettingsSection :name="t('roomvox', 'About RoomVox')"
+		<NcSettingsSection :name="// TRANSLATORS Section heading
+		    t('roomvox', 'About RoomVox')"
 			:description="t('roomvox', 'RoomVox is free and open source (AGPL-3.0). You can use all features without a subscription — no limits, no restrictions, no catch.')" />
 
-		<NcSettingsSection :name="t('roomvox', 'Subscription')"
+		<NcSettingsSection :name="// TRANSLATORS Section heading
+		    t('roomvox', 'Subscription')"
 			:description="t('roomvox', 'If RoomVox is valuable to your organization, consider subscribing. Your subscription funds active development, guaranteed Nextcloud compatibility, and email support.')">
 			<h3 class="support-heading">
 				{{ t('roomvox', 'What a subscription includes') }}
@@ -22,15 +24,15 @@
 			</ul>
 
 			<p class="support-line">
-				{{ t('roomvox', 'Subscriptions are sold through Nextcloud. Contact your Nextcloud account manager, or') }}
-				<a href="mailto:sales@nextcloud.com">sales@nextcloud.com</a>
+				{{ salesLine.before }}<a :href="'mailto:' + salesEmail">{{ salesEmail }}</a>{{ salesLine.after }}
 			</p>
 
 			<!-- Every account on the server, disabled ones included: nothing is
 			     gated, so RoomVox runs in full for all of them. The one figure a
 			     licence is measured by; the other counts are on Statistics. -->
 			<p v-if="licenseStats" class="support-line">
-				{{ n('roomvox', '%n named user on this server', '%n named users on this server', licenseStats.totalUsers || 0) }}
+				<!-- TRANSLATORS Support tab; %n is the number of Nextcloud accounts on this server -->
+				{{ n('roomvox', '%n account on this server', '%n accounts on this server', licenseStats.totalUsers || 0) }}
 			</p>
 
 			<!-- The same notice as the banner above the tabs, which App.vue hides
@@ -41,8 +43,9 @@
 
 			<div class="license-key">
 				<NcTextField v-model="licenseKey"
-					:label="t('roomvox', 'Subscription key')"
-					:placeholder="t('roomvox', 'e.g. RVOX-XXXX-XXXX-XXXX-XXXX')"
+					:label="// TRANSLATORS Field label
+					    t('roomvox', 'Subscription key')"
+					:placeholder="t('roomvox', 'e.g. {example}', { example: 'RVOX-XXXX-XXXX-XXXX-XXXX' }, asText)"
 					:error="!!licenseKeyError"
 					:helper-text="licenseKeyError"
 					@update:model-value="onLicenseKeyInput" />
@@ -50,12 +53,17 @@
 					<NcButton variant="primary"
 						:disabled="savingLicense"
 						@click="saveLicenseKey">
-						{{ savingLicense ? t('roomvox', 'Saving …') : t('roomvox', 'Save & activate') }}
+						{{ savingLicense
+						    // TRANSLATORS Button text while saving
+						    ? t('roomvox', 'Saving …')
+						    // TRANSLATORS Button: save the subscription key and activate it
+						    : t('roomvox', 'Save & activate') }}
 					</NcButton>
 					<NcButton v-if="licenseStats && licenseStats.hasLicense"
 						variant="tertiary"
 						:disabled="savingLicense"
 						@click="removeLicenseKey">
+						<!-- TRANSLATORS Button -->
 						{{ t('roomvox', 'Remove subscription key') }}
 					</NcButton>
 				</div>
@@ -72,8 +80,10 @@
 		<!-- The one switch for usage statistics, next to the subscription key
 		     (TELEMETRY.md §6). The field list and each field's purpose come from
 		     the server, from the definition the report itself is built from. -->
-		<NcSettingsSection :name="t('roomvox', 'Usage statistics')"
-			:description="t('roomvox', 'With your permission, RoomVox sends usage statistics about this installation to licenses.voxcloud.nl, run by VoxCloud, once a day. No personal data, content or names are sent. Nothing is sent until you switch this on.')">
+		<NcSettingsSection :name="// TRANSLATORS Section heading
+		    t('roomvox', 'Usage statistics')"
+			:description="// TRANSLATORS {server} is a host name, licenses.voxcloud.nl; VoxCloud is a company name
+			    t('roomvox', 'With your permission, RoomVox sends usage statistics about this installation to {server}, run by VoxCloud, once a day. No personal data, content or names are sent. Nothing is sent until you switch this on.', { server: licenseServer }, asText)">
 			<NcCheckboxRadioSwitch type="switch"
 				:model-value="telemetryEnabled"
 				:loading="savingTelemetry"
@@ -94,6 +104,7 @@
 					:open="telemetryHasWithheld || undefined">
 					<summary>
 						<ChevronRight :size="20" class="disclosure__chevron" aria-hidden="true" />
+						<!-- TRANSLATORS Link that opens the list of usage statistics fields; %n is the number of fields -->
 						{{ n('roomvox', 'What is sent, and what it is used for (%n field)', 'What is sent, and what it is used for (%n fields)', telemetry.fields.length) }}
 					</summary>
 					<dl class="telemetry-fields">
@@ -122,10 +133,15 @@
 				<NcButton variant="secondary"
 					:disabled="sendingTelemetry"
 					@click="sendTelemetryNow">
-					{{ sendingTelemetry ? t('roomvox', 'Sending …') : t('roomvox', 'Send report now') }}
+					{{ sendingTelemetry
+					    // TRANSLATORS Button text while the report is sent
+					    ? t('roomvox', 'Sending …')
+					    // TRANSLATORS Button
+					    : t('roomvox', 'Send report now') }}
 				</NcButton>
 				<span v-if="telemetryLastReport" class="telemetry-last-report">
-					{{ t('roomvox', 'Last report: {date}', { date: formatDate(telemetryLastReport) }) }}
+					<!-- TRANSLATORS {date} is a formatted date and time -->
+					{{ t('roomvox', 'Last report: {date}', { date: formatDate(telemetryLastReport) }, asText) }}
 				</span>
 				<span v-else class="telemetry-last-report">
 					{{ t('roomvox', 'No report sent yet') }}
@@ -139,11 +155,13 @@
 			<!-- The licence-usage report is not governed by this switch; it is
 			     named here so it does not come as a surprise (TELEMETRY.md §7). -->
 			<NcNoteCard type="info">
-				{{ t('roomvox', 'Separate from this switch: while a subscription key is entered, RoomVox also reports the key, the installation identifier and the number of rooms, room groups, user accounts and disabled accounts to licenses.voxcloud.nl, so the subscription can be checked and seats counted. That report is part of the subscription and stops when the key is removed.') }}
+				<!-- TRANSLATORS {server} is a host name, licenses.voxcloud.nl -->
+				{{ t('roomvox', 'Separate from this switch: while a subscription key is entered, RoomVox also reports the key, the installation identifier and the number of rooms, room groups, accounts and disabled accounts to {server}, so the subscription can be checked and seats counted. That report is part of the subscription and stops when the key is removed.', { server: licenseServer }, asText) }}
 			</NcNoteCard>
 		</NcSettingsSection>
 
-		<NcSettingsSection :name="t('roomvox', 'Help')">
+		<NcSettingsSection :name="// TRANSLATORS Section heading
+		    t('roomvox', 'Help')">
 			<p class="support-line">
 				{{ t('roomvox', 'Questions or feedback?') }}
 				<a href="mailto:info@voxcloud.nl">info@voxcloud.nl</a>
@@ -155,6 +173,7 @@
 					<template #icon>
 						<BookOpenVariant :size="20" />
 					</template>
+					<!-- TRANSLATORS Link button -->
 					{{ t('roomvox', 'Documentation') }}
 				</NcButton>
 				<NcButton variant="secondary"
@@ -163,6 +182,7 @@
 					<template #icon>
 						<BugOutline :size="20" />
 					</template>
+					<!-- TRANSLATORS Link button -->
 					{{ t('roomvox', 'Report an issue') }}
 				</NcButton>
 				<NcButton variant="secondary"
@@ -171,6 +191,7 @@
 					<template #icon>
 						<Apps :size="20" />
 					</template>
+					<!-- TRANSLATORS Link button; Vox apps are the RoomVox family of apps (product names) -->
 					{{ t('roomvox', 'Other Vox apps') }}
 				</NcButton>
 			</div>
@@ -195,10 +216,9 @@ import { subscriptionNudge as buildSubscriptionNudge } from '../composables/useS
 import axios from '@nextcloud/axios'
 import { showError, showSuccess } from '@nextcloud/dialogs'
 import { generateUrl } from '@nextcloud/router'
-import { getLanguage, translate, translatePlural } from '@nextcloud/l10n'
-
-const t = (app, text, vars = {}) => translate(app, text, vars)
-const n = (app, singular, plural, count, vars = {}) => translatePlural(app, singular, plural, count, vars)
+import { getLanguage } from '@nextcloud/l10n'
+import { t, n, asText } from '../l10n.js'
+import { SALES_EMAIL } from '../composables/useSubscriptionNudge.js'
 
 // The anchor the consent notification links to (lib/Notification/Notifier.php).
 const FIELD_LIST_HASH = '#usage-statistics'
@@ -216,6 +236,11 @@ export default {
 		NcNoteCard,
 		NcSettingsSection,
 		NcTextField,
+	},
+
+	setup() {
+		// The template's text sites pass this to t()/n(); see src/l10n.js
+		return { asText }
 	},
 
 	data() {
@@ -245,11 +270,36 @@ export default {
 			return buildSubscriptionNudge(this.licenseStats)
 		},
 
+		salesEmail() {
+			return SALES_EMAIL
+		},
+
+		// Where usage statistics and the subscription report go; a host name,
+		// so it is a placeholder and not translatable text.
+		licenseServer() {
+			return 'licenses.voxcloud.nl'
+		},
+
+		/**
+		 * The sales sentence around its mailto link. The whole sentence is one
+		 * string so translators can put the address where their grammar needs
+		 * it; {email} is left unreplaced and the link goes in its place.
+		 */
+		salesLine() {
+			// TRANSLATORS {email} is an email address shown as a link
+			const [before, after = ''] = t('roomvox', 'Subscriptions are sold through Nextcloud. Contact your Nextcloud account manager or {email}.').split('{email}')
+			return { before, after }
+		},
+
 		includes() {
 			return [
+				// TRANSLATORS Benefit of a subscription, shown as a short title
 				{ icon: ShieldCheckOutline, label: t('roomvox', 'Guaranteed compatibility'), description: t('roomvox', 'Tested with every new Nextcloud release') },
+				// TRANSLATORS Benefit of a subscription, shown as a short title
 				{ icon: EmailOutline, label: t('roomvox', 'Email support'), description: t('roomvox', 'Direct support from the developers') },
+				// TRANSLATORS Benefit of a subscription, shown as a short title
 				{ icon: BugOutline, label: t('roomvox', 'Priority bug fixes'), description: t('roomvox', 'Your issues get priority attention') },
+				// TRANSLATORS Benefit of a subscription, shown as a short title
 				{ icon: RocketLaunchOutline, label: t('roomvox', 'Active development'), description: t('roomvox', 'New features and improvements') },
 			]
 		},
@@ -410,10 +460,12 @@ export default {
 					if (this.telemetry) {
 						this.telemetry.lastReport = response.data.lastReport
 					}
+					// TRANSLATORS Confirmation message
 					this.telemetryMessage = t('roomvox', 'Report sent')
 					this.telemetryMessageType = 'success'
 				} else if (response.data.reason === 'recently_sent') {
 					// The server accepts one report per hour. Not an error.
+					// TRANSLATORS Message after "Send report now" when a report was sent shortly before
 					this.telemetryMessage = t('roomvox', 'Already sent recently')
 					this.telemetryMessageType = 'info'
 				} else if (response.data.reason === 'disabled') {
@@ -422,7 +474,8 @@ export default {
 				} else {
 					const serverMsg = response.data.message || ''
 					this.telemetryMessage = serverMsg
-						? t('roomvox', 'The statistics server returned an error: {message}', { message: serverMsg })
+						// TRANSLATORS {message} is a technical message, often in English
+						? t('roomvox', 'The statistics server returned an error: {message}', { message: serverMsg }, asText)
 						: t('roomvox', 'Failed to send report')
 					this.telemetryMessageType = 'warning'
 				}

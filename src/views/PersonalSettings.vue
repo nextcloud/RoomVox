@@ -12,8 +12,9 @@
                 </div>
 
                 <NcEmptyContent v-else-if="rooms.length === 0"
-                    :name="t('roomvox', 'No rooms')"
-                    :description="t('roomvox', 'You don\'t have access to any rooms yet. Ask an administrator to grant you access.')">
+                    :name="// TRANSLATORS Empty state heading
+                        t('roomvox', 'No rooms')"
+                    :description="t('roomvox', 'You do not have access to any rooms yet. Ask your administrator to grant you access.')">
                     <template #icon>
                         <DoorOpen :size="64" />
                     </template>
@@ -23,17 +24,20 @@
                     <thead>
                         <tr>
                             <th>{{ t('roomvox', 'Name') }}</th>
+                            <!-- TRANSLATORS Column header: room type -->
                             <th>{{ t('roomvox', 'Type') }}</th>
                             <th>{{ t('roomvox', 'Capacity') }}</th>
                             <th>{{ t('roomvox', 'Location') }}</th>
+                            <!-- TRANSLATORS Column header and field label: who to ask about the room -->
                             <th>{{ t('roomvox', 'Responsible contact') }}</th>
+                            <!-- TRANSLATORS Column header: the user's role for the room -->
                             <th>{{ t('roomvox', 'Role') }}</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr v-for="room in rooms" :key="room.id">
                             <td class="room-name">{{ room.name }}</td>
-                            <td>{{ room.roomType || '—' }}</td>
+                            <td>{{ room.roomTypeLabel || '—' }}</td>
                             <td>{{ room.capacity || '—' }}</td>
                             <td>{{ formatAddress(room.address) }}</td>
                             <td>{{ room.responsibleContact || '—' }}</td>
@@ -55,7 +59,8 @@
                 </div>
 
                 <NcEmptyContent v-else-if="approvals.length === 0"
-                    :name="t('roomvox', 'No pending approvals')"
+                    :name="// TRANSLATORS Empty state heading
+                        t('roomvox', 'No pending approvals')"
                     :description="t('roomvox', 'All booking requests have been processed.')">
                     <template #icon>
                         <CheckDecagram :size="64" />
@@ -68,6 +73,7 @@
                             <th>{{ t('roomvox', 'Room') }}</th>
                             <th>{{ t('roomvox', 'Event') }}</th>
                             <th>{{ t('roomvox', 'When') }}</th>
+                            <!-- TRANSLATORS Column header: the person who requested the booking -->
                             <th>{{ t('roomvox', 'Requested by') }}</th>
                             <th></th>
                         </tr>
@@ -116,7 +122,8 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { translate, getLanguage } from '@nextcloud/l10n'
+import { getLanguage } from '@nextcloud/l10n'
+import { t, asText } from '../l10n.js'
 import { showError, showSuccess } from '@nextcloud/dialogs'
 
 import NcButton from '@nextcloud/vue/components/NcButton'
@@ -133,7 +140,6 @@ import Close from 'vue-material-design-icons/Close.vue'
 import BookingOverview from './BookingOverview.vue'
 import { getMyRooms, getMyApprovals, respondToBooking } from '../services/api.js'
 
-const t = (app, text, vars = {}) => translate(app, text, vars)
 const ncLocale = getLanguage().replace('_', '-')
 
 const currentTab = ref('rooms')
@@ -151,11 +157,14 @@ const managedRooms = computed(() =>
 // Icons follow what is behind each tab, as the design guidelines ask (§7).
 // Waiting approvals stay visible in the label: they ask this user to act.
 const tabs = computed(() => [
+    // TRANSLATORS Tab label; keep it short
     { id: 'rooms', label: t('roomvox', 'My rooms'), icon: DoorOpen },
     {
         id: 'approvals',
         label: approvals.value.length > 0
-            ? t('roomvox', 'Approvals ({count})', { count: approvals.value.length })
+            // TRANSLATORS Tab label; {count} is the number of open booking requests
+            ? t('roomvox', 'Approvals ({count})', { count: approvals.value.length }, asText)
+            // TRANSLATORS Tab label; keep it short
             : t('roomvox', 'Approvals'),
         icon: CheckDecagram,
     },
@@ -164,9 +173,13 @@ const tabs = computed(() => [
 
 const getRoleLabel = (role) => {
     switch (role) {
-        case 'admin': return t('roomvox', 'Admin')
+        // TRANSLATORS Role label: the user is a Nextcloud administrator (a person); keep it short
+        case 'admin': return t('roomvox', 'Administrator')
+        // TRANSLATORS Role badge: the user manages the room; keep it short
         case 'manager': return t('roomvox', 'Manager')
+        // TRANSLATORS Role badge: the user can book the room; keep it short
         case 'booker': return t('roomvox', 'Booker')
+        // TRANSLATORS Role badge: the user can only see the room; keep it short
         case 'viewer': return t('roomvox', 'Viewer')
         default: return role
     }

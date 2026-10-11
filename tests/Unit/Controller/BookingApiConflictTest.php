@@ -10,6 +10,7 @@ use OCA\RoomVox\Service\Exchange\ExchangeSyncService;
 use OCA\RoomVox\Service\MailService;
 use OCA\RoomVox\Service\PermissionService;
 use OCA\RoomVox\Service\RoomService;
+use OCA\RoomVox\Tests\Unit\Support\EnglishL10N;
 use OCP\IGroupManager;
 use OCP\IRequest;
 use OCP\IUserSession;
@@ -74,6 +75,7 @@ class BookingApiConflictTest extends TestCase {
             $this->userSession,
             $this->groupManager,
             $logger,
+            new EnglishL10N(),
         );
     }
 
@@ -188,6 +190,7 @@ class BookingApiConflictTest extends TestCase {
             $this->userSession,
             $this->groupManager,
             $logger,
+            new EnglishL10N(),
         );
 
         $response = $controller->create('room1');

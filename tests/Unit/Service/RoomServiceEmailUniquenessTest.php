@@ -29,7 +29,7 @@ class RoomServiceEmailUniquenessTest extends TestCase {
             $this->appConfig,
             $this->createMock(ICrypto::class),
             $this->createMock(ISecureRandom::class),
-            $this->createMock(LoggerInterface::class),
+            $this->createMock(LoggerInterface::class)
         );
     }
 

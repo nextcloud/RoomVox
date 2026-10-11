@@ -13,6 +13,7 @@ use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\BackgroundJob\IJobList;
 use OCP\IGroupManager;
+use OCP\IL10N;
 use OCP\IRequest;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
@@ -29,6 +30,7 @@ class ExchangeApiController extends Controller {
         private IUserSession $userSession,
         private IGroupManager $groupManager,
         private LoggerInterface $logger,
+        private IL10N $l10n,
     ) {
         parent::__construct($appName, $request);
     }
@@ -38,11 +40,12 @@ class ExchangeApiController extends Controller {
      */
     public function testConnection(): JSONResponse {
         if (!$this->requireAdmin()) {
-            return new JSONResponse(['error' => 'Admin access required'], 403);
+            return new JSONResponse(['error' => $this->l10n->t('Administrator privileges required')], 403);
         }
 
         if (!$this->graphClient->isEnabled()) {
-            return new JSONResponse(['error' => 'Exchange integration is not enabled'], 400);
+            // TRANSLATORS Error; Microsoft Exchange is a product name
+            return new JSONResponse(['error' => $this->l10n->t('Exchange integration is not enabled')], 400);
         }
 
         $result = $this->graphClient->testConnection();
@@ -54,12 +57,13 @@ class ExchangeApiController extends Controller {
      */
     public function validateResource(): JSONResponse {
         if (!$this->requireAdmin()) {
-            return new JSONResponse(['error' => 'Admin access required'], 403);
+            return new JSONResponse(['error' => $this->l10n->t('Administrator privileges required')], 403);
         }
 
         $email = $this->request->getParam('email', '');
         if (empty($email)) {
-            return new JSONResponse(['error' => 'Email is required'], 400);
+            // TRANSLATORS Error: the Exchange room email address field is empty
+            return new JSONResponse(['error' => $this->l10n->t('Email is required')], 400);
         }
 
         $result = $this->syncService->validateResourceEmail($email);
@@ -72,16 +76,17 @@ class ExchangeApiController extends Controller {
      */
     public function initialSync(string $id): JSONResponse {
         if (!$this->requireAdmin()) {
-            return new JSONResponse(['error' => 'Admin access required'], 403);
+            return new JSONResponse(['error' => $this->l10n->t('Administrator privileges required')], 403);
         }
 
         $room = $this->roomService->getRoom($id);
         if ($room === null) {
-            return new JSONResponse(['error' => 'Room not found'], 404);
+            return new JSONResponse(['error' => $this->l10n->t('Room not found')], 404);
         }
 
         if (!$this->syncService->isExchangeRoom($room)) {
-            return new JSONResponse(['error' => 'Room does not have Exchange sync configured'], 400);
+            // TRANSLATORS Error; Exchange sync copies bookings between RoomVox and a Microsoft Exchange room mailbox
+            return new JSONResponse(['error' => $this->l10n->t('Room does not have Exchange sync configured')], 400);
         }
 
         $this->roomService->updateExchangeInitialSyncStatus($id, 'pending', null);
@@ -95,7 +100,7 @@ class ExchangeApiController extends Controller {
      */
     public function syncStatus(): JSONResponse {
         if (!$this->requireAdmin()) {
-            return new JSONResponse(['error' => 'Admin access required'], 403);
+            return new JSONResponse(['error' => $this->l10n->t('Administrator privileges required')], 403);
         }
 
         $rooms = $this->roomService->getAllRooms();
@@ -129,7 +134,7 @@ class ExchangeApiController extends Controller {
      */
     public function webhookStatus(): JSONResponse {
         if (!$this->requireAdmin()) {
-            return new JSONResponse(['error' => 'Admin access required'], 403);
+            return new JSONResponse(['error' => $this->l10n->t('Administrator privileges required')], 403);
         }
 
         $rooms = $this->roomService->getAllRooms();
@@ -164,7 +169,7 @@ class ExchangeApiController extends Controller {
      */
     public function createWebhooks(): JSONResponse {
         if (!$this->requireAdmin()) {
-            return new JSONResponse(['error' => 'Admin access required'], 403);
+            return new JSONResponse(['error' => $this->l10n->t('Administrator privileges required')], 403);
         }
 
         $rooms = $this->roomService->getAllRooms();

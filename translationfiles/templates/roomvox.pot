@@ -4,9 +4,9 @@
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: RoomVox 1.6.0\n"
+"Project-Id-Version: RoomVox 1.6.1\n"
 "Report-Msgid-Bugs-To: translations@nextcloud.com\n"
-"POT-Creation-Date: 2026-10-02 14:55+0000\n"
+"POT-Creation-Date: 2026-10-11 09:07+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -18,12 +18,7 @@ msgstr ""
 msgid "(saved — enter new value to change)"
 msgstr ""
 
-msgid "{count} rooms found"
-msgstr ""
-
-msgid "{create} new, {update} existing, {errors} errors"
-msgstr ""
-
+#. TRANSLATORS Button that adds an availability rule
 msgid "+ Add rule"
 msgstr ""
 
@@ -33,60 +28,84 @@ msgstr ""
 msgid "A new booking request requires your approval."
 msgstr ""
 
+#. TRANSLATORS SHA-256 is a hash algorithm; keep the name. VoxCloud is a company name
 msgid "A SHA-256 hash of this server's address, needed to tell installations apart and to join the reports of the VoxCloud apps on one server with its license records. The address itself is not sent."
 msgstr ""
 
 msgid "A single occurrence of your recurring booking has been canceled by a room manager."
 msgstr ""
 
+#. TRANSLATORS CalDAV is a calendar protocol; keep the name
 msgid "A unique email is auto-generated for CalDAV scheduling. Only change this if you need a specific address."
 msgstr ""
 
+#. TRANSLATORS Section heading
 msgid "About RoomVox"
 msgstr ""
 
+#. TRANSLATORS Button: accept a booking request (verb)
 msgid "Accept"
 msgstr ""
 
+#. TRANSLATORS Booking status
 msgid "Accepted"
 msgstr ""
 
+msgid "Accounts active in the last 30 days"
+msgstr ""
+
+#. TRANSLATORS Column header in the import preview: what happens to the row
 msgid "Action"
 msgstr ""
 
+#. TRANSLATORS Column header above the action buttons
 msgid "Actions"
 msgstr ""
 
+#. TRANSLATORS Accessible name of the actions menu button; {name} is a room group name; read by screen readers
 msgid "Actions for group {name}"
 msgstr ""
 
+#. TRANSLATORS Accessible name of the actions menu button; {name} is a room name; read by screen readers
 msgid "Actions for room {name}"
 msgstr ""
 
+#. TRANSLATORS Room status badge
 msgid "Active"
 msgstr ""
 
+#. TRANSLATORS Benefit of a subscription, shown as a short title
 msgid "Active development"
 msgstr ""
 
+#. TRANSLATORS Label under a number on the statistics tab
 msgid "Active rooms"
 msgstr ""
 
+#. TRANSLATORS Accessible name of an add button (icon only); read by screen readers
 msgid "Add"
 msgstr ""
 
-msgid "Added since you agreed: %s. These figures stay on this server until you agree. Everything you agreed to before is still sent to licenses.voxcloud.nl, run by VoxCloud. No personal data, content or names are sent."
+#. TRANSLATORS Notification text; %1$s is a list of usage statistics fields, %2$s a host name (licenses.voxcloud.nl). VoxCloud is a company name
+msgid "Added since you agreed: %1$s. These figures stay on this server until you agree. Everything you agreed to before is still sent to %2$s, run by VoxCloud. No personal data, content or names are sent."
 msgstr ""
 
+#. TRANSLATORS Column header
 msgid "Address"
 msgstr ""
 
-msgid "Admin"
+#. TRANSLATORS Role label: the user is a Nextcloud administrator (a person); keep it short
+msgid "Administrator"
+msgstr ""
+
+#. TRANSLATORS Error when someone who is not a Nextcloud administrator calls an administration action
+msgid "Administrator privileges required"
 msgstr ""
 
 msgid "Agree to the added fields"
 msgstr ""
 
+#. TRANSLATORS Booking filter: all statuses or all dates
 msgid "All"
 msgstr ""
 
@@ -96,24 +115,30 @@ msgstr ""
 msgid "All booking requests have been processed."
 msgstr ""
 
+#. TRANSLATORS Shown instead of a time for a booking that lasts all day
 msgid "All day"
 msgstr ""
 
+#. TRANSLATORS Shown when an API token is valid for every room, and as the room filter that shows every room
 msgid "All rooms"
 msgstr ""
 
+#. TRANSLATORS Message after "Send report now" when a report was sent shortly before
 msgid "Already sent recently"
 msgstr ""
 
 msgid "Anyone with this URL can see the titles and organizers of all bookings for this room. Only share it with people or systems you trust. If a URL leaks, regenerate it below."
 msgstr ""
 
+#. TRANSLATORS Confirmation message
 msgid "API token created"
 msgstr ""
 
+#. TRANSLATORS Confirmation message
 msgid "API token deleted"
 msgstr ""
 
+#. TRANSLATORS Section heading. An API token is a key that external systems use to access RoomVox
 msgid "API tokens"
 msgstr ""
 
@@ -123,9 +148,11 @@ msgstr ""
 msgid "App registration client secret"
 msgstr ""
 
+#. TRANSLATORS Tab label; keep it short
 msgid "Approvals"
 msgstr ""
 
+#. TRANSLATORS Tab label; {count} is the number of open booking requests
 msgid "Approvals ({count})"
 msgstr ""
 
@@ -138,6 +165,7 @@ msgstr ""
 msgid "Are you sure you want to delete this room? This action cannot be undone."
 msgstr ""
 
+#. TRANSLATORS Column header: bookings are accepted without approval
 msgid "Auto-accept"
 msgstr ""
 
@@ -147,94 +175,127 @@ msgstr ""
 msgid "Auto-accept bookings by default for new rooms"
 msgstr ""
 
+#. TRANSLATORS Section heading: when the room can be booked
 msgid "Availability"
 msgstr ""
 
-msgid "Azure AD Tenant ID"
+#. TRANSLATORS Field label. Azure AD is a Microsoft product; the tenant ID identifies an organization there
+msgid "Azure AD tenant ID"
 msgstr ""
 
+#. TRANSLATORS Button: go back to the previous screen
 msgid "Back"
 msgstr ""
 
+#. TRANSLATORS Role badge: the user can book the room; keep it short
 msgid "Booker"
 msgstr ""
 
+#. TRANSLATORS Role heading: groups that can book the room
 msgid "Bookers"
 msgstr ""
 
+#. TRANSLATORS Confirmation message
 msgid "Booking accepted"
 msgstr ""
 
+#. TRANSLATORS Confirmation message
 msgid "Booking canceled"
 msgstr ""
 
+#. TRANSLATORS Mail subject; %1$s is the room name, %2$s the booking title
 msgid "Booking canceled: %1$s — %2$s"
 msgstr ""
 
+#. TRANSLATORS Mail subject when one date of a recurring booking is canceled; %1$s is the room name, %2$s the booking title
 msgid "Booking canceled: %1$s — %2$s (single occurrence)"
 msgstr ""
 
+#. TRANSLATORS Mail subject; %1$s is the room name, %2$s the booking title
 msgid "Booking confirmed: %1$s — %2$s"
 msgstr ""
 
+#. TRANSLATORS Mail subject; %1$s is the room name, %2$s the booking title
 msgid "Booking conflict: %1$s — %2$s"
 msgstr ""
 
+#. TRANSLATORS Confirmation message
 msgid "Booking created successfully"
 msgstr ""
 
+#. TRANSLATORS Confirmation message
 msgid "Booking declined"
 msgstr ""
 
+#. TRANSLATORS Mail subject; %1$s is the room name, %2$s the booking title
 msgid "Booking declined: %1$s — %2$s"
 msgstr ""
 
-msgid "Booking declined: %1$s — %2$s (exceeds %3$d-day horizon)"
-msgstr ""
-
+#. TRANSLATORS Mail subject; %s is the room name
 msgid "Booking declined: %s — outside availability hours"
 msgstr ""
 
+#. TRANSLATORS Dialog title
 msgid "Booking details"
 msgstr ""
 
+#. TRANSLATORS Error: the booking no longer exists
+msgid "Booking not found"
+msgstr ""
+
+#. TRANSLATORS Mail subject; %1$s is the room name, %2$s the booking title
 msgid "Booking not permitted: %1$s — %2$s"
 msgstr ""
 
+#. TRANSLATORS Mail subject to room managers; %1$s is the room name, %2$s the booking title
 msgid "Booking request: %1$s — %2$s"
 msgstr ""
 
+#. TRANSLATORS Confirmation message after dragging a booking to another time
 msgid "Booking rescheduled"
 msgstr ""
 
+#. TRANSLATORS Mail subject; %s is the room name
 msgid "Booking temporarily unavailable: %s"
 msgstr ""
 
+#. TRANSLATORS Confirmation message
 msgid "Booking updated"
 msgstr ""
 
+#. TRANSLATORS Tab and heading
 msgid "Bookings"
 msgstr ""
 
+#. TRANSLATORS In a mail; %s is a formatted date
 msgid "Bookings on or after %s are not allowed."
 msgstr ""
 
+#. TRANSLATORS Column header and field label
 msgid "Building"
 msgstr ""
 
+#. TRANSLATORS Tooltip of an icon button; also read by screen readers
 msgid "Calendar view"
 msgstr ""
 
+#. TRANSLATORS Button: close the dialog without saving (not: cancel a booking)
 msgid "Cancel"
 msgstr ""
 
+#. TRANSLATORS Button, dialog title and confirmation: cancel a booking (verb)
 msgid "Cancel booking"
 msgstr ""
 
+#. TRANSLATORS Line in a mail; %s is the name of the person who canceled
 msgid "Canceled by: %s"
 msgstr ""
 
+#. TRANSLATORS Line in a mail; %s is the date of the canceled occurrence of a recurring booking
 msgid "Canceled occurrence: %s"
+msgstr ""
+
+msgid "Cannot delete group: rooms are still assigned. Move or unassign rooms first."
 msgstr ""
 
 msgid "Cannot delete: this facility is in use"
@@ -243,27 +304,37 @@ msgstr ""
 msgid "Cannot delete: this room type is in use"
 msgstr ""
 
+#. TRANSLATORS Column header and field label: number of seats
 msgid "Capacity"
 msgstr ""
 
 msgid "Capacity cannot be negative"
 msgstr ""
 
+msgid "Capacity must be a number"
+msgstr ""
+
+#. TRANSLATORS Accessible name of the hidden file input; read by screen readers only
 msgid "Choose a CSV file to import"
 msgstr ""
 
+#. TRANSLATORS Button that opens the file picker
 msgid "Choose file"
 msgstr ""
 
+#. TRANSLATORS Field label
 msgid "City"
 msgstr ""
 
+#. TRANSLATORS Field label: the ID of the app registration in Microsoft Azure
 msgid "Client ID"
 msgstr ""
 
+#. TRANSLATORS Field label: the password of the app registration in Microsoft Azure
 msgid "Client secret"
 msgstr ""
 
+#. TRANSLATORS Button: close the dialog
 msgid "Close"
 msgstr ""
 
@@ -276,24 +347,27 @@ msgstr ""
 msgid "Configure the available room types. Types that are in use cannot be deleted."
 msgstr ""
 
+#. TRANSLATORS Heading in a mail above a list of dates on which the room is already booked
 msgid "Conflicting dates:"
 msgstr ""
 
-msgid "Connect RoomVox to Microsoft 365 Exchange to sync room calendars. Requires an Azure AD app registration with Calendars.ReadWrite and User.Read.All application permissions."
+#. TRANSLATORS {calendarPermission} and {userPermission} are Microsoft permission names such as 'Calendars.ReadWrite'; Azure AD is a product name
+msgid "Connect RoomVox to Microsoft 365 Exchange to sync room calendars. Requires an Azure AD app registration with {calendarPermission} and {userPermission} application permissions."
 msgstr ""
 
+#. TRANSLATORS Result of the Exchange connection test
 msgid "Connection failed"
 msgstr ""
 
+#. TRANSLATORS Result of the Exchange connection test
 msgid "Connection successful"
 msgstr ""
 
+#. TRANSLATORS Button text after copying to the clipboard
 msgid "Copied"
 msgstr ""
 
-msgid "Copied!"
-msgstr ""
-
+#. TRANSLATORS Button: copy to the clipboard (verb)
 msgid "Copy"
 msgstr ""
 
@@ -306,243 +380,328 @@ msgstr ""
 msgid "Could not save the setting. Please try again."
 msgstr ""
 
+#. TRANSLATORS Label of a usage statistics field
 msgid "Country"
 msgstr ""
 
+#. TRANSLATORS Dialog title and button (verb)
 msgid "Create booking"
 msgstr ""
 
+#. TRANSLATORS Error for a row in the CSV import; %s is a technical message, often in English
+msgid "Create failed: %s"
+msgstr ""
+
+#. TRANSLATORS Button: create a room group
 msgid "Create group"
 msgstr ""
 
 msgid "Create new + update existing rooms"
 msgstr ""
 
+#. TRANSLATORS Button
 msgid "Create room"
 msgstr ""
 
+#. TRANSLATORS Button: create an API token
 msgid "Create token"
 msgstr ""
 
 msgid "Create your first room to get started"
 msgstr ""
 
+#. TRANSLATORS Label under a number in the import result: rooms created
 msgid "Created"
 msgstr ""
 
+#. TRANSLATORS Column header in the API token table
+msgid "Creation date"
+msgstr ""
+
+#. TRANSLATORS Toggle button that shows the email address field
 msgid "Custom email address"
 msgstr ""
 
+#. TRANSLATORS Field label
 msgid "Date"
 msgstr ""
 
+#. TRANSLATORS Line in a booking mail; %1$s is the start (date and time), %2$s the end time or end date
 msgid "Date: %1$s – %2$s"
 msgstr ""
 
+#. TRANSLATORS Line in a booking mail; %s is a formatted date, or date and time
 msgid "Date: %s"
 msgstr ""
 
 msgid "Dates outside the availability hours:"
 msgstr ""
 
+#. TRANSLATORS Calendar view button: show one day
 msgid "Day"
 msgstr ""
 
+#. TRANSLATORS Unit after the number field of the booking horizon
 msgid "days"
 msgstr ""
 
+#. TRANSLATORS Field label: weekdays a rule applies to
 msgid "Days"
 msgstr ""
 
+#. TRANSLATORS Button: decline a booking request (verb)
 msgid "Decline"
 msgstr ""
 
+#. TRANSLATORS Booking status
 msgid "Declined"
 msgstr ""
 
+#. TRANSLATORS Accessible name of a delete button (icon only); read by screen readers
 msgid "Delete"
 msgstr ""
 
+#. TRANSLATORS Button: delete a room group
 msgid "Delete group"
 msgstr ""
 
+#. TRANSLATORS Button and dialog title
 msgid "Delete room"
 msgstr ""
 
+#. TRANSLATORS Dialog title
 msgid "Delete room group"
 msgstr ""
 
+#. TRANSLATORS Field label
 msgid "Description"
 msgstr ""
 
+#. TRANSLATORS Label followed by the format name of the uploaded CSV file
 msgid "Detected format:"
 msgstr ""
 
 msgid "Direct support from the developers"
 msgstr ""
 
+#. TRANSLATORS Link button
 msgid "Documentation"
 msgstr ""
 
+#. TRANSLATORS Button: close the import result
 msgid "Done"
 msgstr ""
 
+#. TRANSLATORS CSV is a file format; Excel and LibreOffice are product names
 msgid "Download all rooms as a CSV file. This file can be imported into another RoomVox instance or edited in Excel/LibreOffice."
 msgstr ""
 
 msgid "Download an example file with headers and a sample row"
 msgstr ""
 
+#. TRANSLATORS Button: download an example CSV file
 msgid "Download sample CSV"
 msgstr ""
 
+#. TRANSLATORS Text in the file drop zone
 msgid "Drag and drop a CSV file here"
 msgstr ""
 
-msgid "e.g. 12345678-abcd-…"
+#. TRANSLATORS Error for a row in the CSV import; %s is the number of the other row with this email address
+msgid "Duplicate email in CSV (line %s)"
 msgstr ""
 
-msgid "e.g. 2"
+#. TRANSLATORS Error for a row in the CSV import: another row has the same room name
+msgid "Duplicate name in CSV"
 msgstr ""
 
+#. TRANSLATORS Placeholder of the responsible contact field; {email} is an example email address
+msgid "e.g. {email} or 'Ask building manager'"
+msgstr ""
+
+#. TRANSLATORS Placeholder text in an input field; {example} is a sample value such as 'smtp.company.com'
+msgid "e.g. {example}"
+msgstr ""
+
+#. TRANSLATORS Placeholder: example room number; keep the format, translate floor and room
 msgid "e.g. 2.17 (floor.room)"
 msgstr ""
 
+#. TRANSLATORS Placeholder: example postal code; may be replaced by a local example
 msgid "e.g. 3584 CS"
 msgstr ""
 
-msgid "e.g. 90"
-msgstr ""
-
-msgid "e.g. anne@voxcloud.nl or 'Ask building manager'"
-msgstr ""
-
+#. TRANSLATORS Placeholder: example building name; may be replaced by a local example
 msgid "e.g. Building A"
 msgstr ""
 
-msgid "e.g. conference-room@company.com"
-msgstr ""
-
+#. TRANSLATORS Placeholder: example room group name; may be replaced by a local example
 msgid "e.g. Floor 3"
 msgstr ""
 
+#. TRANSLATORS Placeholder: example street address; may be replaced by a local example
 msgid "e.g. Heidelberglaan 8"
 msgstr ""
 
+#. TRANSLATORS Example name for an API token used by a display screen; may be replaced by a local example
 msgid "e.g. Lobby Display"
 msgstr ""
 
 msgid "e.g. Meeting Room 1"
 msgstr ""
 
-msgid "e.g. RVOX-XXXX-XXXX-XXXX-XXXX"
-msgstr ""
-
-msgid "e.g. smtp.company.com"
-msgstr ""
-
+#. TRANSLATORS Placeholder: example city; may be replaced by a local example
 msgid "e.g. Utrecht"
 msgstr ""
 
+#. TRANSLATORS Menu item (verb)
 msgid "Edit"
 msgstr ""
 
+#. TRANSLATORS Menu item
 msgid "Edit group"
 msgstr ""
 
+#. TRANSLATORS Heading
 msgid "Edit room"
 msgstr ""
 
+#. TRANSLATORS Heading
 msgid "Edit room group"
 msgstr ""
 
+#. TRANSLATORS Column header: email address
 msgid "Email"
 msgstr ""
 
+#. TRANSLATORS Field label
 msgid "Email address"
 msgstr ""
 
+msgid "Email address already in use"
+msgstr ""
+
+#. TRANSLATORS Error: the Exchange room email address field is empty
+msgid "Email is required"
+msgstr ""
+
+#. TRANSLATORS Benefit of a subscription, shown as a short title
 msgid "Email support"
 msgstr ""
 
+#. TRANSLATORS Line in the test mail; %s is the room's email address
 msgid "Email: %s"
 msgstr ""
 
+msgid "Empty or unreadable file"
+msgstr ""
+
+#. TRANSLATORS Switch label
 msgid "Enable email notifications"
 msgstr ""
 
+#. TRANSLATORS Switch label; Exchange is Microsoft Exchange
 msgid "Enable Exchange calendar sync"
 msgstr ""
 
+#. TRANSLATORS Checkbox; Exchange is Microsoft Exchange
 msgid "Enable Exchange calendar sync for imported rooms"
 msgstr ""
 
+#. TRANSLATORS Switch label
 msgid "Enable external feed"
 msgstr ""
 
 msgid "Enable sync for this room"
 msgstr ""
 
+#. TRANSLATORS Field label: connection encryption, followed by the options None, TLS and SSL
 msgid "Encryption"
 msgstr ""
 
+#. TRANSLATORS Field label and placeholder
 msgid "End time"
 msgstr ""
 
 msgid "End time must be after start time"
 msgstr ""
 
+#. TRANSLATORS Choice in the cancel dialog: cancel all dates of a recurring booking
 msgid "Entire series"
 msgstr ""
 
+#. TRANSLATORS Status of a row in the import preview
 msgid "Error"
 msgstr ""
 
+#. TRANSLATORS Label under a number in the import result, and heading of the error list
 msgid "Errors"
 msgstr ""
 
+#. TRANSLATORS Column header: the booking title
 msgid "Event"
 msgstr ""
 
+#. TRANSLATORS Line in a booking mail; %s is the booking title
 msgid "Event: %s"
 msgstr ""
 
-msgid "Everything in book + manage rooms and view statistics"
+#. TRANSLATORS {scope} is the name of another scope, "read"; keep it as is
+msgid "Everything in {scope} + create and cancel bookings"
 msgstr ""
 
-msgid "Everything in read + create and cancel bookings"
+#. TRANSLATORS {scope} is the name of another scope, "book"; keep it as is
+msgid "Everything in {scope} + manage rooms and view statistics"
 msgstr ""
 
+#. TRANSLATORS Section heading; Exchange is Microsoft Exchange
 msgid "Exchange calendar sync"
 msgstr ""
 
+#. TRANSLATORS Status; Exchange is Microsoft Exchange
 msgid "Exchange calendar synced successfully"
 msgstr ""
 
+#. TRANSLATORS Error from the Exchange connection test; tenant ID, client ID and client secret are Microsoft Azure terms
+msgid "Exchange integration is not configured: the tenant ID, client ID or client secret is missing"
+msgstr ""
+
+#. TRANSLATORS Error; Microsoft Exchange is a product name
+msgid "Exchange integration is not enabled"
+msgstr ""
+
+#. TRANSLATORS Field label: email address of the room mailbox in Microsoft Exchange
 msgid "Exchange resource email"
 msgstr ""
 
+#. TRANSLATORS Status; Exchange is Microsoft Exchange
 msgid "Exchange sync queued …"
 msgstr ""
 
+#. TRANSLATORS Button: download the rooms as a CSV file
 msgid "Export CSV"
 msgstr ""
 
+#. TRANSLATORS Section heading
 msgid "Export rooms"
 msgstr ""
 
 msgid "Exported from another RoomVox installation"
 msgstr ""
 
-msgid "Exported via PowerShell (Get-EXOMailbox | Get-Place | Export-Csv)"
+#. TRANSLATORS Followed by a PowerShell command that must not be translated; PowerShell is a product name
+msgid "Exported via PowerShell:"
 msgstr ""
 
+#. TRANSLATORS Section heading. A feed is a link that calendar apps subscribe to
 msgid "External calendar feed"
 msgstr ""
 
+#. TRANSLATORS Column header, heading and field label: equipment in a room
 msgid "Facilities"
 msgstr ""
 
+#. TRANSLATORS Accessible name of the input that renames a facility; read by screen readers
 msgid "Facility name"
 msgstr ""
 
@@ -552,16 +711,36 @@ msgstr ""
 msgid "Failed to copy token"
 msgstr ""
 
-msgid "Failed to create API token"
+#. TRANSLATORS Error; {error} is a message from the server
+msgid "Failed to create API token: {error}"
+msgstr ""
+
+msgid "Failed to create booking"
+msgstr ""
+
+#. TRANSLATORS Error; %s is a technical message from the server, often in English
+msgid "Failed to create booking: %s"
+msgstr ""
+
+#. TRANSLATORS Error; %s is a technical message from the server, often in English
+msgid "Failed to create room group: %s"
+msgstr ""
+
+#. TRANSLATORS Error; %s is a technical message from the server, often in English
+msgid "Failed to create room: %s"
 msgstr ""
 
 msgid "Failed to delete API token"
 msgstr ""
 
+msgid "Failed to delete booking"
+msgstr ""
+
 msgid "Failed to delete room"
 msgstr ""
 
-msgid "Failed to delete room group"
+#. TRANSLATORS Error; {error} is a message from the server
+msgid "Failed to delete room group: {error}"
 msgstr ""
 
 msgid "Failed to load approvals"
@@ -576,10 +755,15 @@ msgstr ""
 msgid "Failed to load rooms"
 msgstr ""
 
-msgid "Failed to move room"
+#. TRANSLATORS Error; {error} is a message from the server
+msgid "Failed to move room: {error}"
 msgstr ""
 
 msgid "Failed to parse CSV file"
+msgstr ""
+
+#. TRANSLATORS Error in the CSV import; %s is a technical message, often in English. CSV is a file format
+msgid "Failed to parse CSV: %s"
 msgstr ""
 
 msgid "Failed to process response"
@@ -588,6 +772,7 @@ msgstr ""
 msgid "Failed to queue sync"
 msgstr ""
 
+#. TRANSLATORS Error; the feed is the room's calendar feed link
 msgid "Failed to regenerate feed"
 msgstr ""
 
@@ -606,10 +791,12 @@ msgstr ""
 msgid "Failed to save permissions"
 msgstr ""
 
-msgid "Failed to save room"
+#. TRANSLATORS Error; {error} is a message from the server
+msgid "Failed to save room group: {error}"
 msgstr ""
 
-msgid "Failed to save room group"
+#. TRANSLATORS Error; {error} is a message from the server
+msgid "Failed to save room: {error}"
 msgstr ""
 
 msgid "Failed to save settings"
@@ -624,27 +811,52 @@ msgstr ""
 msgid "Failed to update booking"
 msgstr ""
 
+#. TRANSLATORS Error; %s is a technical message from the server, often in English
+msgid "Failed to update booking: %s"
+msgstr ""
+
+#. TRANSLATORS Error; the feed is the room's calendar feed link
 msgid "Failed to update feed"
 msgstr ""
 
+msgid "Failed to update room"
+msgstr ""
+
+msgid "Failed to update room group"
+msgstr ""
+
+#. TRANSLATORS Field label: the link to the calendar feed
 msgid "Feed URL"
 msgstr ""
 
+#. TRANSLATORS Label of a usage statistics field: the version of the list of fields that is sent
 msgid "Field-list version"
 msgstr ""
 
+msgid "File too large (max 5MB)"
+msgstr ""
+
+#. TRANSLATORS Field label: the floor of the building
 msgid "Floor"
 msgstr ""
 
+#. TRANSLATORS Error: the user may not perform this action
+msgid "Forbidden"
+msgstr ""
+
+#. TRANSLATORS Abbreviation of Friday; keep it short
 msgid "Fri"
 msgstr ""
 
+#. TRANSLATORS Field label: start time of an availability rule
 msgid "From"
 msgstr ""
 
+#. TRANSLATORS Section heading for general settings
 msgid "General"
 msgstr ""
 
+#. TRANSLATORS Field label: name of the room group
 msgid "Group name"
 msgstr ""
 
@@ -660,18 +872,22 @@ msgstr ""
 msgid "Groups that can see, book, and manage the room. Members receive approval requests and can accept/decline bookings."
 msgstr ""
 
+#. TRANSLATORS Benefit of a subscription, shown as a short title
 msgid "Guaranteed compatibility"
 msgstr ""
 
+#. TRANSLATORS Section heading
 msgid "Help"
 msgstr ""
 
+#. TRANSLATORS Toggle button
 msgid "Hide email settings"
 msgstr ""
 
 msgid "If RoomVox is valuable to your organization, consider subscribing. Your subscription funds active development, guaranteed Nextcloud compatibility, and email support."
 msgstr ""
 
+#. TRANSLATORS SMTP is the protocol for sending mail; keep the abbreviation
 msgid "If you receive this, the SMTP configuration is working correctly."
 msgstr ""
 
@@ -681,63 +897,94 @@ msgstr ""
 msgid "If you still need this room, please make a new booking or contact the room manager."
 msgstr ""
 
+#. TRANSLATORS Button: start the import (verb)
 msgid "Import"
 msgstr ""
 
+#. TRANSLATORS Tab label; keep it short
 msgid "Import / export"
 msgstr ""
 
+#. TRANSLATORS Error message
 msgid "Import failed"
 msgstr ""
 
+#. TRANSLATORS Error in the CSV import; %s is a technical message, often in English
+msgid "Import failed: %s"
+msgstr ""
+
+#. TRANSLATORS Label above two choices: only create, or create and update
 msgid "Import mode:"
 msgstr ""
 
+#. TRANSLATORS Section heading
 msgid "Import rooms"
 msgstr ""
 
+#. TRANSLATORS Button text while the import runs
 msgid "Importing …"
 msgstr ""
 
+#. TRANSLATORS Room status badge
 msgid "Inactive"
 msgstr ""
 
+#. TRANSLATORS Badge next to a permission that comes from the room group; keep it short
 msgid "inherited"
 msgstr ""
 
+#. TRANSLATORS Label above the permissions that come from the room group
 msgid "Inherited from group"
 msgstr ""
 
+#. TRANSLATORS Label followed by an error message
 msgid "Initial sync failed:"
 msgstr ""
 
+#. TRANSLATORS Label of a usage statistics field: the anonymous ID of this server
 msgid "Installation identifier"
 msgstr ""
 
+#. TRANSLATORS Error in the booking dialog
 msgid "Invalid date/time selection"
 msgstr ""
 
+#. TRANSLATORS Error under the email field
 msgid "Invalid email address"
 msgstr ""
 
+#. TRANSLATORS Error for a row in the CSV import
+msgid "Invalid email format"
+msgstr ""
+
+msgid "Invalid expiration date format"
+msgstr ""
+
+#. TRANSLATORS Column header in the import preview: problems found in a row
 msgid "Issues"
 msgstr ""
 
+#. TRANSLATORS Button in the cancel dialog: keep the booking, do not cancel it
 msgid "Keep"
 msgstr ""
 
+#. TRANSLATORS Label followed by an error message
 msgid "Last error:"
 msgstr ""
 
+#. TRANSLATORS {date} is a formatted date and time
 msgid "Last report: {date}"
 msgstr ""
 
+#. TRANSLATORS Label followed by a date and time
 msgid "Last synced:"
 msgstr ""
 
+#. TRANSLATORS Column header in the API token table: when the token was last used
 msgid "Last used"
 msgstr ""
 
+#. TRANSLATORS Link to the documentation
 msgid "Learn more"
 msgstr ""
 
@@ -750,36 +997,46 @@ msgstr ""
 msgid "Limit how far in advance bookings can be made. Recurring events that extend beyond this limit will be declined. Set to 0 for no limit."
 msgstr ""
 
-msgid "Line {line}"
+#. TRANSLATORS Import result; {line} is the row number in the CSV file
+msgid "Line {line}:"
 msgstr ""
 
+#. TRANSLATORS MS365 is Microsoft 365, a product name
 msgid "Links each room to its MS365 mailbox for bidirectional calendar sync. Requires Exchange sync to be configured in settings."
 msgstr ""
 
+#. TRANSLATORS Tooltip of an icon button; also read by screen readers
 msgid "List view"
 msgstr ""
 
+#. TRANSLATORS Column header and heading
 msgid "Location"
 msgstr ""
 
 msgid "Log in to approve or decline this booking request."
 msgstr ""
 
+#. TRANSLATORS API is a technical term; keep it if your language has no usual equivalent
 msgid "Manage API tokens for external integrations. Tokens allow external systems to access the RoomVox API."
 msgstr ""
 
+#. TRANSLATORS Button
 msgid "Manage permissions"
 msgstr ""
 
+#. TRANSLATORS Role badge: the user manages the room; keep it short
 msgid "Manager"
 msgstr ""
 
+#. TRANSLATORS Role heading: groups that manage the room
 msgid "Managers"
 msgstr ""
 
+#. TRANSLATORS Microsoft 365 Exchange is a product name
 msgid "Map this room to a Microsoft 365 Exchange room resource. Bookings will be synced bidirectionally."
 msgstr ""
 
+#. TRANSLATORS Import preview; {name} is the existing room the row will update
 msgid "Matches: {name}"
 msgstr ""
 
@@ -789,108 +1046,158 @@ msgstr ""
 msgid "Max inline syncs per 10 sec (default: 5)"
 msgstr ""
 
+#. TRANSLATORS Field label: how many days ahead the room can be booked
 msgid "Maximum booking horizon"
 msgstr ""
 
+#. TRANSLATORS Placeholder in the booking title field
 msgid "Meeting name"
 msgstr ""
 
+#. TRANSLATORS Section heading; Microsoft Exchange is a product name
 msgid "Microsoft Exchange sync"
 msgstr ""
 
+#. TRANSLATORS Label of a usage statistics field; Microsoft Exchange is a product name
 msgid "Microsoft Exchange sync switched on (yes or no)"
 msgstr ""
 
+#. TRANSLATORS Abbreviation of Monday; keep it short
 msgid "Mon"
 msgstr ""
 
+#. TRANSLATORS Calendar view button: show one month
 msgid "Month"
 msgstr ""
 
+#. TRANSLATORS Tab label; keep it short
 msgid "My rooms"
 msgstr ""
 
+#. TRANSLATORS Column header or field label
 msgid "Name"
 msgstr ""
 
+#. TRANSLATORS Error for a row in the CSV import: the room name column is empty
+msgid "Name is required"
+msgstr ""
+
+#. TRANSLATORS Booking status: the request has not been answered yet
 msgid "Needs action"
 msgstr ""
 
+#. TRANSLATORS Button in a notification: stop asking
 msgid "Never ask again"
 msgstr ""
 
+#. TRANSLATORS Status of a row in the import preview: a new room will be created
 msgid "New"
 msgstr ""
 
+#. TRANSLATORS Heading of the booking dialog
 msgid "New booking"
 msgstr ""
 
+#. TRANSLATORS Field label for adding a facility
 msgid "New facility"
 msgstr ""
 
 msgid "New features and improvements"
 msgstr ""
 
+#. TRANSLATORS Button: create a room group
 msgid "New group"
 msgstr ""
 
+#. TRANSLATORS Heading
 msgid "New room"
 msgstr ""
 
+#. TRANSLATORS Heading
 msgid "New room group"
 msgstr ""
 
+#. TRANSLATORS Field label for adding a room type
 msgid "New room type"
 msgstr ""
 
-msgid "Nextcloud Enterprise subscription detected on this instance. RoomVox subscriptions are sold through Nextcloud — contact your Nextcloud account manager or sales@nextcloud.com."
+#. TRANSLATORS Import preview summary; each placeholder is a number of rooms
+msgid "New: {create}, existing: {update}, errors: {errors}"
+msgstr ""
+
+#. TRANSLATORS {email} is an email address; Nextcloud Enterprise is a product name
+msgid "Nextcloud Enterprise subscription detected on this instance. RoomVox subscriptions are sold through Nextcloud — contact your Nextcloud account manager or {email}."
 msgstr ""
 
 msgid "Nextcloud subscription (yes or no)"
 msgstr ""
 
+#. TRANSLATORS Label of a usage statistics field
 msgid "Nextcloud version"
 msgstr ""
 
+#. TRANSLATORS Value in the Auto-accept column
 msgid "No"
 msgstr ""
 
-msgid "No {role} configured"
-msgstr ""
-
+#. TRANSLATORS Empty state
 msgid "No accepted bookings"
 msgstr ""
 
+#. TRANSLATORS Empty state of the API token list
 msgid "No API tokens created yet."
 msgstr ""
 
+#. TRANSLATORS Empty state of the Bookers role
+msgid "No bookers configured"
+msgstr ""
+
+#. TRANSLATORS Empty state
 msgid "No bookings"
 msgstr ""
 
+#. TRANSLATORS Empty state
 msgid "No declined bookings"
 msgstr ""
 
 msgid "No events found for the selected filters"
 msgstr ""
 
+#. TRANSLATORS Error in the CSV import: no file was received
+msgid "No file uploaded"
+msgstr ""
+
+#. TRANSLATORS Option in the room group picker: the room belongs to no group
 msgid "No group"
 msgstr ""
 
+#. TRANSLATORS Empty state of the Managers role
+msgid "No managers configured"
+msgstr ""
+
+#. TRANSLATORS Empty state heading after a search
 msgid "No matching rooms"
 msgstr ""
 
+#. TRANSLATORS Empty state heading
 msgid "No pending approvals"
 msgstr ""
 
+#. TRANSLATORS Empty state
 msgid "No pending bookings"
+msgstr ""
+
+msgid "No permission to move to target room"
 msgstr ""
 
 msgid "No report sent yet"
 msgstr ""
 
+#. TRANSLATORS Empty state heading
 msgid "No rooms"
 msgstr ""
 
+#. TRANSLATORS Empty state heading
 msgid "No rooms configured"
 msgstr ""
 
@@ -900,9 +1207,19 @@ msgstr ""
 msgid "No rooms in this group"
 msgstr ""
 
+#. TRANSLATORS Empty state of the Viewers role
+msgid "No viewers configured"
+msgstr ""
+
+#. TRANSLATORS Encryption option: no encryption
 msgid "None"
 msgstr ""
 
+#. TRANSLATORS Error: the request has no logged-in user
+msgid "Not authenticated"
+msgstr ""
+
+#. TRANSLATORS Button in a notification: ask again later
 msgid "Not now"
 msgstr ""
 
@@ -915,63 +1232,81 @@ msgstr ""
 msgid "Number of room groups"
 msgstr ""
 
+#. TRANSLATORS Label of a usage statistics field
 msgid "Number of rooms"
 msgstr ""
 
+#. TRANSLATORS Placeholder of the capacity field
 msgid "Number of seats"
 msgstr ""
 
 msgid "Number of user accounts"
 msgstr ""
 
+#. TRANSLATORS Confirmation message: one date of a recurring booking was canceled
 msgid "Occurrence canceled"
 msgstr ""
 
-msgid "Once a day, RoomVox would send these figures about this server to licenses.voxcloud.nl, run by VoxCloud: %s. No personal data, content or names are sent. The RoomVox admin settings say what each figure is used for."
+#. TRANSLATORS Notification text; %1$s is a host name (licenses.voxcloud.nl), %2$s a list of usage statistics fields. VoxCloud is a company name
+msgid "Once a day, RoomVox would send these figures about this server to %1$s, run by VoxCloud: %2$s. No personal data, content or names are sent. The RoomVox administration settings say what each figure is used for."
 msgstr ""
 
 msgid "Only create new rooms (skip existing)"
 msgstr ""
 
+#. TRANSLATORS Button and tooltip; Calendar is the Nextcloud Calendar app
 msgid "Open in Calendar"
 msgstr ""
 
+#. TRANSLATORS Placeholder in a description field
 msgid "Optional description"
 msgstr ""
 
+#. TRANSLATORS Placeholder
 msgid "Optional room description"
 msgstr ""
 
+#. TRANSLATORS SMTP is the protocol for sending mail; keep the abbreviation
 msgid "Optional: configure a dedicated SMTP server for this room. If empty, the global Nextcloud mail configuration is used."
 msgstr ""
 
+#. TRANSLATORS Between "Drag and drop a CSV file here" and the "Choose file" button
 msgid "or"
 msgstr ""
 
+#. TRANSLATORS Column header: the person who booked
 msgid "Organizer"
 msgstr ""
 
+#. TRANSLATORS Line in a booking mail; %s is the name of the person who booked
 msgid "Organizer: %s"
 msgstr ""
 
+#. TRANSLATORS Link button; Vox apps are the RoomVox family of apps (product names)
 msgid "Other Vox apps"
 msgstr ""
 
+#. TRANSLATORS Field label
 msgid "Password"
 msgstr ""
 
+#. TRANSLATORS Booking filter
 msgid "Past"
 msgstr ""
 
+#. TRANSLATORS Booking status: waiting for approval
 msgid "Pending"
 msgstr ""
 
-msgid "Permissions"
-msgstr ""
-
+#. TRANSLATORS Confirmation message
 msgid "Permissions saved"
 msgstr ""
 
+#. TRANSLATORS Heading; {name} is the name of a room or room group
+msgid "Permissions: {name}"
+msgstr ""
+
+#. TRANSLATORS Label of a usage statistics field; PHP is a programming language
 msgid "PHP version"
 msgstr ""
 
@@ -996,15 +1331,19 @@ msgstr ""
 msgid "Port must be between 1 and 65535"
 msgstr ""
 
+#. TRANSLATORS Field label
 msgid "Postal code"
 msgstr ""
 
+#. TRANSLATORS Label before buttons with ready-made availability rules
 msgid "Presets:"
 msgstr ""
 
+#. TRANSLATORS Benefit of a subscription, shown as a short title
 msgid "Priority bug fixes"
 msgstr ""
 
+#. TRANSLATORS iCal is a calendar file format; keep the name. The app names are product names
 msgid "Publish this room's bookings as an iCal feed that external calendar apps (Nextcloud Calendar, Outlook, Apple Calendar) and signage displays can subscribe to — no login required."
 msgstr ""
 
@@ -1014,123 +1353,172 @@ msgstr ""
 msgid "Rate limit (per 10 sec)"
 msgstr ""
 
+#. TRANSLATORS Button: create a new feed link, the old one stops working
 msgid "Regenerate URL"
 msgstr ""
 
 msgid "Regenerating creates a new URL and immediately breaks any existing subscriptions."
 msgstr ""
 
+#. TRANSLATORS Button
 msgid "Remove subscription key"
 msgstr ""
 
+#. TRANSLATORS Link button
 msgid "Report an issue"
 msgstr ""
 
+#. TRANSLATORS Confirmation message
 msgid "Report sent"
 msgstr ""
 
+#. TRANSLATORS Column header: the person who requested the booking
 msgid "Requested by"
 msgstr ""
 
+#. TRANSLATORS Line in a mail to room managers; %1$s is the name, %2$s the email address of the person who booked
 msgid "Requested by: %1$s (%2$s)"
 msgstr ""
 
+#. TRANSLATORS Result of checking an Exchange room address
 msgid "Resource found"
 msgstr ""
 
+#. TRANSLATORS Result of checking an Exchange room address
 msgid "Resource not found"
 msgstr ""
 
+#. TRANSLATORS Column header and field label: who to ask about the room
 msgid "Responsible contact"
 msgstr ""
 
 msgid "Responsible contact (visible to viewers)"
 msgstr ""
 
+#. TRANSLATORS Switch label
 msgid "Restrict booking hours"
 msgstr ""
 
 msgid "Restrict when this room can be booked. Bookings outside these hours will be automatically declined."
 msgstr ""
 
+#. TRANSLATORS Button
 msgid "Retry"
 msgstr ""
 
+#. TRANSLATORS In a mail, followed by a link on the next line
 msgid "Review and respond:"
 msgstr ""
 
+#. TRANSLATORS Column header: the user's role for the room
 msgid "Role"
 msgstr ""
 
+#. TRANSLATORS Field label and column header
 msgid "Room"
 msgstr ""
 
+#. TRANSLATORS Error; {room} is the name of another room
 msgid "Room \"{room}\" already uses this email address"
 msgstr ""
 
+#. TRANSLATORS Name of the booking function, used as mail sender name and as the title of the personal settings section
 msgid "Room booking"
 msgstr ""
 
+#. TRANSLATORS Confirmation message
 msgid "Room created"
 msgstr ""
 
+#. TRANSLATORS Confirmation message
 msgid "Room deleted"
 msgstr ""
 
+#. TRANSLATORS Error; Exchange sync copies bookings between RoomVox and a Microsoft Exchange room mailbox
+msgid "Room does not have Exchange sync configured"
+msgstr ""
+
+#. TRANSLATORS Field label
 msgid "Room group"
 msgstr ""
 
+#. TRANSLATORS Confirmation message
 msgid "Room group created"
 msgstr ""
 
+#. TRANSLATORS Confirmation message
 msgid "Room group deleted"
 msgstr ""
 
+msgid "Room group not found"
+msgstr ""
+
+#. TRANSLATORS Confirmation message
 msgid "Room group updated"
 msgstr ""
 
+#. TRANSLATORS Label under a number on the statistics tab, and heading
 msgid "Room groups"
+msgstr ""
+
+msgid "Room has no calendar and cannot be booked"
 msgstr ""
 
 msgid "Room is active and bookable"
 msgstr ""
 
+msgid "Room is not active and cannot be booked"
+msgstr ""
+
 msgid "Room moved to group"
 msgstr ""
 
+#. TRANSLATORS Field label
 msgid "Room name"
 msgstr ""
 
 msgid "Room name is required"
 msgstr ""
 
+#. TRANSLATORS Error: the room no longer exists
+msgid "Room not found"
+msgstr ""
+
 msgid "Room nr."
 msgstr ""
 
+#. TRANSLATORS Field label
 msgid "Room number"
 msgstr ""
 
 msgid "Room removed from group"
 msgstr ""
 
+#. TRANSLATORS Section heading
 msgid "Room statistics"
 msgstr ""
 
+#. TRANSLATORS Field label
 msgid "Room type"
 msgstr ""
 
+#. TRANSLATORS Accessible name of the input that renames a room type; read by screen readers
 msgid "Room type name"
 msgstr ""
 
+#. TRANSLATORS Section heading
 msgid "Room types"
 msgstr ""
 
+#. TRANSLATORS Confirmation message
 msgid "Room updated"
 msgstr ""
 
+#. TRANSLATORS Line in a booking mail; %s is the room name
 msgid "Room: %s"
 msgstr ""
 
+#. TRANSLATORS Tab, column header and heading
 msgid "Rooms"
 msgstr ""
 
@@ -1140,6 +1528,7 @@ msgstr ""
 msgid "Rooms per request (default: 1)"
 msgstr ""
 
+#. TRANSLATORS Label of a usage statistics field
 msgid "Rooms synced with Microsoft Exchange"
 msgstr ""
 
@@ -1149,81 +1538,97 @@ msgstr ""
 msgid "Rooms with their own mail server"
 msgstr ""
 
-msgid "roomvox"
-msgstr ""
-
+#. TRANSLATORS Product name; do not translate
 msgid "RoomVox"
 msgstr ""
 
+#. TRANSLATORS Accessible name of the administration settings page
 msgid "RoomVox administration"
 msgstr ""
 
 msgid "RoomVox is free and open source (AGPL-3.0). You can use all features without a subscription — no limits, no restrictions, no catch."
 msgstr ""
 
-msgid "RoomVox is running for {count} users here and keeps working in full without a subscription. If your organization gets value from it, a subscription is much appreciated — it funds the maintenance. Sold through Nextcloud: contact your account manager or sales@nextcloud.com."
-msgstr ""
-
+#. TRANSLATORS Label of a usage statistics field; RoomVox is a product name
 msgid "RoomVox version"
 msgstr ""
 
 msgid "RoomVox would like to send more usage statistics"
 msgstr ""
 
-msgid "Rule"
+#. TRANSLATORS Heading of an availability rule; {number} is its position, 1, 2, 3
+msgid "Rule {number}"
 msgstr ""
 
+#. TRANSLATORS Abbreviation of Saturday; keep it short
 msgid "Sat"
 msgstr ""
 
+#. TRANSLATORS Button: save the subscription key and activate it
 msgid "Save & activate"
 msgstr ""
 
+#. TRANSLATORS Button
 msgid "Save changes"
 msgstr ""
 
+#. TRANSLATORS Button
 msgid "Save permissions"
 msgstr ""
 
+#. TRANSLATORS Button text while saving
 msgid "Saving …"
 msgstr ""
 
+#. TRANSLATORS Column header and field label: what an API token may do
 msgid "Scope"
 msgstr ""
 
+#. TRANSLATORS Heading above the explanation of the API token scopes read, book and admin
 msgid "Scopes"
 msgstr ""
 
+#. TRANSLATORS Placeholder of the search field for Nextcloud groups
 msgid "Search groups …"
 msgstr ""
 
+#. TRANSLATORS Placeholder of the room search field
 msgid "Search rooms …"
 msgstr ""
 
+#. TRANSLATORS Placeholder of the room picker
 msgid "Select a room"
 msgstr ""
 
+#. TRANSLATORS Placeholder of the date picker
 msgid "Select date"
 msgstr ""
 
+#. TRANSLATORS Button
 msgid "Send report now"
 msgstr ""
 
-msgid "Sending …"
+#. TRANSLATORS Button text while the report is sent
+msgid "Sending …"
 msgstr ""
 
-msgid "Separate from this switch: while a subscription key is entered, RoomVox also reports the key, the installation identifier and the number of rooms, room groups, user accounts and disabled accounts to licenses.voxcloud.nl, so the subscription can be checked and seats counted. That report is part of the subscription and stops when the key is removed."
+#. TRANSLATORS {server} is a host name, licenses.voxcloud.nl
+msgid "Separate from this switch: while a subscription key is entered, RoomVox also reports the key, the installation identifier and the number of rooms, room groups, accounts and disabled accounts to {server}, so the subscription can be checked and seats counted. That report is part of the subscription and stops when the key is removed."
 msgstr ""
 
+#. TRANSLATORS Tab label; keep it short
 msgid "Settings"
 msgstr ""
 
+#. TRANSLATORS Confirmation message
 msgid "Settings saved"
 msgstr ""
 
+#. TRANSLATORS Notification title. VoxCloud is the company that makes RoomVox; keep both names
 msgid "Share RoomVox usage statistics with VoxCloud?"
 msgstr ""
 
+#. TRANSLATORS Button and switch label: agree to send usage statistics
 msgid "Share usage statistics"
 msgstr ""
 
@@ -1236,9 +1641,11 @@ msgstr ""
 msgid "Shows how RoomVox features are used, to decide what to develop and maintain."
 msgstr ""
 
+#. TRANSLATORS Tenant ID, client ID and client secret are Microsoft Azure terms
 msgid "Shows whether the Exchange integration is used. The tenant ID, client ID and client secret are never sent."
 msgstr ""
 
+#. TRANSLATORS Nextcloud Enterprise is a product name
 msgid "Shows whether this server has a Nextcloud Enterprise subscription. Such servers are listed as Enterprise customers and are not approached about a license."
 msgstr ""
 
@@ -1251,33 +1658,46 @@ msgstr ""
 msgid "Shows which RoomVox releases are still in use."
 msgstr ""
 
+#. TRANSLATORS Label under a number in the import result: rows skipped
 msgid "Skipped"
 msgstr ""
 
+#. TRANSLATORS Section heading; SMTP is the protocol for sending mail
 msgid "SMTP configuration"
 msgstr ""
 
-msgid "SMTP Host"
+#. TRANSLATORS Field label: the name of the mail server
+msgid "SMTP host"
 msgstr ""
 
-msgid "SMTP Port"
+#. TRANSLATORS Field label: the port number of the mail server
+msgid "SMTP port"
 msgstr ""
 
+#. TRANSLATORS Placeholder of the mail server login name field
 msgid "SMTP username"
 msgstr ""
 
+msgid "Start and end times are required"
+msgstr ""
+
+#. TRANSLATORS Field label and placeholder
 msgid "Start time"
 msgstr ""
 
+#. TRANSLATORS Tab label; keep it short
 msgid "Statistics"
 msgstr ""
 
+#. TRANSLATORS Column header
 msgid "Status"
 msgstr ""
 
+#. TRANSLATORS Field label
 msgid "Street and number"
 msgstr ""
 
+#. TRANSLATORS Section heading
 msgid "Subscription"
 msgstr ""
 
@@ -1287,6 +1707,7 @@ msgstr ""
 msgid "Subscription active — thank you for supporting RoomVox!"
 msgstr ""
 
+#. TRANSLATORS Field label
 msgid "Subscription key"
 msgstr ""
 
@@ -1299,30 +1720,51 @@ msgstr ""
 msgid "Subscription key saved but validation failed."
 msgstr ""
 
-msgid "Subscriptions are sold through Nextcloud. Contact your Nextcloud account manager, or"
+#. TRANSLATORS {email} is an email address shown as a link
+msgid "Subscriptions are sold through Nextcloud. Contact your Nextcloud account manager or {email}."
 msgstr ""
 
+#. TRANSLATORS Error: a booking was created without a title
+msgid "Summary is required"
+msgstr ""
+
+#. TRANSLATORS Abbreviation of Sunday; keep it short
 msgid "Sun"
 msgstr ""
 
+#. TRANSLATORS Tab label; keep it short
 msgid "Support"
 msgstr ""
 
+#. TRANSLATORS Heading above the list of CSV formats
 msgid "Supported formats"
 msgstr ""
 
+#. TRANSLATORS Status; Exchange is Microsoft Exchange
 msgid "Syncing Exchange calendar …"
 msgstr ""
 
+msgid "Target room has no calendar and cannot be booked"
+msgstr ""
+
+msgid "Target room is not active and cannot be booked"
+msgstr ""
+
+msgid "Target room not found"
+msgstr ""
+
+#. TRANSLATORS Button (verb)
 msgid "Test connection"
 msgstr ""
 
+#. TRANSLATORS Mail subject of the SMTP test mail; %s is the room name
 msgid "Test email from %s"
 msgstr ""
 
 msgid "Tested with every new Nextcloud release"
 msgstr ""
 
+#. TRANSLATORS Button text while the connection test runs
 msgid "Testing …"
 msgstr ""
 
@@ -1347,6 +1789,7 @@ msgstr ""
 msgid "The room is now available for this time slot."
 msgstr ""
 
+#. TRANSLATORS {message} is a technical message, often in English
 msgid "The statistics server returned an error: {message}"
 msgstr ""
 
@@ -1362,9 +1805,11 @@ msgstr ""
 msgid "This is a test email from the room booking system."
 msgstr ""
 
+#. TRANSLATORS Booking filter
 msgid "This month"
 msgstr ""
 
+#. TRANSLATORS Choice in the cancel dialog: cancel only this date of a recurring booking
 msgid "This occurrence"
 msgstr ""
 
@@ -1377,69 +1822,116 @@ msgstr ""
 msgid "This room is available during:"
 msgstr ""
 
+#. TRANSLATORS Booking filter
 msgid "This week"
 msgstr ""
 
+#. TRANSLATORS Abbreviation of Thursday; keep it short
 msgid "Thu"
 msgstr ""
 
+msgid "Time slot conflicts with existing booking"
+msgstr ""
+
+msgid "Time slot conflicts with existing booking in target room"
+msgstr ""
+
+#. TRANSLATORS Field label: title of the booking
 msgid "Title"
 msgstr ""
 
+#. TRANSLATORS Field label: end time of an availability rule
 msgid "To"
 msgstr ""
 
+#. TRANSLATORS Calendar button that jumps to today, and booking filter
 msgid "Today"
 msgstr ""
 
-msgid "Token created! Copy it now — it will not be shown again."
+#. TRANSLATORS Heading of a notice that shows the new API token once
+msgid "Token created. Copy it now — it will not be shown again."
 msgstr ""
 
+#. TRANSLATORS Field label: name of the new API token
 msgid "Token name"
 msgstr ""
 
+#. TRANSLATORS Error: an API token was created without a name. An API token is a key that external systems use to access RoomVox
+msgid "Token name is required"
+msgstr ""
+
+#. TRANSLATORS Error when creating an API token; keep the number 255
+msgid "Token name too long (max 255 characters)"
+msgstr ""
+
+#. TRANSLATORS Error: the API token to delete no longer exists
+msgid "Token not found"
+msgstr ""
+
+#. TRANSLATORS Relative date shown instead of a date
 msgid "Tomorrow"
 msgstr ""
 
+#. TRANSLATORS Label under a number on the statistics tab
 msgid "Total rooms"
 msgstr ""
 
 msgid "Try a different search query"
 msgstr ""
 
+#. TRANSLATORS Abbreviation of Tuesday; keep it short
 msgid "Tue"
 msgstr ""
 
+#. TRANSLATORS Column header: room type
 msgid "Type"
 msgstr ""
 
+#. TRANSLATORS Heading above rooms that belong to no room group
 msgid "Ungrouped rooms"
 msgstr ""
 
+#. TRANSLATORS Booking status when the server reports none
 msgid "Unknown"
 msgstr ""
 
+#. TRANSLATORS Shown as the detected format when the CSV file is not recognized
 msgid "Unknown format"
 msgstr ""
 
+#. TRANSLATORS Shown in a booking mail in place of a missing start or end time
+msgid "Unknown time"
+msgstr ""
+
+#. TRANSLATORS Shown instead of a booking title when the booking has none
 msgid "Unnamed event"
 msgstr ""
 
+#. TRANSLATORS Booking filter
 msgid "Upcoming"
 msgstr ""
 
+#. TRANSLATORS Status of a row in the import preview: an existing room will be updated
 msgid "Update"
 msgstr ""
 
+#. TRANSLATORS Error for a row in the CSV import; %s is a technical message, often in English
+msgid "Update failed: %s"
+msgstr ""
+
+#. TRANSLATORS Label under a number in the import result: rooms updated
 msgid "Updated"
 msgstr ""
 
+#. TRANSLATORS MS365 is Microsoft 365, a product name
 msgid "Upload a CSV file to import rooms. RoomVox and MS365 formats are supported."
 msgstr ""
 
+#. TRANSLATORS Heading above an example command that uses an API token
 msgid "Usage"
 msgstr ""
 
+#. TRANSLATORS Section heading
 msgid "Usage statistics"
 msgstr ""
 
@@ -1449,55 +1941,65 @@ msgstr ""
 msgid "Used to size a license and to find installations that may need one."
 msgstr ""
 
+#. TRANSLATORS Field label: login name for the mail server
 msgid "Username"
 msgstr ""
 
-msgid "Users active in the last 30 days"
-msgstr ""
-
+#. TRANSLATORS Button: check the address (verb)
 msgid "Validate"
 msgstr ""
 
+#. TRANSLATORS Button text while the address is checked
 msgid "Validating …"
 msgstr ""
 
+#. TRANSLATORS What the API token scope "read" allows
 msgid "View rooms, availability, and calendar feed"
 msgstr ""
 
+#. TRANSLATORS Role badge: the user can only see the room; keep it short
 msgid "Viewer"
 msgstr ""
 
+#. TRANSLATORS Role heading: groups that can see the room
 msgid "Viewers"
 msgstr ""
 
+#. TRANSLATORS Abbreviation of Wednesday; keep it short
 msgid "Wed"
 msgstr ""
 
+#. TRANSLATORS Calendar view button: show one week
 msgid "Week"
 msgstr ""
 
+#. TRANSLATORS Preset button: Monday to Friday, 08:00 to 18:00
 msgid "Weekdays 08-18"
 msgstr ""
 
+#. TRANSLATORS Preset button: Monday to Friday, 09:00 to 17:00
 msgid "Weekdays 09-17"
 msgstr ""
 
 msgid "What a subscription includes"
 msgstr ""
 
+#. TRANSLATORS Column header: date and time of the booking
 msgid "When"
 msgstr ""
 
 msgid "Which version of this list the report follows, so that fields added later are only sent after you agree to them."
 msgstr ""
 
-msgid "With your permission, RoomVox sends usage statistics about this installation to licenses.voxcloud.nl, run by VoxCloud, once a day. No personal data, content or names are sent. Nothing is sent until you switch this on."
+#. TRANSLATORS {server} is a host name, licenses.voxcloud.nl; VoxCloud is a company name
+msgid "With your permission, RoomVox sends usage statistics about this installation to {server}, run by VoxCloud, once a day. No personal data, content or names are sent. Nothing is sent until you switch this on."
 msgstr ""
 
+#. TRANSLATORS Value in the Auto-accept column
 msgid "Yes"
 msgstr ""
 
-msgid "You don't have access to any rooms yet. Ask an administrator to grant you access."
+msgid "You do not have access to any rooms yet. Ask your administrator to grant you access."
 msgstr ""
 
 msgid "Your booking could not be processed due to a scheduling conflict."
@@ -1509,6 +2011,7 @@ msgstr ""
 msgid "Your booking has been confirmed."
 msgstr ""
 
+#. TRANSLATORS Mail text. The booking horizon is how many days ahead a room can be booked
 msgid "Your booking request could not be processed because it exceeds the room's booking horizon."
 msgstr ""
 
@@ -1527,21 +2030,43 @@ msgstr ""
 msgid "Your issues get priority attention"
 msgstr ""
 
-msgid "%n named user on this server"
-msgid_plural "%n named users on this server"
+#. TRANSLATORS Support tab; %n is the number of Nextcloud accounts on this server
+msgid "%n account on this server"
+msgid_plural "%n accounts on this server"
 msgstr[0] ""
 msgstr[1] ""
 
+#. TRANSLATORS Import preview; %n is the number of rooms in the uploaded file
+msgid "%n room found"
+msgid_plural "%n rooms found"
+msgstr[0] ""
+msgstr[1] ""
+
+#. TRANSLATORS Last line of a list of dates in a mail; %n is the number of dates not listed
 msgid "and %n more date"
 msgid_plural "and %n more dates"
 msgstr[0] ""
 msgstr[1] ""
 
+#. TRANSLATORS Mail subject; %1$s is the room name, %2$s the booking title, %n the number of days ahead the room can be booked
+msgid "Booking declined: %1$s — %2$s (exceeds the %n-day booking horizon)"
+msgid_plural "Booking declined: %1$s — %2$s (exceeds the %n-day booking horizon)"
+msgstr[0] ""
+msgstr[1] ""
+
+#. TRANSLATORS %n is the number of Nextcloud accounts (always 100 or more); {email} is an email address
+msgid "RoomVox is running for %n account here and keeps working in full without a subscription. If your organization gets value from it, a subscription is much appreciated — it funds the maintenance. Sold through Nextcloud: contact your account manager or {email}."
+msgid_plural "RoomVox is running for %n accounts here and keeps working in full without a subscription. If your organization gets value from it, a subscription is much appreciated — it funds the maintenance. Sold through Nextcloud: contact your account manager or {email}."
+msgstr[0] ""
+msgstr[1] ""
+
+#. TRANSLATORS Mail text; %n is the number of days ahead the room can be booked
 msgid "This room has a maximum booking horizon of %n day."
 msgid_plural "This room has a maximum booking horizon of %n days."
 msgstr[0] ""
 msgstr[1] ""
 
+#. TRANSLATORS Link that opens the list of usage statistics fields; %n is the number of fields
 msgid "What is sent, and what it is used for (%n field)"
 msgid_plural "What is sent, and what it is used for (%n fields)"
 msgstr[0] ""

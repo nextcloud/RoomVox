@@ -671,6 +671,10 @@ class RoomService {
      * Optimized for iOS/macOS Maps geocoding (street + postal code + city first).
      *
      * Address is stored as "Building, Street, PostalCode, City".
+     *
+     * The text is stored in events every attendee sees, so it is content in
+     * the fail-over language, English, like a room name: it does not follow
+     * the language of whoever saved the room or booked it.
      */
     public function buildRoomLocation(array $room): string {
         $address = trim($room['address'] ?? '');

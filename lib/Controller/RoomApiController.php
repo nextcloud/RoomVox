@@ -19,6 +19,7 @@ use OCP\AppFramework\Http\JSONResponse;
 use OCP\BackgroundJob\IJobList;
 use OCP\Calendar\Room\IManager as IRoomManager;
 use OCP\IGroupManager;
+use OCP\IL10N;
 use OCP\IRequest;
 use OCP\IURLGenerator;
 use OCP\IUserManager;
@@ -41,6 +42,7 @@ class RoomApiController extends Controller {
         private IJobList $jobList,
         private IURLGenerator $urlGenerator,
         private LoggerInterface $logger,
+        private IL10N $l10n,
     ) {
         parent::__construct($appName, $request);
     }
@@ -52,7 +54,7 @@ class RoomApiController extends Controller {
     public function index(): JSONResponse {
         $userId = $this->getCurrentUserId();
         if ($userId === null) {
-            return new JSONResponse(['error' => 'Not authenticated'], 401);
+            return new JSONResponse(['error' => $this->l10n->t('Not authenticated')], 401);
         }
 
         $rooms = $this->roomService->getAllRooms();
@@ -91,7 +93,7 @@ class RoomApiController extends Controller {
     public function allBookings(): JSONResponse {
         $userId = $this->getCurrentUserId();
         if ($userId === null) {
-            return new JSONResponse(['error' => 'Not authenticated'], 401);
+            return new JSONResponse(['error' => $this->l10n->t('Not authenticated')], 401);
         }
 
         $roomId = $this->request->getParam('room');
@@ -188,16 +190,16 @@ class RoomApiController extends Controller {
     public function show(string $id): JSONResponse {
         $userId = $this->getCurrentUserId();
         if ($userId === null) {
-            return new JSONResponse(['error' => 'Not authenticated'], 401);
+            return new JSONResponse(['error' => $this->l10n->t('Not authenticated')], 401);
         }
 
         $room = $this->roomService->getRoom($id);
         if ($room === null) {
-            return new JSONResponse(['error' => 'Room not found'], 404);
+            return new JSONResponse(['error' => $this->l10n->t('Room not found')], 404);
         }
 
         if (!$this->groupManager->isAdmin($userId) && !$this->permissionService->canManage($userId, $id)) {
-            return new JSONResponse(['error' => 'Forbidden'], 403);
+            return new JSONResponse(['error' => $this->l10n->t('Forbidden')], 403);
         }
 
         if (!empty($room['smtpConfig']['password'])) {
@@ -220,7 +222,7 @@ class RoomApiController extends Controller {
     public function create(): JSONResponse {
         $userId = $this->getCurrentUserId();
         if ($userId === null || !$this->groupManager->isAdmin($userId)) {
-            return new JSONResponse(['error' => 'Admin access required'], 403);
+            return new JSONResponse(['error' => $this->l10n->t('Administrator privileges required')], 403);
         }
 
         $data = [
@@ -242,7 +244,7 @@ class RoomApiController extends Controller {
         ];
 
         if (empty($data['name'])) {
-            return new JSONResponse(['error' => 'Room name is required'], 400);
+            return new JSONResponse(['error' => $this->l10n->t('Room name is required')], 400);
         }
 
         try {
@@ -273,12 +275,13 @@ class RoomApiController extends Controller {
             // 409 rather than 500: the request is well formed, the address is
             // simply taken. The frontend turns this into a field-level error.
             return new JSONResponse([
-                'error' => 'Email address already in use',
+                'error' => $this->l10n->t('Email address already in use'),
                 'conflictingRoomId' => $e->getConflictingRoomId(),
             ], 409);
         } catch (\Exception $e) {
             $this->logger->error("Failed to create room: " . $e->getMessage());
-            return new JSONResponse(['error' => 'Failed to create room: ' . $e->getMessage()], 500);
+            // TRANSLATORS Error; %s is a technical message from the server, often in English
+            return new JSONResponse(['error' => $this->l10n->t('Failed to create room: %s', [$e->getMessage()])], 500);
         }
     }
 
@@ -288,11 +291,11 @@ class RoomApiController extends Controller {
     public function update(string $id): JSONResponse {
         $userId = $this->getCurrentUserId();
         if ($userId === null) {
-            return new JSONResponse(['error' => 'Not authenticated'], 401);
+            return new JSONResponse(['error' => $this->l10n->t('Not authenticated')], 401);
         }
 
         if (!$this->groupManager->isAdmin($userId) && !$this->permissionService->canManage($userId, $id)) {
-            return new JSONResponse(['error' => 'Forbidden'], 403);
+            return new JSONResponse(['error' => $this->l10n->t('Forbidden')], 403);
         }
 
         $data = [];
@@ -317,7 +320,7 @@ class RoomApiController extends Controller {
 
             $room = $this->roomService->updateRoom($id, $data);
             if ($room === null) {
-                return new JSONResponse(['error' => 'Room not found'], 404);
+                return new JSONResponse(['error' => $this->l10n->t('Room not found')], 404);
             }
 
             // Publish/remove VAVAILABILITY when availability rules change
@@ -346,12 +349,12 @@ class RoomApiController extends Controller {
             return new JSONResponse($room);
         } catch (EmailAlreadyUsedException $e) {
             return new JSONResponse([
-                'error' => 'Email address already in use',
+                'error' => $this->l10n->t('Email address already in use'),
                 'conflictingRoomId' => $e->getConflictingRoomId(),
             ], 409);
         } catch (\Exception $e) {
             $this->logger->error("Failed to update room {$id}: " . $e->getMessage());
-            return new JSONResponse(['error' => 'Failed to update room'], 500);
+            return new JSONResponse(['error' => $this->l10n->t('Failed to update room')], 500);
         }
     }
 
@@ -369,15 +372,15 @@ class RoomApiController extends Controller {
     public function feed(string $id): JSONResponse {
         $userId = $this->getCurrentUserId();
         if ($userId === null) {
-            return new JSONResponse(['error' => 'Not authenticated'], 401);
+            return new JSONResponse(['error' => $this->l10n->t('Not authenticated')], 401);
         }
 
         if (!$this->groupManager->isAdmin($userId) && !$this->permissionService->canManage($userId, $id)) {
-            return new JSONResponse(['error' => 'Forbidden'], 403);
+            return new JSONResponse(['error' => $this->l10n->t('Forbidden')], 403);
         }
 
         if ($this->roomService->getRoom($id) === null) {
-            return new JSONResponse(['error' => 'Room not found'], 404);
+            return new JSONResponse(['error' => $this->l10n->t('Room not found')], 404);
         }
 
         $action = (string)$this->request->getParam('action', 'rotate');
@@ -393,7 +396,7 @@ class RoomApiController extends Controller {
 
         $secret = $this->roomService->rotateFeedSecret($id);
         if ($secret === null) {
-            return new JSONResponse(['error' => 'Room not found'], 404);
+            return new JSONResponse(['error' => $this->l10n->t('Room not found')], 404);
         }
 
         return new JSONResponse([
@@ -418,12 +421,12 @@ class RoomApiController extends Controller {
     public function destroy(string $id): JSONResponse {
         $userId = $this->getCurrentUserId();
         if ($userId === null || !$this->groupManager->isAdmin($userId)) {
-            return new JSONResponse(['error' => 'Admin access required'], 403);
+            return new JSONResponse(['error' => $this->l10n->t('Administrator privileges required')], 403);
         }
 
         $room = $this->roomService->getRoom($id);
         if ($room === null) {
-            return new JSONResponse(['error' => 'Room not found'], 404);
+            return new JSONResponse(['error' => $this->l10n->t('Room not found')], 404);
         }
 
         try {
@@ -451,11 +454,11 @@ class RoomApiController extends Controller {
     public function getPermissions(string $id): JSONResponse {
         $userId = $this->getCurrentUserId();
         if ($userId === null) {
-            return new JSONResponse(['error' => 'Not authenticated'], 401);
+            return new JSONResponse(['error' => $this->l10n->t('Not authenticated')], 401);
         }
 
         if (!$this->groupManager->isAdmin($userId) && !$this->permissionService->canManage($userId, $id)) {
-            return new JSONResponse(['error' => 'Forbidden'], 403);
+            return new JSONResponse(['error' => $this->l10n->t('Forbidden')], 403);
         }
 
         $permissions = $this->permissionService->getPermissions($id);
@@ -468,11 +471,11 @@ class RoomApiController extends Controller {
     public function setPermissions(string $id): JSONResponse {
         $userId = $this->getCurrentUserId();
         if ($userId === null) {
-            return new JSONResponse(['error' => 'Not authenticated'], 401);
+            return new JSONResponse(['error' => $this->l10n->t('Not authenticated')], 401);
         }
 
         if (!$this->groupManager->isAdmin($userId) && !$this->permissionService->canManage($userId, $id)) {
-            return new JSONResponse(['error' => 'Forbidden'], 403);
+            return new JSONResponse(['error' => $this->l10n->t('Forbidden')], 403);
         }
 
         $permissions = [
@@ -548,7 +551,7 @@ class RoomApiController extends Controller {
     public function exportRooms(): DataDownloadResponse|JSONResponse {
         $userId = $this->getCurrentUserId();
         if ($userId === null || !$this->groupManager->isAdmin($userId)) {
-            return new JSONResponse(['error' => 'Admin access required'], 403);
+            return new JSONResponse(['error' => $this->l10n->t('Administrator privileges required')], 403);
         }
 
         $csv = $this->importExportService->exportCsv();
@@ -572,22 +575,23 @@ class RoomApiController extends Controller {
     public function importPreview(): JSONResponse {
         $userId = $this->getCurrentUserId();
         if ($userId === null || !$this->groupManager->isAdmin($userId)) {
-            return new JSONResponse(['error' => 'Admin access required'], 403);
+            return new JSONResponse(['error' => $this->l10n->t('Administrator privileges required')], 403);
         }
 
         $file = $this->request->getUploadedFile('file');
         if ($file === null || !isset($file['tmp_name'])) {
-            return new JSONResponse(['error' => 'No file uploaded'], 400);
+            // TRANSLATORS Error in the CSV import: no file was received
+            return new JSONResponse(['error' => $this->l10n->t('No file uploaded')], 400);
         }
 
         // Limit file size to 5MB
         if (filesize($file['tmp_name']) > 5 * 1024 * 1024) {
-            return new JSONResponse(['error' => 'File too large (max 5MB)'], 413);
+            return new JSONResponse(['error' => $this->l10n->t('File too large (max 5MB)')], 413);
         }
 
         $csvContent = file_get_contents($file['tmp_name']);
         if ($csvContent === false || $csvContent === '') {
-            return new JSONResponse(['error' => 'Empty or unreadable file'], 400);
+            return new JSONResponse(['error' => $this->l10n->t('Empty or unreadable file')], 400);
         }
 
         // Strip UTF-8 BOM if present
@@ -599,7 +603,8 @@ class RoomApiController extends Controller {
             $preview = $this->importExportService->parseCsv($csvContent);
             return new JSONResponse($preview);
         } catch (\Exception $e) {
-            return new JSONResponse(['error' => 'Failed to parse CSV: ' . $e->getMessage()], 400);
+            // TRANSLATORS Error in the CSV import; %s is a technical message, often in English. CSV is a file format
+            return new JSONResponse(['error' => $this->l10n->t('Failed to parse CSV: %s', [$e->getMessage()])], 400);
         }
     }
 
@@ -609,17 +614,17 @@ class RoomApiController extends Controller {
     public function importRooms(): JSONResponse {
         $userId = $this->getCurrentUserId();
         if ($userId === null || !$this->groupManager->isAdmin($userId)) {
-            return new JSONResponse(['error' => 'Admin access required'], 403);
+            return new JSONResponse(['error' => $this->l10n->t('Administrator privileges required')], 403);
         }
 
         $file = $this->request->getUploadedFile('file');
         if ($file === null || !isset($file['tmp_name'])) {
-            return new JSONResponse(['error' => 'No file uploaded'], 400);
+            return new JSONResponse(['error' => $this->l10n->t('No file uploaded')], 400);
         }
 
         // Limit file size to 5MB
         if (filesize($file['tmp_name']) > 5 * 1024 * 1024) {
-            return new JSONResponse(['error' => 'File too large (max 5MB)'], 413);
+            return new JSONResponse(['error' => $this->l10n->t('File too large (max 5MB)')], 413);
         }
 
         $mode = $this->request->getParam('mode', 'create');
@@ -631,7 +636,7 @@ class RoomApiController extends Controller {
 
         $csvContent = file_get_contents($file['tmp_name']);
         if ($csvContent === false || $csvContent === '') {
-            return new JSONResponse(['error' => 'Empty or unreadable file'], 400);
+            return new JSONResponse(['error' => $this->l10n->t('Empty or unreadable file')], 400);
         }
 
         // Strip UTF-8 BOM
@@ -658,7 +663,8 @@ class RoomApiController extends Controller {
             return new JSONResponse($result);
         } catch (\Exception $e) {
             $this->logger->error("Room import failed: " . $e->getMessage());
-            return new JSONResponse(['error' => 'Import failed: ' . $e->getMessage()], 500);
+            // TRANSLATORS Error in the CSV import; %s is a technical message, often in English
+            return new JSONResponse(['error' => $this->l10n->t('Import failed: %s', [$e->getMessage()])], 500);
         }
     }
 
@@ -670,7 +676,7 @@ class RoomApiController extends Controller {
     public function debug(): JSONResponse {
         $userId = $this->getCurrentUserId();
         if ($userId === null || !$this->groupManager->isAdmin($userId)) {
-            return new JSONResponse(['error' => 'Admin access required'], 403);
+            return new JSONResponse(['error' => $this->l10n->t('Administrator privileges required')], 403);
         }
 
         $result = [

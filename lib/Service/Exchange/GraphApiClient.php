@@ -7,6 +7,7 @@ namespace OCA\RoomVox\Service\Exchange;
 use OCA\RoomVox\AppInfo\Application;
 use OCP\Http\Client\IClientService;
 use OCP\IAppConfig;
+use OCP\IL10N;
 use OCP\Security\ICrypto;
 use Psr\Log\LoggerInterface;
 
@@ -29,6 +30,7 @@ class GraphApiClient {
         private ICrypto $crypto,
         private IClientService $clientService,
         private LoggerInterface $logger,
+        private IL10N $l10n,
     ) {
     }
 
@@ -224,7 +226,9 @@ class GraphApiClient {
         $clientSecret = $this->getClientSecret();
 
         if ($tenantId === '' || $clientId === '' || $clientSecret === '') {
-            throw new ExchangeApiException('Exchange integration not configured: missing tenant, client ID, or client secret');
+            // Shown to the administrator by the connection test
+            // TRANSLATORS Error from the Exchange connection test; tenant ID, client ID and client secret are Microsoft Azure terms
+            throw new ExchangeApiException($this->l10n->t('Exchange integration is not configured: the tenant ID, client ID or client secret is missing'));
         }
 
         $tokenUrl = sprintf(self::TOKEN_URL_TEMPLATE, urlencode($tenantId));

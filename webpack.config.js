@@ -22,6 +22,15 @@ module.exports = {
             {
                 test: /\.vue$/,
                 loader: 'vue-loader',
+                options: {
+                    compilerOptions: {
+                        // Template comments are developer notes, such as the
+                        // TRANSLATORS hints the Transifex extractor reads from
+                        // the source. They must not ship in the bundle, and a
+                        // comment node must never become slot content.
+                        comments: false,
+                    },
+                },
             },
             {
                 test: /\.js$/,

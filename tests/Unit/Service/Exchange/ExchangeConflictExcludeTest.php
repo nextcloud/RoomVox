@@ -53,7 +53,7 @@ class ExchangeConflictExcludeTest extends TestCase {
             $this->graphClient,
             $calDAVService,
             $roomService,
-            $logger,
+            $logger
         );
 
         Reader::setTestParser(null);

@@ -70,7 +70,12 @@ class MailService {
         }
 
         if ($this->l10nFactory !== null) {
-            return $this->l10nCache[$key] = $this->l10nFactory->get(Application::APP_ID, $lang);
+            // Dates in the mail follow its language: without an explicit
+            // locale, Nextcloud would take the locale of whoever is logged in
+            // (the booker, an admin) and print German text with English
+            // month names.
+            $locale = $lang !== null && $this->l10nFactory->localeExists($lang) ? $lang : null;
+            return $this->l10nCache[$key] = $this->l10nFactory->get(Application::APP_ID, $lang, $locale);
         }
 
         // No factory injected (unit tests): fall back to a pass-through so the
@@ -90,7 +95,14 @@ class MailService {
             }
 
             public function l(string $type, $data, array $options = []) {
-                return (string)$data;
+                if (!$data instanceof \DateTimeInterface) {
+                    return (string)$data;
+                }
+                return $data->format(match ($type) {
+                    'date' => 'l, F j, Y',
+                    'time' => 'H:i',
+                    default => 'l, F j, Y H:i',
+                });
             }
 
             public function getLanguageCode(): string {
@@ -113,7 +125,8 @@ class MailService {
         }
 
         $l = $this->getL10nForEmail($eventInfo['organizerEmail']);
-        $subject = $l->t('Booking confirmed: %1$s — %2$s', [$room['name'], $eventInfo['summary']]);
+        // TRANSLATORS Mail subject; %1$s is the room name, %2$s the booking title
+        $subject = $l->t('Booking confirmed: %1$s — %2$s', [$room['name'], $this->summary($l, $eventInfo)]);
         $body = $this->buildAcceptedBody($l, $room, $eventInfo);
 
         $this->sendMail(
@@ -121,6 +134,7 @@ class MailService {
             $eventInfo['organizerEmail'],
             $subject,
             $body,
+            $l,
         );
     }
 
@@ -134,7 +148,8 @@ class MailService {
         }
 
         $l = $this->getL10nForEmail($eventInfo['organizerEmail']);
-        $subject = $l->t('Booking declined: %1$s — %2$s', [$room['name'], $eventInfo['summary']]);
+        // TRANSLATORS Mail subject; %1$s is the room name, %2$s the booking title
+        $subject = $l->t('Booking declined: %1$s — %2$s', [$room['name'], $this->summary($l, $eventInfo)]);
         $body = $this->buildDeclinedBody($l, $room, $eventInfo);
 
         $this->sendMail(
@@ -142,6 +157,7 @@ class MailService {
             $eventInfo['organizerEmail'],
             $subject,
             $body,
+            $l,
         );
     }
 
@@ -155,7 +171,8 @@ class MailService {
         }
 
         $l = $this->getL10nForEmail($eventInfo['organizerEmail']);
-        $subject = $l->t('Booking not permitted: %1$s — %2$s', [$room['name'], $eventInfo['summary']]);
+        // TRANSLATORS Mail subject; %1$s is the room name, %2$s the booking title
+        $subject = $l->t('Booking not permitted: %1$s — %2$s', [$room['name'], $this->summary($l, $eventInfo)]);
         $body = $this->buildPermissionDeniedBody($l, $room, $eventInfo);
 
         $this->sendMail(
@@ -163,6 +180,7 @@ class MailService {
             $eventInfo['organizerEmail'],
             $subject,
             $body,
+            $l,
         );
     }
 
@@ -181,8 +199,14 @@ class MailService {
         $maxDays = (int)($room['maxBookingHorizon'] ?? 0);
         $l = $this->getL10nForEmail($eventInfo['organizerEmail']);
         $subject = $maxDays > 0
-            ? $l->t('Booking declined: %1$s — %2$s (exceeds %3$d-day horizon)', [$room['name'], $eventInfo['summary'], $maxDays])
-            : $l->t('Booking declined: %1$s — %2$s', [$room['name'], $eventInfo['summary']]);
+            ? $l->n(
+                // TRANSLATORS Mail subject; %1$s is the room name, %2$s the booking title, %n the number of days ahead the room can be booked
+                'Booking declined: %1$s — %2$s (exceeds the %n-day booking horizon)',
+                'Booking declined: %1$s — %2$s (exceeds the %n-day booking horizon)',
+                $maxDays,
+                [$room['name'], $this->summary($l, $eventInfo)],
+            )
+            : $l->t('Booking declined: %1$s — %2$s', [$room['name'], $this->summary($l, $eventInfo)]);
         $body = $this->buildHorizonExceededBody($l, $room, $eventInfo, $maxDays);
 
         $this->sendMail(
@@ -190,6 +214,7 @@ class MailService {
             $eventInfo['organizerEmail'],
             $subject,
             $body,
+            $l,
         );
     }
 
@@ -207,6 +232,7 @@ class MailService {
         }
 
         $l = $this->getL10nForEmail($eventInfo['organizerEmail']);
+        // TRANSLATORS Mail subject; %s is the room name
         $subject = $l->t('Booking declined: %s — outside availability hours', [$room['name']]);
         $body = $this->buildAvailabilityViolationBody($l, $room, $eventInfo, $dates);
 
@@ -215,6 +241,7 @@ class MailService {
             $eventInfo['organizerEmail'],
             $subject,
             $body,
+            $l,
         );
     }
 
@@ -229,6 +256,7 @@ class MailService {
         }
 
         $l = $this->getL10nForEmail($eventInfo['organizerEmail']);
+        // TRANSLATORS Mail subject; %s is the room name
         $subject = $l->t('Booking temporarily unavailable: %s', [$room['name']]);
         $body = $this->buildSyncInProgressBody($l, $room, $eventInfo);
 
@@ -237,6 +265,7 @@ class MailService {
             $eventInfo['organizerEmail'],
             $subject,
             $body,
+            $l,
         );
     }
 
@@ -253,7 +282,8 @@ class MailService {
         }
 
         $l = $this->getL10nForEmail($eventInfo['organizerEmail']);
-        $subject = $l->t('Booking conflict: %1$s — %2$s', [$room['name'], $eventInfo['summary']]);
+        // TRANSLATORS Mail subject; %1$s is the room name, %2$s the booking title
+        $subject = $l->t('Booking conflict: %1$s — %2$s', [$room['name'], $this->summary($l, $eventInfo)]);
         $body = $this->buildConflictBody($l, $room, $eventInfo, $dates);
 
         $this->sendMail(
@@ -261,6 +291,7 @@ class MailService {
             $eventInfo['organizerEmail'],
             $subject,
             $body,
+            $l,
         );
     }
 
@@ -309,10 +340,11 @@ class MailService {
             $l = $this->getL10n(
                 $this->l10nFactory !== null ? $this->l10nFactory->getUserLanguage($user) : null
             );
-            $subject = $l->t('Booking request: %1$s — %2$s', [$room['name'], $eventInfo['summary']]);
+            // TRANSLATORS Mail subject to room managers; %1$s is the room name, %2$s the booking title
+            $subject = $l->t('Booking request: %1$s — %2$s', [$room['name'], $this->summary($l, $eventInfo)]);
             $body = $this->buildApprovalRequestBody($l, $room, $eventInfo);
 
-            $this->sendMail($room, $email, $subject, $body);
+            $this->sendMail($room, $email, $subject, $body, $l);
         }
     }
 
@@ -330,8 +362,10 @@ class MailService {
         $this->sendMail(
             $room,
             $eventInfo['organizerEmail'],
-            $organizerL10n->t('Booking canceled: %1$s — %2$s', [$room['name'], $eventInfo['summary']]),
+            // TRANSLATORS Mail subject; %1$s is the room name, %2$s the booking title
+            $organizerL10n->t('Booking canceled: %1$s — %2$s', [$room['name'], $this->summary($organizerL10n, $eventInfo)]),
             $this->buildCancelledBody($organizerL10n, $room, $eventInfo),
+            $organizerL10n,
         );
 
         // Also notify managers — each in theirs
@@ -349,8 +383,9 @@ class MailService {
                 $this->sendMail(
                     $room,
                     $email,
-                    $l->t('Booking canceled: %1$s — %2$s', [$room['name'], $eventInfo['summary']]),
+                    $l->t('Booking canceled: %1$s — %2$s', [$room['name'], $this->summary($l, $eventInfo)]),
                     $this->buildCancelledBody($l, $room, $eventInfo),
+                    $l,
                 );
             }
         }
@@ -364,10 +399,10 @@ class MailService {
         $eventInfo = $this->bookingDataToEventInfo($bookingData);
 
         $l = $this->getL10nForEmail($eventInfo['organizerEmail']);
-        $subject = $l->t('Booking confirmed: %1$s — %2$s', [$room['name'], $eventInfo['summary']]);
+        $subject = $l->t('Booking confirmed: %1$s — %2$s', [$room['name'], $this->summary($l, $eventInfo)]);
         $body = $this->buildAcceptedBody($l, $room, $eventInfo);
 
-        $this->sendMail($room, $eventInfo['organizerEmail'], $subject, $body);
+        $this->sendMail($room, $eventInfo['organizerEmail'], $subject, $body, $l);
     }
 
     /**
@@ -378,10 +413,10 @@ class MailService {
         $eventInfo = $this->bookingDataToEventInfo($bookingData);
 
         $l = $this->getL10nForEmail($eventInfo['organizerEmail']);
-        $subject = $l->t('Booking declined: %1$s — %2$s', [$room['name'], $eventInfo['summary']]);
+        $subject = $l->t('Booking declined: %1$s — %2$s', [$room['name'], $this->summary($l, $eventInfo)]);
         $body = $this->buildDeclinedBody($l, $room, $eventInfo);
 
-        $this->sendMail($room, $eventInfo['organizerEmail'], $subject, $body);
+        $this->sendMail($room, $eventInfo['organizerEmail'], $subject, $body, $l);
     }
 
     /**
@@ -393,17 +428,18 @@ class MailService {
     public function sendRespondCancelled(array $room, array $bookingData, ?string $recurrenceId = null): void {
         $eventInfo = $this->bookingDataToEventInfo($bookingData);
 
+        $l = $this->getL10nForEmail($eventInfo['organizerEmail']);
         $occurrenceFormatted = $recurrenceId !== null
-            ? $this->formatOccurrence($recurrenceId, $bookingData)
+            ? $this->formatOccurrence($l, $recurrenceId, $bookingData)
             : null;
 
-        $l = $this->getL10nForEmail($eventInfo['organizerEmail']);
         $subject = $occurrenceFormatted !== null
-            ? $l->t('Booking canceled: %1$s — %2$s (single occurrence)', [$room['name'], $eventInfo['summary']])
-            : $l->t('Booking canceled: %1$s — %2$s', [$room['name'], $eventInfo['summary']]);
+            // TRANSLATORS Mail subject when one date of a recurring booking is canceled; %1$s is the room name, %2$s the booking title
+            ? $l->t('Booking canceled: %1$s — %2$s (single occurrence)', [$room['name'], $this->summary($l, $eventInfo)])
+            : $l->t('Booking canceled: %1$s — %2$s', [$room['name'], $this->summary($l, $eventInfo)]);
         $body = $this->buildRespondCancelledBody($l, $room, $eventInfo, $occurrenceFormatted);
 
-        $this->sendMail($room, $eventInfo['organizerEmail'], $subject, $body);
+        $this->sendMail($room, $eventInfo['organizerEmail'], $subject, $body, $l);
     }
 
     /**
@@ -414,9 +450,10 @@ class MailService {
      * `+00:00` like any instant. RFC 5545 requires RECURRENCE-ID to have the
      * value type of the series' DTSTART, so the series' own flags decide.
      */
-    private function formatOccurrence(string $recurrenceId, array $bookingData): string {
+    private function formatOccurrence(IL10N $l, string $recurrenceId, array $bookingData): string {
         try {
             [$formatted] = $this->formatEventTimes(
+                $l,
                 new \DateTimeImmutable($recurrenceId),
                 null,
                 !empty($bookingData['wallClock']),
@@ -433,24 +470,15 @@ class MailService {
      * to the event info format used by body builders.
      */
     private function bookingDataToEventInfo(array $data): array {
-        $dtStart = !empty($data['dtstart']) ? new \DateTimeImmutable($data['dtstart']) : null;
-        $dtEnd = !empty($data['dtend']) ? new \DateTimeImmutable($data['dtend']) : null;
-        [$startFormatted, $endFormatted] = $this->formatEventTimes(
-            $dtStart,
-            $dtEnd,
-            !empty($data['wallClock']),
-            !empty($data['allDay']),
-        );
-
         return [
             'uid' => $data['uid'] ?? '',
-            'summary' => $data['summary'] ?: 'Unnamed event',
+            'summary' => (string)($data['summary'] ?? ''),
             'organizerEmail' => $data['organizerEmail'] ?? '',
             'organizerName' => $data['organizerName'] ?: ($data['organizerEmail'] ?? ''),
-            'dtstart' => $dtStart,
-            'dtend' => $dtEnd,
-            'dtstartFormatted' => $startFormatted,
-            'dtendFormatted' => $endFormatted,
+            'dtstart' => !empty($data['dtstart']) ? new \DateTimeImmutable($data['dtstart']) : null,
+            'dtend' => !empty($data['dtend']) ? new \DateTimeImmutable($data['dtend']) : null,
+            'wallClock' => !empty($data['wallClock']),
+            'allDay' => !empty($data['allDay']),
         ];
     }
 
@@ -468,16 +496,23 @@ class MailService {
      * last day shown is the one before it. A single day has no end: the
      * caller prints the start alone.
      *
+     * Day and month names and the date order come from the recipient's
+     * language ($l->l()), so a German mail does not say "Thursday, October 1".
+     *
      * @return array{0: string, 1: ?string} start, and end (null for a single all-day date)
      */
-    private function formatEventTimes(?\DateTimeInterface $start, ?\DateTimeInterface $end, bool $wallClock, bool $allDay = false): array {
+    private function formatEventTimes(IL10N $l, ?\DateTimeInterface $start, ?\DateTimeInterface $end, bool $wallClock, bool $allDay = false): array {
+        // IL10N::l() only formats a mutable \DateTime; it keeps its zone.
+        $format = static fn (string $type, \DateTimeInterface $moment, string $width): string
+            => (string)$l->l($type, \DateTime::createFromInterface($moment), ['width' => $width]);
+
         if ($allDay && $start !== null) {
             $first = \DateTimeImmutable::createFromInterface($start);
             $last = $end !== null ? \DateTimeImmutable::createFromInterface($end)->modify('-1 day') : $first;
 
             return [
-                $first->format('l, F j, Y'),
-                $last->format('Y-m-d') > $first->format('Y-m-d') ? $last->format('l, F j, Y') : null,
+                $format('date', $first, 'full'),
+                $last->format('Y-m-d') > $first->format('Y-m-d') ? $format('date', $last, 'full') : null,
             ];
         }
 
@@ -486,18 +521,19 @@ class MailService {
             $zone = $this->instanceTimezone?->get() ?? new \DateTimeZone('UTC');
         }
 
-        $render = function (?\DateTimeInterface $moment, string $format) use ($zone): string {
+        $render = function (?\DateTimeInterface $moment, string $type, string $width) use ($zone, $format, $l): string {
             if ($moment === null) {
-                return 'Unknown';
+                // TRANSLATORS Shown in a booking mail in place of a missing start or end time
+                return $l->t('Unknown time');
             }
             if ($zone !== null) {
                 $moment = \DateTimeImmutable::createFromInterface($moment)->setTimezone($zone);
             }
-            return $moment->format($format);
+            return $format($type, $moment, $width);
         };
 
-        $startFormatted = $render($start, 'l, F j, Y H:i');
-        $endFormatted = $render($end, 'H:i');
+        $startFormatted = $render($start, 'datetime', 'full|short');
+        $endFormatted = $render($end, 'time', 'short');
 
         if ($zone !== null) {
             $suffix = ' (' . $zone->getName() . ')';
@@ -520,11 +556,16 @@ class MailService {
             $this->sendMail(
                 $room,
                 $recipientEmail,
+                // TRANSLATORS Mail subject of the SMTP test mail; %s is the room name
                 $l->t('Test email from %s', [$room['name']]),
                 $l->t('This is a test email from the room booking system.') . "\n\n"
+                    // TRANSLATORS Line in a booking mail; %s is the room name
                     . $l->t('Room: %s', [$room['name']]) . "\n"
+                    // TRANSLATORS Line in the test mail; %s is the room's email address
                     . $l->t('Email: %s', [$room['email']]) . "\n\n"
-                    . $l->t('If you receive this, the SMTP configuration is working correctly.')
+                    // TRANSLATORS SMTP is the protocol for sending mail; keep the abbreviation
+                    . $l->t('If you receive this, the SMTP configuration is working correctly.'),
+                $l,
             );
             return true;
         } catch (\Exception $e) {
@@ -542,6 +583,7 @@ class MailService {
         string $to,
         string $subject,
         string $body,
+        IL10N $l,
     ): void {
         if (empty($to)) {
             return;
@@ -549,7 +591,8 @@ class MailService {
 
         $smtpConfig = $room['smtpConfig'] ?? null;
         $fromEmail = $room['email'] ?? '';
-        $fromName = $room['name'] ?? 'Room Booking';
+        // TRANSLATORS Name of the booking function, used as mail sender name and as the title of the personal settings section
+        $fromName = $room['name'] ?? $l->t('Room booking');
 
         // Use per-room SMTP if configured
         if ($smtpConfig !== null && !empty($smtpConfig['host'])) {
@@ -669,16 +712,13 @@ class MailService {
         $dtEnd = $vEvent->DTEND ? $vEvent->DTEND->getDateTime() : null;
         $wallClock = CalDAVService::isWallClock($vEvent->DTSTART);
         $allDay = CalDAVService::isDateOnly($vEvent->DTSTART);
-        [$startFormatted, $endFormatted] = $this->formatEventTimes($dtStart, $dtEnd, $wallClock, $allDay);
 
         return [
             'uid' => (string)($vEvent->UID ?? ''),
-            'summary' => (string)($vEvent->SUMMARY ?? 'Unnamed event'),
+            'summary' => (string)($vEvent->SUMMARY ?? ''),
             'description' => (string)($vEvent->DESCRIPTION ?? ''),
             'dtstart' => $dtStart,
             'dtend' => $dtEnd,
-            'dtstartFormatted' => $startFormatted,
-            'dtendFormatted' => $endFormatted,
             'wallClock' => $wallClock,
             'allDay' => $allDay,
             'organizer' => $organizer,
@@ -688,22 +728,50 @@ class MailService {
     }
 
     /**
+     * An event's start and end as one recipient reads them.
+     *
+     * @return array{0: string, 1: ?string}
+     */
+    private function formatEventInfoTimes(IL10N $l, array $event): array {
+        return $this->formatEventTimes(
+            $l,
+            $event['dtstart'] ?? null,
+            $event['dtend'] ?? null,
+            !empty($event['wallClock']),
+            !empty($event['allDay']),
+        );
+    }
+
+    /**
+     * The event's title, or "Unnamed event" in the recipient's language.
+     */
+    private function summary(IL10N $l, array $event): string {
+        $summary = (string)($event['summary'] ?? '');
+        return $summary !== '' ? $summary : $l->t('Unnamed event');
+    }
+
+    /**
      * The "Room / Event / Date" block every mail opens with. Each label is a
      * separate translatable string; the values are never translated.
      */
     private function buildEventBlock(IL10N $l, array $room, array $event): string {
-        $date = $event['dtendFormatted'] === null
-            ? $l->t('Date: %s', [$event['dtstartFormatted']])
-            : $l->t('Date: %1$s – %2$s', [$event['dtstartFormatted'], $event['dtendFormatted']]);
+        [$start, $end] = $this->formatEventInfoTimes($l, $event);
+        $date = $end === null
+            // TRANSLATORS Line in a booking mail; %s is a formatted date, or date and time
+            ? $l->t('Date: %s', [$start])
+            // TRANSLATORS Line in a booking mail; %1$s is the start (date and time), %2$s the end time or end date
+            : $l->t('Date: %1$s – %2$s', [$start, $end]);
 
         return $l->t('Room: %s', [$room['name']]) . "\n"
-            . $l->t('Event: %s', [$event['summary']]) . "\n"
+            // TRANSLATORS Line in a booking mail; %s is the booking title
+            . $l->t('Event: %s', [$this->summary($l, $event)]) . "\n"
             . $date . "\n";
     }
 
     private function buildAcceptedBody(IL10N $l, array $room, array $event): string {
         return $l->t('Your booking has been confirmed.') . "\n\n"
             . $this->buildEventBlock($l, $room, $event)
+            // TRANSLATORS Line in a booking mail; %s is the name of the person who booked
             . $l->t('Organizer: %s', [$event['organizerName']]) . "\n\n"
             . $l->t('The room has been reserved for your event.');
     }
@@ -723,14 +791,19 @@ class MailService {
     private function buildHorizonExceededBody(IL10N $l, array $room, array $event, int $maxDays): string {
         $explanation = $l->t('This room has restrictions on how far in advance it can be booked.');
         if ($maxDays > 0) {
-            $cutoff = (new \DateTimeImmutable('+' . $maxDays . ' days'))->format('Y-m-d');
+            // The date in the reader's language and order, not ISO
+            $cutoff = (string)$l->l('date', new \DateTime('+' . $maxDays . ' days'), ['width' => 'long']);
             $explanation = $l->n(
+                // TRANSLATORS Mail text; %n is the number of days ahead the room can be booked
                 'This room has a maximum booking horizon of %n day.',
                 'This room has a maximum booking horizon of %n days.',
                 $maxDays
-            ) . "\n" . $l->t('Bookings on or after %s are not allowed.', [$cutoff]);
+            );
+            // TRANSLATORS In a mail; %s is a formatted date
+            $explanation .= "\n" . $l->t('Bookings on or after %s are not allowed.', [$cutoff]);
         }
 
+        // TRANSLATORS Mail text. The booking horizon is how many days ahead a room can be booked
         return $l->t('Your booking request could not be processed because it exceeds the room\'s booking horizon.') . "\n\n"
             . $this->buildEventBlock($l, $room, $event) . "\n"
             . $explanation . "\n\n"
@@ -765,15 +838,26 @@ class MailService {
         if (empty($rules)) {
             return '';
         }
-        $dayLabels = [
-            'mon' => $l->t('Mon'),
-            'tue' => $l->t('Tue'),
-            'wed' => $l->t('Wed'),
-            'thu' => $l->t('Thu'),
-            'fri' => $l->t('Fri'),
-            'sat' => $l->t('Sat'),
-            'sun' => $l->t('Sun'),
+        // Rules store days as 0 (Sunday) to 6 (Saturday), as the room editor
+        // and SchedulingPlugin do; the 'mon'…'sun' keys only matched a format
+        // nothing writes, so mails printed "1, 2, 3". Both are accepted.
+        $names = [
+            // TRANSLATORS Abbreviation of Sunday; keep it short
+            0 => $l->t('Sun'),
+            // TRANSLATORS Abbreviation of Monday; keep it short
+            1 => $l->t('Mon'),
+            // TRANSLATORS Abbreviation of Tuesday; keep it short
+            2 => $l->t('Tue'),
+            // TRANSLATORS Abbreviation of Wednesday; keep it short
+            3 => $l->t('Wed'),
+            // TRANSLATORS Abbreviation of Thursday; keep it short
+            4 => $l->t('Thu'),
+            // TRANSLATORS Abbreviation of Friday; keep it short
+            5 => $l->t('Fri'),
+            // TRANSLATORS Abbreviation of Saturday; keep it short
+            6 => $l->t('Sat'),
         ];
+        $dayLabels = $names + array_combine(['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'], $names);
         $lines = [];
         foreach ($rules as $rule) {
             $days = array_map(fn($d) => $dayLabels[strtolower((string)$d)] ?? (string)$d, $rule['days'] ?? []);
@@ -796,6 +880,7 @@ class MailService {
 
         return $l->t('Your booking could not be processed due to a scheduling conflict.') . "\n\n"
             . $this->buildEventBlock($l, $room, $event) . "\n"
+            // TRANSLATORS Heading in a mail above a list of dates on which the room is already booked
             . $this->buildDateList($l, $l->t('Conflicting dates:'), $dates, $event)
             . $l->t('The room is already booked on these dates, so the whole series was declined. Exclude these dates from the series, or choose a different time, and book again.');
     }
@@ -817,11 +902,12 @@ class MailService {
 
         $lines = [];
         foreach (array_slice($dates, 0, self::MAX_LISTED_DATES) as $date) {
-            [$formatted] = $this->formatEventTimes($date, null, !empty($event['wallClock']), !empty($event['allDay']));
+            [$formatted] = $this->formatEventTimes($l, $date, null, !empty($event['wallClock']), !empty($event['allDay']));
             $lines[] = '- ' . $formatted;
         }
         $more = count($dates) - self::MAX_LISTED_DATES;
         if ($more > 0) {
+            // TRANSLATORS Last line of a list of dates in a mail; %n is the number of dates not listed
             $lines[] = $l->n('and %n more date', 'and %n more dates', $more);
         }
 
@@ -833,7 +919,9 @@ class MailService {
 
         return $l->t('A new booking request requires your approval.') . "\n\n"
             . $this->buildEventBlock($l, $room, $event)
+            // TRANSLATORS Line in a mail to room managers; %1$s is the name, %2$s the email address of the person who booked
             . $l->t('Requested by: %1$s (%2$s)', [$event['organizerName'], $event['organizerEmail']]) . "\n\n"
+            // TRANSLATORS In a mail, followed by a link on the next line
             . $l->t('Review and respond:') . "\n{$settingsUrl}\n\n"
             . $l->t('Log in to approve or decline this booking request.');
     }
@@ -841,6 +929,7 @@ class MailService {
     private function buildCancelledBody(IL10N $l, array $room, array $event): string {
         return $l->t('A booking has been canceled.') . "\n\n"
             . $this->buildEventBlock($l, $room, $event)
+            // TRANSLATORS Line in a mail; %s is the name of the person who canceled
             . $l->t('Canceled by: %s', [$event['organizerName']]) . "\n\n"
             . $l->t('The room is now available for this time slot.');
     }
@@ -849,7 +938,8 @@ class MailService {
         if ($occurrenceFormatted !== null) {
             return $l->t('A single occurrence of your recurring booking has been canceled by a room manager.') . "\n\n"
                 . $l->t('Room: %s', [$room['name']]) . "\n"
-                . $l->t('Event: %s', [$event['summary']]) . "\n"
+                . $l->t('Event: %s', [$this->summary($l, $event)]) . "\n"
+                // TRANSLATORS Line in a mail; %s is the date of the canceled occurrence of a recurring booking
                 . $l->t('Canceled occurrence: %s', [$occurrenceFormatted]) . "\n\n"
                 . $l->t('The recurring series continues as scheduled; only this one occurrence has been removed.') . "\n"
                 . $l->t('If you still need this room for the canceled time, please make a new booking or contact the room manager.');

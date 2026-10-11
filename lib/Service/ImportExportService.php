@@ -4,8 +4,7 @@ declare(strict_types=1);
 
 namespace OCA\RoomVox\Service;
 
-use OCA\RoomVox\AppInfo\Application;
-use OCP\IAppConfig;
+use OCP\IL10N;
 use Psr\Log\LoggerInterface;
 
 class ImportExportService {
@@ -69,27 +68,20 @@ class ImportExportService {
         'bookingtype' => '_bookingType',
     ];
 
-    /** Default facility IDs (matching frontend canonical IDs) */
-    private const DEFAULT_FACILITY_IDS = [
-        'projector', 'whiteboard', 'videoconf', 'audio', 'display', 'wheelchair',
-    ];
-
+    /**
+     * @param IL10N $l10n The row errors are shown to the administrator who
+     *                    uploads the file, in the preview and the result
+     */
     public function __construct(
         private RoomService $roomService,
-        private IAppConfig $appConfig,
+        private RoomCatalogService $catalog,
         private LoggerInterface $logger,
+        private IL10N $l10n,
     ) {
     }
 
     private function getKnownFacilityIds(): array {
-        $json = $this->appConfig->getValueString(Application::APP_ID, 'facilities', '');
-        if ($json !== '') {
-            $facilities = json_decode($json, true);
-            if (is_array($facilities)) {
-                return array_map(fn($f) => $f['id'], $facilities);
-            }
-        }
-        return self::DEFAULT_FACILITY_IDS;
+        return $this->catalog->getFacilityIds();
     }
 
     /**
@@ -185,19 +177,22 @@ class ImportExportService {
             // Validate
             $errors = [];
             if (empty($row['name'])) {
-                $errors[] = 'Name is required';
+                // TRANSLATORS Error for a row in the CSV import: the room name column is empty
+                $errors[] = $this->l10n->t('Name is required');
             }
             if ($row['capacity'] !== '' && !is_numeric($row['capacity'])) {
-                $errors[] = 'Capacity must be a number';
+                $errors[] = $this->l10n->t('Capacity must be a number');
             }
             if (!empty($row['email']) && !filter_var($row['email'], FILTER_VALIDATE_EMAIL)) {
-                $errors[] = 'Invalid email format';
+                // TRANSLATORS Error for a row in the CSV import
+                $errors[] = $this->l10n->t('Invalid email format');
             }
 
             // Check for duplicates within the CSV
             $nameLower = strtolower($row['name'] ?? '');
             if ($nameLower !== '' && isset($seenNames[$nameLower])) {
-                $errors[] = 'Duplicate name in CSV';
+                // TRANSLATORS Error for a row in the CSV import: another row has the same room name
+                $errors[] = $this->l10n->t('Duplicate name in CSV');
             }
             $seenNames[$nameLower] = true;
 
@@ -206,7 +201,8 @@ class ImportExportService {
             // silently creating an ambiguous pair.
             $emailLower = strtolower(trim($row['email'] ?? ''));
             if ($emailLower !== '' && isset($seenEmails[$emailLower])) {
-                $errors[] = 'Duplicate email in CSV (line ' . $seenEmails[$emailLower] . ')';
+                // TRANSLATORS Error for a row in the CSV import; %s is the number of the other row with this email address
+                $errors[] = $this->l10n->t('Duplicate email in CSV (line %s)', [$seenEmails[$emailLower]]);
             } elseif ($emailLower !== '') {
                 $seenEmails[$emailLower] = $lineNum + 2;
             }
@@ -289,7 +285,8 @@ class ImportExportService {
                     $result['errors'][] = [
                         'line' => $row['line'],
                         'name' => $data['name'] ?? '',
-                        'errors' => ['Update failed: ' . $e->getMessage()],
+                        // TRANSLATORS Error for a row in the CSV import; %s is a technical message, often in English
+                        'errors' => [$this->l10n->t('Update failed: %s', [$e->getMessage()])],
                     ];
                 }
             } elseif ($row['action'] === 'create') {
@@ -310,7 +307,8 @@ class ImportExportService {
                     $result['errors'][] = [
                         'line' => $row['line'],
                         'name' => $data['name'] ?? '',
-                        'errors' => ['Create failed: ' . $e->getMessage()],
+                        // TRANSLATORS Error for a row in the CSV import; %s is a technical message, often in English
+                        'errors' => [$this->l10n->t('Create failed: %s', [$e->getMessage()])],
                     ];
                 }
             } else {

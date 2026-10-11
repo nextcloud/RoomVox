@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace OCA\RoomVox\Tests\Unit\Service;
 
 use OCA\RoomVox\Service\ImportExportService;
+use OCA\RoomVox\Service\RoomCatalogService;
 use OCA\RoomVox\Service\RoomService;
+use OCA\RoomVox\Tests\Unit\Support\EnglishL10N;
 use OCP\IAppConfig;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -27,7 +29,7 @@ class ImportExportEmailDuplicateTest extends TestCase {
         $appConfig = $this->createMock(IAppConfig::class);
         $appConfig->method('getValueString')->willReturn('');
 
-        return new ImportExportService($roomService, $appConfig, $this->createMock(LoggerInterface::class));
+        return new ImportExportService($roomService, new RoomCatalogService($appConfig), $this->createMock(LoggerInterface::class), new EnglishL10N());
     }
 
     /**

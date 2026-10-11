@@ -6,6 +6,7 @@ namespace OCA\RoomVox\Connector\Room;
 
 use OCA\RoomVox\AppInfo\Application;
 use OCA\RoomVox\Service\PermissionService;
+use OCA\RoomVox\Service\RoomCatalogService;
 use OCA\RoomVox\Service\RoomService;
 use OCP\Calendar\Room\IBackend;
 use OCP\Calendar\Room\IRoom;
@@ -16,6 +17,7 @@ class RoomBackend implements IBackend {
         private RoomService $roomService,
         private PermissionService $permissionService,
         private LoggerInterface $logger,
+        private RoomCatalogService $catalog,
     ) {
     }
 
@@ -81,6 +83,8 @@ class RoomBackend implements IBackend {
 
         $groupRestrictions = $this->extractGroupIds($permissions);
 
+        $facilities = $roomData['facilities'] ?? [];
+
         return new Room(
             backend: $this,
             id: $roomData['id'],
@@ -92,8 +96,9 @@ class RoomBackend implements IBackend {
             address: $roomData['address'] ?? null,
             roomType: $roomData['roomType'] ?? 'meeting-room',
             description: $roomData['description'] ?? null,
-            facilities: $roomData['facilities'] ?? [],
+            facilities: $facilities,
             groupRestrictions: $groupRestrictions,
+            facilityLabels: $this->catalog->getFacilityLabels($facilities),
         );
     }
 

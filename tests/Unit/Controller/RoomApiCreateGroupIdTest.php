@@ -10,6 +10,7 @@ use OCA\RoomVox\Service\ImportExportService;
 use OCA\RoomVox\Service\MailService;
 use OCA\RoomVox\Service\PermissionService;
 use OCA\RoomVox\Service\RoomService;
+use OCA\RoomVox\Tests\Unit\Support\EnglishL10N;
 use OCP\BackgroundJob\IJobList;
 use OCP\Calendar\Room\IManager as IRoomManager;
 use OCP\IGroupManager;
@@ -57,6 +58,7 @@ class RoomApiCreateGroupIdTest extends TestCase {
             $this->createMock(IJobList::class),
             $this->createMock(IURLGenerator::class),
             $this->createMock(LoggerInterface::class),
+            new EnglishL10N(),
         );
     }
 

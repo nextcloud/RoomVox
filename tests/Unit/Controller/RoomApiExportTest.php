@@ -10,6 +10,7 @@ use OCA\RoomVox\Service\ImportExportService;
 use OCA\RoomVox\Service\MailService;
 use OCA\RoomVox\Service\PermissionService;
 use OCA\RoomVox\Service\RoomService;
+use OCA\RoomVox\Tests\Unit\Support\EnglishL10N;
 use OCP\AppFramework\Http\DataDownloadResponse;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\BackgroundJob\IJobList;
@@ -56,6 +57,7 @@ class RoomApiExportTest extends TestCase {
             $this->createMock(IJobList::class),
             $this->createMock(IURLGenerator::class),
             $this->createMock(LoggerInterface::class),
+            new EnglishL10N(),
         );
     }
 
@@ -67,7 +69,7 @@ class RoomApiExportTest extends TestCase {
 
         $this->assertInstanceOf(JSONResponse::class, $response);
         $this->assertSame(403, $response->getStatus());
-        $this->assertSame(['error' => 'Admin access required'], $response->getData());
+        $this->assertSame(['error' => 'Administrator privileges required'], $response->getData());
     }
 
     public function testAdminGetsCsvDownload(): void {

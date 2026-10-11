@@ -9,6 +9,7 @@ use OCA\RoomVox\Service\MailService;
 use OCA\RoomVox\Service\PermissionService;
 use OCP\IAppConfig;
 use OCP\IConfig;
+use OCP\IL10N;
 use OCP\IURLGenerator;
 use OCP\IUserManager;
 use OCP\Mail\IMailer;
@@ -52,17 +53,28 @@ class MailServiceTimezoneTest extends TestCase {
         return (new \ReflectionMethod($service, $method))->invoke($service, ...$args);
     }
 
+    /** The pass-through translator MailService uses without an IFactory. */
+    private function english(): IL10N {
+        return $this->call($this->service(null), 'getL10n', null);
+    }
+
+    /** An event's start and end as an English recipient reads them. */
+    private function times(MailService $service, array $info): array {
+        return $this->call($service, 'formatEventInfoTimes', $this->english(), $info);
+    }
+
     /** The respond flow: approve/decline/cancel from the RoomVox UI. */
     public function testRespondFlowShowsUtcEventInInstanceTime(): void {
-        $info = $this->call($this->service('Europe/Vienna'), 'bookingDataToEventInfo', [
+        $service = $this->service('Europe/Vienna');
+        $info = $this->call($service, 'bookingDataToEventInfo', [
             'organizerName' => 'Alice',
             'summary' => 'Workshop',
             'dtstart' => '2026-10-01T11:30:00+00:00',
             'dtend' => '2026-10-01T14:30:00+00:00',
         ]);
 
-        $this->assertSame('Thursday, October 1, 2026 13:30', $info['dtstartFormatted']);
-        $this->assertSame('16:30 (Europe/Vienna)', $info['dtendFormatted']);
+        $this->assertSame('Thursday, October 1, 2026 13:30', $this->times($service, $info)[0]);
+        $this->assertSame('16:30 (Europe/Vienna)', $this->times($service, $info)[1]);
     }
 
     /**
@@ -82,8 +94,8 @@ class MailServiceTimezoneTest extends TestCase {
             'allDay' => true,
         ]);
 
-        $this->assertSame('Thursday, August 13, 2026', $info['dtstartFormatted']);
-        $this->assertNull($info['dtendFormatted']);
+        $this->assertSame('Thursday, August 13, 2026', $this->times($service, $info)[0]);
+        $this->assertNull($this->times($service, $info)[1]);
 
         $l = $this->call($service, 'getL10n', null);
         $block = $this->call($service, 'buildEventBlock', $l, ['name' => 'Room 1'], $info);
@@ -91,7 +103,8 @@ class MailServiceTimezoneTest extends TestCase {
     }
 
     public function testMultiDayAllDayBookingShowsItsLastDay(): void {
-        $info = $this->call($this->service('Europe/Vienna'), 'bookingDataToEventInfo', [
+        $service = $this->service('Europe/Vienna');
+        $info = $this->call($service, 'bookingDataToEventInfo', [
             'organizerName' => 'Alice',
             'summary' => 'Conference',
             'dtstart' => '2026-10-05T00:00:00+00:00',
@@ -100,13 +113,14 @@ class MailServiceTimezoneTest extends TestCase {
             'allDay' => true,
         ]);
 
-        $this->assertSame('Monday, October 5, 2026', $info['dtstartFormatted']);
-        $this->assertSame('Wednesday, October 7, 2026', $info['dtendFormatted']);
+        $this->assertSame('Monday, October 5, 2026', $this->times($service, $info)[0]);
+        $this->assertSame('Wednesday, October 7, 2026', $this->times($service, $info)[1]);
     }
 
     /** Floating times are wall-clock too, but they do have a time. */
     public function testFloatingTimeIsPrintedAsStoredWithItsTime(): void {
-        $info = $this->call($this->service('America/New_York'), 'bookingDataToEventInfo', [
+        $service = $this->service('America/New_York');
+        $info = $this->call($service, 'bookingDataToEventInfo', [
             'organizerName' => 'Alice',
             'summary' => 'Standup',
             'dtstart' => '2026-10-05T09:00:00+00:00',
@@ -114,8 +128,8 @@ class MailServiceTimezoneTest extends TestCase {
             'wallClock' => true,
         ]);
 
-        $this->assertSame('Monday, October 5, 2026 09:00', $info['dtstartFormatted']);
-        $this->assertSame('10:00', $info['dtendFormatted']);
+        $this->assertSame('Monday, October 5, 2026 09:00', $this->times($service, $info)[0]);
+        $this->assertSame('10:00', $this->times($service, $info)[1]);
     }
 
     /** The iTIP flow: accepted/declined/conflict mails via CalDAV. */
@@ -129,10 +143,11 @@ class MailServiceTimezoneTest extends TestCase {
         $message = new Message();
         $message->message = $calendar;
 
-        $info = $this->call($this->service('Europe/Vienna'), 'extractEventInfo', $message);
+        $service = $this->service('Europe/Vienna');
+        $info = $this->call($service, 'extractEventInfo', $message);
 
-        $this->assertSame('Thursday, October 1, 2026 13:30', $info['dtstartFormatted']);
-        $this->assertSame('16:30 (Europe/Vienna)', $info['dtendFormatted']);
+        $this->assertSame('Thursday, October 1, 2026 13:30', $this->times($service, $info)[0]);
+        $this->assertSame('16:30 (Europe/Vienna)', $this->times($service, $info)[1]);
     }
 
     public function testItipAllDayEventIsShownAsADate(): void {
@@ -146,10 +161,11 @@ class MailServiceTimezoneTest extends TestCase {
         $message = new Message();
         $message->message = $calendar;
 
-        $info = $this->call($this->service('Europe/Vienna'), 'extractEventInfo', $message);
+        $service = $this->service('Europe/Vienna');
+        $info = $this->call($service, 'extractEventInfo', $message);
 
-        $this->assertSame('Thursday, August 13, 2026', $info['dtstartFormatted']);
-        $this->assertNull($info['dtendFormatted']);
+        $this->assertSame('Thursday, August 13, 2026', $this->times($service, $info)[0]);
+        $this->assertNull($this->times($service, $info)[1]);
     }
 
     /** A single cancelled occurrence has no end; the zone goes on the start. */
@@ -157,6 +173,7 @@ class MailServiceTimezoneTest extends TestCase {
         [$start] = $this->call(
             $this->service('Europe/Vienna'),
             'formatEventTimes',
+            $this->english(),
             new \DateTimeImmutable('2026-10-19T08:00:00Z'),
             null,
             false,
@@ -173,35 +190,36 @@ class MailServiceTimezoneTest extends TestCase {
      * decide instead.
      */
     public function testCancelledAllDayOccurrenceKeepsItsDate(): void {
-        $formatted = $this->call($this->service('America/New_York'), 'formatOccurrence',
+        $formatted = $this->call($this->service('America/New_York'), 'formatOccurrence', $this->english(),
             '2026-10-05T00:00:00+00:00', ['allDay' => true, 'wallClock' => true]);
 
         $this->assertSame('Monday, October 5, 2026', $formatted);
     }
 
     public function testCancelledFloatingOccurrenceIsPrintedAsStored(): void {
-        $formatted = $this->call($this->service('America/New_York'), 'formatOccurrence',
+        $formatted = $this->call($this->service('America/New_York'), 'formatOccurrence', $this->english(),
             '2026-10-05T09:00:00+00:00', ['allDay' => false, 'wallClock' => true]);
 
         $this->assertSame('Monday, October 5, 2026 09:00', $formatted);
     }
 
     public function testCancelledTimedOccurrenceIsConverted(): void {
-        $formatted = $this->call($this->service('Europe/Vienna'), 'formatOccurrence',
+        $formatted = $this->call($this->service('Europe/Vienna'), 'formatOccurrence', $this->english(),
             '2026-10-19T08:00:00+00:00', ['allDay' => false, 'wallClock' => false]);
 
         $this->assertSame('Monday, October 19, 2026 10:00 (Europe/Vienna)', $formatted);
     }
 
     public function testWithoutInstanceTimezoneTimesAreLabelledUtc(): void {
-        $info = $this->call($this->service(null), 'bookingDataToEventInfo', [
+        $service = $this->service(null);
+        $info = $this->call($service, 'bookingDataToEventInfo', [
             'organizerName' => 'Alice',
             'summary' => 'Workshop',
             'dtstart' => '2026-10-01T13:30:00+02:00',
             'dtend' => '2026-10-01T16:30:00+02:00',
         ]);
 
-        $this->assertSame('Thursday, October 1, 2026 11:30', $info['dtstartFormatted']);
-        $this->assertSame('14:30 (UTC)', $info['dtendFormatted']);
+        $this->assertSame('Thursday, October 1, 2026 11:30', $this->times($service, $info)[0]);
+        $this->assertSame('14:30 (UTC)', $this->times($service, $info)[1]);
     }
 }

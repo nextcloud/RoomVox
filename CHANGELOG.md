@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **Source strings are American English throughout**: every translatable string follows American spelling ("canceled", "license", "organization"), as Nextcloud writes its own. 1.6.0 switched the remaining British spellings in the source but left the German, French and Dutch translations under the old spelling, so those lines showed in English; they are attached to the American strings again (10 in Dutch, 1 each in German and French). Identifiers and iCalendar's `CANCELLED` status are unchanged.
+
 ## [1.6.1] - 2026-10-11 - Security fix
 
 ### Security

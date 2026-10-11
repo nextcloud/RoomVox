@@ -6,6 +6,8 @@ namespace OCA\RoomVox\Tests\Unit\Controller;
 
 use OCA\RoomVox\AppInfo\Application;
 use OCA\RoomVox\Controller\SettingsController;
+use OCA\RoomVox\Service\RoomCatalogService;
+use OCA\RoomVox\Tests\Unit\Support\EnglishL10N;
 use OCP\IAppConfig;
 use OCP\IGroupManager;
 use OCP\IRequest;
@@ -42,6 +44,8 @@ class SettingsControllerTest extends TestCase {
             $this->crypto,
             $this->userSession,
             $this->groupManager,
+            new RoomCatalogService($this->appConfig),
+            new EnglishL10N(),
         );
     }
 

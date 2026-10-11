@@ -6,7 +6,9 @@ namespace OCA\RoomVox\Tests\Unit\Connector;
 
 use OCA\RoomVox\Connector\Room\RoomBackend;
 use OCA\RoomVox\Service\PermissionService;
+use OCA\RoomVox\Service\RoomCatalogService;
 use OCA\RoomVox\Service\RoomService;
+use OCP\IAppConfig;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
@@ -27,7 +29,7 @@ class RoomBackendInactiveTest extends TestCase {
         $roomService->method('getRoom')->willReturnCallback(fn (string $id) => $rooms[$id] ?? null);
         $roomService->method('buildRoomLocation')->willReturn('');
 
-        $backend = new RoomBackend($roomService, $this->createMock(PermissionService::class), $this->createMock(LoggerInterface::class));
+        $backend = new RoomBackend($roomService, $this->createMock(PermissionService::class), $this->createMock(LoggerInterface::class), new RoomCatalogService($this->createMock(IAppConfig::class)));
 
         $this->assertSame(['aula', 'library'], $backend->listAllRooms());
         $this->assertCount(2, $backend->getAllRooms());

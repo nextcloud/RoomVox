@@ -11,6 +11,7 @@ use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\Calendar\Room\IManager as IRoomManager;
 use OCP\IGroupManager;
+use OCP\IL10N;
 use OCP\IRequest;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
@@ -26,6 +27,7 @@ class RoomGroupApiController extends Controller {
         private IUserSession $userSession,
         private IGroupManager $groupManager,
         private LoggerInterface $logger,
+        private IL10N $l10n,
     ) {
         parent::__construct($appName, $request);
     }
@@ -36,7 +38,7 @@ class RoomGroupApiController extends Controller {
     public function index(): JSONResponse {
         $userId = $this->getCurrentUserId();
         if ($userId === null || !$this->groupManager->isAdmin($userId)) {
-            return new JSONResponse(['error' => 'Admin access required'], 403);
+            return new JSONResponse(['error' => $this->l10n->t('Administrator privileges required')], 403);
         }
 
         $groups = $this->roomGroupService->getAllGroups();
@@ -49,12 +51,12 @@ class RoomGroupApiController extends Controller {
     public function show(string $id): JSONResponse {
         $userId = $this->getCurrentUserId();
         if ($userId === null || !$this->groupManager->isAdmin($userId)) {
-            return new JSONResponse(['error' => 'Admin access required'], 403);
+            return new JSONResponse(['error' => $this->l10n->t('Administrator privileges required')], 403);
         }
 
         $group = $this->roomGroupService->getGroup($id);
         if ($group === null) {
-            return new JSONResponse(['error' => 'Room group not found'], 404);
+            return new JSONResponse(['error' => $this->l10n->t('Room group not found')], 404);
         }
 
         return new JSONResponse($group);
@@ -66,7 +68,7 @@ class RoomGroupApiController extends Controller {
     public function create(): JSONResponse {
         $userId = $this->getCurrentUserId();
         if ($userId === null || !$this->groupManager->isAdmin($userId)) {
-            return new JSONResponse(['error' => 'Admin access required'], 403);
+            return new JSONResponse(['error' => $this->l10n->t('Administrator privileges required')], 403);
         }
 
         $data = [
@@ -75,7 +77,7 @@ class RoomGroupApiController extends Controller {
         ];
 
         if (empty($data['name'])) {
-            return new JSONResponse(['error' => 'Group name is required'], 400);
+            return new JSONResponse(['error' => $this->l10n->t('Group name is required')], 400);
         }
 
         try {
@@ -91,7 +93,8 @@ class RoomGroupApiController extends Controller {
             return new JSONResponse($group, 201);
         } catch (\Exception $e) {
             $this->logger->error("Failed to create room group: " . $e->getMessage());
-            return new JSONResponse(['error' => 'Failed to create room group: ' . $e->getMessage()], 500);
+            // TRANSLATORS Error; %s is a technical message from the server, often in English
+            return new JSONResponse(['error' => $this->l10n->t('Failed to create room group: %s', [$e->getMessage()])], 500);
         }
     }
 
@@ -101,7 +104,7 @@ class RoomGroupApiController extends Controller {
     public function update(string $id): JSONResponse {
         $userId = $this->getCurrentUserId();
         if ($userId === null || !$this->groupManager->isAdmin($userId)) {
-            return new JSONResponse(['error' => 'Admin access required'], 403);
+            return new JSONResponse(['error' => $this->l10n->t('Administrator privileges required')], 403);
         }
 
         $data = [];
@@ -115,13 +118,13 @@ class RoomGroupApiController extends Controller {
         try {
             $group = $this->roomGroupService->updateGroup($id, $data);
             if ($group === null) {
-                return new JSONResponse(['error' => 'Room group not found'], 404);
+                return new JSONResponse(['error' => $this->l10n->t('Room group not found')], 404);
             }
 
             return new JSONResponse($group);
         } catch (\Exception $e) {
             $this->logger->error("Failed to update room group {$id}: " . $e->getMessage());
-            return new JSONResponse(['error' => 'Failed to update room group'], 500);
+            return new JSONResponse(['error' => $this->l10n->t('Failed to update room group')], 500);
         }
     }
 
@@ -131,7 +134,7 @@ class RoomGroupApiController extends Controller {
     public function destroy(string $id): JSONResponse {
         $userId = $this->getCurrentUserId();
         if ($userId === null || !$this->groupManager->isAdmin($userId)) {
-            return new JSONResponse(['error' => 'Admin access required'], 403);
+            return new JSONResponse(['error' => $this->l10n->t('Administrator privileges required')], 403);
         }
 
         // Check if any rooms are assigned to this group
@@ -139,14 +142,14 @@ class RoomGroupApiController extends Controller {
         foreach ($rooms as $room) {
             if (($room['groupId'] ?? null) === $id) {
                 return new JSONResponse([
-                    'error' => 'Cannot delete group: rooms are still assigned. Move or unassign rooms first.',
+                    'error' => $this->l10n->t('Cannot delete group: rooms are still assigned. Move or unassign rooms first.'),
                 ], 409);
             }
         }
 
         $group = $this->roomGroupService->getGroup($id);
         if ($group === null) {
-            return new JSONResponse(['error' => 'Room group not found'], 404);
+            return new JSONResponse(['error' => $this->l10n->t('Room group not found')], 404);
         }
 
         // Delete group permissions
@@ -164,7 +167,7 @@ class RoomGroupApiController extends Controller {
     public function getPermissions(string $id): JSONResponse {
         $userId = $this->getCurrentUserId();
         if ($userId === null || !$this->groupManager->isAdmin($userId)) {
-            return new JSONResponse(['error' => 'Admin access required'], 403);
+            return new JSONResponse(['error' => $this->l10n->t('Administrator privileges required')], 403);
         }
 
         $permissions = $this->permissionService->getGroupPermissions($id);
@@ -177,7 +180,7 @@ class RoomGroupApiController extends Controller {
     public function setPermissions(string $id): JSONResponse {
         $userId = $this->getCurrentUserId();
         if ($userId === null || !$this->groupManager->isAdmin($userId)) {
-            return new JSONResponse(['error' => 'Admin access required'], 403);
+            return new JSONResponse(['error' => $this->l10n->t('Administrator privileges required')], 403);
         }
 
         $permissions = [

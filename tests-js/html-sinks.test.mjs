@@ -7,7 +7,9 @@ import assert from 'node:assert/strict'
 import { readFileSync, readdirSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 import { translate } from '@nextcloud/l10n'
-import { escapeHtml } from '../src/utils/escapeHtml.js'
+// src/ is ESM in a CommonJS package, as webpack expects; Node 20 (CI) will
+// not import it by path, so load the file's source as a module instead.
+const { escapeHtml } = await import('data:text/javascript,' + encodeURIComponent(readFileSync(new URL('../src/utils/escapeHtml.js', import.meta.url), 'utf8')))
 
 const PAYLOAD = '<img src=x onerror=alert(1)> & "Tom\'s"'
 

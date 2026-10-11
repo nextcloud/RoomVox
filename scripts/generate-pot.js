@@ -22,6 +22,7 @@
 const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
+const { computeSourceStrings } = require('./extract-en-json.js');
 
 const ROOT = path.resolve(__dirname, '..');
 const EN_JSON = path.join(ROOT, 'l10n', 'en.json');
@@ -43,12 +44,20 @@ function escapePo(s) {
 // Plural entries (en.json array value [singular, plural]) emit a msgid_plural
 // block with msgstr[0]/msgstr[1] — required so the `%n` placeholder is a real
 // gettext plural and not an "undefined plural" (see NC translation dos-and-don'ts).
+// TRANSLATORS hints from the source, written as extracted comments (#.) the
+// way the Nextcloud bot's xgettext run writes them. Without these lines the
+// POT we commit would show no context at all for a string that has some.
+const HINTS = computeSourceStrings().hints;
+function hintLines(msgid) {
+    return (HINTS.get(msgid) ?? []).map(h => `#. TRANSLATORS ${h.replace(/\n/g, ' ')}\n`).join('');
+}
+
 function poEntry(msgid) {
-    return `msgid "${escapePo(msgid)}"\nmsgstr ""\n`;
+    return hintLines(msgid) + `msgid "${escapePo(msgid)}"\nmsgstr ""\n`;
 }
 
 function poPluralEntry(singular, plural) {
-    return `msgid "${escapePo(singular)}"\n` +
+    return hintLines(singular) + `msgid "${escapePo(singular)}"\n` +
         `msgid_plural "${escapePo(plural)}"\n` +
         `msgstr[0] ""\nmsgstr[1] ""\n`;
 }

@@ -20,6 +20,9 @@ class Room implements IRoom, IMetadataProvider {
         '{http://nextcloud.com/ns}room-features',
     ];
 
+    /**
+     * @param list<string> $facilityLabels Display names of $facilities
+     */
     public function __construct(
         private IBackend $backend,
         private string $id,
@@ -33,6 +36,7 @@ class Room implements IRoom, IMetadataProvider {
         private ?string $description = null,
         private array $facilities = [],
         private array $groupRestrictions = [],
+        private array $facilityLabels = [],
     ) {
     }
 
@@ -150,6 +154,11 @@ class Room implements IRoom, IMetadataProvider {
         return $segments === [] ? null : implode(', ', $segments);
     }
 
+    /**
+     * The calendar description Nextcloud caches for every user. It is stored
+     * content, so it is written in the fail-over language, English, and does
+     * not follow the language of whoever triggered the room sync.
+     */
     private function buildDescription(): string {
         $parts = [$this->displayName];
 
@@ -163,11 +172,12 @@ class Room implements IRoom, IMetadataProvider {
         }
 
         if ($this->capacity !== null && $this->capacity > 0) {
-            $parts[] = "Capacity: {$this->capacity} persons";
+            $parts[] = $this->capacity === 1 ? 'Capacity: 1 person' : "Capacity: {$this->capacity} persons";
         }
 
         if (!empty($this->facilities)) {
-            $parts[] = "Facilities: " . implode(', ', $this->facilities);
+            $labels = $this->facilityLabels !== [] ? $this->facilityLabels : $this->facilities;
+            $parts[] = 'Facilities: ' . implode(', ', $labels);
         }
 
         if ($this->description !== null && $this->description !== '') {

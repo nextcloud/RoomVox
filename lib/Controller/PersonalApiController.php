@@ -6,11 +6,13 @@ namespace OCA\RoomVox\Controller;
 
 use OCA\RoomVox\Service\CalDAVService;
 use OCA\RoomVox\Service\PermissionService;
+use OCA\RoomVox\Service\RoomCatalogService;
 use OCA\RoomVox\Service\RoomService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IGroupManager;
+use OCP\IL10N;
 use OCP\IRequest;
 use OCP\IUserSession;
 
@@ -23,6 +25,8 @@ class PersonalApiController extends Controller {
         private CalDAVService $calDAVService,
         private IUserSession $userSession,
         private IGroupManager $groupManager,
+        private IL10N $l10n,
+        private RoomCatalogService $catalog,
     ) {
         parent::__construct($appName, $request);
     }
@@ -34,7 +38,7 @@ class PersonalApiController extends Controller {
     public function rooms(): JSONResponse {
         $userId = $this->getCurrentUserId();
         if ($userId === null) {
-            return new JSONResponse(['error' => 'Not authenticated'], 401);
+            return new JSONResponse(['error' => $this->l10n->t('Not authenticated')], 401);
         }
 
         $allRooms = $this->roomService->getAllRooms();
@@ -51,6 +55,10 @@ class PersonalApiController extends Controller {
                 'id' => $room['id'],
                 'name' => $room['name'],
                 'roomType' => $room['roomType'] ?? '',
+                // The tab shows the type's name; the ID means nothing to a user
+                'roomTypeLabel' => ($room['roomType'] ?? '') !== ''
+                    ? $this->catalog->getRoomTypeLabel($room['roomType'])
+                    : '',
                 'capacity' => $room['capacity'] ?? 0,
                 'address' => $room['address'] ?? '',
                 'responsibleContact' => $room['responsibleContact'] ?? '',
@@ -76,7 +84,7 @@ class PersonalApiController extends Controller {
     public function viewableRooms(): JSONResponse {
         $userId = $this->getCurrentUserId();
         if ($userId === null) {
-            return new JSONResponse(['error' => 'Not authenticated'], 401);
+            return new JSONResponse(['error' => $this->l10n->t('Not authenticated')], 401);
         }
 
         $isAdmin = $this->groupManager->isAdmin($userId);
@@ -101,7 +109,7 @@ class PersonalApiController extends Controller {
     public function approvals(): JSONResponse {
         $userId = $this->getCurrentUserId();
         if ($userId === null) {
-            return new JSONResponse(['error' => 'Not authenticated'], 401);
+            return new JSONResponse(['error' => $this->l10n->t('Not authenticated')], 401);
         }
 
         $allRooms = $this->roomService->getAllRooms();
@@ -128,7 +136,8 @@ class PersonalApiController extends Controller {
                         'uid' => $booking['uid'],
                         'roomId' => $room['id'],
                         'roomName' => $room['name'],
-                        'summary' => $booking['summary'] ?? 'Unnamed event',
+                        // TRANSLATORS Shown instead of a booking title when the booking has none
+                        'summary' => $booking['summary'] ?? $this->l10n->t('Unnamed event'),
                         'dtstart' => $booking['dtstart'] ?? null,
                         'dtend' => $booking['dtend'] ?? null,
                         'organizerName' => $booking['organizerName'] ?? '',

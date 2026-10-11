@@ -7,7 +7,10 @@ namespace OCA\RoomVox\Tests\Unit\Controller;
 use OCA\RoomVox\Controller\PersonalApiController;
 use OCA\RoomVox\Service\CalDAVService;
 use OCA\RoomVox\Service\PermissionService;
+use OCA\RoomVox\Service\RoomCatalogService;
 use OCA\RoomVox\Service\RoomService;
+use OCA\RoomVox\Tests\Unit\Support\EnglishL10N;
+use OCP\IAppConfig;
 use OCP\IGroupManager;
 use OCP\IRequest;
 use OCP\IUser;
@@ -58,6 +61,8 @@ class PersonalApiViewableRoomsTest extends TestCase {
             $this->createMock(CalDAVService::class),
             $this->userSession,
             $this->groupManager,
+            new EnglishL10N(),
+            new RoomCatalogService($this->createMock(IAppConfig::class)),
         );
     }
 

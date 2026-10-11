@@ -51,8 +51,8 @@ class MailServiceBodiesTest extends TestCase {
     private function sampleEvent(): array {
         return [
             'summary' => 'Weekly standup',
-            'dtstartFormatted' => '2026-08-15 10:00',
-            'dtendFormatted' => '2026-08-15 11:00',
+            'dtstart' => new \DateTimeImmutable('2026-08-15T10:00:00Z'),
+            'dtend' => new \DateTimeImmutable('2026-08-15T11:00:00Z'),
             'organizerName' => 'Sebastian',
             'organizerEmail' => 'sebastian@example.com',
         ];
@@ -71,8 +71,10 @@ class MailServiceBodiesTest extends TestCase {
         $room = ['name' => 'Room X', 'maxBookingHorizon' => 60];
         $body = $this->callBody('buildHorizonExceededBody', $room, $this->sampleEvent(), 60);
 
-        $cutoff = (new \DateTimeImmutable('+60 days'))->format('Y-m-d');
-        $this->assertStringContainsString($cutoff, $body);
+        // Rendered by the translator's date format (the English pass-through
+        // here), no longer as an ISO date
+        $cutoff = (new \DateTimeImmutable('+60 days'))->format('l, F j, Y');
+        $this->assertStringContainsString("Bookings on or after {$cutoff} are not allowed.", $body);
     }
 
     public function testHorizonBodyHandlesZeroMaxDaysGracefully(): void {
@@ -101,6 +103,27 @@ class MailServiceBodiesTest extends TestCase {
         $this->assertStringContainsString('Mon', $body);
         $this->assertStringContainsString('09:00', $body);
         $this->assertStringContainsString('17:00', $body);
+    }
+
+    /**
+     * The room editor stores days as 0 (Sunday) to 6, and so does every rule
+     * check; the mail looked them up as 'mon'…'sun' and printed "1, 2, 3".
+     */
+    public function testAvailabilityBodyNamesNumericDays(): void {
+        $room = [
+            'name' => 'Room Y',
+            'availabilityRules' => [
+                'enabled' => true,
+                'rules' => [
+                    ['days' => [1, 2, 3, 4, 5], 'startTime' => '09:00', 'endTime' => '17:00'],
+                    ['days' => ['6', '0'], 'startTime' => '10:00', 'endTime' => '14:00'],
+                ],
+            ],
+        ];
+        $body = $this->callBody('buildAvailabilityViolationBody', $room, $this->sampleEvent());
+
+        $this->assertStringContainsString('Mon, Tue, Wed, Thu, Fri 09:00–17:00', $body);
+        $this->assertStringContainsString('Sat, Sun 10:00–14:00', $body);
     }
 
     public function testAvailabilityBodyWithoutRulesOmitsSummary(): void {

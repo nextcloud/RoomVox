@@ -7,14 +7,22 @@
                 </template>
                 {{ t('roomvox', 'Back') }}
             </NcButton>
-            <h2>{{ creating ? t('roomvox', 'New room') : t('roomvox', 'Edit room') }}</h2>
+            <h2>
+                {{ creating
+                    // TRANSLATORS Heading
+                    ? t('roomvox', 'New room')
+                    // TRANSLATORS Heading
+                    : t('roomvox', 'Edit room') }}
+            </h2>
         </div>
 
         <div class="room-editor__form">
             <div class="form-section">
+                <!-- TRANSLATORS Section heading for general settings -->
                 <h3>{{ t('roomvox', 'General') }}</h3>
                 <div class="form-grid">
                     <div class="form-field">
+                        <!-- TRANSLATORS Field label -->
                         <label>{{ t('roomvox', 'Room name') }}</label>
                         <NcTextField
                             v-model="form.name"
@@ -25,10 +33,12 @@
                             @update:model-value="clearError('name')" />
                     </div>
                     <div class="form-field">
+                        <!-- TRANSLATORS Field label -->
                         <label>{{ t('roomvox', 'Room number') }}</label>
                         <NcTextField
                             v-model="form.roomNumber"
-                            :placeholder="t('roomvox', 'e.g. 2.17 (floor.room)')" />
+                            :placeholder="// TRANSLATORS Placeholder: example room number; keep the format, translate floor and room
+                                t('roomvox', 'e.g. 2.17 (floor.room)')" />
                     </div>
                     <div class="form-field">
                         <label>{{ t('roomvox', 'Capacity') }}</label>
@@ -37,16 +47,19 @@
                             :error="!!errors.capacity"
                             :helper-text="errors.capacity"
                             type="number"
-                            :placeholder="t('roomvox', 'Number of seats')"
+                            :placeholder="// TRANSLATORS Placeholder of the capacity field
+                                t('roomvox', 'Number of seats')"
                             @update:model-value="clearError('capacity')" />
                     </div>
                     <div class="form-field">
+                        <!-- TRANSLATORS Field label: the floor of the building -->
                         <label>{{ t('roomvox', 'Floor') }}</label>
                         <NcTextField
                             v-model="form.floor"
-                            :placeholder="t('roomvox', 'e.g. 2')" />
+                            :placeholder="t('roomvox', 'e.g. {example}', { example: '2' }, asText)" />
                     </div>
                     <div class="form-field">
+                        <!-- TRANSLATORS Field label -->
                         <label>{{ t('roomvox', 'Room type') }}</label>
                         <NcSelect
                             :model-value="roomTypeOptions.find(o => o.id === form.roomType) || roomTypeOptions[0]"
@@ -63,25 +76,32 @@
                         <label>{{ t('roomvox', 'Building') }}</label>
                         <NcTextField
                             v-model="form.building"
-                            :placeholder="t('roomvox', 'e.g. Building A')" />
+                            :placeholder="// TRANSLATORS Placeholder: example building name; may be replaced by a local example
+                                t('roomvox', 'e.g. Building A')" />
                     </div>
                     <div class="form-field">
+                        <!-- TRANSLATORS Field label -->
                         <label>{{ t('roomvox', 'Street and number') }}</label>
                         <NcTextField
                             v-model="form.street"
-                            :placeholder="t('roomvox', 'e.g. Heidelberglaan 8')" />
+                            :placeholder="// TRANSLATORS Placeholder: example street address; may be replaced by a local example
+                                t('roomvox', 'e.g. Heidelberglaan 8')" />
                     </div>
                     <div class="form-field">
+                        <!-- TRANSLATORS Field label -->
                         <label>{{ t('roomvox', 'Postal code') }}</label>
                         <NcTextField
                             v-model="form.postalCode"
-                            :placeholder="t('roomvox', 'e.g. 3584 CS')" />
+                            :placeholder="// TRANSLATORS Placeholder: example postal code; may be replaced by a local example
+                                t('roomvox', 'e.g. 3584 CS')" />
                     </div>
                     <div class="form-field">
+                        <!-- TRANSLATORS Field label -->
                         <label>{{ t('roomvox', 'City') }}</label>
                         <NcTextField
                             v-model="form.city"
-                            :placeholder="t('roomvox', 'e.g. Utrecht')" />
+                            :placeholder="// TRANSLATORS Placeholder: example city; may be replaced by a local example
+                                t('roomvox', 'e.g. Utrecht')" />
                     </div>
                 </div>
 
@@ -89,7 +109,8 @@
                     <label>{{ t('roomvox', 'Description') }}</label>
                     <NcTextArea
                         v-model="form.description"
-                        :placeholder="t('roomvox', 'Optional room description')"
+                        :placeholder="// TRANSLATORS Placeholder
+                            t('roomvox', 'Optional room description')"
                         resize="vertical" />
                 </div>
 
@@ -97,7 +118,8 @@
                     <label>{{ t('roomvox', 'Responsible contact (visible to viewers)') }}</label>
                     <NcTextField
                         v-model="form.responsibleContact"
-                        :placeholder="t('roomvox', 'e.g. anne@voxcloud.nl or \'Ask building manager\'')"
+                        :placeholder="// TRANSLATORS Placeholder of the responsible contact field; {email} is an example email address
+                            t('roomvox', 'e.g. {email} or \'Ask building manager\'', { email: 'anne@voxcloud.nl' }, asText)"
                         maxlength="255" />
                 </div>
 
@@ -131,12 +153,18 @@
 
                 <div class="form-field">
                     <NcButton type="tertiary" @click="showEmailField = !showEmailField">
-                        {{ showEmailField ? t('roomvox', 'Hide email settings') : t('roomvox', 'Custom email address') }}
+                        {{ showEmailField
+                            // TRANSLATORS Toggle button
+                            ? t('roomvox', 'Hide email settings')
+                            // TRANSLATORS Toggle button that shows the email address field
+                            : t('roomvox', 'Custom email address') }}
                     </NcButton>
                     <div v-if="showEmailField" class="email-advanced">
                         <p class="section-description">
+                            <!-- TRANSLATORS CalDAV is a calendar protocol; keep the name -->
                             {{ t('roomvox', 'A unique email is auto-generated for CalDAV scheduling. Only change this if you need a specific address.') }}
                         </p>
+                        <!-- TRANSLATORS Field label -->
                         <label>{{ t('roomvox', 'Email address') }}</label>
                         <NcTextField
                             v-model="form.email"
@@ -149,6 +177,7 @@
                 </div>
 
                 <div v-if="roomGroups.length > 0" class="form-field">
+                    <!-- TRANSLATORS Field label -->
                     <label>{{ t('roomvox', 'Room group') }}</label>
                     <NcSelect
                         :model-value="groupOptions.find(o => o.id === form.groupId) || groupOptions[0]"
@@ -160,6 +189,7 @@
             </div>
 
             <div class="form-section">
+                <!-- TRANSLATORS Section heading: when the room can be booked -->
                 <h3>{{ t('roomvox', 'Availability') }}</h3>
                 <p class="section-description">
                     {{ t('roomvox', 'Restrict when this room can be booked. Bookings outside these hours will be automatically declined.') }}
@@ -169,6 +199,7 @@
                     <NcCheckboxRadioSwitch
                         :model-value="availability.enabled"
                         @update:model-value="availability.enabled = $event">
+                        <!-- TRANSLATORS Switch label -->
                         {{ t('roomvox', 'Restrict booking hours') }}
                     </NcCheckboxRadioSwitch>
                 </div>
@@ -178,7 +209,8 @@
                          :key="ruleIndex"
                          class="availability-rule">
                         <div class="rule-header">
-                            <span class="rule-label">{{ t('roomvox', 'Rule') }} {{ ruleIndex + 1 }}</span>
+                            <!-- TRANSLATORS Heading of an availability rule; {number} is its position, 1, 2, 3 -->
+                            <span class="rule-label">{{ t('roomvox', 'Rule {number}', { number: ruleIndex + 1 }, asText) }}</span>
                             <NcButton v-if="availability.rules.length > 1"
                                       type="tertiary"
                                       @click="removeRule(ruleIndex)">
@@ -189,6 +221,7 @@
                         </div>
 
                         <div class="form-field">
+                            <!-- TRANSLATORS Field label: weekdays a rule applies to -->
                             <label>{{ t('roomvox', 'Days') }}</label>
                             <div class="days-grid">
                                 <NcCheckboxRadioSwitch
@@ -203,10 +236,12 @@
 
                         <div class="time-grid">
                             <div class="form-field">
+                                <!-- TRANSLATORS Field label: start time of an availability rule -->
                                 <label>{{ t('roomvox', 'From') }}</label>
                                 <input type="time" v-model="rule.startTime" class="time-input" />
                             </div>
                             <div class="form-field">
+                                <!-- TRANSLATORS Field label: end time of an availability rule -->
                                 <label>{{ t('roomvox', 'To') }}</label>
                                 <input type="time" v-model="rule.endTime" class="time-input" />
                             </div>
@@ -215,22 +250,27 @@
 
                     <div class="availability-actions">
                         <NcButton type="secondary" @click="addRule">
+                            <!-- TRANSLATORS Button that adds an availability rule -->
                             {{ t('roomvox', '+ Add rule') }}
                         </NcButton>
                     </div>
 
                     <div class="availability-presets">
+                        <!-- TRANSLATORS Label before buttons with ready-made availability rules -->
                         <span class="presets-label">{{ t('roomvox', 'Presets:') }}</span>
                         <NcButton type="tertiary" @click="applyPreset([1,2,3,4,5], '08:00', '18:00')">
+                            <!-- TRANSLATORS Preset button: Monday to Friday, 08:00 to 18:00 -->
                             {{ t('roomvox', 'Weekdays 08-18') }}
                         </NcButton>
                         <NcButton type="tertiary" @click="applyPreset([1,2,3,4,5], '09:00', '17:00')">
+                            <!-- TRANSLATORS Preset button: Monday to Friday, 09:00 to 17:00 -->
                             {{ t('roomvox', 'Weekdays 09-17') }}
                         </NcButton>
                     </div>
                 </div>
 
                 <div class="form-field horizon-field">
+                    <!-- TRANSLATORS Field label: how many days ahead the room can be booked -->
                     <label>{{ t('roomvox', 'Maximum booking horizon') }}</label>
                     <p class="section-description">
                         {{ t('roomvox', 'Limit how far in advance bookings can be made. Recurring events that extend beyond this limit will be declined. Set to 0 for no limit.') }}
@@ -239,27 +279,32 @@
                         <NcTextField
                             v-model="form.maxBookingHorizon"
                             type="number"
-                            :placeholder="t('roomvox', 'e.g. 90')"
+                            :placeholder="t('roomvox', 'e.g. {example}', { example: '90' }, asText)"
                             min="0" />
+                        <!-- TRANSLATORS Unit after the number field of the booking horizon -->
                         <span class="horizon-unit">{{ t('roomvox', 'days') }}</span>
                     </div>
                 </div>
             </div>
 
             <div class="form-section">
+                <!-- TRANSLATORS Section heading; SMTP is the protocol for sending mail -->
                 <h3>{{ t('roomvox', 'SMTP configuration') }}</h3>
                 <p class="section-description">
+                    <!-- TRANSLATORS SMTP is the protocol for sending mail; keep the abbreviation -->
                     {{ t('roomvox', 'Optional: configure a dedicated SMTP server for this room. If empty, the global Nextcloud mail configuration is used.') }}
                 </p>
                 <div class="form-grid">
                     <div class="form-field">
-                        <label>{{ t('roomvox', 'SMTP Host') }}</label>
+                        <!-- TRANSLATORS Field label: the name of the mail server -->
+                        <label>{{ t('roomvox', 'SMTP host') }}</label>
                         <NcTextField
                             v-model="smtp.host"
-                            :placeholder="t('roomvox', 'e.g. smtp.company.com')" />
+                            :placeholder="t('roomvox', 'e.g. {example}', { example: 'smtp.company.com' }, asText)" />
                     </div>
                     <div class="form-field">
-                        <label>{{ t('roomvox', 'SMTP Port') }}</label>
+                        <!-- TRANSLATORS Field label: the port number of the mail server -->
+                        <label>{{ t('roomvox', 'SMTP port') }}</label>
                         <NcTextField
                             v-model="smtp.port"
                             :error="!!errors.smtpPort"
@@ -269,12 +314,15 @@
                             @update:model-value="clearError('smtpPort')" />
                     </div>
                     <div class="form-field">
+                        <!-- TRANSLATORS Field label: login name for the mail server -->
                         <label>{{ t('roomvox', 'Username') }}</label>
                         <NcTextField
                             v-model="smtp.username"
-                            :placeholder="t('roomvox', 'SMTP username')" />
+                            :placeholder="// TRANSLATORS Placeholder of the mail server login name field
+                                t('roomvox', 'SMTP username')" />
                     </div>
                     <div class="form-field">
+                        <!-- TRANSLATORS Field label -->
                         <label>{{ t('roomvox', 'Password') }}</label>
                         <NcPasswordField
                             v-model="smtp.password"
@@ -282,6 +330,7 @@
                     </div>
                 </div>
                 <div class="form-field">
+                    <!-- TRANSLATORS Field label: connection encryption, followed by the options None, TLS and SSL -->
                     <label>{{ t('roomvox', 'Encryption') }}</label>
                     <div class="encryption-options">
                         <NcCheckboxRadioSwitch
@@ -303,6 +352,7 @@
                             type="radio"
                             name="encryption"
                             @update:model-value="smtp.encryption = 'none'">
+                            <!-- TRANSLATORS Encryption option: no encryption -->
                             {{ t('roomvox', 'None') }}
                         </NcCheckboxRadioSwitch>
                     </div>
@@ -310,8 +360,10 @@
             </div>
 
             <div v-if="!creating" class="form-section">
+                <!-- TRANSLATORS Section heading. A feed is a link that calendar apps subscribe to -->
                 <h3>{{ t('roomvox', 'External calendar feed') }}</h3>
                 <p class="section-description">
+                    <!-- TRANSLATORS iCal is a calendar file format; keep the name. The app names are product names -->
                     {{ t('roomvox', 'Publish this room\'s bookings as an iCal feed that external calendar apps (Nextcloud Calendar, Outlook, Apple Calendar) and signage displays can subscribe to — no login required.') }}
                 </p>
 
@@ -320,6 +372,7 @@
                         :model-value="feed.enabled"
                         :disabled="feed.busy"
                         @update:model-value="toggleFeed($event)">
+                        <!-- TRANSLATORS Switch label -->
                         {{ t('roomvox', 'Enable external feed') }}
                     </NcCheckboxRadioSwitch>
                 </div>
@@ -329,6 +382,7 @@
                 </NcNoteCard>
 
                 <div v-if="feed.enabled && feed.url" class="form-field">
+                    <!-- TRANSLATORS Field label: the link to the calendar feed -->
                     <label>{{ t('roomvox', 'Feed URL') }}</label>
                     <div class="feed-url-row">
                         <NcTextField
@@ -337,13 +391,18 @@
                             :label="t('roomvox', 'Feed URL')"
                             :label-visible="false" />
                         <NcButton type="secondary" :disabled="feed.busy" @click="copyFeedUrl">
-                            {{ feed.copied ? t('roomvox', 'Copied') : t('roomvox', 'Copy') }}
+                            {{ feed.copied
+                                // TRANSLATORS Button text after copying to the clipboard
+                                ? t('roomvox', 'Copied')
+                                // TRANSLATORS Button: copy to the clipboard (verb)
+                                : t('roomvox', 'Copy') }}
                         </NcButton>
                     </div>
                     <NcButton type="tertiary" :disabled="feed.busy" @click="regenerateFeed">
                         <template #icon>
                             <NcLoadingIcon v-if="feed.busy" :size="20" />
                         </template>
+                        <!-- TRANSLATORS Button: create a new feed link, the old one stops working -->
                         {{ t('roomvox', 'Regenerate URL') }}
                     </NcButton>
                     <p class="section-description">
@@ -357,17 +416,20 @@
             </div>
 
             <div v-if="exchangeGlobalEnabled" class="form-section">
+                <!-- TRANSLATORS Section heading; Exchange is Microsoft Exchange -->
                 <h3>{{ t('roomvox', 'Exchange calendar sync') }}</h3>
                 <p class="section-description">
+                    <!-- TRANSLATORS Microsoft 365 Exchange is a product name -->
                     {{ t('roomvox', 'Map this room to a Microsoft 365 Exchange room resource. Bookings will be synced bidirectionally.') }}
                 </p>
 
                 <div class="form-grid">
                     <div class="form-field">
+                        <!-- TRANSLATORS Field label: email address of the room mailbox in Microsoft Exchange -->
                         <label>{{ t('roomvox', 'Exchange resource email') }}</label>
                         <NcTextField
                             v-model="exchange.resourceEmail"
-                            :placeholder="t('roomvox', 'e.g. conference-room@company.com')"
+                            :placeholder="t('roomvox', 'e.g. {example}', { example: 'conference-room@company.com' }, asText)"
                             type="email" />
                     </div>
                     <div class="form-field exchange-validate-field">
@@ -379,7 +441,11 @@
                             <template v-if="exchangeValidating" #icon>
                                 <NcLoadingIcon :size="20" />
                             </template>
-                            {{ exchangeValidating ? t('roomvox', 'Validating …') : t('roomvox', 'Validate') }}
+                            {{ exchangeValidating
+                                // TRANSLATORS Button text while the address is checked
+                                ? t('roomvox', 'Validating …')
+                                // TRANSLATORS Button: check the address (verb)
+                                : t('roomvox', 'Validate') }}
                         </NcButton>
                     </div>
                 </div>
@@ -401,26 +467,33 @@
                          class="exchange-initial-sync">
                         <NcLoadingIcon :size="20" />
                         <span>{{ exchange.initialSyncStatus === 'pending'
+                            // TRANSLATORS Status; Exchange is Microsoft Exchange
                             ? t('roomvox', 'Exchange sync queued …')
+                            // TRANSLATORS Status; Exchange is Microsoft Exchange
                             : t('roomvox', 'Syncing Exchange calendar …') }}</span>
                     </div>
 
                     <div v-if="exchange.initialSyncStatus === 'failed'" class="exchange-initial-sync exchange-sync-failed">
+                        <!-- TRANSLATORS Label followed by an error message -->
                         <span>{{ t('roomvox', 'Initial sync failed:') }} {{ exchange.initialSyncError }}</span>
                         <NcButton type="secondary" @click="retryInitialSync">
+                            <!-- TRANSLATORS Button -->
                             {{ t('roomvox', 'Retry') }}
                         </NcButton>
                     </div>
 
                     <NcNoteCard v-if="exchange.initialSyncStatus === 'completed'" type="success" class="exchange-note">
+                        <!-- TRANSLATORS Status; Exchange is Microsoft Exchange -->
                         {{ t('roomvox', 'Exchange calendar synced successfully') }}
                     </NcNoteCard>
 
                     <div v-if="exchange.lastSyncAt" class="exchange-status-row">
+                        <!-- TRANSLATORS Label followed by a date and time -->
                         <span class="exchange-status-label">{{ t('roomvox', 'Last synced:') }}</span>
                         <span>{{ new Date(exchange.lastSyncAt).toLocaleString(ncLocale) }}</span>
                     </div>
                     <div v-if="exchange.lastError" class="exchange-status-row exchange-status-error">
+                        <!-- TRANSLATORS Label followed by an error message -->
                         <span class="exchange-status-label">{{ t('roomvox', 'Last error:') }}</span>
                         <span>{{ exchange.lastError }}</span>
                     </div>
@@ -429,7 +502,11 @@
 
             <div class="form-actions">
                 <NcButton type="primary" @click="save">
-                    {{ creating ? t('roomvox', 'Create room') : t('roomvox', 'Save changes') }}
+                    {{ creating
+                        // TRANSLATORS Button
+                        ? t('roomvox', 'Create room')
+                        // TRANSLATORS Button
+                        : t('roomvox', 'Save changes') }}
                 </NcButton>
                 <NcButton type="secondary" @click="$emit('cancel')">
                     {{ t('roomvox', 'Cancel') }}
@@ -438,12 +515,14 @@
                     v-if="!creating"
                     type="secondary"
                     @click="$emit('manage-permissions', room)">
+                    <!-- TRANSLATORS Button -->
                     {{ t('roomvox', 'Manage permissions') }}
                 </NcButton>
                 <NcButton
                     v-if="!creating"
                     type="error"
                     @click="showDeleteDialog = true">
+                    <!-- TRANSLATORS Button and dialog title -->
                     {{ t('roomvox', 'Delete room') }}
                 </NcButton>
             </div>
@@ -459,6 +538,7 @@
                     {{ t('roomvox', 'Cancel') }}
                 </NcButton>
                 <NcButton type="error" @click="showDeleteDialog = false; $emit('delete', room.id)">
+                    <!-- TRANSLATORS Accessible name of a delete button (icon only); read by screen readers -->
                     {{ t('roomvox', 'Delete') }}
                 </NcButton>
             </template>
@@ -479,10 +559,10 @@ import ArrowLeft from 'vue-material-design-icons/ArrowLeft.vue'
 import Close from 'vue-material-design-icons/Close.vue'
 import NcNoteCard from '@nextcloud/vue/components/NcNoteCard'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
-import { translate, getLanguage } from '@nextcloud/l10n'
+import { getLanguage } from '@nextcloud/l10n'
+import { t, asText } from '../l10n.js'
 import { validateExchangeResource, retryInitialExchangeSync, getSettings, getRoom, manageRoomFeed } from '../services/api.js'
 
-const t = (app, text, vars = {}) => translate(app, text, vars)
 const ncLocale = getLanguage().replace('_', '-')
 
 const props = defineProps({
@@ -498,20 +578,9 @@ const emit = defineEmits(['save', 'cancel', 'delete', 'manage-permissions'])
 const showDeleteDialog = ref(false)
 const showEmailField = ref(false)
 
-const availableFacilities = computed(() => {
-    if (props.facilities.length > 0) {
-        return props.facilities
-    }
-    // Fallback defaults if settings haven't loaded yet
-    return [
-        { id: 'projector', label: 'Projector' },
-        { id: 'whiteboard', label: 'Whiteboard' },
-        { id: 'videoconf', label: 'Video conference' },
-        { id: 'audio', label: 'Audio system' },
-        { id: 'display', label: 'Display screen' },
-        { id: 'wheelchair', label: 'Wheelchair accessible' },
-    ]
-})
+// Room types and facilities come from /api/settings, which translates the
+// built-in defaults (RoomCatalogService, seeded in English); there is no second copy here.
+const availableFacilities = computed(() => props.facilities)
 
 const weekDays = computed(() => [
     { value: 1, label: t('roomvox', 'Mon') },
@@ -525,21 +594,13 @@ const weekDays = computed(() => [
 
 const groupOptions = computed(() => {
     return [
+        // TRANSLATORS Option in the room group picker: the room belongs to no group
         { id: null, label: t('roomvox', 'No group') },
         ...props.roomGroups.map(g => ({ id: g.id, label: g.name })),
     ]
 })
 
-const roomTypeOptions = computed(() => {
-    if (props.roomTypes.length > 0) {
-        return props.roomTypes
-    }
-    // Fallback defaults if settings haven't loaded yet
-    return [
-        { id: 'meeting-room', label: 'Meeting room' },
-        { id: 'other', label: 'Other' },
-    ]
-})
+const roomTypeOptions = computed(() => props.roomTypes)
 
 const form = reactive({
     name: '',
@@ -618,8 +679,10 @@ const validateResource = async () => {
     exchangeValidateResult.value = null
     try {
         const response = await validateExchangeResource(exchange.resourceEmail)
+        // TRANSLATORS Result of checking an Exchange room address
         exchangeValidateResult.value = { success: true, message: response.data.displayName || t('roomvox', 'Resource found') }
     } catch (e) {
+        // TRANSLATORS Result of checking an Exchange room address
         exchangeValidateResult.value = { success: false, message: e.response?.data?.error || t('roomvox', 'Resource not found') }
     } finally {
         exchangeValidating.value = false
@@ -651,6 +714,7 @@ const toggleFeed = async (enabled) => {
         const res = await manageRoomFeed(props.room.id, enabled ? 'enable' : 'disable')
         applyFeedResult(res.data)
     } catch (e) {
+        // TRANSLATORS Error; the feed is the room's calendar feed link
         feed.error = e.response?.data?.error || t('roomvox', 'Failed to update feed')
     } finally {
         feed.busy = false
@@ -665,6 +729,7 @@ const regenerateFeed = async () => {
         const res = await manageRoomFeed(props.room.id, 'rotate')
         applyFeedResult(res.data)
     } catch (e) {
+        // TRANSLATORS Error; the feed is the room's calendar feed link
         feed.error = e.response?.data?.error || t('roomvox', 'Failed to regenerate feed')
     } finally {
         feed.busy = false
@@ -722,6 +787,7 @@ const validate = () => {
     }
 
     if (form.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
+        // TRANSLATORS Error under the email field
         errors.email = t('roomvox', 'Invalid email address')
         valid = false
     }

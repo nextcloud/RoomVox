@@ -1,5 +1,6 @@
 <template>
-    <NcModal :name="t('roomvox', 'Booking details')" @close="$emit('close')">
+    <NcModal :name="// TRANSLATORS Dialog title
+        t('roomvox', 'Booking details')" @close="$emit('close')">
         <div class="event-details-modal">
             <div class="event-header">
                 <h2>{{ booking.summary || t('roomvox', 'Unnamed event') }}</h2>
@@ -43,6 +44,7 @@
                         <template #icon>
                             <CheckIcon :size="20" />
                         </template>
+                        <!-- TRANSLATORS Button: accept a booking request (verb) -->
                         {{ t('roomvox', 'Accept') }}
                     </NcButton>
                     <NcButton
@@ -52,6 +54,7 @@
                         <template #icon>
                             <CloseIcon :size="20" />
                         </template>
+                        <!-- TRANSLATORS Button: decline a booking request (verb) -->
                         {{ t('roomvox', 'Decline') }}
                     </NcButton>
                 </template>
@@ -64,6 +67,7 @@
                     <template #icon>
                         <OpenInNewIcon :size="20" />
                     </template>
+                    <!-- TRANSLATORS Button and tooltip; Calendar is the Nextcloud Calendar app -->
                     {{ t('roomvox', 'Open in Calendar') }}
                 </NcButton>
 
@@ -75,12 +79,14 @@
                     <template #icon>
                         <DeleteIcon :size="20" />
                     </template>
+                    <!-- TRANSLATORS Button, dialog title and confirmation: cancel a booking (verb) -->
                     {{ t('roomvox', 'Cancel booking') }}
                 </NcButton>
 
                 <div class="spacer" />
 
                 <NcButton type="tertiary" @click="$emit('close')">
+                    <!-- TRANSLATORS Button: close the dialog -->
                     {{ t('roomvox', 'Close') }}
                 </NcButton>
             </div>
@@ -99,12 +105,15 @@
                 <p>{{ t('roomvox', 'Are you sure you want to cancel this booking? The booker will be notified by email.') }}</p>
             </template>
             <template #actions>
+                <!-- TRANSLATORS Button in the cancel dialog: keep the booking, do not cancel it -->
                 <NcButton type="tertiary" @click="showDeleteDialog = false">{{ t('roomvox', 'Keep') }}</NcButton>
                 <template v-if="booking.recurrenceId">
                     <NcButton type="warning" :disabled="loading" @click="executeDelete('occurrence')">
+                        <!-- TRANSLATORS Choice in the cancel dialog: cancel only this date of a recurring booking -->
                         {{ t('roomvox', 'This occurrence') }}
                     </NcButton>
                     <NcButton type="error" :disabled="loading" @click="executeDelete('series')">
+                        <!-- TRANSLATORS Choice in the cancel dialog: cancel all dates of a recurring booking -->
                         {{ t('roomvox', 'Entire series') }}
                     </NcButton>
                 </template>
@@ -118,7 +127,8 @@
 
 <script setup>
 import { computed, ref } from 'vue'
-import { translate, getLanguage } from '@nextcloud/l10n'
+import { getLanguage } from '@nextcloud/l10n'
+import { t } from '../../l10n.js'
 import { generateUrl } from '@nextcloud/router'
 import { showSuccess, showError } from '@nextcloud/dialogs'
 
@@ -137,7 +147,6 @@ import OpenInNewIcon from 'vue-material-design-icons/OpenInNew.vue'
 
 import { respondToBooking, deleteBooking } from '../../services/api.js'
 
-const t = (app, text, vars = {}) => translate(app, text, vars)
 const ncLocale = getLanguage().replace('_', '-')
 
 const props = defineProps({
@@ -163,9 +172,13 @@ const statusClass = computed(() => {
 
 const statusLabel = computed(() => {
     switch (props.booking.partstat) {
+        // TRANSLATORS Booking status
         case 'ACCEPTED': return t('roomvox', 'Accepted')
+        // TRANSLATORS Booking status: waiting for approval
         case 'TENTATIVE': return t('roomvox', 'Pending')
+        // TRANSLATORS Booking status
         case 'DECLINED': return t('roomvox', 'Declined')
+        // TRANSLATORS Booking status when the server reports none
         default: return props.booking.partstat || t('roomvox', 'Unknown')
     }
 })
@@ -196,6 +209,7 @@ const formattedDate = computed(() => {
 })
 
 const formattedTime = computed(() => {
+    // TRANSLATORS Shown instead of a time for a booking that lasts all day
     if (props.booking.allDay) return t('roomvox', 'All day')
     if (!props.booking.dtstart || !props.booking.dtend) return ''
     const start = new Date(props.booking.dtstart)
@@ -224,7 +238,11 @@ async function handleRespond(action) {
     loading.value = true
     try {
         await respondToBooking(props.booking.roomId, props.booking.uid, action)
-        showSuccess(action === 'accept' ? t('roomvox', 'Booking accepted') : t('roomvox', 'Booking declined'))
+        showSuccess(action === 'accept'
+            // TRANSLATORS Confirmation message
+            ? t('roomvox', 'Booking accepted')
+            // TRANSLATORS Confirmation message
+            : t('roomvox', 'Booking declined'))
         emit('updated')
     } catch (e) {
         showError(t('roomvox', 'Failed to respond to booking'))
@@ -242,7 +260,11 @@ async function executeDelete(mode) {
     loading.value = true
     try {
         await deleteBooking(props.booking.roomId, props.booking.uid, recurrenceId)
-        showSuccess(mode === 'occurrence' ? t('roomvox', 'Occurrence canceled') : t('roomvox', 'Booking canceled'))
+        showSuccess(mode === 'occurrence'
+            // TRANSLATORS Confirmation message: one date of a recurring booking was canceled
+            ? t('roomvox', 'Occurrence canceled')
+            // TRANSLATORS Confirmation message
+            : t('roomvox', 'Booking canceled'))
         showDeleteDialog.value = false
         emit('deleted')
     } catch (e) {
@@ -278,7 +300,6 @@ async function executeDelete(mode) {
     border-radius: 12px;
     font-size: 12px;
     font-weight: 500;
-    text-transform: uppercase;
 }
 
 /* --color-success / --color-warning are already the light badge backgrounds in

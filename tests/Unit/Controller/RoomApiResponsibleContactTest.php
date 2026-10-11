@@ -10,6 +10,7 @@ use OCA\RoomVox\Service\ImportExportService;
 use OCA\RoomVox\Service\MailService;
 use OCA\RoomVox\Service\PermissionService;
 use OCA\RoomVox\Service\RoomService;
+use OCA\RoomVox\Tests\Unit\Support\EnglishL10N;
 use OCP\BackgroundJob\IJobList;
 use OCP\IURLGenerator;
 use OCP\Calendar\Room\IManager as IRoomManager;
@@ -69,6 +70,7 @@ class RoomApiResponsibleContactTest extends TestCase {
             $jobList,
             $urlGenerator,
             $logger,
+            new EnglishL10N(),
         );
     }
 

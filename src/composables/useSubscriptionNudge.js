@@ -1,4 +1,7 @@
-import { translate as t } from '@nextcloud/l10n'
+import { t, n, asText } from '../l10n.js'
+
+/** Where subscriptions are sold; kept out of the translatable text. */
+export const SALES_EMAIL = 'sales@nextcloud.com'
 
 /**
  * The one subscription message an unlicensed instance sees, or null when there
@@ -33,7 +36,8 @@ export function subscriptionNudge(stats) {
 	}
 
 	if (stats.hasValidSubscription || stats.hasExtendedSupport) {
-		return t('roomvox', 'Nextcloud Enterprise subscription detected on this instance. RoomVox subscriptions are sold through Nextcloud — contact your Nextcloud account manager or sales@nextcloud.com.')
+		// TRANSLATORS {email} is an email address; Nextcloud Enterprise is a product name
+		return t('roomvox', 'Nextcloud Enterprise subscription detected on this instance. RoomVox subscriptions are sold through Nextcloud — contact your Nextcloud account manager or {email}.', { email: SALES_EMAIL }, asText)
 	}
 
 	// A missing threshold means an older backend: say nothing rather than
@@ -44,5 +48,6 @@ export function subscriptionNudge(stats) {
 		return null
 	}
 
-	return t('roomvox', 'RoomVox is running for {count} users here and keeps working in full without a subscription. If your organization gets value from it, a subscription is much appreciated — it funds the maintenance. Sold through Nextcloud: contact your account manager or sales@nextcloud.com.', { count: users })
+	// TRANSLATORS %n is the number of Nextcloud accounts (always 100 or more); {email} is an email address
+	return n('roomvox', 'RoomVox is running for %n account here and keeps working in full without a subscription. If your organization gets value from it, a subscription is much appreciated — it funds the maintenance. Sold through Nextcloud: contact your account manager or {email}.', 'RoomVox is running for %n accounts here and keeps working in full without a subscription. If your organization gets value from it, a subscription is much appreciated — it funds the maintenance. Sold through Nextcloud: contact your account manager or {email}.', users, { email: SALES_EMAIL }, asText)
 }

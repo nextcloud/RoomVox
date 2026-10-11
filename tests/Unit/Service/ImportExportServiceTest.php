@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace OCA\RoomVox\Tests\Unit\Service;
 
 use OCA\RoomVox\Service\ImportExportService;
+use OCA\RoomVox\Service\RoomCatalogService;
 use OCA\RoomVox\Service\RoomService;
+use OCA\RoomVox\Tests\Unit\Support\EnglishL10N;
 use OCP\IAppConfig;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -19,7 +21,7 @@ class ImportExportServiceTest extends TestCase {
         $appConfig->method('getValueString')->willReturn('');
         $logger = $this->createMock(LoggerInterface::class);
 
-        $this->service = new ImportExportService($roomService, $appConfig, $logger);
+        $this->service = new ImportExportService($roomService, new RoomCatalogService($appConfig), $logger, new EnglishL10N());
     }
 
     // ── normalizeFacility (via reflection since it's private) ──

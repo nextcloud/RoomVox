@@ -19,10 +19,12 @@
  * src/main.js (translate('roomvox', …)), so they carry NO 'roomvox' first arg.
  *
  * Output structure (matches the NC bot's en.json exactly):
- *   { "translations": { "<msgid>": "<msgid>", "<singular>": ["<singular>", "<plural>"] } }
+ *   { "translations": { "<msgid>": "<msgid>",
+ *                       "_<singular>_::_<plural>_": ["<singular>", "<plural>"] } }
  *
- * Singular values map to themselves; plural entries map to a [singular, plural]
- * array — generate-pot.js already expects exactly this shape.
+ * Singular values map to themselves; a plural is keyed the way Nextcloud looks
+ * it up at runtime (pluralKey() below, in JS and PHP alike) and maps to a
+ * [singular, plural] array — generate-pot.js reads the array.
  *
  * This module also exports computeSourceStrings() so scripts/check-l10n-sync.js
  * can compute the exact same source-string set without a second copy of the
@@ -57,12 +59,17 @@ const STR = "'((?:[^'\\\\]|\\\\.)*)'";
 // literal `$t(`/`$n(` token, which can't be a false positive.
 const T_PREFIX = `(?:this\\.|\\$\\w+->|->)?`;
 
+// Whitespace, plus `// …` comment lines: a TRANSLATORS hint sits directly
+// above the string when a call spans several lines.
+const GAP = `\\s*(?://[^\\n]*\\n\\s*)*`;
+const GAP_COMMA = `${GAP},${GAP}`;
+
 // Factory functions so every caller gets fresh, non-shared RegExp instances
 // (a shared /g regex carries lastIndex state between files).
 function makeRegexes() {
 	return {
-		T_RE: new RegExp(`(?<![\\w$])${T_PREFIX}t\\(\\s*(?:'roomvox'\\s*,\\s*)?${STR}`, 'g'),
-		N_RE: new RegExp(`(?<![\\w$])${T_PREFIX}n\\(\\s*(?:'roomvox'\\s*,\\s*)?${STR}\\s*,\\s*${STR}`, 'g'),
+		T_RE: new RegExp(`(?<![\\w$])${T_PREFIX}t\\(${GAP}(?:'roomvox'\\s*,\\s*)?${STR}`, 'g'),
+		N_RE: new RegExp(`(?<![\\w$])${T_PREFIX}n\\(${GAP}(?:'roomvox'\\s*,\\s*)?${STR}${GAP_COMMA}${STR}`, 'g'),
 		DT_RE: new RegExp(`(?:this\\.)?\\$t\\(\\s*${STR}`, 'g'),
 		DN_RE: new RegExp(`(?:this\\.)?\\$n\\(\\s*${STR}\\s*,\\s*${STR}`, 'g'),
 	};
@@ -75,6 +82,35 @@ function unescapeLiteral(raw) {
 		if (ch === 't') return '\t';
 		return ch; // \' -> '   \\ -> \
 	});
+}
+
+/**
+ * The TRANSLATORS hint for a call at `index`, the way Nextcloud's
+ * translationtool reads it: a hint on the same line wins, otherwise the line
+ * directly above. Covers `// TRANSLATORS …` (JS, PHP) and
+ * `<!-- TRANSLATORS … -->` (Vue templates). Returns null without one.
+ */
+function hintAt(content, index, literalIndex = index) {
+	// A call spread over lines (PHP: `$l->t(` here, the string below) takes
+	// the hint from the line above the string, as xgettext does.
+	if (content.lastIndexOf('\n', literalIndex - 1) > content.lastIndexOf('\n', index - 1)) {
+		return hintAt(content, literalIndex);
+	}
+	const lineStart = content.lastIndexOf('\n', index - 1) + 1;
+	const lineEnd = content.indexOf('\n', index);
+	const current = content.slice(lineStart, lineEnd === -1 ? undefined : lineEnd);
+	const prevStart = content.lastIndexOf('\n', lineStart - 2) + 1;
+	const previous = lineStart > 0 ? content.slice(prevStart, lineStart - 1) : '';
+	// xgettext gives a comment on the line above to the first string of the
+	// line only; translationtool does the same for a template line, unless
+	// the line carries its own hint.
+	const firstCall = current.search(/(?<![\w$])(?:t|n)\(|->(?:t|n)\(/);
+	const isFirst = firstCall === -1 || lineStart + firstCall >= index - 2;
+	const source = current.includes('TRANSLATORS') ? current : (isFirst ? previous : '');
+	const m = source.match(/TRANSLATORS[: ]*(.*)/);
+	if (!m) return null;
+	const hint = m[1].replace(/-->\s*$/, '').replace(/\*\/\s*$/, '').replace(/\r$/, '').trim();
+	return hint || null;
 }
 
 // Recursively collect files under dir matching one of the extensions.
@@ -102,13 +138,22 @@ function walk(dir, exts, acc = []) {
  * string set. Single source of truth for both the POT extractor (this file's
  * CLI) and the prebuild guard (check-l10n-sync.js).
  *
- * @returns {{ singulars: string[], plurals: [string,string][], files: string[] }}
+ * @returns {{ singulars: string[], plurals: [string,string][], files: string[], hints: Map<string, string[]> }}
  *   singulars and plurals are sorted (localeCompare); a string used in n() is a
- *   plural pair and never also appears in singulars.
+ *   plural pair and never also appears in singulars. hints maps a msgid to its
+ *   TRANSLATORS comments, for generate-pot.js; they do not affect the manifest.
  */
 function computeSourceStrings() {
 	const singulars = new Set();
 	const plurals = new Map(); // singular -> plural
+	const hints = new Map(); // msgid -> [hint, …]
+	const addHint = (msgid, content, index, literalIndex) => {
+		const hint = hintAt(content, index, literalIndex);
+		if (!hint) return;
+		const list = hints.get(msgid) ?? [];
+		if (!list.includes(hint)) list.push(hint);
+		hints.set(msgid, list);
+	};
 
 	const files = [
 		...walk(path.join(ROOT, 'src'), ['.vue', '.js']),
@@ -125,14 +170,23 @@ function computeSourceStrings() {
 			while ((m = re.exec(content)) !== null) {
 				const sing = unescapeLiteral(m[1]);
 				const plur = unescapeLiteral(m[2]);
-				if (sing) plurals.set(sing, plur);
+				if (sing) {
+					plurals.set(sing, plur);
+					addHint(sing, content, m.index, m.index + m[0].indexOf("'", m[0].indexOf('(')));
+				}
 			}
 		}
 
 		for (const re of [T_RE, DT_RE]) {
 			while ((m = re.exec(content)) !== null) {
 				const s = unescapeLiteral(m[1]);
-				if (s) singulars.add(s);
+				// The app id itself is never a msgid. It shows up when the
+				// optional 'roomvox' group cannot match because no string
+				// literal follows, as in a comment that reads t('roomvox', …).
+				if (s && s !== 'roomvox') {
+					singulars.add(s);
+					addHint(s, content, m.index, m.index + m[0].length - m[1].length - 2);
+				}
 			}
 		}
 	}
@@ -148,7 +202,7 @@ function computeSourceStrings() {
 		.sort((a, b) => a.localeCompare(b))
 		.map(s => [s, plurals.get(s)]);
 
-	return { singulars: sortedSingulars, plurals: sortedPlurals, files };
+	return { singulars: sortedSingulars, plurals: sortedPlurals, files, hints };
 }
 
 /**
@@ -168,7 +222,16 @@ function sourceStringManifest(src) {
 	return { msgids, sha256, count: msgids.length };
 }
 
-module.exports = { computeSourceStrings, sourceStringManifest };
+/**
+ * The key a plural has in l10n/<lang>.{js,json}: what @nextcloud/l10n's
+ * translatePlural() and PHP's IL10N::n() look up, and what the Transifex bot
+ * writes. A plural stored under its singular alone is never found.
+ */
+function pluralKey(singular, plural) {
+	return `_${singular}_::_${plural}_`;
+}
+
+module.exports = { computeSourceStrings, sourceStringManifest, pluralKey };
 
 // ---- CLI ----
 if (require.main === module) {
@@ -180,7 +243,7 @@ if (require.main === module) {
 		translations[s] = s;
 	}
 	for (const [s, p] of src.plurals) {
-		translations[s] = [s, p];
+		translations[pluralKey(s, p)] = [s, p];
 	}
 
 	const out = { translations, pluralForm: 'nplurals=2; plural=(n != 1);' };

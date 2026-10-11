@@ -7,7 +7,13 @@
                 </template>
                 {{ t('roomvox', 'Back') }}
             </NcButton>
-            <h2>{{ creating ? t('roomvox', 'New room group') : t('roomvox', 'Edit room group') }}</h2>
+            <h2>
+                {{ creating
+                    // TRANSLATORS Heading
+                    ? t('roomvox', 'New room group')
+                    // TRANSLATORS Heading
+                    : t('roomvox', 'Edit room group') }}
+            </h2>
         </div>
 
         <div class="room-group-editor__form">
@@ -15,9 +21,11 @@
                 <h3>{{ t('roomvox', 'General') }}</h3>
                 <div class="form-fields">
                     <NcTextField
-                        :label="t('roomvox', 'Group name')"
+                        :label="// TRANSLATORS Field label: name of the room group
+                            t('roomvox', 'Group name')"
                         v-model="form.name"
-                        :placeholder="t('roomvox', 'e.g. Floor 3')"
+                        :placeholder="// TRANSLATORS Placeholder: example room group name; may be replaced by a local example
+                            t('roomvox', 'e.g. Floor 3')"
                         :error="!!errors.name"
                         :helper-text="errors.name"
                         required
@@ -32,7 +40,11 @@
 
             <div class="form-actions">
                 <NcButton type="primary" @click="save">
-                    {{ creating ? t('roomvox', 'Create group') : t('roomvox', 'Save changes') }}
+                    {{ creating
+                        // TRANSLATORS Button: create a room group
+                        ? t('roomvox', 'Create group')
+                        // TRANSLATORS Button
+                        : t('roomvox', 'Save changes') }}
                 </NcButton>
                 <NcButton type="secondary" @click="$emit('cancel')">
                     {{ t('roomvox', 'Cancel') }}
@@ -47,6 +59,7 @@
                     v-if="!creating"
                     type="error"
                     @click="showDeleteDialog = true">
+                    <!-- TRANSLATORS Button: delete a room group -->
                     {{ t('roomvox', 'Delete group') }}
                 </NcButton>
             </div>
@@ -54,7 +67,8 @@
 
         <NcDialog
             v-if="showDeleteDialog"
-            :name="t('roomvox', 'Delete room group')"
+            :name="// TRANSLATORS Dialog title
+                t('roomvox', 'Delete room group')"
             @closing="showDeleteDialog = false">
             <p>{{ t('roomvox', 'Are you sure you want to delete this room group? Rooms in this group will become ungrouped. This only works if no rooms are assigned.') }}</p>
             <template #actions>
@@ -71,14 +85,13 @@
 
 <script setup>
 import { ref, reactive, watch } from 'vue'
-import { translate } from '@nextcloud/l10n'
+import { t } from '../l10n.js'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
 import NcTextArea from '@nextcloud/vue/components/NcTextArea'
 import NcDialog from '@nextcloud/vue/components/NcDialog'
 import ArrowLeft from 'vue-material-design-icons/ArrowLeft.vue'
 
-const t = (app, text, vars = {}) => translate(app, text, vars)
 
 const props = defineProps({
     group: { type: Object, default: null },

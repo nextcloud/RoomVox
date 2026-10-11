@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace OCA\RoomVox\Controller;
 
 use OCA\RoomVox\AppInfo\Application;
+use OCA\RoomVox\Service\RoomCatalogService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IAppConfig;
 use OCP\IGroupManager;
+use OCP\IL10N;
 use OCP\IRequest;
 use OCP\IUserSession;
 use OCP\Security\ICrypto;
@@ -21,27 +23,11 @@ class SettingsController extends Controller {
         private ICrypto $crypto,
         private IUserSession $userSession,
         private IGroupManager $groupManager,
+        private RoomCatalogService $catalog,
+        private IL10N $l10n,
     ) {
         parent::__construct($appName, $request);
     }
-
-    private const DEFAULT_ROOM_TYPES = [
-        ['id' => 'meeting-room', 'label' => 'Meeting room'],
-        ['id' => 'rehearsal-room', 'label' => 'Rehearsal room'],
-        ['id' => 'studio', 'label' => 'Studio'],
-        ['id' => 'lecture-hall', 'label' => 'Lecture hall'],
-        ['id' => 'outdoor-area', 'label' => 'Outdoor area'],
-        ['id' => 'other', 'label' => 'Other'],
-    ];
-
-    private const DEFAULT_FACILITIES = [
-        ['id' => 'projector', 'label' => 'Projector'],
-        ['id' => 'whiteboard', 'label' => 'Whiteboard'],
-        ['id' => 'videoconf', 'label' => 'Video conference'],
-        ['id' => 'audio', 'label' => 'Audio system'],
-        ['id' => 'display', 'label' => 'Display screen'],
-        ['id' => 'wheelchair', 'label' => 'Wheelchair accessible'],
-    ];
 
     /**
      * Get global settings
@@ -49,15 +35,15 @@ class SettingsController extends Controller {
     public function get(): JSONResponse {
         $userId = $this->getCurrentUserId();
         if ($userId === null || !$this->groupManager->isAdmin($userId)) {
-            return new JSONResponse(['error' => 'Admin access required'], 403);
+            return new JSONResponse(['error' => $this->l10n->t('Administrator privileges required')], 403);
         }
 
         $settings = [
             'defaultAutoAccept' => $this->appConfig->getValueString(Application::APP_ID, 'default_auto_accept', 'false') === 'true',
             'emailEnabled' => $this->appConfig->getValueString(Application::APP_ID, 'email_enabled', 'true') === 'true',
             'showWeekends' => $this->appConfig->getValueString(Application::APP_ID, 'show_weekends', 'true') === 'true',
-            'roomTypes' => $this->getRoomTypes(),
-            'facilities' => $this->getFacilities(),
+            'roomTypes' => $this->catalog->getRoomTypes(),
+            'facilities' => $this->catalog->getFacilities(),
             'exchangeEnabled' => $this->appConfig->getValueString(Application::APP_ID, 'exchange_enabled', 'false') === 'true',
             'exchangeTenantId' => $this->appConfig->getValueString(Application::APP_ID, 'exchange_tenant_id', ''),
             'exchangeClientId' => $this->appConfig->getValueString(Application::APP_ID, 'exchange_client_id', ''),
@@ -75,7 +61,7 @@ class SettingsController extends Controller {
     public function save(): JSONResponse {
         $userId = $this->getCurrentUserId();
         if ($userId === null || !$this->groupManager->isAdmin($userId)) {
-            return new JSONResponse(['error' => 'Admin access required'], 403);
+            return new JSONResponse(['error' => $this->l10n->t('Administrator privileges required')], 403);
         }
 
         $defaultAutoAccept = $this->request->getParam('defaultAutoAccept');
@@ -184,24 +170,6 @@ class SettingsController extends Controller {
         }
 
         return new JSONResponse(['status' => 'ok']);
-    }
-
-    private function getRoomTypes(): array {
-        $json = $this->appConfig->getValueString(Application::APP_ID, 'room_types', '');
-        if ($json === '') {
-            return self::DEFAULT_ROOM_TYPES;
-        }
-        $types = json_decode($json, true);
-        return is_array($types) ? $types : self::DEFAULT_ROOM_TYPES;
-    }
-
-    private function getFacilities(): array {
-        $json = $this->appConfig->getValueString(Application::APP_ID, 'facilities', '');
-        if ($json === '') {
-            return self::DEFAULT_FACILITIES;
-        }
-        $facilities = json_decode($json, true);
-        return is_array($facilities) ? $facilities : self::DEFAULT_FACILITIES;
     }
 
     private function getCurrentUserId(): ?string {

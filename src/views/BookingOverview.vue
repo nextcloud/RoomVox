@@ -62,13 +62,15 @@
                     <button
                         :class="['view-btn', { active: viewMode === 'list' }]"
                         @click="viewMode = 'list'"
-                        :title="t('roomvox', 'List view')">
+                        :title="// TRANSLATORS Tooltip of an icon button; also read by screen readers
+                            t('roomvox', 'List view')">
                         <FormatListBulleted :size="20" />
                     </button>
                     <button
                         :class="['view-btn', { active: viewMode === 'calendar' }]"
                         @click="viewMode = 'calendar'"
-                        :title="t('roomvox', 'Calendar view')">
+                        :title="// TRANSLATORS Tooltip of an icon button; also read by screen readers
+                            t('roomvox', 'Calendar view')">
                         <CalendarMonth :size="20" />
                     </button>
                 </div>
@@ -105,6 +107,7 @@
                 <thead>
                     <tr>
                         <th class="th-sortable" @click="toggleSort('summary')">
+                            <!-- TRANSLATORS Column header: the booking title -->
                             {{ t('roomvox', 'Event') }}
                             <span v-if="sortField === 'summary'" class="sort-icon">{{ sortDirection === 'asc' ? '▲' : '▼' }}</span>
                         </th>
@@ -113,21 +116,26 @@
                             <span v-if="sortField === 'roomName'" class="sort-icon">{{ sortDirection === 'asc' ? '▲' : '▼' }}</span>
                         </th>
                         <th class="th-sortable" @click="toggleSort('roomLocation')">
+                            <!-- TRANSLATORS Column header and heading -->
                             {{ t('roomvox', 'Location') }}
                             <span v-if="sortField === 'roomLocation'" class="sort-icon">{{ sortDirection === 'asc' ? '▲' : '▼' }}</span>
                         </th>
                         <th class="th-sortable" @click="toggleSort('dtstart')">
+                            <!-- TRANSLATORS Column header: date and time of the booking -->
                             {{ t('roomvox', 'When') }}
                             <span v-if="sortField === 'dtstart'" class="sort-icon">{{ sortDirection === 'asc' ? '▲' : '▼' }}</span>
                         </th>
                         <th class="th-sortable" @click="toggleSort('organizerName')">
+                            <!-- TRANSLATORS Column header: the person who booked -->
                             {{ t('roomvox', 'Organizer') }}
                             <span v-if="sortField === 'organizerName'" class="sort-icon">{{ sortDirection === 'asc' ? '▲' : '▼' }}</span>
                         </th>
                         <th class="th-sortable" @click="toggleSort('partstat')">
+                            <!-- TRANSLATORS Column header -->
                             {{ t('roomvox', 'Status') }}
                             <span v-if="sortField === 'partstat'" class="sort-icon">{{ sortDirection === 'asc' ? '▲' : '▼' }}</span>
                         </th>
+                        <!-- TRANSLATORS Column header above the action buttons -->
                         <th class="th-actions">{{ t('roomvox', 'Actions') }}</th>
                     </tr>
                 </thead>
@@ -237,7 +245,8 @@
 
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue'
-import { translate, getLanguage } from '@nextcloud/l10n'
+import { getLanguage } from '@nextcloud/l10n'
+import { t } from '../l10n.js'
 import { showError, showSuccess } from '@nextcloud/dialogs'
 
 import NcButton from '@nextcloud/vue/components/NcButton'
@@ -258,7 +267,6 @@ import ResourceCalendar from '../components/calendar/ResourceCalendar.vue'
 import { getAllBookings, respondToBooking, deleteBooking } from '../services/api.js'
 import { generateUrl } from '@nextcloud/router'
 
-const t = (app, text, vars = {}) => translate(app, text, vars)
 const ncLocale = getLanguage().replace('_', '-')
 
 const props = defineProps({
@@ -291,6 +299,7 @@ const stats = ref({
 })
 
 const statusTabs = computed(() => [
+    // TRANSLATORS Booking filter: all statuses or all dates
     { value: 'all', label: t('roomvox', 'All') },
     { value: 'pending', label: t('roomvox', 'Pending') },
     { value: 'accepted', label: t('roomvox', 'Accepted') },
@@ -298,10 +307,14 @@ const statusTabs = computed(() => [
 ])
 
 const dateRangeTabs = computed(() => [
+    // TRANSLATORS Booking filter
     { value: 'upcoming', label: t('roomvox', 'Upcoming') },
+    // TRANSLATORS Booking filter
     { value: 'thisWeek', label: t('roomvox', 'This week') },
+    // TRANSLATORS Booking filter
     { value: 'thisMonth', label: t('roomvox', 'This month') },
     { value: 'all', label: t('roomvox', 'All') },
+    // TRANSLATORS Booking filter
     { value: 'past', label: t('roomvox', 'Past') },
 ])
 
@@ -317,6 +330,7 @@ const groupNameById = computed(() => {
 // apart in the filter (issue #19). Rooms without a (resolvable) group keep
 // their plain name.
 const roomOptions = computed(() => [
+    // TRANSLATORS Shown when an API token is valid for every room, and as the room filter that shows every room
     { id: null, label: t('roomvox', 'All rooms') },
     ...props.rooms.map(r => {
         const groupName = r.groupId ? groupNameById.value[r.groupId] : null
@@ -346,9 +360,13 @@ const filteredBookings = computed(() => {
 })
 
 const emptyTitle = computed(() => {
+    // TRANSLATORS Empty state
     if (statusFilter.value === 'pending') return t('roomvox', 'No pending bookings')
+    // TRANSLATORS Empty state
     if (statusFilter.value === 'accepted') return t('roomvox', 'No accepted bookings')
+    // TRANSLATORS Empty state
     if (statusFilter.value === 'declined') return t('roomvox', 'No declined bookings')
+    // TRANSLATORS Empty state
     return t('roomvox', 'No bookings')
 })
 
@@ -463,6 +481,7 @@ const formatRelativeDate = (dateStr) => {
         return t('roomvox', 'Today')
     }
     if (d.toDateString() === tomorrow.toDateString()) {
+        // TRANSLATORS Relative date shown instead of a date
         return t('roomvox', 'Tomorrow')
     }
     return d.toLocaleDateString(ncLocale, { weekday: 'short', day: 'numeric', month: 'short' })
@@ -488,6 +507,7 @@ const getStatusLabel = (partstat) => {
         case 'ACCEPTED': return t('roomvox', 'Accepted')
         case 'DECLINED': return t('roomvox', 'Declined')
         case 'TENTATIVE': return t('roomvox', 'Pending')
+        // TRANSLATORS Booking status: the request has not been answered yet
         case 'NEEDS-ACTION': return t('roomvox', 'Needs action')
         default: return partstat || t('roomvox', 'Unknown')
     }

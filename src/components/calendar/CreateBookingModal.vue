@@ -1,41 +1,49 @@
 <template>
     <NcModal :name="t('roomvox', 'Create booking')" @close="$emit('close')">
         <div class="create-booking-modal">
+            <!-- TRANSLATORS Heading of the booking dialog -->
             <h2>{{ t('roomvox', 'New booking') }}</h2>
 
             <form @submit.prevent="handleSubmit">
                 <div class="form-group">
+                    <!-- TRANSLATORS Field label: title of the booking -->
                     <label for="booking-summary">{{ t('roomvox', 'Title') }} *</label>
                     <NcTextField
                         id="booking-summary"
                         v-model="form.summary"
-                        :placeholder="t('roomvox', 'Meeting name')"
+                        :placeholder="// TRANSLATORS Placeholder in the booking title field
+                            t('roomvox', 'Meeting name')"
                         required />
                 </div>
 
                 <div class="form-group">
+                    <!-- TRANSLATORS Field label and column header -->
                     <label for="booking-room">{{ t('roomvox', 'Room') }} *</label>
                     <NcSelect
                         v-model="selectedRoom"
                         :options="roomOptions"
-                        :placeholder="t('roomvox', 'Select a room')"
+                        :placeholder="// TRANSLATORS Placeholder of the room picker
+                            t('roomvox', 'Select a room')"
                         label="label"
                         :reduce="option => option.value" />
                 </div>
 
                 <div class="form-row">
                     <div class="form-group">
+                        <!-- TRANSLATORS Field label -->
                         <label for="booking-date">{{ t('roomvox', 'Date') }} *</label>
                         <NcDateTimePicker
                             id="booking-date"
                             v-model="form.date"
                             type="date"
-                            :placeholder="t('roomvox', 'Select date')" />
+                            :placeholder="// TRANSLATORS Placeholder of the date picker
+                                t('roomvox', 'Select date')" />
                     </div>
                 </div>
 
                 <div class="form-row">
                     <div class="form-group">
+                        <!-- TRANSLATORS Field label and placeholder -->
                         <label for="booking-start">{{ t('roomvox', 'Start time') }} *</label>
                         <NcDateTimePicker
                             id="booking-start"
@@ -45,6 +53,7 @@
                             :placeholder="t('roomvox', 'Start time')" />
                     </div>
                     <div class="form-group">
+                        <!-- TRANSLATORS Field label and placeholder -->
                         <label for="booking-end">{{ t('roomvox', 'End time') }} *</label>
                         <NcDateTimePicker
                             id="booking-end"
@@ -56,11 +65,13 @@
                 </div>
 
                 <div class="form-group">
+                    <!-- TRANSLATORS Field label -->
                     <label for="booking-description">{{ t('roomvox', 'Description') }}</label>
                     <NcTextArea
                         id="booking-description"
                         v-model="form.description"
-                        :placeholder="t('roomvox', 'Optional description')"
+                        :placeholder="// TRANSLATORS Placeholder in a description field
+                            t('roomvox', 'Optional description')"
                         :rows="3" />
                 </div>
 
@@ -70,6 +81,7 @@
 
                 <div class="modal-actions">
                     <NcButton type="tertiary" @click="$emit('close')">
+                        <!-- TRANSLATORS Button: close the dialog without saving (not: cancel a booking) -->
                         {{ t('roomvox', 'Cancel') }}
                     </NcButton>
                     <NcButton
@@ -79,6 +91,7 @@
                         <template v-if="loading">
                             <NcLoadingIcon :size="20" />
                         </template>
+                        <!-- TRANSLATORS Dialog title and button (verb) -->
                         {{ t('roomvox', 'Create booking') }}
                     </NcButton>
                 </div>
@@ -89,7 +102,7 @@
 
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue'
-import { translate } from '@nextcloud/l10n'
+import { t } from '../../l10n.js'
 import { showSuccess, showError } from '@nextcloud/dialogs'
 import { escapeHtml } from '../../utils/escapeHtml.js'
 
@@ -103,7 +116,6 @@ import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 
 import { createBooking } from '../../services/api.js'
 
-const t = (app, text, vars = {}) => translate(app, text, vars)
 
 const props = defineProps({
     roomId: { type: String, default: null },
@@ -185,6 +197,7 @@ async function handleSubmit() {
         const endISO = combineDateTime(form.value.date, form.value.endTime)
 
         if (!startISO || !endISO) {
+            // TRANSLATORS Error in the booking dialog
             error.value = t('roomvox', 'Invalid date/time selection')
             return
         }
@@ -202,10 +215,11 @@ async function handleSubmit() {
             description: form.value.description.trim(),
         })
 
+        // TRANSLATORS Confirmation message
         showSuccess(t('roomvox', 'Booking created successfully'))
         emit('created')
     } catch (e) {
-        const message = e.response?.data?.error || 'Failed to create booking'
+        const message = e.response?.data?.error || t('roomvox', 'Failed to create booking')
         error.value = message
         showError(escapeHtml(message))
     } finally {

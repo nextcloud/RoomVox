@@ -27,7 +27,7 @@ class ExchangeSyncServiceTest extends TestCase {
             $this->graphClient,
             $this->calDAVService,
             $this->roomService,
-            $logger,
+            $logger
         );
     }
 
