@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.6.1] - 2026-10-11 - Security fix
+
+### Security
+
+- **Room names, booking titles and server messages could run script in another person's browser.** Three places treated text as HTML: the error message about a room address that another room already uses, the error messages that show the server's reason, and the room timeline, which shows each room's name and each booking's title. A room manager could name a room so that it ran script when an administrator later saw that message, and anyone who can book a room could do the same with a booking title in the timeline. Names and titles are now escaped before they reach these places, so they show exactly as typed and never as markup. Update from 1.6.0 is recommended.
+
 ### Fixed
 
 - **The documentation no longer promises room availability in Outlook's Scheduling Assistant.** It said that Outlook supports CalDAV resources through a CalDAV account and that a room "will respond with its availability" in the Scheduling Assistant. Outlook has no built-in CalDAV support and shows free/busy only from Exchange or from an Internet Free/Busy (IFB) service, which RoomVox does not provide; IFB add-ins such as NC Connector look addresses up in Nextcloud's system address book, which lists users but not rooms. The Outlook pages now describe booking through a CalDAV add-in such as CalDAV Synchronizer, and the troubleshooting page explains why the Scheduling Assistant shows no availability for rooms.

@@ -576,6 +576,7 @@ import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { showError, showSuccess } from '@nextcloud/dialogs'
 import { translate, getLanguage } from '@nextcloud/l10n'
 import { generateUrl } from '@nextcloud/router'
+import { escapeHtml } from './utils/escapeHtml.js'
 import NcSettingsSection from '@nextcloud/vue/components/NcSettingsSection'
 import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwitch'
 import NcNoteCard from '@nextcloud/vue/components/NcNoteCard'
@@ -826,7 +827,7 @@ const onCreateToken = async () => {
         await loadApiTokens()
         showSuccess(t('roomvox', 'API token created'))
     } catch (e) {
-        showError(t('roomvox', 'Failed to create API token') + ': ' + (e.response?.data?.error || e.message))
+        showError(t('roomvox', 'Failed to create API token') + ': ' + escapeHtml(e.response?.data?.error || e.message))
     } finally {
         creatingToken.value = false
     }
@@ -967,10 +968,10 @@ const onSaveRoom = async (roomData) => {
             const conflicting = rooms.value.find(r => r.id === conflictingId)
             showError(t('roomvox', 'Room "{room}" already uses this email address', {
                 room: conflicting?.name || conflictingId || '?',
-            }, asText))
+            }))
             return
         }
-        showError(t('roomvox', 'Failed to save room') + ': ' + (e.response?.data?.error || e.message))
+        showError(t('roomvox', 'Failed to save room') + ': ' + escapeHtml(e.response?.data?.error || e.message))
     }
 }
 
@@ -1010,7 +1011,7 @@ const onSaveRoomGroup = async (groupData) => {
         creatingRoomGroup.value = false
         await loadRooms()
     } catch (e) {
-        showError(t('roomvox', 'Failed to save room group') + ': ' + (e.response?.data?.error || e.message))
+        showError(t('roomvox', 'Failed to save room group') + ': ' + escapeHtml(e.response?.data?.error || e.message))
     }
 }
 
@@ -1021,7 +1022,7 @@ const onDeleteRoomGroup = async (groupId) => {
         selectedRoomGroup.value = null
         await loadRooms()
     } catch (e) {
-        showError(t('roomvox', 'Failed to delete room group') + ': ' + (e.response?.data?.error || e.message))
+        showError(t('roomvox', 'Failed to delete room group') + ': ' + escapeHtml(e.response?.data?.error || e.message))
     }
 }
 
@@ -1038,7 +1039,7 @@ const onMoveToGroup = async ({ room, groupId }) => {
         showSuccess(groupId ? t('roomvox', 'Room moved to group') : t('roomvox', 'Room removed from group'))
         await loadRooms()
     } catch (e) {
-        showError(t('roomvox', 'Failed to move room') + ': ' + (e.response?.data?.error || e.message))
+        showError(t('roomvox', 'Failed to move room') + ': ' + escapeHtml(e.response?.data?.error || e.message))
     }
 }
 

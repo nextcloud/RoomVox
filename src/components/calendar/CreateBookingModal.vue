@@ -91,6 +91,7 @@
 import { ref, computed, watch, onMounted } from 'vue'
 import { translate } from '@nextcloud/l10n'
 import { showSuccess, showError } from '@nextcloud/dialogs'
+import { escapeHtml } from '../../utils/escapeHtml.js'
 
 import NcModal from '@nextcloud/vue/components/NcModal'
 import NcButton from '@nextcloud/vue/components/NcButton'
@@ -206,7 +207,7 @@ async function handleSubmit() {
     } catch (e) {
         const message = e.response?.data?.error || 'Failed to create booking'
         error.value = message
-        showError(message)
+        showError(escapeHtml(message))
     } finally {
         loading.value = false
     }

@@ -70,6 +70,7 @@ import timeGridPlugin from '@fullcalendar/timegrid'
 import interactionPlugin from '@fullcalendar/interaction'
 import { showError, showSuccess } from '@nextcloud/dialogs'
 import { translate, getLanguage } from '@nextcloud/l10n'
+import { escapeHtml } from '../../utils/escapeHtml.js'
 const t = (app, text, vars = {}) => translate(app, text, vars)
 const ncLocale = getLanguage().replace('_', '-')
 
@@ -147,7 +148,7 @@ const calendarOptions = computed(() => ({
     resources: resources.value,
     events: events.value,
     resourceLabelContent: (arg) => {
-        return { html: `<span class="resource-label">${arg.resource.title}</span>` }
+        return { html: `<span class="resource-label">${escapeHtml(arg.resource.title)}</span>` }
     },
     eventContent: (arg) => {
         const status = arg.event.extendedProps?.partstat || ''
@@ -159,8 +160,8 @@ const calendarOptions = computed(() => ({
             : arg.timeText
         return {
             html: `<div class="fc-event-content ${statusClass}">
-                <span class="fc-event-time">${timeText}</span>
-                <span class="fc-event-title">${arg.event.title}</span>
+                <span class="fc-event-time">${escapeHtml(timeText)}</span>
+                <span class="fc-event-title">${escapeHtml(arg.event.title)}</span>
             </div>`,
         }
     },

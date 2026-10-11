@@ -1,6 +1,6 @@
 {
     "name": "roomvox",
-    "version": "1.6.0",
+    "version": "1.6.1",
     "description": "Nextcloud Room Booking App",
     "scripts": {
         "prebuild": "node scripts/check-l10n-sync.js",
@@ -12,7 +12,8 @@
         "l10n:check": "node scripts/check-l10n-sync.js",
         "l10n:js": "node scripts/generate-l10n-js.js",
         "pot": "npm run l10n:extract && node scripts/generate-pot.js",
-        "l10n:push": "npm run l10n:extract && node scripts/lint-l10n-strings.js && node scripts/generate-pot.js"
+        "l10n:push": "npm run l10n:extract && node scripts/lint-l10n-strings.js && node scripts/generate-pot.js",
+        "test:js": "node --test 'tests-js/**/*.test.mjs'"
     },
     "dependencies": {
         "@fullcalendar/core": "^6.1.20",
