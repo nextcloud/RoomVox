@@ -1,135 +1,178 @@
 # RoomVox vs Nextcloud Calendar Resource Management
 
-This document compares RoomVox with Nextcloud's built-in [Calendar Resource Management](https://github.com/nextcloud/calendar_resource_management) app (v0.12.0-dev.1, February 2026).
+This page compares RoomVox with Nextcloud's own [Calendar Resource Management](https://github.com/nextcloud/calendar_resource_management) app (CRM). CRM recently gained a web interface, so we often get asked: *what does RoomVox add?*
 
-## Overview
+Checked in **October 2026** against RoomVox 1.6.1 and against the CRM code and issue tracker: stable release 0.12.2, release candidate 1.0.0-rc.2 (the first release with the web UI), and `main`. CRM 1.0.0 itself was not out yet at the time of writing. Calendar behaviour refers to Nextcloud Calendar 6.6 on Nextcloud 35.
+
+## In short
+
+The two apps solve different problems.
+
+- **Calendar Resource Management is a room register.** You enter buildings, floors, rooms and resources. Nextcloud then shows those rooms in the Calendar app, so users can invite them to an event. CRM contains no booking logic itself. Whatever happens after the invitation is done by Nextcloud server: a free/busy check that accepts or declines the room.
+- **RoomVox is a booking system.** Besides publishing rooms to the calendar, it decides *who* may book *which* room, *when* and *how far ahead*. It can route bookings through a manager for approval, emails everyone involved, and connects rooms to Microsoft 365/Exchange, displays and other systems.
+
+If you only need rooms to show up in the calendar and the free/busy answer is good enough, CRM is a sound and free choice. Once you need rules, approval, notifications or access control per room, you need RoomVox.
+
+## At a glance
 
 | | **RoomVox** | **Calendar Resource Management** |
 |---|---|---|
-| Version | 1.5.0 | 0.12.0-dev.1 |
+| Version | 1.6.1 | 0.12.2 stable · 1.0.0-rc.2 with web UI |
+| Maintainer | VoxCloud | Nextcloud GmbH |
 | License | AGPL-3.0 | AGPL-3.0 |
-| Nextcloud | 32–35 | 31–34 |
-| PHP | 8.2+ | 8.1–8.5 |
-| Data storage | IAppConfig (no database) | Database (6+ tables) |
-| Admin interface | Full web UI | CLI only (`occ` commands) |
+| Nextcloud | 32–35 | 31–35 (0.12) · 34–35 (1.0) |
+| PHP | 8.2+ | 8.1–8.5 (0.12) · 8.3–8.5 (1.0) |
+| Admin interface | Web UI (admin) + personal page for managers | Web UI in admin settings (1.0, list/create/delete) + `occ` |
+| Interface languages | English, Dutch, German, French | English only |
+| Who decides on a booking | RoomVox's own scheduling rules | Nextcloud server's free/busy check |
 
-## Feature Comparison
+## Feature comparison
 
-| Feature | **RoomVox** | **Calendar Resource Management** |
+### Booking rules
+
+| | **RoomVox** | **CRM** |
 |---|:---:|:---:|
-| Rooms as CalDAV resources | Yes | Yes |
-| Web-based admin panel | Yes | No |
-| Conflict detection | Yes | No (broken — [#199](https://github.com/nextcloud/calendar_resource_management/issues/199)) |
-| Auto-accept bookings | Yes (per room) | Partial (unreliable — [#192](https://github.com/nextcloud/calendar_resource_management/issues/192)) |
-| Approval workflow | Yes | No ([#198](https://github.com/nextcloud/calendar_resource_management/issues/198)) |
-| Availability rules | Yes (day/time) | No |
-| Booking horizon | Yes (max days ahead) | No |
-| Email notifications | Yes (5 types) | No ([#196](https://github.com/nextcloud/calendar_resource_management/issues/196)) |
-| Per-room SMTP | Yes (encrypted) | No |
-| Permission system | Yes (3 roles) | Group restrictions only |
-| Room groups | Yes (with inherited permissions) | No |
-| Custom room types | Yes | No |
-| Room facilities | Yes (customizable) | Yes (fixed set) |
-| Building/floor hierarchy | No | Yes |
-| Vehicles & general resources | No | Yes |
-| iOS compatibility fix | Yes (CUTYPE) | No |
-| eM Client compatibility fix | Yes (LOCATION) | No |
-| Recurring event validation | Yes (horizon + availability) | No conflict checking |
-| Public REST API | Yes (Bearer token auth) | No |
-| CSV import/export | Yes (RoomVox + MS365) | No |
-| Bulk room management | Yes (CSV import) | CLI only |
-| Zero database migrations | Yes | No |
+| Rooms appear in the room finder of Nextcloud Calendar 6.6+ | Yes | Yes |
+| Double-booking check for single events | Yes | Yes (by Nextcloud server) |
+| Double-booking check for recurring events | Yes, every occurrence | No — server does not answer recurring invitations |
+| Auto-accept | Per room | Always, if free |
+| Manager approval | Per room | No ([#198](https://github.com/nextcloud/calendar_resource_management/issues/198), open) |
+| Opening hours per room (days and times) | Yes, multiple rules | No |
+| Booking horizon (max days ahead) | Yes, per room | No |
+| Deactivate a room temporarily | Yes, existing bookings are kept | No |
 
-## Why RoomVox
+### Notifications
 
-### Reliable Booking Management
+| | **RoomVox** | **CRM** |
+|---|:---:|:---:|
+| Email to the organizer | Accepted, declined (with the reason), cancelled | No |
+| Email to room managers | Approval requests, cancellations | No |
+| Emails in the recipient's language | Yes | — |
+| Send from the room's own mail account (per-room SMTP) | Yes, password encrypted | No |
 
-RoomVox provides **working conflict detection** that automatically prevents double bookings. The Calendar Resource Management app has a known, unresolved issue where overlapping bookings are not detected ([#199](https://github.com/nextcloud/calendar_resource_management/issues/199)), making it unreliable for real-world room booking scenarios.
+### Access control
 
-### Approval Workflows
+| | **RoomVox** | **CRM** |
+|---|:---:|:---:|
+| Restrict who can book a room | Yes, per user or group (incl. LDAP) | Per group, `occ` only |
+| Roles | Viewer, Booker, Manager | — |
+| Permissions on a group of rooms, inherited by its rooms | Yes | No |
+| Hide rooms from users who may not see them | Yes | Yes (restricted rooms) |
+| Managers handle bookings for their own rooms | Yes, without admin rights | No |
+| Delegate room setup to a non-admin | No, admin only | Yes, via Nextcloud's *Administration privileges* |
 
-RoomVox supports both **auto-accept** and **manager approval** modes per room. When a room requires approval, the booking is set to tentative and all designated managers receive an email notification. They can then approve or decline the booking from the admin panel. Calendar Resource Management has no approval workflow — bookings are accepted immediately without oversight.
+### Administration
 
-### Full Admin Interface
+| | **RoomVox** | **CRM** |
+|---|:---:|:---:|
+| Create and delete rooms in a web UI | Yes | Yes (1.0) |
+| Edit an existing room | Yes | Not yet — no edit in the UI or `occ` ([PR #342](https://github.com/nextcloud/calendar_resource_management/pull/342) pending) |
+| Overview of all bookings (calendar and list) | Yes | No |
+| Usage statistics | Yes | No |
+| Bulk import/export (CSV) | Yes, including Microsoft 365 `Get-Place` export | No |
+| Room types | Configurable list | Free text per room |
+| Facilities | Configurable list | Fixed set of six (phone, video, TV, projector, whiteboard, wheelchair access) |
 
-RoomVox includes a **complete web-based admin panel** for creating and managing rooms, configuring permissions, reviewing bookings, and adjusting settings. Calendar Resource Management requires administrators to use CLI commands (`occ`) for all management tasks, which is impractical for non-technical administrators.
+### Integrations
 
-### Email Notifications
+| | **RoomVox** | **CRM** |
+|---|:---:|:---:|
+| Microsoft 365 / Exchange room mailboxes, two-way sync | Yes | No |
+| Public REST API (displays, kiosks, signage) | Yes, scoped tokens | No |
+| Subscribable iCal feed per room | Yes | No |
+| Fixes for Apple Calendar (iOS/macOS) and eM Client | Yes | No |
 
-RoomVox sends **five types of email notifications**:
+### Resource model
 
-| Notification | When |
+| | **RoomVox** | **CRM** |
+|---|:---:|:---:|
+| Rooms | Yes | Yes |
+| Buildings and floors | As room fields (building, floor, address) | Separate entities |
+| Equipment and other resources | No | Yes |
+| Vehicles | No | Yes (`occ` only) |
+| Database tables | None — config in app settings, bookings in CalDAV | Own tables |
+
+## What RoomVox adds
+
+### Recurring meetings are checked too
+
+Nextcloud server answers a room invitation by checking the room's free/busy time. It does this **only for single events**: invitations with a repeat rule get no answer at all, so a weekly meeting can land on an occupied room without anyone noticing. There are open reports of double bookings made from other calendar apps as well ([#199](https://github.com/nextcloud/calendar_resource_management/issues/199), [#192](https://github.com/nextcloud/calendar_resource_management/issues/192)).
+
+RoomVox checks **every occurrence** of a recurring series against existing bookings, opening hours and the booking horizon. If one date conflicts, the series is declined and the email lists the dates that are the problem, so the organizer can fix exactly those.
+
+### Rules per room
+
+Each room can have:
+
+- **Opening hours** — for example weekdays 08:00–18:00, with several rules per room.
+- **A booking horizon** — for example at most 90 days ahead. A series that repeats forever is refused for a room with a horizon.
+- **Auto-accept or approval** — some rooms are free to book, others go via a manager.
+
+CRM has none of these. Nextcloud server can honour opening hours if they are set on the room's calendar, but CRM offers no way to set them.
+
+### Approval by a room manager
+
+For rooms that need approval, the booking is marked *tentative* and the room's managers get an email. They approve or decline from their personal RoomVox page in Nextcloud, and the organizer is informed by email. Managers need no admin rights. A manager booking their own room is accepted directly.
+
+### Everyone hears what happened
+
+With CRM, the only feedback is the room's status in the organizer's calendar app. Nextcloud does not email rooms or resources, and no one is told when something goes wrong.
+
+RoomVox emails the organizer when a booking is accepted, declined or cancelled, and always says *why* a booking was declined: no permission, outside opening hours, beyond the horizon, or a conflict. Managers get approval requests and cancellations. Emails are sent in each recipient's own language, and a room can send from its own mail account.
+
+### Access control that fits an organization
+
+RoomVox has three roles — **Viewer**, **Booker** and **Manager** — that you assign to users or groups, including LDAP groups. Give a whole group of rooms its permissions once, and every room in it inherits them. Rooms a user may not see are hidden from the room picker.
+
+CRM can restrict a room to certain groups, but only on the command line, and without a distinction between viewing, booking and managing.
+
+### Microsoft 365 and Exchange
+
+RoomVox can link a room to an Exchange room mailbox and keep both sides in sync:
+
+- Bookings made in Nextcloud are written to Exchange.
+- Bookings made in Outlook/Exchange are pulled into Nextcloud, through webhooks and a sync every 15 minutes.
+- Exchange bookings count in the double-booking check.
+
+This lets an organization move to Nextcloud step by step, or run both side by side. Rooms can also be imported straight from a Microsoft 365 `Get-Place` export.
+
+### Connect displays and other systems
+
+The [Public API](public-api.md) lets room displays, kiosks, digital signage and other applications read room status and availability, and create or cancel bookings. Each token has a scope (read, book or admin), can be limited to specific rooms and can expire. Every room can also publish a subscribable iCal feed.
+
+### Works with the calendar apps people already use
+
+Booking happens in the user's own calendar app. RoomVox corrects known quirks so bookings also work from:
+
+- **Apple Calendar (iOS/macOS)**, which invites rooms as a person instead of a room.
+- **eM Client**, which only fills in the location field.
+
+Like CRM, RoomVox publishes each room's building, floor, capacity and facilities. The room finder in Nextcloud Calendar 6.6 and later uses these to filter rooms and group them by building. Rooms are only grouped by building when the room's building field is filled in; rooms without one are listed under *Other rooms*.
+
+### Day-to-day management
+
+- A **booking overview** in calendar and list view, for admins and for managers of their own rooms.
+- **Statistics** on room usage.
+- **CSV import and export** with a preview before anything changes.
+- **Editing** any room setting at any time. In CRM 1.0 a room can only be created or deleted; editing is still in review.
+
+## Where Calendar Resource Management is the better fit
+
+- **Equipment, vehicles and other resources.** RoomVox only handles rooms.
+- **Buildings and floors as separate entities.** RoomVox stores building and floor as fields of a room, which is enough for filtering and grouping but not a full location hierarchy.
+- **Delegating room setup.** CRM's settings can be assigned to a non-admin through Nextcloud's *Administration privileges*. In RoomVox, managers handle bookings but creating rooms and setting permissions stays with the admin.
+- **A minimal setup.** If rooms only need to be visible and free/busy is enough, CRM does the job with less to configure.
+
+## Which one to choose
+
+| You need… | Choose |
 |---|---|
-| Booking confirmed | After auto-accepting a booking |
-| Booking declined | Permission, availability, or conflict rejection |
-| Booking conflict | When a time overlap is detected |
-| Approval request | When manual approval is required (sent to managers) |
-| Booking cancelled | When the organizer cancels (sent to organizer + managers) |
-
-Calendar Resource Management does not send any email notifications.
-
-### Per-Room SMTP
-
-Each room can have its **own SMTP configuration**, allowing booking confirmations to be sent from the room's own email address. SMTP passwords are encrypted using Nextcloud's ICrypto. Rooms without custom SMTP fall back to Nextcloud's global mail configuration.
-
-### Granular Permissions
-
-RoomVox implements a **three-role permission system**:
-
-| Role | Can view | Can book | Can manage |
-|---|:---:|:---:|:---:|
-| Viewer | Yes | No | No |
-| Booker | Yes | Yes | No |
-| Manager | Yes | Yes | Yes |
-
-Permissions can be assigned to **individual users** or **Nextcloud groups**, at both the room level and the room group level. Effective permissions are the union of both. Calendar Resource Management only supports group-based restrictions without role differentiation.
-
-### Availability Rules & Booking Horizon
-
-RoomVox lets administrators define **when rooms can be booked** (e.g., weekdays 08:00–18:00) and **how far in advance** (e.g., maximum 90 days). These rules are enforced for both single and recurring events. Calendar Resource Management has no availability or horizon features.
-
-### Calendar Client Compatibility
-
-RoomVox includes **automatic compatibility fixes** for common CalDAV client issues:
-
-- **iOS/macOS Calendar**: Sends `CUTYPE=INDIVIDUAL` instead of `CUTYPE=ROOM` — RoomVox auto-corrects this and adds the LOCATION field
-- **eM Client**: Sends bookings with only a LOCATION field (no ATTENDEE) — RoomVox detects the room by location match and adds the proper CalDAV attendee
-
-These fixes happen transparently during scheduling without any user intervention.
-
-### Zero Database Overhead
-
-RoomVox stores all configuration in Nextcloud's **IAppConfig** key-value store. This means:
-
-- No database migrations during install or upgrade
-- No schema conflicts with other apps
-- Booking data lives in standard CalDAV calendars
-- Works with any database backend (PostgreSQL, MySQL, SQLite)
-
-## Where Calendar Resource Management Differs
-
-Calendar Resource Management supports **resource types beyond rooms**:
-
-- **Buildings** with addresses and accessibility flags
-- **Stories** (floors) within buildings
-- **Vehicles** with make, model, range, and electric status
-- **General resources** for equipment and assets
-
-It also provides a **building-floor-room hierarchy** for organizations with multiple locations. RoomVox currently focuses exclusively on rooms, organized in flat groups.
-
-## Roadmap
-
-RoomVox is designed with an extensible architecture. Additional resource types (vehicles, equipment, shared spaces) may be added in future versions, expanding the scope beyond room booking while maintaining the same level of scheduling reliability, permissions, and notifications.
-
-## Summary
-
-RoomVox is purpose-built for **reliable room booking** with the features organizations need: conflict prevention, approval workflows, email notifications, availability rules, and an intuitive admin interface. Calendar Resource Management offers broader resource type support but lacks the core booking functionality required for dependable day-to-day room management.
-
-| Need | Recommendation |
-|---|---|
-| Reliable room booking with conflict detection | **RoomVox** |
-| Approval workflows for room requests | **RoomVox** |
-| Email notifications for bookings | **RoomVox** |
-| Web-based administration | **RoomVox** |
-| Vehicle or equipment management | Calendar Resource Management |
-| Multi-building hierarchy | Calendar Resource Management |
+| Rooms visible in the calendar, simple free/busy | Calendar Resource Management |
+| Equipment or vehicle booking | Calendar Resource Management |
+| Reliable checks on recurring meetings | **RoomVox** |
+| Opening hours or a booking horizon per room | **RoomVox** |
+| Approval by a room manager | **RoomVox** |
+| Email confirmations and reasons for a decline | **RoomVox** |
+| Viewer/Booker/Manager roles per room or group of rooms | **RoomVox** |
+| Microsoft 365 / Exchange sync, or migration from it | **RoomVox** |
+| Room displays, kiosks or other integrations via an API | **RoomVox** |

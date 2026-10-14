@@ -45,7 +45,7 @@ Per-feature documentatie voor mogelijkheden.
 - [E-mailnotificaties](features/email-notifications.md) — Alle 9 notificatietypen
 - [Calendar-patch](features/calendar-patch.md) — Visuele ruimte-browser voor Nextcloud Calendar
 - [Publieke API](features/public-api.md) — Bearer-token REST API voor displays, kiosks, integraties
-- [Vergelijking vs. Calendar Resource Management](features/comparison.md) — Feature-vergelijking met de ingebouwde Nextcloud resource-app
+- [Vergelijking vs. Calendar Resource Management](features/comparison.md) — Wat RoomVox toevoegt aan Nextclouds eigen ruimte-app
 
 ### Voor architecten & ontwikkelaars
 
