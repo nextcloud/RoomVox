@@ -85,7 +85,7 @@ Outlook has no built-in CalDAV support. Connect it to Nextcloud with a CalDAV ad
 3. Send the meeting request
 4. When the meeting reaches Nextcloud on the next sync, RoomVox accepts or declines it and emails you the result
 
-> **No room availability in the Scheduling Assistant.** Outlook shows free/busy only from Exchange or from an Internet Free/Busy (IFB) service. RoomVox does not provide one. Add-ins that do, such as NC Connector, look addresses up in Nextcloud's system address book, which lists users but not rooms. Colleagues therefore show their availability there, rooms do not. Check the room in Nextcloud Calendar before you send the invitation; if the room is already taken, RoomVox declines the booking and tells you why.
+> **Room availability in Outlook.** CalDAV synchronization alone does not provide a room picker with availability checks in Outlook. Add-ins that do, such as [NC Connector >= 3.5.0](https://nc-connector.de/#raeume-ressourcen), let you select RoomVox rooms and check their availability in a separate picker. This is independent of Outlook’s built-in Scheduling Assistant. Otherwise, check availability in Nextcloud Calendar before sending the invitation.
 
 ## Booking from Thunderbird
 
