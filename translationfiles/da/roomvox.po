@@ -1,0 +1,1682 @@
+# RoomVox da translation.
+# Carried over from the pre-Transifex l10n/da.json bundle.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: RoomVox 1.6.1\n"
+"Report-Msgid-Bugs-To: translations@nextcloud.com\n"
+"PO-Revision-Date: 2026-11-22 00:00+0000\n"
+"Last-Translator: RoomVox <translations@nextcloud.com>\n"
+"Language-Team: da\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: da\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "(saved — enter new value to change)"
+msgstr "(gemt – skriv en ny værdi for at ændre den)"
+
+msgid "+ Add rule"
+msgstr "+ Tilføj regel"
+
+msgid "A booking has been canceled."
+msgstr "En booking er blevet aflyst."
+
+msgid "A new booking request requires your approval."
+msgstr "Du har fået en ny bookinganmodning, som skal godkendes."
+
+msgid "A SHA-256 hash of this server's address, needed to tell installations apart and to join the reports of the VoxCloud apps on one server with its license records. The address itself is not sent."
+msgstr "En SHA-256-hash af serverens adresse. Den skal bruges til at skelne installationer fra hinanden og til at samle rapporterne fra VoxClouds apps på én server med dens licensoplysninger. Selve adressen sendes ikke."
+
+msgid "A single occurrence of your recurring booking has been canceled by a room manager."
+msgstr "En enkelt forekomst af din gentagne booking er blevet aflyst af en lokaleansvarlig."
+
+msgid "A unique email is auto-generated for CalDAV scheduling. Only change this if you need a specific address."
+msgstr "Der oprettes automatisk en unik e-mailadresse til CalDAV-planlægning. Du behøver kun at ændre den, hvis du skal bruge en bestemt adresse."
+
+msgid "About RoomVox"
+msgstr "Om RoomVox"
+
+msgid "Accept"
+msgstr "Acceptér"
+
+msgid "Accepted"
+msgstr "Accepteret"
+
+msgid "Accounts active in the last 30 days"
+msgstr "Konti, der har været aktive inden for de seneste 30 dage"
+
+msgid "Action"
+msgstr "Handling"
+
+msgid "Actions"
+msgstr "Handlinger"
+
+msgid "Actions for group {name}"
+msgstr "Handlinger for gruppen {name}"
+
+msgid "Actions for room {name}"
+msgstr "Handlinger for lokalet {name}"
+
+msgid "Active"
+msgstr "Aktiv"
+
+msgid "Active development"
+msgstr "Aktiv udvikling"
+
+msgid "Active rooms"
+msgstr "Aktive lokaler"
+
+msgid "Add"
+msgstr "Tilføj"
+
+msgid "Added since you agreed: %1$s. These figures stay on this server until you agree. Everything you agreed to before is still sent to %2$s, run by VoxCloud. No personal data, content or names are sent."
+msgstr "Tilføjet, siden du sagde ja: %1$s. Disse tal bliver på serveren, indtil du siger ja til dem. Alt det, som du tidligere har sagt ja til, sendes fortsat til %2$s, som drives af VoxCloud. Der sendes ingen personoplysninger, intet indhold og ingen navne."
+
+msgid "Address"
+msgstr "Adresse"
+
+msgid "Administrator"
+msgstr "Administrator"
+
+msgid "Administrator privileges required"
+msgstr "Kræver administratorrettigheder"
+
+msgid "Agree to the added fields"
+msgstr "Sig ja til de nye felter"
+
+msgid "All"
+msgstr "Alle"
+
+msgid "All booking requests have been processed"
+msgstr "Alle bookinganmodninger er behandlet"
+
+msgid "All booking requests have been processed."
+msgstr "Alle bookinganmodninger er behandlet."
+
+msgid "All day"
+msgstr "Hele dagen"
+
+msgid "All rooms"
+msgstr "Alle lokaler"
+
+msgid "Already sent recently"
+msgstr "Allerede sendt for nylig"
+
+msgid "Anyone with this URL can see the titles and organizers of all bookings for this room. Only share it with people or systems you trust. If a URL leaks, regenerate it below."
+msgstr "Alle, der har denne URL, kan se titler og arrangører på alle bookinger af lokalet. Del den kun med personer eller systemer, som du har tillid til. Hvis en URL slipper ud, så opret en ny nedenfor."
+
+msgid "API token created"
+msgstr "API-token oprettet"
+
+msgid "API token deleted"
+msgstr "API-token slettet"
+
+msgid "API tokens"
+msgstr "API-tokens"
+
+msgid "App registration client ID"
+msgstr "Klient-ID fra app-registreringen"
+
+msgid "App registration client secret"
+msgstr "Klienthemmelighed fra app-registreringen"
+
+msgid "Approvals"
+msgstr "Godkendelser"
+
+msgid "Approvals ({count})"
+msgstr "Godkendelser ({count})"
+
+msgid "Are you sure you want to cancel this booking? The booker will be notified by email."
+msgstr "Er du sikker på, at du vil aflyse bookingen? Personen, der har booket, får besked via e-mail."
+
+msgid "Are you sure you want to delete this room group? Rooms in this group will become ungrouped. This only works if no rooms are assigned."
+msgstr "Er du sikker på, at du vil slette lokalegruppen? Lokalerne i gruppen vil ikke længere være i en gruppe. Det virker kun, hvis der ikke er tilknyttet nogen lokaler."
+
+msgid "Are you sure you want to delete this room? This action cannot be undone."
+msgstr "Er du sikker på, at du vil slette lokalet? Handlingen kan ikke fortrydes."
+
+msgid "Auto-accept"
+msgstr "Automatisk accept"
+
+msgid "Auto-accept bookings (no manual approval required)"
+msgstr "Acceptér bookinger automatisk (ingen manuel godkendelse)"
+
+msgid "Auto-accept bookings by default for new rooms"
+msgstr "Acceptér som standard bookinger automatisk for nye lokaler"
+
+msgid "Availability"
+msgstr "Tilgængelighed"
+
+msgid "Azure AD tenant ID"
+msgstr "Tenant-ID i Azure AD"
+
+msgid "Back"
+msgstr "Tilbage"
+
+msgid "Booker"
+msgstr "Kan booke"
+
+msgid "Bookers"
+msgstr "Kan booke"
+
+msgid "Booking accepted"
+msgstr "Bookingen er accepteret"
+
+msgid "Booking canceled"
+msgstr "Bookingen er aflyst"
+
+msgid "Booking canceled: %1$s — %2$s"
+msgstr "Booking aflyst: %1$s — %2$s"
+
+msgid "Booking canceled: %1$s — %2$s (single occurrence)"
+msgstr "Booking aflyst: %1$s — %2$s (enkelt forekomst)"
+
+msgid "Booking confirmed: %1$s — %2$s"
+msgstr "Booking bekræftet: %1$s — %2$s"
+
+msgid "Booking conflict: %1$s — %2$s"
+msgstr "Bookingkonflikt: %1$s — %2$s"
+
+msgid "Booking created successfully"
+msgstr "Bookingen er oprettet"
+
+msgid "Booking declined"
+msgstr "Bookingen er afvist"
+
+msgid "Booking declined: %1$s — %2$s"
+msgstr "Booking afvist: %1$s — %2$s"
+
+msgid "Booking declined: %s — outside availability hours"
+msgstr "Booking afvist: %s — uden for bookingtiderne"
+
+msgid "Booking details"
+msgstr "Bookingoplysninger"
+
+msgid "Booking not found"
+msgstr "Bookingen blev ikke fundet"
+
+msgid "Booking not permitted: %1$s — %2$s"
+msgstr "Booking ikke tilladt: %1$s — %2$s"
+
+msgid "Booking request: %1$s — %2$s"
+msgstr "Bookinganmodning: %1$s — %2$s"
+
+msgid "Booking rescheduled"
+msgstr "Bookingen er flyttet"
+
+msgid "Booking temporarily unavailable: %s"
+msgstr "Booking midlertidigt ikke mulig: %s"
+
+msgid "Booking updated"
+msgstr "Bookingen er opdateret"
+
+msgid "Bookings"
+msgstr "Bookinger"
+
+msgid "Bookings on or after %s are not allowed."
+msgstr "Der kan ikke bookes den %s eller senere."
+
+msgid "Building"
+msgstr "Bygning"
+
+msgid "Calendar view"
+msgstr "Kalendervisning"
+
+msgid "Cancel"
+msgstr "Annuller"
+
+msgid "Cancel booking"
+msgstr "Aflys booking"
+
+msgid "Canceled by: %s"
+msgstr "Aflyst af: %s"
+
+msgid "Canceled occurrence: %s"
+msgstr "Aflyst forekomst: %s"
+
+msgid "Cannot delete group: rooms are still assigned. Move or unassign rooms first."
+msgstr "Gruppen kan ikke slettes, fordi der stadig er tilknyttet lokaler. Flyt lokalerne, eller fjern dem fra gruppen først."
+
+msgid "Cannot delete: this facility is in use"
+msgstr "Kan ikke slettes: udstyret er i brug"
+
+msgid "Cannot delete: this room type is in use"
+msgstr "Kan ikke slettes: lokaletypen er i brug"
+
+msgid "Capacity"
+msgstr "Kapacitet"
+
+msgid "Capacity cannot be negative"
+msgstr "Kapaciteten må ikke være negativ"
+
+msgid "Capacity must be a number"
+msgstr "Kapaciteten skal være et tal"
+
+msgid "Choose a CSV file to import"
+msgstr "Vælg en CSV-fil, der skal importeres"
+
+msgid "Choose file"
+msgstr "Vælg fil"
+
+msgid "City"
+msgstr "By"
+
+msgid "Client ID"
+msgstr "Klient-ID"
+
+msgid "Client secret"
+msgstr "Klienthemmelighed"
+
+msgid "Close"
+msgstr "Luk"
+
+msgid "Column names are automatically detected and mapped."
+msgstr "Kolonnenavne genkendes og tilknyttes automatisk."
+
+msgid "Configure the available facilities for rooms. Facilities that are in use cannot be deleted."
+msgstr "Angiv, hvilket udstyr der kan vælges til lokalerne. Udstyr, der er i brug, kan ikke slettes."
+
+msgid "Configure the available room types. Types that are in use cannot be deleted."
+msgstr "Angiv, hvilke lokaletyper der kan vælges. Typer, der er i brug, kan ikke slettes."
+
+msgid "Conflicting dates:"
+msgstr "Datoer med konflikt:"
+
+msgid "Connect RoomVox to Microsoft 365 Exchange to sync room calendars. Requires an Azure AD app registration with {calendarPermission} and {userPermission} application permissions."
+msgstr "Forbind RoomVox med Microsoft 365 Exchange for at synkronisere lokalekalendere. Det kræver en app-registrering i Azure AD med programtilladelserne {calendarPermission} og {userPermission}."
+
+msgid "Connection failed"
+msgstr "Forbindelsen mislykkedes"
+
+msgid "Connection successful"
+msgstr "Forbindelsen lykkedes"
+
+msgid "Copied"
+msgstr "Kopieret"
+
+msgid "Copy"
+msgstr "Kopiér"
+
+msgid "Could not copy to clipboard"
+msgstr "Kunne ikke kopiere til udklipsholderen"
+
+msgid "Could not reach the statistics server. Please try again later."
+msgstr "Statistikserveren kunne ikke nås. Prøv igen senere."
+
+msgid "Could not save the setting. Please try again."
+msgstr "Indstillingen kunne ikke gemmes. Prøv igen."
+
+msgid "Country"
+msgstr "Land"
+
+msgid "Create booking"
+msgstr "Opret booking"
+
+msgid "Create failed: %s"
+msgstr "Oprettelsen mislykkedes: %s"
+
+msgid "Create group"
+msgstr "Opret gruppe"
+
+msgid "Create new + update existing rooms"
+msgstr "Opret nye, og opdater eksisterende lokaler"
+
+msgid "Create room"
+msgstr "Opret lokale"
+
+msgid "Create token"
+msgstr "Opret token"
+
+msgid "Create your first room to get started"
+msgstr "Opret dit første lokale for at komme i gang"
+
+msgid "Created"
+msgstr "Oprettet"
+
+msgid "Creation date"
+msgstr "Oprettelsesdato"
+
+msgid "Custom email address"
+msgstr "Brugerdefineret e-mailadresse"
+
+msgid "Date"
+msgstr "Dato"
+
+msgid "Date: %1$s – %2$s"
+msgstr "Dato: %1$s – %2$s"
+
+msgid "Date: %s"
+msgstr "Dato: %s"
+
+msgid "Dates outside the availability hours:"
+msgstr "Datoer uden for bookingtiderne:"
+
+msgid "Day"
+msgstr "Dag"
+
+msgid "Days"
+msgstr "Dage"
+
+msgid "days"
+msgstr "dage"
+
+msgid "Decline"
+msgstr "Afvis"
+
+msgid "Declined"
+msgstr "Afvist"
+
+msgid "Delete"
+msgstr "Slet"
+
+msgid "Delete group"
+msgstr "Slet gruppe"
+
+msgid "Delete room"
+msgstr "Slet lokale"
+
+msgid "Delete room group"
+msgstr "Slet lokalegruppe"
+
+msgid "Description"
+msgstr "Beskrivelse"
+
+msgid "Detected format:"
+msgstr "Fundet format:"
+
+msgid "Direct support from the developers"
+msgstr "Direkte support fra udviklerne"
+
+msgid "Documentation"
+msgstr "Dokumentation"
+
+msgid "Done"
+msgstr "Færdig"
+
+msgid "Download all rooms as a CSV file. This file can be imported into another RoomVox instance or edited in Excel/LibreOffice."
+msgstr "Hent alle lokaler som en CSV-fil. Filen kan importeres i en anden RoomVox-installation eller redigeres i Excel/LibreOffice."
+
+msgid "Download an example file with headers and a sample row"
+msgstr "Hent en eksempelfil med kolonneoverskrifter og en eksempelrække"
+
+msgid "Download sample CSV"
+msgstr "Hent CSV-eksempel"
+
+msgid "Drag and drop a CSV file here"
+msgstr "Træk og slip en CSV-fil her"
+
+msgid "Duplicate email in CSV (line %s)"
+msgstr "E-mailadressen findes allerede i CSV-filen (linje %s)"
+
+msgid "Duplicate name in CSV"
+msgstr "Navnet findes allerede i CSV-filen"
+
+msgid "e.g. {email} or 'Ask building manager'"
+msgstr "f.eks. {email} eller \"Spørg den bygningsansvarlige\""
+
+msgid "e.g. {example}"
+msgstr "f.eks. {example}"
+
+msgid "e.g. 2.17 (floor.room)"
+msgstr "f.eks. 2.17 (etage.lokale)"
+
+msgid "e.g. 3584 CS"
+msgstr "f.eks. 2635"
+
+msgid "e.g. Building A"
+msgstr "f.eks. Bygning A"
+
+msgid "e.g. Floor 3"
+msgstr "f.eks. 3. sal"
+
+msgid "e.g. Heidelberglaan 8"
+msgstr "f.eks. Vestergade 8"
+
+msgid "e.g. Lobby Display"
+msgstr "f.eks. Skærm i receptionen"
+
+msgid "e.g. Meeting Room 1"
+msgstr "f.eks. Mødelokale 1"
+
+msgid "e.g. Utrecht"
+msgstr "f.eks. Ishøj"
+
+msgid "Edit"
+msgstr "Rediger"
+
+msgid "Edit group"
+msgstr "Rediger gruppe"
+
+msgid "Edit room"
+msgstr "Rediger lokale"
+
+msgid "Edit room group"
+msgstr "Rediger lokalegruppe"
+
+msgid "Email"
+msgstr "E-mail"
+
+msgid "Email address"
+msgstr "E-mailadresse"
+
+msgid "Email address already in use"
+msgstr "E-mailadressen er allerede i brug"
+
+msgid "Email is required"
+msgstr "E-mailadressen skal udfyldes"
+
+msgid "Email support"
+msgstr "Support via e-mail"
+
+msgid "Email: %s"
+msgstr "E-mail: %s"
+
+msgid "Empty or unreadable file"
+msgstr "Filen er tom eller kan ikke læses"
+
+msgid "Enable email notifications"
+msgstr "Aktivér e-mailnotifikationer"
+
+msgid "Enable Exchange calendar sync"
+msgstr "Aktivér synkronisering med Exchange-kalendere"
+
+msgid "Enable Exchange calendar sync for imported rooms"
+msgstr "Aktivér synkronisering med Exchange-kalendere for importerede lokaler"
+
+msgid "Enable external feed"
+msgstr "Aktivér eksternt feed"
+
+msgid "Enable sync for this room"
+msgstr "Aktivér synkronisering for dette lokale"
+
+msgid "Encryption"
+msgstr "Kryptering"
+
+msgid "End time"
+msgstr "Sluttidspunkt"
+
+msgid "End time must be after start time"
+msgstr "Sluttidspunktet skal ligge efter starttidspunktet"
+
+msgid "Entire series"
+msgstr "Hele serien"
+
+msgid "Error"
+msgstr "Fejl"
+
+msgid "Errors"
+msgstr "Fejl"
+
+msgid "Event"
+msgstr "Begivenhed"
+
+msgid "Event: %s"
+msgstr "Begivenhed: %s"
+
+msgid "Everything in {scope} + create and cancel bookings"
+msgstr "Alt i {scope} + opret og aflys bookinger"
+
+msgid "Everything in {scope} + manage rooms and view statistics"
+msgstr "Alt i {scope} + administrer lokaler og se statistik"
+
+msgid "Exchange calendar sync"
+msgstr "Synkronisering med Exchange-kalendere"
+
+msgid "Exchange calendar synced successfully"
+msgstr "Exchange-kalenderen er synkroniseret"
+
+msgid "Exchange integration is not configured: the tenant ID, client ID or client secret is missing"
+msgstr "Exchange-integrationen er ikke konfigureret: tenant-ID, klient-ID eller klienthemmelighed mangler"
+
+msgid "Exchange integration is not enabled"
+msgstr "Exchange-integrationen er ikke aktiveret"
+
+msgid "Exchange resource email"
+msgstr "E-mailadresse på Exchange-ressourcen"
+
+msgid "Exchange sync queued …"
+msgstr "Synkronisering med Exchange er sat i kø …"
+
+msgid "Export CSV"
+msgstr "Eksportér CSV"
+
+msgid "Export rooms"
+msgstr "Eksportér lokaler"
+
+msgid "Exported from another RoomVox installation"
+msgstr "Eksporteret fra en anden RoomVox-installation"
+
+msgid "Exported via PowerShell:"
+msgstr "Eksporteret via PowerShell:"
+
+msgid "External calendar feed"
+msgstr "Eksternt kalenderfeed"
+
+msgid "Facilities"
+msgstr "Udstyr"
+
+msgid "Facility name"
+msgstr "Navn på udstyr"
+
+msgid "Failed to cancel booking"
+msgstr "Bookingen kunne ikke aflyses"
+
+msgid "Failed to copy token"
+msgstr "Tokenet kunne ikke kopieres"
+
+msgid "Failed to create API token: {error}"
+msgstr "API-tokenet kunne ikke oprettes: {error}"
+
+msgid "Failed to create booking"
+msgstr "Bookingen kunne ikke oprettes"
+
+msgid "Failed to create booking: %s"
+msgstr "Bookingen kunne ikke oprettes: %s"
+
+msgid "Failed to create room group: %s"
+msgstr "Lokalegruppen kunne ikke oprettes: %s"
+
+msgid "Failed to create room: %s"
+msgstr "Lokalet kunne ikke oprettes: %s"
+
+msgid "Failed to delete API token"
+msgstr "API-tokenet kunne ikke slettes"
+
+msgid "Failed to delete booking"
+msgstr "Bookingen kunne ikke slettes"
+
+msgid "Failed to delete room"
+msgstr "Lokalet kunne ikke slettes"
+
+msgid "Failed to delete room group: {error}"
+msgstr "Lokalegruppen kunne ikke slettes: {error}"
+
+msgid "Failed to load approvals"
+msgstr "Godkendelserne kunne ikke indlæses"
+
+msgid "Failed to load bookings"
+msgstr "Bookingerne kunne ikke indlæses"
+
+msgid "Failed to load permissions"
+msgstr "Rettighederne kunne ikke indlæses"
+
+msgid "Failed to load rooms"
+msgstr "Lokalerne kunne ikke indlæses"
+
+msgid "Failed to move room: {error}"
+msgstr "Lokalet kunne ikke flyttes: {error}"
+
+msgid "Failed to parse CSV file"
+msgstr "CSV-filen kunne ikke læses"
+
+msgid "Failed to parse CSV: %s"
+msgstr "CSV-filen kunne ikke læses: %s"
+
+msgid "Failed to process response"
+msgstr "Svaret kunne ikke behandles"
+
+msgid "Failed to queue sync"
+msgstr "Synkroniseringen kunne ikke sættes i kø"
+
+msgid "Failed to regenerate feed"
+msgstr "Der kunne ikke oprettes et nyt feed"
+
+msgid "Failed to remove subscription key"
+msgstr "Abonnementsnøglen kunne ikke fjernes"
+
+msgid "Failed to reschedule booking"
+msgstr "Bookingen kunne ikke flyttes"
+
+msgid "Failed to respond to booking"
+msgstr "Bookingen kunne ikke besvares"
+
+msgid "Failed to save Exchange settings"
+msgstr "Exchange-indstillingerne kunne ikke gemmes"
+
+msgid "Failed to save permissions"
+msgstr "Rettighederne kunne ikke gemmes"
+
+msgid "Failed to save room group: {error}"
+msgstr "Lokalegruppen kunne ikke gemmes: {error}"
+
+msgid "Failed to save room: {error}"
+msgstr "Lokalet kunne ikke gemmes: {error}"
+
+msgid "Failed to save settings"
+msgstr "Indstillingerne kunne ikke gemmes"
+
+msgid "Failed to save subscription key"
+msgstr "Abonnementsnøglen kunne ikke gemmes"
+
+msgid "Failed to send report"
+msgstr "Rapporten kunne ikke sendes"
+
+msgid "Failed to update booking"
+msgstr "Bookingen kunne ikke opdateres"
+
+msgid "Failed to update booking: %s"
+msgstr "Bookingen kunne ikke opdateres: %s"
+
+msgid "Failed to update feed"
+msgstr "Feedet kunne ikke opdateres"
+
+msgid "Failed to update room"
+msgstr "Lokalet kunne ikke opdateres"
+
+msgid "Failed to update room group"
+msgstr "Lokalegruppen kunne ikke opdateres"
+
+msgid "Feed URL"
+msgstr "Feed-URL"
+
+msgid "Field-list version"
+msgstr "Version af feltlisten"
+
+msgid "File too large (max 5MB)"
+msgstr "Filen er for stor (maks. 5 MB)"
+
+msgid "Floor"
+msgstr "Etage"
+
+msgid "Forbidden"
+msgstr "Ingen adgang"
+
+msgid "Fri"
+msgstr "Fre"
+
+msgid "From"
+msgstr "Fra"
+
+msgid "General"
+msgstr "Generelt"
+
+msgid "Group name"
+msgstr "Gruppenavn"
+
+msgid "Group name is required"
+msgstr "Gruppenavnet skal udfyldes"
+
+msgid "Groups that can see and book the room. Bookings follow the auto-accept or approval workflow."
+msgstr "Grupper, der kan se og booke lokalet. Bookinger accepteres automatisk eller sendes til godkendelse."
+
+msgid "Groups that can see the room in their calendar, but cannot book."
+msgstr "Grupper, der kan se lokalet i deres kalender, men ikke booke det."
+
+msgid "Groups that can see, book, and manage the room. Members receive approval requests and can accept/decline bookings."
+msgstr "Grupper, der kan se, booke og administrere lokalet. Medlemmerne modtager anmodninger om godkendelse og kan acceptere eller afvise bookinger."
+
+msgid "Guaranteed compatibility"
+msgstr "Garanteret kompatibilitet"
+
+msgid "Help"
+msgstr "Hjælp"
+
+msgid "Hide email settings"
+msgstr "Skjul e-mailindstillinger"
+
+msgid "If RoomVox is valuable to your organization, consider subscribing. Your subscription funds active development, guaranteed Nextcloud compatibility, and email support."
+msgstr "Hvis RoomVox er værdifuld for din organisation, så overvej at tegne et abonnement. Dit abonnement finansierer aktiv udvikling, garanteret kompatibilitet med Nextcloud og support via e-mail."
+
+msgid "If you receive this, the SMTP configuration is working correctly."
+msgstr "Hvis du modtager denne e-mail, så virker SMTP-konfigurationen."
+
+msgid "If you still need this room for the canceled time, please make a new booking or contact the room manager."
+msgstr "Hvis du stadig har brug for lokalet i det aflyste tidsrum, så lav en ny booking, eller kontakt den lokaleansvarlige."
+
+msgid "If you still need this room, please make a new booking or contact the room manager."
+msgstr "Hvis du stadig har brug for lokalet, så lav en ny booking, eller kontakt den lokaleansvarlige."
+
+msgid "Import"
+msgstr "Importér"
+
+msgid "Import / export"
+msgstr "Import/eksport"
+
+msgid "Import failed"
+msgstr "Importen mislykkedes"
+
+msgid "Import failed: %s"
+msgstr "Importen mislykkedes: %s"
+
+msgid "Import mode:"
+msgstr "Importtilstand:"
+
+msgid "Import rooms"
+msgstr "Importér lokaler"
+
+msgid "Importing …"
+msgstr "Importerer …"
+
+msgid "Inactive"
+msgstr "Inaktiv"
+
+msgid "inherited"
+msgstr "arvet"
+
+msgid "Inherited from group"
+msgstr "Arvet fra gruppen"
+
+msgid "Initial sync failed:"
+msgstr "Den første synkronisering mislykkedes:"
+
+msgid "Installation identifier"
+msgstr "Installations-ID"
+
+msgid "Invalid date/time selection"
+msgstr "Ugyldigt valg af dato eller klokkeslæt"
+
+msgid "Invalid email address"
+msgstr "Ugyldig e-mailadresse"
+
+msgid "Invalid email format"
+msgstr "Ugyldigt format på e-mailadressen"
+
+msgid "Invalid expiration date format"
+msgstr "Ugyldigt format på udløbsdatoen"
+
+msgid "Issues"
+msgstr "Problemer"
+
+msgid "Keep"
+msgstr "Behold"
+
+msgid "Last error:"
+msgstr "Seneste fejl:"
+
+msgid "Last report: {date}"
+msgstr "Seneste rapport: {date}"
+
+msgid "Last synced:"
+msgstr "Senest synkroniseret:"
+
+msgid "Last used"
+msgstr "Senest brugt"
+
+msgid "Learn more"
+msgstr "Få mere at vide"
+
+msgid "Leave empty for auto-generated address"
+msgstr "Lad feltet være tomt for at få en automatisk oprettet adresse"
+
+msgid "Leave empty to keep current"
+msgstr "Lad feltet være tomt for at beholde den nuværende"
+
+msgid "Limit how far in advance bookings can be made. Recurring events that extend beyond this limit will be declined. Set to 0 for no limit."
+msgstr "Begræns, hvor langt frem i tiden der kan bookes. Gentagne begivenheder, der rækker ud over grænsen, afvises. Angiv 0 for ingen grænse."
+
+msgid "Line {line}:"
+msgstr "Linje {line}:"
+
+msgid "Links each room to its MS365 mailbox for bidirectional calendar sync. Requires Exchange sync to be configured in settings."
+msgstr "Knytter hvert lokale til dets postkasse i Microsoft 365, så kalenderen synkroniseres begge veje. Det kræver, at synkronisering med Exchange er konfigureret i indstillingerne."
+
+msgid "List view"
+msgstr "Listevisning"
+
+msgid "Location"
+msgstr "Placering"
+
+msgid "Log in to approve or decline this booking request."
+msgstr "Log ind for at godkende eller afvise bookinganmodningen."
+
+msgid "Manage API tokens for external integrations. Tokens allow external systems to access the RoomVox API."
+msgstr "Administrer API-tokens til eksterne integrationer. Med et token kan eksterne systemer få adgang til RoomVox-API'et."
+
+msgid "Manage permissions"
+msgstr "Administrer rettigheder"
+
+msgid "Manager"
+msgstr "Ansvarlig"
+
+msgid "Managers"
+msgstr "Ansvarlige"
+
+msgid "Map this room to a Microsoft 365 Exchange room resource. Bookings will be synced bidirectionally."
+msgstr "Knyt lokalet til en lokaleressource i Microsoft 365 Exchange. Bookinger synkroniseres begge veje."
+
+msgid "Matches: {name}"
+msgstr "Svarer til: {name}"
+
+msgid "Max inline sync per request"
+msgstr "Maks. direkte synkroniseringer pr. anmodning"
+
+msgid "Max inline syncs per 10 sec (default: 5)"
+msgstr "Maks. direkte synkroniseringer pr. 10 sek. (standard: 5)"
+
+msgid "Maximum booking horizon"
+msgstr "Hvor langt frem der kan bookes"
+
+msgid "Meeting name"
+msgstr "Mødets navn"
+
+msgid "Microsoft Exchange sync"
+msgstr "Synkronisering med Microsoft Exchange"
+
+msgid "Microsoft Exchange sync switched on (yes or no)"
+msgstr "Synkronisering med Microsoft Exchange slået til (ja eller nej)"
+
+msgid "Mon"
+msgstr "Man"
+
+msgid "Month"
+msgstr "Måned"
+
+msgid "My rooms"
+msgstr "Mine lokaler"
+
+msgid "Name"
+msgstr "Navn"
+
+msgid "Name is required"
+msgstr "Navnet skal udfyldes"
+
+msgid "Needs action"
+msgstr "Handling nødvendig"
+
+msgid "Never ask again"
+msgstr "Spørg ikke igen"
+
+msgid "New"
+msgstr "Ny"
+
+msgid "New booking"
+msgstr "Ny booking"
+
+msgid "New facility"
+msgstr "Nyt udstyr"
+
+msgid "New features and improvements"
+msgstr "Nye funktioner og forbedringer"
+
+msgid "New group"
+msgstr "Ny gruppe"
+
+msgid "New room"
+msgstr "Nyt lokale"
+
+msgid "New room group"
+msgstr "Ny lokalegruppe"
+
+msgid "New room type"
+msgstr "Ny lokaletype"
+
+msgid "New: {create}, existing: {update}, errors: {errors}"
+msgstr "Nye: {create}, eksisterende: {update}, fejl: {errors}"
+
+msgid "Nextcloud Enterprise subscription detected on this instance. RoomVox subscriptions are sold through Nextcloud — contact your Nextcloud account manager or {email}."
+msgstr "Der er fundet et Nextcloud Enterprise-abonnement på denne instans. RoomVox-abonnementer sælges gennem Nextcloud – kontakt din kundeansvarlige hos Nextcloud eller {email}."
+
+msgid "Nextcloud subscription (yes or no)"
+msgstr "Nextcloud-abonnement (ja eller nej)"
+
+msgid "Nextcloud version"
+msgstr "Nextcloud-version"
+
+msgid "No"
+msgstr "Nej"
+
+msgid "No accepted bookings"
+msgstr "Ingen accepterede bookinger"
+
+msgid "No API tokens created yet."
+msgstr "Der er ikke oprettet nogen API-tokens endnu."
+
+msgid "No bookers configured"
+msgstr "Ingen grupper kan booke lokalet"
+
+msgid "No bookings"
+msgstr "Ingen bookinger"
+
+msgid "No declined bookings"
+msgstr "Ingen afviste bookinger"
+
+msgid "No events found for the selected filters"
+msgstr "Der blev ikke fundet nogen begivenheder med de valgte filtre"
+
+msgid "No file uploaded"
+msgstr "Der er ikke overført nogen fil"
+
+msgid "No group"
+msgstr "Ingen gruppe"
+
+msgid "No managers configured"
+msgstr "Ingen ansvarlige angivet"
+
+msgid "No matching rooms"
+msgstr "Ingen lokaler passer"
+
+msgid "No pending approvals"
+msgstr "Ingen ventende godkendelser"
+
+msgid "No pending bookings"
+msgstr "Ingen ventende bookinger"
+
+msgid "No permission to move to target room"
+msgstr "Du har ikke rettighed til at flytte til mållokalet"
+
+msgid "No report sent yet"
+msgstr "Der er ikke sendt nogen rapport endnu"
+
+msgid "No rooms"
+msgstr "Ingen lokaler"
+
+msgid "No rooms configured"
+msgstr "Ingen lokaler er konfigureret"
+
+msgid "No rooms found in CSV file"
+msgstr "Der blev ikke fundet nogen lokaler i CSV-filen"
+
+msgid "No rooms in this group"
+msgstr "Ingen lokaler i gruppen"
+
+msgid "No viewers configured"
+msgstr "Ingen grupper kan se lokalet"
+
+msgid "None"
+msgstr "Ingen"
+
+msgid "Not authenticated"
+msgstr "Ikke godkendt"
+
+msgid "Not now"
+msgstr "Ikke nu"
+
+msgid "Not sent until you agree to it"
+msgstr "Sendes ikke, før du siger ja til det"
+
+msgid "Number of disabled accounts"
+msgstr "Antal deaktiverede konti"
+
+msgid "Number of room groups"
+msgstr "Antal lokalegrupper"
+
+msgid "Number of rooms"
+msgstr "Antal lokaler"
+
+msgid "Number of seats"
+msgstr "Antal pladser"
+
+msgid "Number of user accounts"
+msgstr "Antal brugerkonti"
+
+msgid "Occurrence canceled"
+msgstr "Forekomsten er aflyst"
+
+msgid "Once a day, RoomVox would send these figures about this server to %1$s, run by VoxCloud: %2$s. No personal data, content or names are sent. The RoomVox administration settings say what each figure is used for."
+msgstr "Én gang om dagen vil RoomVox sende disse tal om serveren til %1$s, som drives af VoxCloud: %2$s. Der sendes ingen personoplysninger, intet indhold og ingen navne. I administrationsindstillingerne for RoomVox kan du se, hvad hvert tal bruges til."
+
+msgid "Only create new rooms (skip existing)"
+msgstr "Opret kun nye lokaler (spring eksisterende over)"
+
+msgid "Open in Calendar"
+msgstr "Åbn i Kalender"
+
+msgid "Optional description"
+msgstr "Valgfri beskrivelse"
+
+msgid "Optional room description"
+msgstr "Valgfri beskrivelse af lokalet"
+
+msgid "Optional: configure a dedicated SMTP server for this room. If empty, the global Nextcloud mail configuration is used."
+msgstr "Valgfrit: Konfigurer en separat SMTP-server til lokalet. Hvis feltet er tomt, bruges Nextclouds generelle mailkonfiguration."
+
+msgid "or"
+msgstr "eller"
+
+msgid "Organizer"
+msgstr "Arrangør"
+
+msgid "Organizer: %s"
+msgstr "Arrangør: %s"
+
+msgid "Other Vox apps"
+msgstr "Andre Vox-apps"
+
+msgid "Password"
+msgstr "Adgangskode"
+
+msgid "Past"
+msgstr "Tidligere"
+
+msgid "Pending"
+msgstr "Afventer"
+
+msgid "Permissions saved"
+msgstr "Rettighederne er gemt"
+
+msgid "Permissions: {name}"
+msgstr "Rettigheder: {name}"
+
+msgid "PHP version"
+msgstr "PHP-version"
+
+msgid "Please choose a different date or contact the room manager."
+msgstr "Vælg en anden dato, eller kontakt den lokaleansvarlige."
+
+msgid "Please choose a time within the room's availability or contact the room manager."
+msgstr "Vælg et tidspunkt, hvor lokalet kan bookes, eller kontakt den lokaleansvarlige."
+
+msgid "Please contact the room manager for more information."
+msgstr "Kontakt den lokaleansvarlige for at få flere oplysninger."
+
+msgid "Please contact your administrator if you believe this is an error."
+msgstr "Kontakt din administrator, hvis du mener, at det er en fejl."
+
+msgid "Please enter a subscription key"
+msgstr "Indtast en abonnementsnøgle"
+
+msgid "Please select a CSV file"
+msgstr "Vælg en CSV-fil"
+
+msgid "Port must be between 1 and 65535"
+msgstr "Porten skal være mellem 1 og 65535"
+
+msgid "Postal code"
+msgstr "Postnummer"
+
+msgid "Presets:"
+msgstr "Forvalg:"
+
+msgid "Priority bug fixes"
+msgstr "Fejlrettelser med prioritet"
+
+msgid "Publish this room's bookings as an iCal feed that external calendar apps (Nextcloud Calendar, Outlook, Apple Calendar) and signage displays can subscribe to — no login required."
+msgstr "Udgiv lokalets bookinger som et iCal-feed, som eksterne kalenderapps (Nextcloud Kalender, Outlook, Apple Kalender) og infoskærme kan abonnere på – uden login."
+
+msgid "Questions or feedback?"
+msgstr "Spørgsmål eller feedback?"
+
+msgid "Rate limit (per 10 sec)"
+msgstr "Hastighedsgrænse (pr. 10 sek.)"
+
+msgid "Regenerate URL"
+msgstr "Opret ny URL"
+
+msgid "Regenerating creates a new URL and immediately breaks any existing subscriptions."
+msgstr "Når du opretter en ny URL, holder alle eksisterende abonnementer straks op med at virke."
+
+msgid "Remove subscription key"
+msgstr "Fjern abonnementsnøgle"
+
+msgid "Report an issue"
+msgstr "Rapportér et problem"
+
+msgid "Report sent"
+msgstr "Rapporten er sendt"
+
+msgid "Requested by"
+msgstr "Anmodet af"
+
+msgid "Requested by: %1$s (%2$s)"
+msgstr "Anmodet af: %1$s (%2$s)"
+
+msgid "Resource found"
+msgstr "Ressourcen blev fundet"
+
+msgid "Resource not found"
+msgstr "Ressourcen blev ikke fundet"
+
+msgid "Responsible contact"
+msgstr "Kontaktperson"
+
+msgid "Responsible contact (visible to viewers)"
+msgstr "Kontaktperson (synlig for dem, der kan se lokalet)"
+
+msgid "Restrict booking hours"
+msgstr "Begræns bookingtider"
+
+msgid "Restrict when this room can be booked. Bookings outside these hours will be automatically declined."
+msgstr "Begræns, hvornår lokalet kan bookes. Bookinger uden for disse tider afvises automatisk."
+
+msgid "Retry"
+msgstr "Prøv igen"
+
+msgid "Review and respond:"
+msgstr "Gennemse og svar:"
+
+msgid "Role"
+msgstr "Rolle"
+
+msgid "Room"
+msgstr "Lokale"
+
+msgid "Room \"{room}\" already uses this email address"
+msgstr "Lokalet \"{room}\" bruger allerede denne e-mailadresse"
+
+msgid "Room booking"
+msgstr "Lokalebooking"
+
+msgid "Room created"
+msgstr "Lokalet er oprettet"
+
+msgid "Room deleted"
+msgstr "Lokalet er slettet"
+
+msgid "Room does not have Exchange sync configured"
+msgstr "Lokalet har ikke synkronisering med Exchange konfigureret"
+
+msgid "Room group"
+msgstr "Lokalegruppe"
+
+msgid "Room group created"
+msgstr "Lokalegruppen er oprettet"
+
+msgid "Room group deleted"
+msgstr "Lokalegruppen er slettet"
+
+msgid "Room group not found"
+msgstr "Lokalegruppen blev ikke fundet"
+
+msgid "Room group updated"
+msgstr "Lokalegruppen er opdateret"
+
+msgid "Room groups"
+msgstr "Lokalegrupper"
+
+msgid "Room has no calendar and cannot be booked"
+msgstr "Lokalet har ingen kalender og kan ikke bookes"
+
+msgid "Room is active and bookable"
+msgstr "Lokalet er aktivt og kan bookes"
+
+msgid "Room is not active and cannot be booked"
+msgstr "Lokalet er ikke aktivt og kan ikke bookes"
+
+msgid "Room moved to group"
+msgstr "Lokalet er flyttet til gruppen"
+
+msgid "Room name"
+msgstr "Lokalenavn"
+
+msgid "Room name is required"
+msgstr "Lokalenavnet skal udfyldes"
+
+msgid "Room not found"
+msgstr "Lokalet blev ikke fundet"
+
+msgid "Room nr."
+msgstr "Lokalenr."
+
+msgid "Room number"
+msgstr "Lokalenummer"
+
+msgid "Room removed from group"
+msgstr "Lokalet er fjernet fra gruppen"
+
+msgid "Room statistics"
+msgstr "Lokalestatistik"
+
+msgid "Room type"
+msgstr "Lokaletype"
+
+msgid "Room type name"
+msgstr "Navn på lokaletype"
+
+msgid "Room types"
+msgstr "Lokaletyper"
+
+msgid "Room updated"
+msgstr "Lokalet er opdateret"
+
+msgid "Room: %s"
+msgstr "Lokale: %s"
+
+msgid "Rooms"
+msgstr "Lokaler"
+
+msgid "Rooms and room groups in this RoomVox installation."
+msgstr "Lokaler og lokalegrupper i denne RoomVox-installation."
+
+msgid "Rooms per request (default: 1)"
+msgstr "Lokaler pr. anmodning (standard: 1)"
+
+msgid "Rooms synced with Microsoft Exchange"
+msgstr "Lokaler, der synkroniseres med Microsoft Exchange"
+
+msgid "Rooms that accept bookings automatically"
+msgstr "Lokaler, der accepterer bookinger automatisk"
+
+msgid "Rooms with their own mail server"
+msgstr "Lokaler med deres egen mailserver"
+
+msgid "RoomVox"
+msgstr "RoomVox"
+
+msgid "RoomVox administration"
+msgstr "Administration af RoomVox"
+
+msgid "RoomVox is free and open source (AGPL-3.0). You can use all features without a subscription — no limits, no restrictions, no catch."
+msgstr "RoomVox er gratis og open source (AGPL-3.0). Du kan bruge alle funktioner uden abonnement – ingen grænser, ingen begrænsninger, ingen skjulte betingelser."
+
+msgid "RoomVox version"
+msgstr "RoomVox-version"
+
+msgid "RoomVox would like to send more usage statistics"
+msgstr "RoomVox vil gerne sende mere brugsstatistik"
+
+msgid "Rule {number}"
+msgstr "Regel {number}"
+
+msgid "Sat"
+msgstr "Lør"
+
+msgid "Save & activate"
+msgstr "Gem og aktivér"
+
+msgid "Save changes"
+msgstr "Gem ændringer"
+
+msgid "Save permissions"
+msgstr "Gem rettigheder"
+
+msgid "Saving …"
+msgstr "Gemmer …"
+
+msgid "Scope"
+msgstr "Omfang"
+
+msgid "Scopes"
+msgstr "Omfang"
+
+msgid "Search groups …"
+msgstr "Søg efter grupper …"
+
+msgid "Search rooms …"
+msgstr "Søg efter lokaler …"
+
+msgid "Select a room"
+msgstr "Vælg et lokale"
+
+msgid "Select date"
+msgstr "Vælg dato"
+
+msgid "Send report now"
+msgstr "Send rapport nu"
+
+msgid "Sending …"
+msgstr "Sender …"
+
+msgid "Separate from this switch: while a subscription key is entered, RoomVox also reports the key, the installation identifier and the number of rooms, room groups, accounts and disabled accounts to {server}, so the subscription can be checked and seats counted. That report is part of the subscription and stops when the key is removed."
+msgstr "Uafhængigt af denne kontakt: Når der er angivet en abonnementsnøgle, sender RoomVox også nøglen, installations-ID'et og antallet af lokaler, lokalegrupper, konti og deaktiverede konti til {server}, så abonnementet kan kontrolleres, og antallet af pladser kan tælles. Den rapport er en del af abonnementet og stopper, når nøglen fjernes."
+
+msgid "Settings"
+msgstr "Indstillinger"
+
+msgid "Settings saved"
+msgstr "Indstillingerne er gemt"
+
+msgid "Share RoomVox usage statistics with VoxCloud?"
+msgstr "Vil du dele brugsstatistik for RoomVox med VoxCloud?"
+
+msgid "Share usage statistics"
+msgstr "Del brugsstatistik"
+
+msgid "Show weekends in calendar"
+msgstr "Vis weekender i kalenderen"
+
+msgid "Shown on a world map of installations. Taken from the default phone region, or worked out on this server from the default time zone. The time zone itself is not sent."
+msgstr "Vises på et verdenskort over installationer. Hentes fra standardtelefonregionen eller beregnes på serveren ud fra standardtidszonen. Selve tidszonen sendes ikke."
+
+msgid "Shows how RoomVox features are used, to decide what to develop and maintain."
+msgstr "Viser, hvordan funktionerne i RoomVox bruges, så vi kan beslutte, hvad der skal udvikles og vedligeholdes."
+
+msgid "Shows whether the Exchange integration is used. The tenant ID, client ID and client secret are never sent."
+msgstr "Viser, om Exchange-integrationen bruges. Tenant-ID, klient-ID og klienthemmelighed sendes aldrig."
+
+msgid "Shows whether this server has a Nextcloud Enterprise subscription. Such servers are listed as Enterprise customers and are not approached about a license."
+msgstr "Viser, om serveren har et Nextcloud Enterprise-abonnement. Sådanne servere registreres som Enterprise-kunder og bliver ikke kontaktet om en licens."
+
+msgid "Shows which Nextcloud versions RoomVox must keep supporting."
+msgstr "Viser, hvilke Nextcloud-versioner RoomVox fortsat skal understøtte."
+
+msgid "Shows which PHP versions RoomVox must keep supporting. Only the major and minor version, such as 8.3."
+msgstr "Viser, hvilke PHP-versioner RoomVox fortsat skal understøtte. Kun hoved- og underversion, f.eks. 8.3."
+
+msgid "Shows which RoomVox releases are still in use."
+msgstr "Viser, hvilke RoomVox-udgivelser der stadig er i brug."
+
+msgid "Skipped"
+msgstr "Sprunget over"
+
+msgid "SMTP configuration"
+msgstr "SMTP-konfiguration"
+
+msgid "SMTP host"
+msgstr "SMTP-vært"
+
+msgid "SMTP port"
+msgstr "SMTP-port"
+
+msgid "SMTP username"
+msgstr "SMTP-brugernavn"
+
+msgid "Start and end times are required"
+msgstr "Start- og sluttidspunkt skal udfyldes"
+
+msgid "Start time"
+msgstr "Starttidspunkt"
+
+msgid "Statistics"
+msgstr "Statistik"
+
+msgid "Status"
+msgstr "Status"
+
+msgid "Street and number"
+msgstr "Gade og nummer"
+
+msgid "Subscription"
+msgstr "Abonnement"
+
+msgid "Subscription activated!"
+msgstr "Abonnementet er aktiveret!"
+
+msgid "Subscription active — thank you for supporting RoomVox!"
+msgstr "Abonnementet er aktivt – tak, fordi du støtter RoomVox!"
+
+msgid "Subscription key"
+msgstr "Abonnementsnøgle"
+
+msgid "Subscription key is invalid or expired."
+msgstr "Abonnementsnøglen er ugyldig eller udløbet."
+
+msgid "Subscription key removed."
+msgstr "Abonnementsnøglen er fjernet."
+
+msgid "Subscription key saved but validation failed."
+msgstr "Abonnementsnøglen er gemt, men den kunne ikke valideres."
+
+msgid "Subscriptions are sold through Nextcloud. Contact your Nextcloud account manager or {email}."
+msgstr "Abonnementer sælges gennem Nextcloud. Kontakt din kundeansvarlige hos Nextcloud eller {email}."
+
+msgid "Summary is required"
+msgstr "Titlen skal udfyldes"
+
+msgid "Sun"
+msgstr "Søn"
+
+msgid "Support"
+msgstr "Support"
+
+msgid "Supported formats"
+msgstr "Understøttede formater"
+
+msgid "Syncing Exchange calendar …"
+msgstr "Synkroniserer Exchange-kalenderen …"
+
+msgid "Target room has no calendar and cannot be booked"
+msgstr "Mållokalet har ingen kalender og kan ikke bookes"
+
+msgid "Target room is not active and cannot be booked"
+msgstr "Mållokalet er ikke aktivt og kan ikke bookes"
+
+msgid "Target room not found"
+msgstr "Mållokalet blev ikke fundet"
+
+msgid "Test connection"
+msgstr "Test forbindelsen"
+
+msgid "Test email from %s"
+msgstr "Test-e-mail fra %s"
+
+msgid "Tested with every new Nextcloud release"
+msgstr "Testet med hver ny udgave af Nextcloud"
+
+msgid "Testing …"
+msgstr "Tester …"
+
+msgid "The booker will be notified by email."
+msgstr "Personen, der har booket, får besked via e-mail."
+
+msgid "The recurring series continues as scheduled; only this one occurrence has been removed."
+msgstr "Den gentagne serie fortsætter som planlagt; kun denne ene forekomst er fjernet."
+
+msgid "The room has been released and is no longer reserved for your event."
+msgstr "Lokalet er frigivet og er ikke længere reserveret til din begivenhed."
+
+msgid "The room has been reserved for your event."
+msgstr "Lokalet er reserveret til din begivenhed."
+
+msgid "The room is already booked for this time slot. Please choose a different time."
+msgstr "Lokalet er allerede booket på dette tidspunkt. Vælg et andet tidspunkt."
+
+msgid "The room is already booked on these dates, so the whole series was declined. Exclude these dates from the series, or choose a different time, and book again."
+msgstr "Lokalet er allerede booket på disse datoer, så hele serien blev afvist. Udelad datoerne fra serien, eller vælg et andet tidspunkt, og book igen."
+
+msgid "The room is now available for this time slot."
+msgstr "Lokalet er nu ledigt på dette tidspunkt."
+
+msgid "The statistics server returned an error: {message}"
+msgstr "Statistikserveren returnerede en fejl: {message}"
+
+msgid "These permissions apply to all rooms in this group. Individual rooms can have additional permissions on top of these."
+msgstr "Rettighederne gælder alle lokaler i gruppen. De enkelte lokaler kan have yderligere rettigheder ud over disse."
+
+msgid "This booking is part of a recurring series. What would you like to cancel?"
+msgstr "Bookingen er en del af en gentagen serie. Hvad vil du aflyse?"
+
+msgid "This is a temporary state — please try again in a few minutes. If the problem persists, contact your administrator."
+msgstr "Det er en midlertidig tilstand – prøv igen om et par minutter. Kontakt din administrator, hvis problemet fortsætter."
+
+msgid "This is a test email from the room booking system."
+msgstr "Dette er en test-e-mail fra systemet til lokalebooking."
+
+msgid "This month"
+msgstr "Denne måned"
+
+msgid "This occurrence"
+msgstr "Denne forekomst"
+
+msgid "This room has restrictions on how far in advance it can be booked."
+msgstr "Der er en grænse for, hvor langt frem lokalet kan bookes."
+
+msgid "This room inherits permissions from its group (shown as \"inherited\" below). You can add room-specific permissions that will be merged with the inherited ones."
+msgstr "Lokalet arver rettigheder fra sin gruppe (vist som \"arvet\" nedenfor). Du kan tilføje rettigheder for det enkelte lokale, som lægges sammen med de arvede."
+
+msgid "This room is available during:"
+msgstr "Lokalet kan bookes:"
+
+msgid "This week"
+msgstr "Denne uge"
+
+msgid "Thu"
+msgstr "Tor"
+
+msgid "Time slot conflicts with existing booking"
+msgstr "Tidspunktet overlapper en eksisterende booking"
+
+msgid "Time slot conflicts with existing booking in target room"
+msgstr "Tidspunktet overlapper en eksisterende booking i mållokalet"
+
+msgid "Title"
+msgstr "Titel"
+
+msgid "To"
+msgstr "Til"
+
+msgid "Today"
+msgstr "I dag"
+
+msgid "Token created. Copy it now — it will not be shown again."
+msgstr "Tokenet er oprettet. Kopiér det nu – det bliver ikke vist igen."
+
+msgid "Token name"
+msgstr "Token-navn"
+
+msgid "Token name is required"
+msgstr "Token-navnet skal udfyldes"
+
+msgid "Token name too long (max 255 characters)"
+msgstr "Token-navnet er for langt (maks. 255 tegn)"
+
+msgid "Token not found"
+msgstr "Tokenet blev ikke fundet"
+
+msgid "Tomorrow"
+msgstr "I morgen"
+
+msgid "Total rooms"
+msgstr "Lokaler i alt"
+
+msgid "Try a different search query"
+msgstr "Prøv en anden søgning"
+
+msgid "Tue"
+msgstr "Tir"
+
+msgid "Type"
+msgstr "Type"
+
+msgid "Ungrouped rooms"
+msgstr "Lokaler uden gruppe"
+
+msgid "Unknown"
+msgstr "Ukendt"
+
+msgid "Unknown format"
+msgstr "Ukendt format"
+
+msgid "Unknown time"
+msgstr "Ukendt tidspunkt"
+
+msgid "Unnamed event"
+msgstr "Begivenhed uden navn"
+
+msgid "Upcoming"
+msgstr "Kommende"
+
+msgid "Update"
+msgstr "Opdateres"
+
+msgid "Update failed: %s"
+msgstr "Opdateringen mislykkedes: %s"
+
+msgid "Updated"
+msgstr "Opdateret"
+
+msgid "Upload a CSV file to import rooms. RoomVox and MS365 formats are supported."
+msgstr "Overfør en CSV-fil for at importere lokaler. Formaterne fra RoomVox og Microsoft 365 understøttes."
+
+msgid "Usage"
+msgstr "Brug"
+
+msgid "Usage statistics"
+msgstr "Brugsstatistik"
+
+msgid "Usage statistics are switched off, so no report was sent."
+msgstr "Brugsstatistik er slået fra, så der blev ikke sendt nogen rapport."
+
+msgid "Used to size a license and to find installations that may need one."
+msgstr "Bruges til at fastsætte størrelsen på en licens og til at finde installationer, der måske har brug for en."
+
+msgid "Username"
+msgstr "Brugernavn"
+
+msgid "Validate"
+msgstr "Valider"
+
+msgid "Validating …"
+msgstr "Validerer …"
+
+msgid "View rooms, availability, and calendar feed"
+msgstr "Se lokaler, tilgængelighed og kalenderfeed"
+
+msgid "Viewer"
+msgstr "Kan se"
+
+msgid "Viewers"
+msgstr "Kan se"
+
+msgid "Wed"
+msgstr "Ons"
+
+msgid "Week"
+msgstr "Uge"
+
+msgid "Weekdays 08-18"
+msgstr "Hverdage 08-18"
+
+msgid "Weekdays 09-17"
+msgstr "Hverdage 09-17"
+
+msgid "What a subscription includes"
+msgstr "Det får du med et abonnement"
+
+msgid "When"
+msgstr "Hvornår"
+
+msgid "Which version of this list the report follows, so that fields added later are only sent after you agree to them."
+msgstr "Hvilken version af listen rapporten følger, så felter, der kommer til senere, først sendes, når du har sagt ja til dem."
+
+msgid "With your permission, RoomVox sends usage statistics about this installation to {server}, run by VoxCloud, once a day. No personal data, content or names are sent. Nothing is sent until you switch this on."
+msgstr "Med din tilladelse sender RoomVox én gang om dagen brugsstatistik om installationen til {server}, som drives af VoxCloud. Der sendes ingen personoplysninger, intet indhold og ingen navne. Der sendes intet, før du slår det til."
+
+msgid "Yes"
+msgstr "Ja"
+
+msgid "You do not have access to any rooms yet. Ask your administrator to grant you access."
+msgstr "Du har ikke adgang til nogen lokaler endnu. Bed din administrator om at give dig adgang."
+
+msgid "Your booking could not be processed due to a scheduling conflict."
+msgstr "Din booking kunne ikke gennemføres på grund af en konflikt med en anden booking."
+
+msgid "Your booking has been canceled by a room manager."
+msgstr "Din booking er blevet aflyst af en lokaleansvarlig."
+
+msgid "Your booking has been confirmed."
+msgstr "Din booking er bekræftet."
+
+msgid "Your booking request could not be processed because it exceeds the room's booking horizon."
+msgstr "Din bookinganmodning kunne ikke gennemføres, fordi den ligger længere ude i fremtiden, end lokalet kan bookes."
+
+msgid "Your booking request could not be processed because it falls outside the room's availability hours."
+msgstr "Din bookinganmodning kunne ikke gennemføres, fordi den ligger uden for lokalets bookingtider."
+
+msgid "Your booking request could not be processed right now because the room is still being synchronized."
+msgstr "Din bookinganmodning kunne ikke gennemføres lige nu, fordi lokalet stadig er ved at blive synkroniseret."
+
+msgid "Your booking request has been declined."
+msgstr "Din bookinganmodning er afvist."
+
+msgid "Your booking request was automatically declined because you do not have permission to book this room."
+msgstr "Din bookinganmodning blev automatisk afvist, fordi du ikke har rettighed til at booke lokalet."
+
+msgid "Your issues get priority attention"
+msgstr "Dine henvendelser bliver prioriteret"
+
+msgid "%n account on this server"
+msgid_plural "%n accounts on this server"
+msgstr[0] "%n konto på serveren"
+msgstr[1] "%n konti på serveren"
+
+msgid "%n room found"
+msgid_plural "%n rooms found"
+msgstr[0] "%n lokale fundet"
+msgstr[1] "%n lokaler fundet"
+
+msgid "and %n more date"
+msgid_plural "and %n more dates"
+msgstr[0] "og %n dato mere"
+msgstr[1] "og %n datoer mere"
+
+msgid "Booking declined: %1$s — %2$s (exceeds the %n-day booking horizon)"
+msgid_plural "Booking declined: %1$s — %2$s (exceeds the %n-day booking horizon)"
+msgstr[0] "Booking afvist: %1$s — %2$s (mere end %n dag frem)"
+msgstr[1] "Booking afvist: %1$s — %2$s (mere end %n dage frem)"
+
+msgid "RoomVox is running for %n account here and keeps working in full without a subscription. If your organization gets value from it, a subscription is much appreciated — it funds the maintenance. Sold through Nextcloud: contact your account manager or {email}."
+msgid_plural "RoomVox is running for %n accounts here and keeps working in full without a subscription. If your organization gets value from it, a subscription is much appreciated — it funds the maintenance. Sold through Nextcloud: contact your account manager or {email}."
+msgstr[0] "RoomVox kører for %n konto her og virker fuldt ud uden abonnement. Hvis din organisation har gavn af appen, vil et abonnement blive meget værdsat – det finansierer vedligeholdelsen. Sælges gennem Nextcloud: kontakt din kundeansvarlige eller {email}."
+msgstr[1] "RoomVox kører for %n konti her og virker fuldt ud uden abonnement. Hvis din organisation har gavn af appen, vil et abonnement blive meget værdsat – det finansierer vedligeholdelsen. Sælges gennem Nextcloud: kontakt din kundeansvarlige eller {email}."
+
+msgid "This room has a maximum booking horizon of %n day."
+msgid_plural "This room has a maximum booking horizon of %n days."
+msgstr[0] "Lokalet kan højst bookes %n dag frem."
+msgstr[1] "Lokalet kan højst bookes %n dage frem."
+
+msgid "What is sent, and what it is used for (%n field)"
+msgid_plural "What is sent, and what it is used for (%n fields)"
+msgstr[0] "Hvad der sendes, og hvad det bruges til (%n felt)"
+msgstr[1] "Hvad der sendes, og hvad det bruges til (%n felter)"
